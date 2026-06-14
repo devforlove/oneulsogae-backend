@@ -1,0 +1,55 @@
+package com.org.meeple.core.chat.domain
+
+import java.time.LocalDateTime
+
+/**
+ * 채팅방에 참가한 사용자 한 명의 참가 상태 도메인 모델.
+ * 기존 [ChatRoom]은 안 읽은 개수를 성별(male/female)로 비정규화해 한 행에 들고 있으나,
+ * 이 모델은 (chatRoomId, userId) 한 쌍을 한 행으로 두어 참가자별 읽음 상태를 정규화한다.
+ * [unreadCount]/[lastReadAt]은 해당 참가자 본인의 읽음 상태이며, 상대가 보낸 메세지가 쌓이면 증가하고 본인이 읽으면 0으로 되돌린다.
+ * [exitedAt]이 채워지면 채팅방을 나간 것으로 본다.
+ * 영속성은 [com.org.meeple.infra.chat.entity.ChatRoomMemberEntity]가 담당한다.
+ */
+data class ChatRoomMember(
+	val id: Long = 0,
+	val chatRoomId: Long,
+	val userId: Long,
+	val unreadCount: Int = 0,
+	val lastReadAt: LocalDateTime? = null,
+	val joinedAt: LocalDateTime,
+	val exitedAt: LocalDateTime? = null,
+) {
+
+	/** 채팅방을 나갔는지 여부. */
+	val isExited: Boolean
+		get() = exitedAt != null
+
+	/**
+	 * 이 참가자가 메세지 한 건을 새로 받은 것으로 보고, 안 읽은 개수만 1 증가시킨 새 모델을 반환한다.
+	 * (상대가 보낸 메세지의 수신자 쪽에서 호출한다. 참가/미종료 검증은 호출 측 책임)
+	 */
+	fun receiveMessage(): ChatRoomMember =
+		copy(unreadCount = unreadCount + 1)
+
+	/**
+	 * 이 참가자가 메세지를 모두 확인한 것으로 보고, 안 읽은 개수를 0으로 되돌리고 마지막 읽은 시각을 [now]로 갱신한 새 모델을 반환한다.
+	 * (참가자 검증은 호출 측 책임)
+	 */
+	fun markAsRead(now: LocalDateTime): ChatRoomMember =
+		copy(unreadCount = 0, lastReadAt = now)
+
+	/** 이 참가자가 [now]에 채팅방을 나간 것으로 전이한 새 모델을 반환한다. */
+	fun exit(now: LocalDateTime): ChatRoomMember =
+		copy(exitedAt = now)
+
+	companion object {
+
+		/** [userId] 사용자를 [chatRoomId] 채팅방에 [now]에 참가시킨 신규 참가자를 생성한다. (안 읽은 개수 0, 미확인 상태) */
+		fun join(chatRoomId: Long, userId: Long, now: LocalDateTime): ChatRoomMember =
+			ChatRoomMember(
+				chatRoomId = chatRoomId,
+				userId = userId,
+				joinedAt = now,
+			)
+	}
+}

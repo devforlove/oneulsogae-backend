@@ -1,0 +1,22 @@
+# 통합테스트(test 프로파일) 설정.
+# datasource / redis 접속 정보는 @ServiceConnection(Testcontainers)이 주입하므로 여기서 지정하지 않는다.
+spring:
+  jpa:
+    hibernate:
+      # 컨테이너 DB에 스키마를 매 컨텍스트마다 새로 생성한다.
+      ddl-auto: create-drop
+    database-platform: org.hibernate.dialect.MySQLDialect
+    properties:
+      hibernate:
+        format_sql: true
+  security:
+    oauth2:
+      client:
+        registration:
+          kakao:
+            client-id: test-kakao-client-id
+            client-secret: test-kakao-client-secret
+
+jwt:
+  # HS512 서명 키. 최소 64바이트(512bit) 이상이어야 한다.
+  secret: this-is-a-very-long-test-jwt-secret-key-that-must-be-at-least-64-bytes-long-1234567890
