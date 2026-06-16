@@ -1,11 +1,11 @@
-package com.org.meeple.infra.user.adapter
+package com.org.meeple.infra.user.command.adapter
 
-import com.org.meeple.core.user.application.port.out.GetUserPort
-import com.org.meeple.core.user.application.port.out.SaveUserPort
-import com.org.meeple.core.user.domain.User
-import com.org.meeple.infra.user.mapper.toDomain
-import com.org.meeple.infra.user.mapper.toEntity
-import com.org.meeple.infra.user.repository.UserJpaRepository
+import com.org.meeple.core.user.command.service.port.out.GetUserPort
+import com.org.meeple.core.user.command.service.port.out.SaveUserPort
+import com.org.meeple.core.user.command.domain.User
+import com.org.meeple.infra.user.command.mapper.toDomain
+import com.org.meeple.infra.user.command.mapper.toEntity
+import com.org.meeple.infra.user.command.repository.UserJpaRepository
 import org.springframework.stereotype.Component
 
 /**

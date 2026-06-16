@@ -1,10 +1,10 @@
 package com.org.meeple.core.user.command.service
 
-import com.org.meeple.core.user.application.port.`in`.UpdateUserDetailUseCase
-import com.org.meeple.core.user.application.port.`in`.command.UpdateUserDetailCommand
-import com.org.meeple.core.user.application.port.out.GetUserDetailPort
-import com.org.meeple.core.user.application.port.out.SaveUserDetailPort
-import com.org.meeple.core.user.domain.UserDetail
+import com.org.meeple.core.user.command.service.port.`in`.UpdateUserDetailUseCase
+import com.org.meeple.core.user.command.service.port.`in`.command.UpdateUserDetailCommand
+import com.org.meeple.core.user.command.service.port.out.GetUserDetailPort
+import com.org.meeple.core.user.command.service.port.out.SaveUserDetailPort
+import com.org.meeple.core.user.command.domain.UserDetail
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 

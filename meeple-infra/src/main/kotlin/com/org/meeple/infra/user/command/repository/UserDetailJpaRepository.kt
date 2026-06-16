@@ -1,6 +1,6 @@
-package com.org.meeple.infra.user.repository
+package com.org.meeple.infra.user.command.repository
 
-import com.org.meeple.infra.user.entity.UserDetailEntity
+import com.org.meeple.infra.user.command.entity.UserDetailEntity
 import org.springframework.data.jpa.repository.JpaRepository
 
 /**

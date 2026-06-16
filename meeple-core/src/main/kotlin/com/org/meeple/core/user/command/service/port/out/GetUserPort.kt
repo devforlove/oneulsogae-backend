@@ -1,6 +1,6 @@
 package com.org.meeple.core.user.command.service.port.out
 
-import com.org.meeple.core.user.domain.User
+import com.org.meeple.core.user.command.domain.User
 
 /**
  * 사용자 조회 아웃포트.

@@ -4,7 +4,7 @@ import com.org.meeple.core.chat.query.dao.ChatParticipantQueryDao
 import com.org.meeple.core.chat.query.dto.ChatParticipant
 import com.org.meeple.core.chat.query.dto.ChatParticipants
 import com.org.meeple.infra.chat.command.entity.QChatRoomMemberEntity
-import com.org.meeple.infra.user.entity.QUserDetailEntity
+import com.org.meeple.infra.user.command.entity.QUserDetailEntity
 import com.querydsl.core.types.Projections
 import com.querydsl.jpa.impl.JPAQueryFactory
 import org.springframework.stereotype.Component

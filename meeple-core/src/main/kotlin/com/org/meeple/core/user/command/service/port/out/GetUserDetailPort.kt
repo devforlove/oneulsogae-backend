@@ -1,6 +1,6 @@
 package com.org.meeple.core.user.command.service.port.out
 
-import com.org.meeple.core.user.domain.UserDetail
+import com.org.meeple.core.user.command.domain.UserDetail
 
 /**
  * 사용자 프로필 상세 조회 아웃포트.

@@ -3,11 +3,11 @@ package com.org.meeple.api.user
 import com.org.meeple.common.user.UserStatus
 import com.org.meeple.infra.coin.entity.QCoinBalanceEntity
 import com.org.meeple.infra.fixture.IntegrationUtil
-import com.org.meeple.infra.user.entity.QUserDetailEntity
-import com.org.meeple.infra.user.entity.UserDetailEntity
-import com.org.meeple.infra.user.entity.QCompanyEmailVerificationEntity
-import com.org.meeple.infra.user.entity.QUserCompanyEntity
-import com.org.meeple.infra.user.entity.QUserEntity
+import com.org.meeple.infra.user.command.entity.QUserDetailEntity
+import com.org.meeple.infra.user.command.entity.UserDetailEntity
+import com.org.meeple.infra.user.command.entity.QCompanyEmailVerificationEntity
+import com.org.meeple.infra.user.command.entity.QUserCompanyEntity
+import com.org.meeple.infra.user.command.entity.QUserEntity
 
 /**
  * 온보딩 엔드포인트 E2E 공통 헬퍼.

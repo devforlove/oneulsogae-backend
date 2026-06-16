@@ -1,6 +1,6 @@
 package com.org.meeple.infra.fixture
 
-import com.org.meeple.infra.user.entity.UserCompanyEntity
+import com.org.meeple.infra.user.command.entity.UserCompanyEntity
 
 /**
  * [UserCompanyEntity] 테스트 픽스처. 회사 이메일 도메인 -> 회사명 매핑을 만든다.

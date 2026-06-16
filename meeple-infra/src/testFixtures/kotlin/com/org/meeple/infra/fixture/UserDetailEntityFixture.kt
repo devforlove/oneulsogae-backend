@@ -1,7 +1,7 @@
 package com.org.meeple.infra.fixture
 
 import com.org.meeple.common.user.Gender
-import com.org.meeple.infra.user.entity.UserDetailEntity
+import com.org.meeple.infra.user.command.entity.UserDetailEntity
 
 /**
  * [UserDetailEntity] 테스트 픽스처. 매칭 응답 결과에 노출되는 최소 프로필(닉네임·성별·나이)을 기본으로 채운다.

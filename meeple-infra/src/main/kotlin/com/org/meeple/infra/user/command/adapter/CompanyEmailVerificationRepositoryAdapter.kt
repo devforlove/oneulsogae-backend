@@ -1,11 +1,11 @@
-package com.org.meeple.infra.user.adapter
+package com.org.meeple.infra.user.command.adapter
 
-import com.org.meeple.core.user.application.port.out.GetCompanyEmailVerificationPort
-import com.org.meeple.core.user.application.port.out.SaveCompanyEmailVerificationPort
-import com.org.meeple.core.user.domain.CompanyEmailVerification
-import com.org.meeple.infra.user.mapper.toDomain
-import com.org.meeple.infra.user.mapper.toEntity
-import com.org.meeple.infra.user.repository.CompanyEmailVerificationJpaRepository
+import com.org.meeple.core.user.command.service.port.out.GetCompanyEmailVerificationPort
+import com.org.meeple.core.user.command.service.port.out.SaveCompanyEmailVerificationPort
+import com.org.meeple.core.user.command.domain.CompanyEmailVerification
+import com.org.meeple.infra.user.command.mapper.toDomain
+import com.org.meeple.infra.user.command.mapper.toEntity
+import com.org.meeple.infra.user.command.repository.CompanyEmailVerificationJpaRepository
 import org.springframework.stereotype.Component
 
 /**

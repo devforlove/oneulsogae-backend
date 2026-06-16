@@ -1,6 +1,6 @@
 package com.org.meeple.core.fixture
 
-import com.org.meeple.core.user.domain.CompanyEmailVerification
+import com.org.meeple.core.user.command.domain.CompanyEmailVerification
 import java.time.LocalDateTime
 
 /** [CompanyEmailVerification] 도메인 모델 테스트 픽스처. 기본은 아직 검증되지 않은(verifiedAt=null) 회사 도메인 인증 요청이다. */

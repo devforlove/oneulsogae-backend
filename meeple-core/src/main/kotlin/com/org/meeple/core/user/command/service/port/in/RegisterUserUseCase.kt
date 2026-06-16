@@ -1,6 +1,6 @@
 package com.org.meeple.core.user.command.service.port.`in`
 
-import com.org.meeple.core.user.domain.User
+import com.org.meeple.core.user.command.domain.User
 
 /**
  * 사용자 가입 인포트(유스케이스).

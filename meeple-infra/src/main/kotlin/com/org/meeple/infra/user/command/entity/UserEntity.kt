@@ -1,4 +1,4 @@
-package com.org.meeple.infra.user.entity
+package com.org.meeple.infra.user.command.entity
 
 import com.org.meeple.common.user.Role
 import com.org.meeple.common.user.UserStatus

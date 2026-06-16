@@ -1,13 +1,14 @@
 package com.org.meeple.core.user.command.service
 
 import com.org.meeple.core.common.error.BusinessException
-import com.org.meeple.core.user.application.port.`in`.ResolveCompanyNameUseCase
-import com.org.meeple.core.user.application.port.out.GetUserDetailPort
-import com.org.meeple.core.user.application.port.out.GetUserPort
-import com.org.meeple.core.user.application.port.out.SaveUserDetailPort
-import com.org.meeple.core.user.application.port.out.SaveUserPort
-import com.org.meeple.core.user.domain.User
-import com.org.meeple.core.user.domain.UserDetail
+import com.org.meeple.core.user.UserErrorCode
+import com.org.meeple.core.user.command.service.port.`in`.ResolveCompanyNameUseCase
+import com.org.meeple.core.user.command.service.port.out.GetUserDetailPort
+import com.org.meeple.core.user.command.service.port.out.GetUserPort
+import com.org.meeple.core.user.command.service.port.out.SaveUserDetailPort
+import com.org.meeple.core.user.command.service.port.out.SaveUserPort
+import com.org.meeple.core.user.command.domain.User
+import com.org.meeple.core.user.command.domain.UserDetail
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 

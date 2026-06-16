@@ -10,7 +10,7 @@ import com.org.meeple.auth.jwt.RefreshTokenService
 import com.org.meeple.auth.jwt.TokenCookieFactory
 import com.org.meeple.core.common.error.ErrorResponse
 import com.org.meeple.core.common.response.ApiResponse
-import com.org.meeple.core.user.application.port.`in`.GetUserByIdUseCase
+import com.org.meeple.core.user.query.service.port.`in`.GetUserByIdUseCase
 import jakarta.servlet.http.HttpServletResponse
 import org.springframework.http.HttpHeaders
 import org.springframework.http.HttpStatus

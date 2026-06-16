@@ -7,8 +7,8 @@ import com.org.meeple.infra.match.command.entity.MatchEntity
 import com.org.meeple.infra.match.command.entity.MatchMemberEntity
 import com.org.meeple.infra.match.command.entity.QMatchEntity
 import com.org.meeple.infra.match.command.entity.QMatchMemberEntity
-import com.org.meeple.infra.user.entity.QUserDetailEntity
-import com.org.meeple.infra.user.entity.UserDetailEntity
+import com.org.meeple.infra.user.command.entity.QUserDetailEntity
+import com.org.meeple.infra.user.command.entity.UserDetailEntity
 import com.querydsl.core.Tuple
 import com.querydsl.jpa.impl.JPAQueryFactory
 import org.springframework.stereotype.Component

@@ -2,16 +2,17 @@ package com.org.meeple.core.user.command.service
 
 import com.org.meeple.core.coin.application.port.`in`.CreateCoinBalanceUseCase
 import com.org.meeple.core.common.error.BusinessException
+import com.org.meeple.core.user.UserErrorCode
 import com.org.meeple.core.common.time.TimeGenerator
-import com.org.meeple.core.user.application.port.`in`.UpdateUserDetailUseCase
-import com.org.meeple.core.user.application.port.`in`.command.UpdateUserDetailCommand
-import com.org.meeple.core.user.application.port.`in`.RequestCompanyEmailVerificationUseCase
-import com.org.meeple.core.user.application.port.out.GetUserPort
-import com.org.meeple.core.user.application.port.out.SaveCompanyEmailVerificationPort
-import com.org.meeple.core.user.application.port.out.SaveUserPort
-import com.org.meeple.core.user.application.port.out.SendCompanyEmailVerificationPort
-import com.org.meeple.core.user.domain.CompanyEmailVerification
-import com.org.meeple.core.user.domain.User
+import com.org.meeple.core.user.command.service.port.`in`.UpdateUserDetailUseCase
+import com.org.meeple.core.user.command.service.port.`in`.command.UpdateUserDetailCommand
+import com.org.meeple.core.user.command.service.port.`in`.RequestCompanyEmailVerificationUseCase
+import com.org.meeple.core.user.command.service.port.out.GetUserPort
+import com.org.meeple.core.user.command.service.port.out.SaveCompanyEmailVerificationPort
+import com.org.meeple.core.user.command.service.port.out.SaveUserPort
+import com.org.meeple.core.user.command.service.port.out.SendCompanyEmailVerificationPort
+import com.org.meeple.core.user.command.domain.CompanyEmailVerification
+import com.org.meeple.core.user.command.domain.User
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import java.security.SecureRandom

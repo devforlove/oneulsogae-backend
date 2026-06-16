@@ -1,7 +1,7 @@
 package com.org.meeple.core.user.command.service.port.`in`
 
-import com.org.meeple.core.user.application.port.`in`.command.UpdateUserDetailCommand
-import com.org.meeple.core.user.domain.UserDetail
+import com.org.meeple.core.user.command.service.port.`in`.command.UpdateUserDetailCommand
+import com.org.meeple.core.user.command.domain.UserDetail
 
 /**
  * 온보딩 입력값(프로필 상세 전체)을 프로필에 저장하는 인포트(유스케이스).

@@ -1,7 +1,7 @@
 package com.org.meeple.core.user.command.service.port.`in`
 
-import com.org.meeple.core.user.application.port.`in`.command.UpdateProfileCommand
-import com.org.meeple.core.user.domain.UserDetail
+import com.org.meeple.core.user.command.service.port.`in`.command.UpdateProfileCommand
+import com.org.meeple.core.user.command.domain.UserDetail
 
 /**
  * 현재 사용자의 프로필을 수정하는 인포트(유스케이스).

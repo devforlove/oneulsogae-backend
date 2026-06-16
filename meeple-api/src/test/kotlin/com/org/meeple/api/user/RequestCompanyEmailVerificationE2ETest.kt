@@ -8,7 +8,7 @@ import com.org.meeple.common.user.UserStatus
 import com.org.meeple.infra.fixture.IntegrationUtil
 import com.org.meeple.infra.fixture.UserDetailEntityFixture
 import com.org.meeple.infra.fixture.UserEntityFixture
-import com.org.meeple.infra.user.entity.UserDetailEntity
+import com.org.meeple.infra.user.command.entity.UserDetailEntity
 import io.kotest.matchers.shouldBe
 import org.hamcrest.Matchers.notNullValue
 

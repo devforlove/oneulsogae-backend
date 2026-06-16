@@ -1,8 +1,8 @@
 package com.org.meeple.domain.user
 
 import com.org.meeple.core.common.error.BusinessException
-import com.org.meeple.core.user.application.UserErrorCode
-import com.org.meeple.core.user.domain.CompanyEmailVerification
+import com.org.meeple.core.user.UserErrorCode
+import com.org.meeple.core.user.command.domain.CompanyEmailVerification
 import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.core.spec.style.DescribeSpec
 import io.kotest.matchers.shouldBe

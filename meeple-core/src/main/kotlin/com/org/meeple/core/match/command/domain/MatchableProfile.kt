@@ -29,14 +29,16 @@ data class MatchableProfile(
 	companion object {
 
 		/**
-		 * 사용자([UserWithDetail])가 매칭 가능한지 검증해 프로필로 변환한다.
-		 * 정식 가입(ACTIVE)이 아니면 [com.org.meeple.core.user.application.UserErrorCode.USER_NOT_ACTIVE],
+		 * 사용자([UserWithDetailView])가 매칭 가능한지 검증해 프로필로 변환한다.
+		 * 정식 가입(ACTIVE)이 아니면 [UserErrorCode.USER_NOT_ACTIVE],
 		 * 매칭 필수 필드(성별·닉네임·나이·활동 권역·결혼 여부)가 비어 있으면 [MatchErrorCode.PROFILE_INCOMPLETE]를 던진다.
 		 */
-		fun from(userWithDetail: UserWithDetail): MatchableProfile {
-			userWithDetail.user.validateRegistered()
+		fun from(userWithDetail: UserWithDetailView): MatchableProfile {
+			if (!userWithDetail.user.isRegistered) {
+				throw BusinessException(UserErrorCode.USER_NOT_ACTIVE)
+			}
 
-			val detail: UserDetail = userWithDetail.detail
+			val detail: UserDetailView = userWithDetail.detail
 			return MatchableProfile(
 				userId = detail.userId,
 				gender = detail.gender ?: throw BusinessException(MatchErrorCode.PROFILE_INCOMPLETE),

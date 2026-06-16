@@ -1,6 +1,6 @@
-package com.org.meeple.infra.user.repository
+package com.org.meeple.infra.user.command.repository
 
-import com.org.meeple.infra.user.entity.CompanyEmailVerificationEntity
+import com.org.meeple.infra.user.command.entity.CompanyEmailVerificationEntity
 import org.springframework.data.jpa.repository.JpaRepository
 
 /**

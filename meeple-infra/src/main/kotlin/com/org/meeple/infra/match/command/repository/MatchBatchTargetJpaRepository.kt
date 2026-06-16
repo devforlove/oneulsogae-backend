@@ -3,7 +3,7 @@ package com.org.meeple.infra.match.command.repository
 import com.org.meeple.common.user.Gender
 import com.org.meeple.common.user.MaritalStatus
 import com.org.meeple.common.user.UserStatus
-import com.org.meeple.infra.user.entity.UserEntity
+import com.org.meeple.infra.user.command.entity.UserEntity
 import org.springframework.data.domain.Limit
 import org.springframework.data.jpa.repository.JpaRepository
 import org.springframework.data.jpa.repository.Query

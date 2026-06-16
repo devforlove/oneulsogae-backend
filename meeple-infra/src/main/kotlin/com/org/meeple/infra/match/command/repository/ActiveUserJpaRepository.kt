@@ -1,7 +1,7 @@
 package com.org.meeple.infra.match.command.repository
 
 import com.org.meeple.common.user.UserStatus
-import com.org.meeple.infra.user.entity.UserEntity
+import com.org.meeple.infra.user.command.entity.UserEntity
 import com.org.meeple.scheduler.match.domain.ActiveUser
 import org.springframework.data.jpa.repository.JpaRepository
 import org.springframework.data.jpa.repository.Query

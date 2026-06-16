@@ -1,7 +1,7 @@
-package com.org.meeple.infra.user.mapper
+package com.org.meeple.infra.user.command.mapper
 
-import com.org.meeple.core.user.domain.CompanyEmailVerification
-import com.org.meeple.infra.user.entity.CompanyEmailVerificationEntity
+import com.org.meeple.core.user.command.domain.CompanyEmailVerification
+import com.org.meeple.infra.user.command.entity.CompanyEmailVerificationEntity
 
 /** 영속성 엔티티 -> 도메인 모델 */
 fun CompanyEmailVerificationEntity.toDomain(): CompanyEmailVerification =

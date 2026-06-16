@@ -1,6 +1,6 @@
 package com.org.meeple.infra.fixture
 
-import com.org.meeple.infra.user.entity.CompanyEmailVerificationEntity
+import com.org.meeple.infra.user.command.entity.CompanyEmailVerificationEntity
 import java.time.LocalDateTime
 
 /**

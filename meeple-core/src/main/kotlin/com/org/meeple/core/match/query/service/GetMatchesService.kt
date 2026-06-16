@@ -5,9 +5,9 @@ import com.org.meeple.core.common.time.TimeGenerator
 import com.org.meeple.core.match.query.service.port.`in`.GetMatchesUseCase
 import com.org.meeple.core.match.command.service.port.`in`.RecommendMatchUseCase
 import com.org.meeple.core.match.query.dao.MatchWithPartnerQueryDao
-import com.org.meeple.core.user.application.port.`in`.GetUserWithDetailUseCase
+import com.org.meeple.core.user.query.service.port.`in`.GetUserWithDetailUseCase
 import com.org.meeple.core.match.query.dto.MatchWithPartner
-import com.org.meeple.core.user.domain.UserWithDetail
+import com.org.meeple.core.user.query.dto.UserWithDetailView
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import java.time.LocalDateTime
@@ -30,7 +30,7 @@ class GetMatchesService(
 
 	@Transactional
 	override fun getMatches(userId: Long, isAfterOnboarding: Boolean): List<MatchWithPartner> {
-		val userWithDetail: UserWithDetail = getUserWithDetailUseCase.getByUserId(userId)
+		val userWithDetail: UserWithDetailView = getUserWithDetailUseCase.getByUserId(userId)
 
 		// 온보딩 직후 사용자에게만 신규 매칭을 1건 만들어 준다.
 		if (isAfterOnboarding) {

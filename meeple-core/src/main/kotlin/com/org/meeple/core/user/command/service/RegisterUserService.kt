@@ -1,11 +1,12 @@
 package com.org.meeple.core.user.command.service
 
 import com.org.meeple.core.common.error.BusinessException
+import com.org.meeple.core.user.UserErrorCode
 import com.org.meeple.core.common.time.TimeGenerator
-import com.org.meeple.core.user.application.port.`in`.RegisterUserUseCase
-import com.org.meeple.core.user.application.port.out.GetUserPort
-import com.org.meeple.core.user.application.port.out.SaveUserPort
-import com.org.meeple.core.user.domain.User
+import com.org.meeple.core.user.command.service.port.`in`.RegisterUserUseCase
+import com.org.meeple.core.user.command.service.port.out.GetUserPort
+import com.org.meeple.core.user.command.service.port.out.SaveUserPort
+import com.org.meeple.core.user.command.domain.User
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import java.time.LocalDateTime

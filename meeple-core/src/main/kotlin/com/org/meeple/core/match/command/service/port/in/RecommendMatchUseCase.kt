@@ -1,7 +1,7 @@
 package com.org.meeple.core.match.command.service.port.`in`
 
 import com.org.meeple.core.match.command.domain.Match
-import com.org.meeple.core.user.domain.UserWithDetail
+import com.org.meeple.core.user.query.dto.UserWithDetailView
 
 /**
  * 매칭 추천 인포트(유스케이스).
@@ -11,5 +11,5 @@ import com.org.meeple.core.user.domain.UserWithDetail
  */
 interface RecommendMatchUseCase {
 
-	fun recommend(userWithDetail: UserWithDetail): Match?
+	fun recommend(userWithDetail: UserWithDetailView): Match?
 }

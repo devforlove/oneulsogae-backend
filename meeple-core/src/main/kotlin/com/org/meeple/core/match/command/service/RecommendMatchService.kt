@@ -7,7 +7,7 @@ import com.org.meeple.core.match.command.service.port.out.GetMatchCandidatePort
 import com.org.meeple.core.match.command.service.port.out.SaveMatchPort
 import com.org.meeple.core.match.command.domain.Match
 import com.org.meeple.core.match.command.domain.MatchableProfile
-import com.org.meeple.core.user.domain.UserWithDetail
+import com.org.meeple.core.user.query.dto.UserWithDetailView
 import org.springframework.stereotype.Service
 import java.time.LocalDateTime
 
@@ -26,7 +26,7 @@ class RecommendMatchService(
 	private val timeGenerator: TimeGenerator,
 ) : RecommendMatchUseCase {
 
-	override fun recommend(userWithDetail: UserWithDetail): Match? {
+	override fun recommend(userWithDetail: UserWithDetailView): Match? {
 		// 매칭 가능 여부(정식 가입 + 필수 필드)를 검증하고, 이후엔 non-null로 사용한다.
 		val profile: MatchableProfile = MatchableProfile.from(userWithDetail)
 

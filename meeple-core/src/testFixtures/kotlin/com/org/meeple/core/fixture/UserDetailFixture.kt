@@ -6,7 +6,7 @@ import com.org.meeple.common.user.Gender
 import com.org.meeple.common.user.MaritalStatus
 import com.org.meeple.common.user.Religion
 import com.org.meeple.common.user.SmokingStatus
-import com.org.meeple.core.user.domain.UserDetail
+import com.org.meeple.core.user.command.domain.UserDetail
 
 /**
  * [UserDetail] 도메인 모델 테스트 픽스처.

@@ -8,14 +8,14 @@ import com.org.meeple.common.user.Region
 import com.org.meeple.common.user.Religion
 import com.org.meeple.common.user.SmokingStatus
 import com.org.meeple.core.common.error.BusinessException
-import com.org.meeple.core.user.application.UserErrorCode
+import com.org.meeple.core.user.UserErrorCode
 import java.security.SecureRandom
 
 /**
- * 사용자 프로필 상세 도메인 모델. [com.org.meeple.core.user.domain.User]와 1:1로 연결되며 닉네임/프로필 이미지 및
+ * 사용자 프로필 상세 도메인 모델. [com.org.meeple.core.user.command.domain.User]와 1:1로 연결되며 닉네임/프로필 이미지 및
  * 가입 과정에서 점진적으로 채워지는 프로필 정보(나이/키/성별 등)를 담는다.
  * 사용자 프로필 속성 묶음으로, user 도메인이 소유한다.
- * 영속성은 [com.org.meeple.infra.user.entity.UserDetailEntity]가 담당한다.
+ * 영속성은 [com.org.meeple.infra.user.command.entity.UserDetailEntity]가 담당한다.
  */
 data class UserDetail(
 	val id: Long = 0,
@@ -162,7 +162,7 @@ data class UserDetail(
 
 		private val secureRandom: SecureRandom = SecureRandom()
 
-		/** [com.org.meeple.core.user.domain.User]에 연결되는 신규 프로필 상세를 생성한다. */
+		/** [com.org.meeple.core.user.command.domain.User]에 연결되는 신규 프로필 상세를 생성한다. */
 		fun create(userId: Long, nickname: String? = null, profileImageCode: String? = null): UserDetail =
 			UserDetail(
 				userId = userId,

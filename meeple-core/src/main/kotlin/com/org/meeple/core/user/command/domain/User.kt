@@ -3,13 +3,13 @@ package com.org.meeple.core.user.command.domain
 import com.org.meeple.common.user.Role
 import com.org.meeple.common.user.UserStatus
 import com.org.meeple.core.common.error.BusinessException
-import com.org.meeple.core.user.application.UserErrorCode
+import com.org.meeple.core.user.UserErrorCode
 import java.time.LocalDateTime
 
 /**
  * 사용자 도메인 모델. 인증/가입 상태 등 계정 식별에 관한 도메인 행위를 정의한다.
  * 닉네임/프로필 등 프로필 상세 정보는 [UserDetail]이 담당한다.
- * 영속성은 [com.org.meeple.infra.user.entity.UserEntity]가 담당한다.
+ * 영속성은 [com.org.meeple.infra.user.command.entity.UserEntity]가 담당한다.
  */
 data class User(
 	val id: Long = 0,

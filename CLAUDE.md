@@ -88,7 +88,7 @@ meeple-common ──> (없음)                                                  
 - **Adapter**(`@Component`, `meeple-infra`)가 out-port를 구현하고 JPA Repository에 위임하며, `toDomain()`/`toEntity()`로 도메인 ↔ 엔티티를 변환한다.
 - **네이밍**: `<동사><명사>UseCase` / `<동사><명사>Service` (Get/Register/Recommend/Acquire …).
 - **에러 처리**: 도메인별 `ErrorCode` enum + `BusinessException` 사용. (예: `MatchErrorCode.MATCH_NOT_FOUND`)
-- **`user` 도메인이 사용자 프로필을 소유한다.** 계정/식별(`User`, 회사 이메일 인증)뿐 아니라 **프로필(`UserDetail`·`UserWithDetail`, 닉네임·프로필이미지·성별·나이 등)도 `user` 도메인**에 둔다. (엔티티 `com.org.meeple.infra.user.entity.UserDetailEntity`, 에러코드 `UserErrorCode.USER_DETAIL_NOT_FOUND` 등) 프로필은 매칭 산출물이 아니라 여러 도메인이 읽는 공유 사용자 데이터이므로 특정 도메인(match 등)에 두지 않는다.
+- **`user` 도메인이 사용자 프로필을 소유한다.** 계정/식별(`User`, 회사 이메일 인증)뿐 아니라 **프로필(command 도메인 `UserDetail`·query read model `UserDetailView`/`UserWithDetailView`, 닉네임·프로필이미지·성별·나이 등)도 `user` 도메인**에 둔다. (엔티티 `com.org.meeple.infra.user.command.entity.UserDetailEntity`, 에러코드 `UserErrorCode.USER_DETAIL_NOT_FOUND` 등) 프로필은 매칭 산출물이 아니라 여러 도메인이 읽는 공유 사용자 데이터이므로 특정 도메인(match 등)에 두지 않는다.
   - match·chat·alarm 등 **다른 도메인이 프로필을 필요로 하면**: core에서는 user의 in-port(`GetUserDetailUseCase`/`GetUserWithDetailUseCase`)로 참조하고, 목록·상세의 **표시용 프로필 조인**은 infra 읽기 어댑터가 `UserDetailEntity`를 조인해 자기 도메인 read model로 투영한다. (예: `ChatParticipantQueryDaoImpl` → `ChatParticipant`, `MatchWithPartnerQueryDaoImpl` → 상대 프로필)
 
 ## 도메인 간 참조 규칙
@@ -111,7 +111,7 @@ class GetMatchesService(
 ```
 
 - **자기 도메인 내부**의 영속성 접근은 그대로 **자기 도메인의 out-port**를 사용한다.
-- 선례: 프로필을 `user`로 이전하면서 `MatchEventHandler`·`GetMatchesService`는 프로필을 user의 in-port(`GetUserDetailUseCase`/`GetUserWithDetailUseCase`)로 참조하도록 정리했다. (단, `nullable` 조회가 필요한 곳을 위해 `GetUserDetailUseCase.findByUserId(): UserDetail?`도 둔다)
+- 선례: 프로필을 `user`로 이전하면서 `MatchEventHandler`·`GetMatchesService`는 프로필을 user의 query in-port(`GetUserDetailUseCase`/`GetUserWithDetailUseCase`)로 참조하도록 정리했다. (단, `nullable` 조회가 필요한 곳을 위해 `GetUserDetailUseCase.findByUserId(): UserDetailView?`도 둔다)
 - 참고: 일부 기존 코드는 아직 과거 패턴(다른 도메인 out-port 직접 주입)을 쓸 수 있다. 본 규칙은 **신규/수정 코드**에 적용하며, 기존 코드를 일괄 변경하지는 않는다.
 
 ## 명령·조회 분리 (CQS, Command Query Separation)

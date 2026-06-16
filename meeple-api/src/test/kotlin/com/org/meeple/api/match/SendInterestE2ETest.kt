@@ -22,7 +22,7 @@ import com.org.meeple.infra.fixture.UserDetailEntityFixture
 import com.org.meeple.infra.match.command.entity.MatchEntity
 import com.org.meeple.infra.match.command.entity.QMatchEntity
 import com.org.meeple.infra.match.command.entity.QMatchMemberEntity
-import com.org.meeple.infra.user.entity.QUserDetailEntity
+import com.org.meeple.infra.user.command.entity.QUserDetailEntity
 import io.kotest.matchers.shouldBe
 
 /**

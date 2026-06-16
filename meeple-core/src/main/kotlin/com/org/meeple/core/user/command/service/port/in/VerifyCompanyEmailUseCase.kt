@@ -1,6 +1,6 @@
 package com.org.meeple.core.user.command.service.port.`in`
 
-import com.org.meeple.core.user.application.port.`in`.result.VerifyCompanyEmailResult
+import com.org.meeple.core.user.command.service.port.`in`.result.VerifyCompanyEmailResult
 
 /**
  * 회사 이메일 인증번호 검증 인포트(유스케이스).

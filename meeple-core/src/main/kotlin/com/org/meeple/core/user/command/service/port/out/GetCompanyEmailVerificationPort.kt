@@ -1,6 +1,6 @@
 package com.org.meeple.core.user.command.service.port.out
 
-import com.org.meeple.core.user.domain.CompanyEmailVerification
+import com.org.meeple.core.user.command.domain.CompanyEmailVerification
 
 /**
  * 회사 이메일 인증 조회 아웃포트.

@@ -12,7 +12,7 @@ import com.org.meeple.infra.fixture.ChatRoomEntityFixture
 import com.org.meeple.infra.fixture.ChatRoomMemberEntityFixture
 import com.org.meeple.infra.fixture.IntegrationUtil
 import com.org.meeple.infra.fixture.UserDetailEntityFixture
-import com.org.meeple.infra.user.entity.QUserDetailEntity
+import com.org.meeple.infra.user.command.entity.QUserDetailEntity
 import org.hamcrest.Matchers.hasItems
 import org.hamcrest.Matchers.notNullValue
 import org.hamcrest.Matchers.nullValue

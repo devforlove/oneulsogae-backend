@@ -3,7 +3,7 @@ package com.org.meeple.core.match.command.service
 import com.org.meeple.common.alarm.AlarmType
 import com.org.meeple.core.alarm.application.port.`in`.SaveAlarmUseCase
 import com.org.meeple.core.alarm.application.port.`in`.command.SaveAlarmCommand
-import com.org.meeple.core.user.application.port.`in`.GetUserDetailUseCase
+import com.org.meeple.core.user.query.service.port.`in`.GetUserDetailUseCase
 import com.org.meeple.core.match.command.domain.event.InterestSent
 import com.org.meeple.core.match.command.domain.event.MatchAccepted
 import org.springframework.stereotype.Component

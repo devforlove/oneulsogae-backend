@@ -1,7 +1,7 @@
 package com.org.meeple.infra.fixture
 
 import com.org.meeple.common.user.UserStatus
-import com.org.meeple.infra.user.entity.UserEntity
+import com.org.meeple.infra.user.command.entity.UserEntity
 import java.time.LocalDateTime
 
 /**

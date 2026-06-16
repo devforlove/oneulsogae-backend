@@ -1,7 +1,7 @@
 package com.org.meeple.core.user.command.domain
 
 import com.org.meeple.core.common.error.BusinessException
-import com.org.meeple.core.user.application.UserErrorCode
+import com.org.meeple.core.user.UserErrorCode
 import java.time.Duration
 import java.time.LocalDateTime
 

@@ -1,7 +1,7 @@
 package com.org.meeple.core.user.command.service.port.`in`
 
-import com.org.meeple.core.user.application.port.`in`.command.UpdateUserDetailCommand
-import com.org.meeple.core.user.domain.CompanyEmailVerification
+import com.org.meeple.core.user.command.service.port.`in`.command.UpdateUserDetailCommand
+import com.org.meeple.core.user.command.domain.CompanyEmailVerification
 
 /**
  * 회사 이메일 인증 요청 인포트(유스케이스).

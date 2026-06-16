@@ -1,4 +1,4 @@
-package com.org.meeple.infra.user.entity
+package com.org.meeple.infra.user.command.entity
 
 import com.org.meeple.infra.common.BaseEntity
 import jakarta.persistence.Column
