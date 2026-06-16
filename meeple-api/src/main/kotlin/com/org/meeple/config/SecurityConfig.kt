@@ -51,6 +51,11 @@ class SecurityConfig(
 					.requestMatchers("/oauth2/**", "/login/**").permitAll()
 					// 토큰 재발급/로그아웃은 access token이 만료된 상태에서도 호출되므로 허용한다.
 					.requestMatchers("/auth/v1/refresh", "/auth/v1/logout").permitAll()
+					// WebSocket 핸드셰이크(SockJS 하위 경로 포함)는 토큰을 못 싣으므로 열어둔다.
+					// 실제 인증은 STOMP CONNECT 프레임에서 AuthChannelInterceptor가 수행한다.
+					.requestMatchers("/ws/chat/**").permitAll()
+					// 관리자 전용(매칭 배치 수동 실행 등)은 ROLE_ADMIN만 허용한다.
+					.requestMatchers("/admin/**").hasRole("ADMIN")
 					.anyRequest().authenticated()
 			}
 			// 인증이 필요한 요청인데 토큰이 없거나 유효하지 않으면(만료/위조) 401 JSON으로 차단한다.

@@ -91,8 +91,15 @@ abstract class AbstractIntegrationSupport(
 	 * `bearer(accessTokenFor(userId))` 형태로 사용한다.
 	 */
 	// internal: 생성자 람다(리시버=베이스)에서도 호출할 수 있도록 protected가 아닌 internal로 둔다. (테스트 모듈 한정)
-	internal fun accessTokenFor(userId: Long, email: String = "user$userId@test.com"): String {
-		val authorities: List<SimpleGrantedAuthority> = listOf(SimpleGrantedAuthority("ROLE_USER"))
+	internal fun accessTokenFor(userId: Long, email: String = "user$userId@test.com"): String =
+		tokenFor(userId, email, "ROLE_USER")
+
+	/** 관리자(ROLE_ADMIN) 권한이 실린 access token. (admin 전용 엔드포인트 테스트용) */
+	internal fun adminAccessTokenFor(userId: Long, email: String = "admin$userId@test.com"): String =
+		tokenFor(userId, email, "ROLE_ADMIN")
+
+	private fun tokenFor(userId: Long, email: String, role: String): String {
+		val authorities: List<SimpleGrantedAuthority> = listOf(SimpleGrantedAuthority(role))
 		val principal = PrincipalDetails(email = email, id = userId, authorities = authorities)
 		return tokenProvider.generateAccessToken(UsernamePasswordAuthenticationToken(principal, "", authorities))
 	}

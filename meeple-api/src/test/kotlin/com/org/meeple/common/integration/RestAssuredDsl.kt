@@ -60,6 +60,9 @@ class HttpResponseSpec(private val response: ValidatableResponse) {
 fun post(path: String, configure: HttpRequestSpec.() -> Unit = {}): ValidatableResponse =
 	HttpRequestSpec().apply(configure).spec.post(path).then()
 
+fun put(path: String, configure: HttpRequestSpec.() -> Unit = {}): ValidatableResponse =
+	HttpRequestSpec().apply(configure).spec.put(path).then()
+
 fun get(path: String, configure: HttpRequestSpec.() -> Unit = {}): ValidatableResponse =
 	HttpRequestSpec().apply(configure).spec.get(path).then()
 

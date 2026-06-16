@@ -8,7 +8,6 @@ import com.org.meeple.core.match.domain.Match
 import com.org.meeple.scheduler.match.application.port.out.MatchRecordPort
 import com.org.meeple.scheduler.match.domain.MatchedUserIds
 import org.springframework.stereotype.Component
-import java.time.LocalDate
 import java.time.LocalDateTime
 
 /**
@@ -23,11 +22,8 @@ class MatchSchedulerAdapter(
 	private val saveMatchPort: SaveMatchPort,
 ) : MatchRecordPort {
 
-	override fun existsByPair(maleUserId: Long, femaleUserId: Long): Boolean =
-		getMatchPort.existsByPair(maleUserId, femaleUserId)
-
-	override fun existsByUserIdAndIntroducedDate(userId: Long, gender: Gender, date: LocalDate): Boolean =
-		getMatchPort.existsByUserIdAndIntroducedDate(userId, gender, date)
+	override fun existsByPair(userIdA: Long, userIdB: Long): Boolean =
+		getMatchPort.existsByPair(userIdA, userIdB)
 
 	// core가 펼쳐 준 (남/녀 양쪽) 매칭 사용자 ID 리스트를 Set으로 정리해 일급 컬렉션으로 감싼다.
 	override fun findMatchedUserIds(): MatchedUserIds =

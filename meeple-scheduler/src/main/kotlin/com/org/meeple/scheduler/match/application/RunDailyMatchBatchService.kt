@@ -17,7 +17,6 @@ import com.org.meeple.scheduler.match.domain.MatchedUserIds
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
-import java.time.LocalDate
 import java.time.LocalDateTime
 
 /**
@@ -42,25 +41,18 @@ class RunDailyMatchBatchService(
 
 	override fun run(): MatchBatchResult {
 		val now: LocalDateTime = timeGenerator.now()
-		val today: LocalDate = timeGenerator.today()
 		val loginAfter: LocalDateTime = now.minusWeeks(RECENT_LOGIN_WEEKS)
 
 		// 이미 성사(MATCHED)된 매칭에 속한 사용자 ID를 배치 시작에 한 번 적재한다. (풀 적재·대상 순회 양쪽에서 재사용)
 		val matchedUserIds: MatchedUserIds = matchRecordPort.findMatchedUserIds()
 
-		// 소개를 돌리기 전에, 활성 유저에서 이미 매칭된 사용자를 빼고 (성별:지역) 그룹으로 묶어, 적재 순서 편향을 없애려 한 번 섞어 Redis에 적재한다.
-		val activeUsers: List<ActiveUser> = matchedUserIds.exclude(getActiveUserPort.findActiveUsers(loginAfter))
-		val groups: List<MatchPoolGroup> = MatchPoolGroup.group(activeUsers)
-		groups.forEach { group: MatchPoolGroup -> saveMatchPoolPort.save(group.shuffled()) }
+		// 이번 배치 실행에서 이미 소개한 사용자 집합. (빈 Set으로 시작)
+		// 실행 중 소개한 두 사람을 추가해, 같은 배치에서 한 사람이 두 번 소개되는 것만 막는다.
+		// 온보딩 등 배치 외 당일 소개는 별개로 허용하므로, DB에서 당일 소개를 미리 적재하지 않는다.
+		val introducedInThisRun: MutableSet<Long> = mutableSetOf()
 
-		// 지역과 무관하게 성별만으로도 풀을 적재한다. (match:pool:{gender}) 같은 권역 후보가 마른 경우 등에 대비한다.
-		val genderPools: List<MatchPoolByGender> = MatchPoolByGender.group(activeUsers)
-		genderPools.forEach { pool: MatchPoolByGender -> saveMatchPoolPort.saveByGender(pool.shuffled()) }
-
-		log.info(
-			"활성 유저 매칭 풀 그룹핑 완료: groups={}, genderPools={}, activeUsers={}, matchedExcluded={}",
-			groups.size, genderPools.size, activeUsers.size, matchedUserIds.size,
-		)
+		// 소개를 돌리기 전에 매칭 풀(권역별·성별)을 Redis에 적재하고, 적재에 쓴 활성 유저 목록을 받는다.
+		val activeUsers: List<ActiveUser> = loadMatchPools(loginAfter, matchedUserIds)
 
 		// 성별 풀에서 뽑은 상대의 권역을 알아내, 매칭 후 그 사람의 권역 풀에서도 빼주기 위한 조회표. (추가 쿼리 없이 메모리에서 산출)
 		val regionByUserId: Map<Long, Int> = activeUsers.associate { user: ActiveUser -> user.userId to user.regionCode }
@@ -99,14 +91,22 @@ class RunDailyMatchBatchService(
 						continue
 					}
 
-					// 오늘 이미 소개가 있으면(직접 요청 or 다른 사용자의 상대로 소개됨) 건너뛴다.
-					if (matchRecordPort.existsByUserIdAndIntroducedDate(id, gender, today)) {
+					// 이번 배치에서 이미 소개됐으면(다른 사용자의 상대로 소개됨) 건너뛴다. (메모리 집합 검사)
+					if (introducedInThisRun.contains(id)) {
 						skipped++
 						continue
 					}
 
 					// 반대 성별·같은 권역 풀에서 재소개 이력 없는 후보를 찾아 소개한다. 후보가 없으면 이번엔 건너뛴다.
-					if (matchIntroducer.introduce(id, gender, regionCode, regionByUserId, now)) recommended++ else skipped++
+					val partnerId: Long? = matchIntroducer.introduce(id, gender, regionCode, regionByUserId, now)
+					if (partnerId != null) {
+						// 소개된 두 사람을 집합에 추가해, 상대가 뒤이어 대상이 될 때 이중 소개를 막는다.
+						introducedInThisRun.add(id)
+						introducedInThisRun.add(partnerId)
+						recommended++
+					} else {
+						skipped++
+					}
 				} catch (e: Exception) {
 					failed++
 					log.warn("매칭 배치 처리 실패 userId={}", id, e)
@@ -121,6 +121,27 @@ class RunDailyMatchBatchService(
 		val result = MatchBatchResult(targets = targets, recommended = recommended, skipped = skipped, failed = failed)
 		log.info("일일 매칭 배치 완료: {}", result)
 		return result
+	}
+
+	/**
+	 * 매칭 풀을 적재하고, 적재에 쓴 활성 유저 목록을 반환한다.
+	 * 활성 유저에서 이미 매칭(MATCHED)된 사용자를 빼고, (성별:지역) 그룹 + 지역 무관 성별 풀로 묶어 적재 순서 편향을 없애려 한 번 섞어 Redis에 적재한다.
+	 * 성별 풀은 같은 권역 후보가 마른 경우의 폴백용이다. 반환한 목록은 이후 대상 순회의 권역 조회표 산출에 재사용한다.
+	 */
+	private fun loadMatchPools(loginAfter: LocalDateTime, matchedUserIds: MatchedUserIds): List<ActiveUser> {
+		val activeUsers: List<ActiveUser> = matchedUserIds.exclude(getActiveUserPort.findActiveUsers(loginAfter))
+
+		val groups: List<MatchPoolGroup> = MatchPoolGroup.group(activeUsers)
+		groups.forEach { group: MatchPoolGroup -> saveMatchPoolPort.save(group.shuffled()) }
+
+		val genderPools: List<MatchPoolByGender> = MatchPoolByGender.group(activeUsers)
+		genderPools.forEach { pool: MatchPoolByGender -> saveMatchPoolPort.saveByGender(pool.shuffled()) }
+
+		log.info(
+			"활성 유저 매칭 풀 그룹핑 완료: groups={}, genderPools={}, activeUsers={}, matchedExcluded={}",
+			groups.size, genderPools.size, activeUsers.size, matchedUserIds.size,
+		)
+		return activeUsers
 	}
 
 	companion object {

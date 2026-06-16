@@ -1,58 +1,58 @@
 package com.org.meeple.infra.match.adapter
 
 import com.org.meeple.common.match.MatchStatus
-import com.org.meeple.common.user.Gender
 import com.org.meeple.core.match.application.port.out.GetMatchPort
-import com.org.meeple.core.match.application.port.out.SaveMatchMemberPort
 import com.org.meeple.core.match.application.port.out.SaveMatchPort
 import com.org.meeple.core.match.domain.Match
 import com.org.meeple.core.match.domain.MatchMembers
+import com.org.meeple.infra.match.entity.MatchEntity
 import com.org.meeple.infra.match.mapper.toDomain
 import com.org.meeple.infra.match.mapper.toEntity
-import com.org.meeple.infra.match.repository.MatchedPairView
 import com.org.meeple.infra.match.repository.MatchJpaRepository
+import com.org.meeple.infra.match.repository.MatchMemberJpaRepository
 import org.springframework.stereotype.Component
-import java.time.LocalDate
 
 /**
  * core 모듈이 쓰는 [MatchEntity]의 Spring Data 어댑터.
- * 단건/존재 조회([GetMatchPort])·저장([SaveMatchPort])을 `MatchJpaRepository`로 구현한다.
- * 신규 매칭 저장 시에는 참가자를 정규화 테이블(match_members)에도 함께 기록한다(확장 씨앗). 그 저장은 [SaveMatchMemberPort]에 위임한다.
- * QueryDSL이 필요한 조인 조회는 [MatchQueryCoreAdapter]가, scheduler 모듈용 어댑터는 [MatchSchedulerAdapter]가 별도로 둔다.
+ * 매칭은 헤더(matches) + 참가자(match_members)로 이뤄진 하나의 애그리거트이므로, 이 어댑터가 두 테이블의 영속화를 함께 책임진다.
+ * 단건/존재 조회([GetMatchPort])·저장([SaveMatchPort])을 구현하며, 재소개 방지(member_key)·일일 소개·성사 사용자 조회는 참가자 조인으로 처리한다.
+ * QueryDSL이 필요한 상대 프로필 조인 조회는 [MatchQueryCoreAdapter]가, scheduler 모듈용 어댑터는 [MatchSchedulerAdapter]가 별도로 둔다.
  */
 @Component
 class MatchCoreAdapter(
 	private val matchJpaRepository: MatchJpaRepository,
-	private val saveMatchMemberPort: SaveMatchMemberPort,
+	private val matchMemberJpaRepository: MatchMemberJpaRepository,
 ) : GetMatchPort, SaveMatchPort {
 
+	// 헤더 + 참가자를 함께 읽어 매칭 애그리거트로 조립한다.
 	override fun findById(id: Long): Match? =
-		matchJpaRepository.findById(id).orElse(null)?.toDomain()
-
-	// (male_user_id, female_user_id) 유니크 인덱스로 해당 쌍의 소개 이력 존재 여부만 확인한다.
-	override fun existsByPair(maleUserId: Long, femaleUserId: Long): Boolean =
-		matchJpaRepository.existsByMaleUserIdAndFemaleUserId(maleUserId, femaleUserId)
-
-	// 사용자의 성별에 해당하는 컬럼(복합 인덱스)만 조회한다.
-	override fun existsByUserIdAndIntroducedDate(userId: Long, gender: Gender, date: LocalDate): Boolean =
-		when (gender) {
-			Gender.MALE -> matchJpaRepository.existsByMaleUserIdAndIntroducedDate(userId, date)
-			Gender.FEMALE -> matchJpaRepository.existsByFemaleUserIdAndIntroducedDate(userId, date)
+		matchJpaRepository.findById(id).orElse(null)?.let { entity: MatchEntity ->
+			entity.toDomain(loadMembers(entity.id!!))
 		}
 
-	// 성사(MATCHED) 매칭의 (남자 ID, 여자 ID) 쌍을 양쪽 모두 한 리스트로 펼쳐 반환한다. (중복 정리는 호출 측 Set이 맡는다)
+	// 참가자 조합 키(정렬된 userId)로 소개 이력 존재 여부만 확인한다. (udx_member_key)
+	override fun existsByPair(userIdA: Long, userIdB: Long): Boolean =
+		matchJpaRepository.existsByMemberKey(MatchMembers.memberKeyOf(listOf(userIdA, userIdB)))
+
+	// 성사(MATCHED) 매칭에 속한 사용자 ID 전체. (중복 정리는 호출 측 Set이 맡는다)
 	override fun findMatchedUserIds(): List<Long> =
-		matchJpaRepository.findUserIdPairsByStatus(MatchStatus.MATCHED)
-			.flatMap { pair: MatchedPairView -> listOf(pair.maleUserId, pair.femaleUserId) }
+		matchMemberJpaRepository.findUserIdsByMatchStatus(MatchStatus.MATCHED)
 
-	// id가 0이면 INSERT, 0이 아니면 기존 행 UPDATE(merge). 둘 다 Spring Data save가 처리한다.
-	// 신규 매칭(INSERT)일 때만, 저장으로 얻은 id로 참가자(male→MALE, female→FEMALE)를 match_members에 함께 기록한다. (확장 씨앗)
+	/**
+	 * 매칭 애그리거트를 저장한다. 헤더를 저장해 id를 얻고, 그 id로 참가자 행들을 함께 저장한다.
+	 * 신규면 참가자가 INSERT(member id 0)되고, 응답 반영 등 갱신이면 기존 참가자 행이 수락 여부까지 UPDATE된다.
+	 */
 	override fun save(match: Match): Match {
-		val isNew: Boolean = match.id == 0L
-		val saved: Match = matchJpaRepository.save(match.toEntity()).toDomain()
-		if (isNew) {
-			saveMatchMemberPort.saveAll(MatchMembers.from(saved))
-		}
-		return saved
+		val savedEntity: MatchEntity = matchJpaRepository.save(match.toEntity())
+		val matchId: Long = savedEntity.id!!
+		val savedMembers: MatchMembers = MatchMembers(
+			matchMemberJpaRepository
+				.saveAll(match.members.values.map { it.copy(matchId = matchId).toEntity() })
+				.map { it.toDomain() },
+		)
+		return savedEntity.toDomain(savedMembers)
 	}
+
+	private fun loadMembers(matchId: Long): MatchMembers =
+		MatchMembers(matchMemberJpaRepository.findByMatchId(matchId).map { it.toDomain() })
 }

@@ -51,7 +51,7 @@ class GetChatRoomDetailE2ETest : AbstractIntegrationSupport({
 					UserDetailEntityFixture.create(userId = femaleUserId, nickname = "영희", profileImageCode = "IMG_F", gender = Gender.FEMALE),
 				)
 				val roomId: Long = openRoomWith(1L, maleUserId, femaleUserId)
-				// 오래된 → 최신 순으로 적재(id 증가). 조회는 최신(id 내림차순)부터 내려온다.
+				// 오래된 → 최신 순으로 적재(id 증가). 조회는 id 오름차순(과거→최신)으로 내려온다.
 				IntegrationUtil.persist(ChatMessageEntityFixture.create(chatRoomId = roomId, senderId = maleUserId, content = "안녕하세요", sentAt = base))
 				IntegrationUtil.persist(ChatMessageEntityFixture.create(chatRoomId = roomId, senderId = femaleUserId, content = "반가워요", sentAt = base.plusMinutes(1)))
 				val lastMessageId: Long = IntegrationUtil.persist(
@@ -68,12 +68,12 @@ class GetChatRoomDetailE2ETest : AbstractIntegrationSupport({
 					body("data.participants.size()", 2)
 					body("data.participants.userId", hasItems(maleUserId.toInt(), femaleUserId.toInt()))
 					body("data.participants.nickname", hasItems("철수", "영희"))
-					// 메세지 3건, 최신부터
+					// 메세지 3건, 과거부터(id 오름차순)
 					body("data.messages.size()", 3)
-					body("data.messages[0].messageId", lastMessageId.toInt())
 					body("data.messages[0].senderId", maleUserId.toInt())
-					body("data.messages[0].content", "오늘 뭐 해요?")
-					body("data.messages[2].content", "안녕하세요")
+					body("data.messages[0].content", "안녕하세요")
+					body("data.messages[2].messageId", lastMessageId.toInt())
+					body("data.messages[2].content", "오늘 뭐 해요?")
 					// 더 과거를 이어 읽을 커서(가장 오래된 메세지 id)가 내려온다
 					body("data.nextCursor", notNullValue())
 				}
@@ -148,7 +148,7 @@ class GetChatRoomDetailE2ETest : AbstractIntegrationSupport({
 				val m2: Long = IntegrationUtil.persist(ChatMessageEntityFixture.create(chatRoomId = roomId, senderId = partner, content = "2", sentAt = base.plusMinutes(1))).id!!
 				val m3: Long = IntegrationUtil.persist(ChatMessageEntityFixture.create(chatRoomId = roomId, senderId = me, content = "3", sentAt = base.plusMinutes(2))).id!!
 
-				// m3보다 과거(cursor = m3) 요청 → m2, m1만 (최신 순)
+				// m3보다 과거(cursor = m3) 요청 → m1, m2만 (과거부터, id 오름차순)
 				get("/chat/v1/rooms/$roomId?cursor=$m3&size=10") {
 					bearer(accessTokenFor(me))
 				} expect {
@@ -157,10 +157,10 @@ class GetChatRoomDetailE2ETest : AbstractIntegrationSupport({
 					// 방·참여자 데이터는 첫 페이지에서만 → 이후 페이지엔 없음
 					body("data.status", nullValue())
 					body("data.participants.size()", 0)
-					// 더 과거 메세지만, 최신 순
+					// 더 과거 메세지만, 과거부터(id 오름차순)
 					body("data.messages.size()", 2)
-					body("data.messages[0].messageId", m2.toInt())
-					body("data.messages[1].messageId", m1.toInt())
+					body("data.messages[0].messageId", m1.toInt())
+					body("data.messages[1].messageId", m2.toInt())
 				}
 			}
 

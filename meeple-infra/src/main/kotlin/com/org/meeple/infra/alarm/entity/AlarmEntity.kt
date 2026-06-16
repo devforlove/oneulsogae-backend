@@ -20,7 +20,7 @@ import org.hibernate.annotations.SQLRestriction
 	name = "alarms",
 	// 내 알람 목록 조회용. (user_id 등치 + created_at 범위(최근 1개월) seek + created_at 정렬을 filesort 없이 충족)
 	// InnoDB 보조 인덱스에 PK(id)가 암묵 포함돼 created_at 동률 시 id 정렬까지 인덱스로 커버한다.
-	indexes = [Index(name = "idx_alarms_user_id_created_at", columnList = "user_id, created_at")],
+	indexes = [Index(name = "idx_user_id_created_at", columnList = "user_id, created_at")],
 )
 class AlarmEntity(
 	/** 알람 수신자 id. */

@@ -5,8 +5,10 @@ import com.org.meeple.common.match.MatchStatus
 import com.org.meeple.common.match.MatchType
 import com.org.meeple.common.user.Gender
 import com.org.meeple.common.user.UserStatus
+import com.org.meeple.core.match.domain.MatchMembers
 import com.org.meeple.infra.fixture.IntegrationUtil
 import com.org.meeple.infra.fixture.MatchEntityFixture
+import com.org.meeple.infra.fixture.MatchMemberEntityFixture
 import com.org.meeple.infra.fixture.UserDetailEntityFixture
 import com.org.meeple.infra.fixture.UserEntityFixture
 import com.org.meeple.infra.match.entity.MatchEntity
@@ -79,15 +81,28 @@ class RunDailyMatchBatchIntegrationTest(
 			it("신규 소개 대상·후보에서 제외되어 새 소개가 생기지 않는다") {
 				val maleId: Long = persistActiveUser(providerId = "p-male", gender = Gender.MALE, regionCode = 1)
 				val femaleId: Long = persistActiveUser(providerId = "p-female", gender = Gender.FEMALE, regionCode = 1)
-				// maleId가 이미 다른 사용자와 성사(MATCHED)된 매칭을 보유한다.
-				IntegrationUtil.persist(
-					MatchEntityFixture.create(maleUserId = maleId, femaleUserId = 9_999L, status = MatchStatus.MATCHED),
-				)
+				// maleId가 이미 다른 사용자와 성사(MATCHED)된 매칭을 보유한다. (참가자 행으로 기록)
+				persistMatchedMatch(maleId, 9_999L)
 
 				val result: MatchBatchResult = runDailyMatchBatchUseCase.run()
 
 				result.recommended shouldBe 0
 				proposedMatchBetween(maleId, femaleId).shouldBeNull()
+			}
+		}
+
+		context("같은 배치 실행 안에서") {
+			it("상대로 소개된 사용자가 뒤이어 대상이 돼도 두 번 소개되지 않는다") {
+				// 남성 2명·여성 1명. 한 남성이 여성과 소개되면, 여성은 본인 차례에 '오늘 소개됨'으로 건너뛰어 다른 남성과 또 소개되지 않는다.
+				persistActiveUser(providerId = "p-m1", gender = Gender.MALE, regionCode = 1)
+				persistActiveUser(providerId = "p-m2", gender = Gender.MALE, regionCode = 1)
+				val femaleId: Long = persistActiveUser(providerId = "p-female", gender = Gender.FEMALE, regionCode = 1)
+
+				val result: MatchBatchResult = runDailyMatchBatchUseCase.run()
+
+				// 소개는 정확히 1건, 여성은 정확히 한 매칭에만 속한다. (이중 소개 방지)
+				result.recommended shouldBe 1
+				matchesInvolving(femaleId).size shouldBe 1
 			}
 		}
 	}
@@ -117,25 +132,39 @@ private fun persistActiveUser(providerId: String, gender: Gender, regionCode: In
 	return userId
 }
 
-// 해당 남녀 쌍의 PROPOSED 소개 한 건. (없으면 null)
+// 1:1 성사(MATCHED) 매칭 헤더 + 두 참가자 행을 저장한다. (이미 매칭된 사용자 제외는 참가자 조인으로 판단되므로 참가자 행이 있어야 한다)
+private fun persistMatchedMatch(maleUserId: Long, femaleUserId: Long) {
+	val match: MatchEntity = IntegrationUtil.persist(
+		MatchEntityFixture.create(
+			memberKey = MatchMembers.memberKeyOf(listOf(maleUserId, femaleUserId)),
+			status = MatchStatus.MATCHED,
+		),
+	)
+	IntegrationUtil.persist(MatchMemberEntityFixture.create(matchId = match.id!!, userId = maleUserId, gender = Gender.MALE, accepted = true))
+	IntegrationUtil.persist(MatchMemberEntityFixture.create(matchId = match.id!!, userId = femaleUserId, gender = Gender.FEMALE, accepted = true))
+}
+
+// 해당 쌍의 PROPOSED 소개 한 건. (없으면 null) 참가자 조합 키로 찾는다.
 private fun proposedMatchBetween(maleUserId: Long, femaleUserId: Long): MatchEntity? {
 	val match: QMatchEntity = QMatchEntity.matchEntity
 	return IntegrationUtil.getQuery()
 		.selectFrom(match)
 		.where(
-			match.maleUserId.eq(maleUserId)
-				.and(match.femaleUserId.eq(femaleUserId))
+			match.memberKey.eq(MatchMembers.memberKeyOf(listOf(maleUserId, femaleUserId)))
 				.and(match.status.eq(MatchStatus.PROPOSED)),
 		)
 		.fetchOne()
 }
 
-// 해당 사용자가 남/녀 어느 쪽으로든 참여한 매칭 전체.
+// 해당 사용자가 참가자로 들어간 매칭 전체. (match_members ⋈ matches)
 private fun matchesInvolving(userId: Long): List<MatchEntity> {
 	val match: QMatchEntity = QMatchEntity.matchEntity
+	val member: QMatchMemberEntity = QMatchMemberEntity.matchMemberEntity
 	return IntegrationUtil.getQuery()
-		.selectFrom(match)
-		.where(match.maleUserId.eq(userId).or(match.femaleUserId.eq(userId)))
+		.select(match)
+		.from(member)
+		.join(match).on(match.id.eq(member.matchId))
+		.where(member.userId.eq(userId))
 		.fetch()
 }
 

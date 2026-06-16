@@ -9,7 +9,7 @@ import java.time.LocalDateTime
 
 /**
  * 채팅방 상세 응답. 메세지([messages])와, 첫 페이지에서만 채워지는 방 상태([status])·참여자([participants])를 내려준다.
- * 메세지는 최근(id 내림차순) 순이며, 더 과거를 이어 읽을 때 [nextCursor]를 `cursor`로 넘긴다. (없으면 null)
+ * 메세지는 id 오름차순(과거→최신) 순이며, 더 과거를 이어 읽을 때 [nextCursor](가장 오래된 메세지 id)를 `cursor`로 넘긴다. (없으면 null)
  * 커서로 이후 페이지를 조회하면 방·참여자 데이터는 다시 내려주지 않는다. ([status]는 null, [participants]는 빈 목록)
  */
 data class ChatRoomDetailResponse(

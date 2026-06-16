@@ -25,7 +25,7 @@ import java.time.LocalDateTime
 	uniqueConstraints = [UniqueConstraint(name = "udx_provider_provider_id", columnNames = ["provider", "provider_id"])],
 	indexes = [
 		// 매칭 배치/풀 그룹핑용. status 등치 + last_login_at 범위 seek + (lastLoginAt, id) 정렬/키셋을 filesort 없이 충족한다.
-		Index(name = "idx_status_last_login_at", columnList = "status, last_login_at, id"),
+		Index(name = "idx_status_last_login_at_id", columnList = "status, last_login_at, id"),
 	],
 )
 class UserEntity(

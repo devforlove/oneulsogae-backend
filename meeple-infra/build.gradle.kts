@@ -11,6 +11,8 @@ dependencies {
 	implementation(project(":meeple-core"))
 	// 배치 전용 포트(scheduler 소유)를 infra 어댑터가 구현하므로 의존한다. (infra -> scheduler)
 	implementation(project(":meeple-scheduler"))
+	// 채팅 전용 포트(chatting 소유)를 infra 어댑터가 구현하므로 의존한다. (infra -> chatting)
+	implementation(project(":meeple-chatting"))
 
 	api("org.springframework.boot:spring-boot-starter-data-jpa")
 	// 매칭 풀 적재용. 스타터로 두어 Lettuce 클라이언트 + Spring Boot 자동설정(StringRedisTemplate)을 함께 가져온다.

@@ -9,7 +9,7 @@ import com.org.meeple.core.chat.domain.ChatMessages
 interface GetChatMessagePort {
 
 	/**
-	 * [chatRoomId] 채팅방의 메세지를 최근(id 내림차순) 순으로 [limit]건 조회한다.
+	 * [chatRoomId] 채팅방의 최근 [limit]건을 조회해 id 오름차순(과거→최신)으로 담아 반환한다. (최신 N건을 위해 쿼리는 DESC로 끊어 읽고 컬렉션이 ASC로 보정)
 	 * [beforeMessageId]가 null이면 최신부터, 값이 있으면 그 id보다 과거(더 작은 id) 구간을 조회한다. (키셋 페이지네이션)
 	 * `(chat_room_id, id)` 인덱스 역방향 스캔이라 filesort 없이 끊어 읽는다.
 	 */

@@ -19,7 +19,8 @@ class MatchIntroducer(
 ) {
 
 	/**
-	 * [targetId] 사용자에게 소개 상대를 찾아 소개를 생성한다. 소개했으면 true, 후보를 못 찾으면 false.
+	 * [targetId] 사용자에게 소개 상대를 찾아 소개를 생성한다. 소개한 상대 userId를 반환하고, 후보를 못 찾으면 null.
+	 * (호출 측은 반환된 상대 id로 "오늘 소개됨" 집합을 갱신해, 그 상대가 뒤이어 대상이 될 때 이중 소개를 막는다)
 	 * 1순위로 반대 성별·**같은 권역**([regionCode]) 풀에서 찾고, 거기서 못 찾으면 2순위로 **지역 무관 성별 풀**로 폴백한다.
 	 * 소개에 성공하면 두 사람을 (권역 풀 + 성별 풀) 모든 풀에서 빼, 같은 배치에서 다시 소개되지 않게 한다.
 	 * (성별 풀로 뽑힌 상대의 권역은 [regionByUserId]로 알아내 그 사람의 권역 풀에서도 제거한다)
@@ -30,7 +31,7 @@ class MatchIntroducer(
 		regionCode: Int,
 		regionByUserId: Map<Long, Int>,
 		now: LocalDateTime,
-	): Boolean {
+	): Long? {
 		val partnerGender: Gender = gender.opposite()
 		val matchedPartnerId: Long =
 			popFreshCandidate( // 1순위: 같은 권역 풀.
@@ -44,7 +45,7 @@ class MatchIntroducer(
 				pop = { matchPoolPort.popByGender(partnerGender) },
 				pushBack = { ids: List<Long> -> matchPoolPort.pushBackByGender(partnerGender, ids) },
 			)
-			?: return false
+			?: return null
 
 		matchRecordPort.saveProposedMatch(
 			requesterId = targetId,
@@ -56,7 +57,7 @@ class MatchIntroducer(
 		// 소개된 두 사람을 모든 풀(권역+성별)에서 제거해 같은 배치에서 다시 소개되지 않게 한다.
 		removeFromAllPools(targetId, gender, regionCode)
 		removeFromAllPools(matchedPartnerId, partnerGender, regionByUserId[matchedPartnerId])
-		return true
+		return matchedPartnerId
 	}
 
 	/**

@@ -66,7 +66,7 @@ class MatchEventHandler(
 				?.let { "${it}님과 매칭되었어요!" }
 				?: "새로운 매칭이 성사되었어요!",
 			// 알람을 누르면 해당 매칭으로 이동한다. (프론트 라우팅에 맞춘 경로)
-			link = "/",
+			link = "/chat",
 			fromUserId = matchedUserId,
 		)
 	}

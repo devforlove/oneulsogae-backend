@@ -2,7 +2,6 @@ package com.org.meeple.scheduler.match.application.port.out
 
 import com.org.meeple.common.user.Gender
 import com.org.meeple.scheduler.match.domain.MatchedUserIds
-import java.time.LocalDate
 import java.time.LocalDateTime
 
 /**
@@ -12,11 +11,8 @@ import java.time.LocalDateTime
  */
 interface MatchRecordPort {
 
-	/** 해당 남녀 쌍으로 소개된 이력이 있는지 여부. (재소개 방지용) */
-	fun existsByPair(maleUserId: Long, femaleUserId: Long): Boolean
-
-	/** 해당 사용자가 [date]에 소개된 매칭이 있는지 여부. (하루 한 번 제약 확인용) */
-	fun existsByUserIdAndIntroducedDate(userId: Long, gender: Gender, date: LocalDate): Boolean
+	/** 두 사용자가 함께 소개된 이력이 있는지 여부. (재소개 방지용) */
+	fun existsByPair(userIdA: Long, userIdB: Long): Boolean
 
 	/**
 	 * 성사(MATCHED)된 매칭에 속한 사용자 ID 전체를 한 번에 조회한다. (매칭의 남/녀 양쪽 ID를 모두 모은다)

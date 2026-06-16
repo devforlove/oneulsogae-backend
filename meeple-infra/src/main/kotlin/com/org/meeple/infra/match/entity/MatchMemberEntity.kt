@@ -13,10 +13,10 @@ import org.hibernate.annotations.SQLRestriction
 
 /**
  * 매칭(소개)에 참가한 사용자 한 명의 참가 정보 영속성 엔티티.
- * 기존 [MatchEntity]는 참가자를 (male_user_id, female_user_id) 두 컬럼으로 비정규화해 1:1에 고정돼 있으나,
- * 이 엔티티는 (match_id, user_id) 한 쌍을 한 행으로 정규화해 1:1·N:N(2:2·3:3) 미팅으로 확장할 토대를 만든다.
+ * 참가자를 (match_id, user_id) 한 쌍의 행으로 정규화해, 참가자·수락의 단일 진실원천 역할을 한다. ([MatchEntity]는 헤더만 보관)
+ * 1:1이면 한 매칭에 두 행(남1·여1)이, N:N(2:2·3:3)이면 여러 행이 생긴다.
  * (match_id, user_id) 유니크 제약으로 한 매칭에 같은 사용자가 중복 참가하는 것을 막고, user_id 단독 인덱스로 사용자별 참가 매칭 조회를 커버한다.
- * 현재는 확장 씨앗 단계로, 매칭 생성 시 함께 기록만 한다. (수락·조회·배치 로직은 아직 MatchEntity의 male/female 기준)
+ * [accepted]가 참가자별 수락 여부이며, 한 매칭의 참가자가 모두 수락하면 매칭이 성사된다.
  * 도메인 로직은 [com.org.meeple.core.match.domain.MatchMember] 모델에 정의한다.
  */
 @Entity
@@ -27,7 +27,7 @@ import org.hibernate.annotations.SQLRestriction
 		UniqueConstraint(name = "udx_match_id_user_id", columnNames = ["match_id", "user_id"]),
 	],
 	indexes = [
-		Index(name = "idx_match_members_user_id", columnList = "user_id"),
+		Index(name = "idx_user_id", columnList = "user_id"),
 	],
 )
 class MatchMemberEntity(
@@ -41,4 +41,8 @@ class MatchMemberEntity(
 	@Enumerated(EnumType.STRING)
 	@Column(name = "gender", nullable = false, length = 10)
 	val gender: Gender,
+
+	/** 이 참가자의 수락 여부. 아직 응답 전이면 null. (전원 수락 시 매칭 성사) */
+	@Column(name = "accepted")
+	var accepted: Boolean? = null,
 ) : BaseEntity()

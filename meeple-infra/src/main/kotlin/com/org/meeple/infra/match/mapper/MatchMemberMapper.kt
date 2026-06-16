@@ -10,6 +10,7 @@ fun MatchMemberEntity.toDomain(): MatchMember =
 		matchId = matchId,
 		userId = userId,
 		gender = gender,
+		accepted = accepted,
 	)
 
 /**
@@ -21,4 +22,5 @@ fun MatchMember.toEntity(): MatchMemberEntity =
 		matchId = matchId,
 		userId = userId,
 		gender = gender,
+		accepted = accepted,
 	).also { if (id != 0L) it.id = id }

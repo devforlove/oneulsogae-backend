@@ -9,15 +9,13 @@ dependencies {
 	implementation(project(":meeple-infra"))
 	implementation(project(":meeple-chatting"))
 	implementation(project(":meeple-scheduler"))
+	// 인증 검증 커널(TokenProvider/PrincipalDetails). 발급·로그인·SecurityConfig는 api가 이 모듈을 호출해 수행한다.
+	implementation(project(":meeple-auth"))
 
 	implementation("org.springframework.boot:spring-boot-starter-webmvc")
 	implementation("org.springframework.boot:spring-boot-starter-validation")
 	implementation("org.springframework.boot:spring-boot-starter-security")
 	implementation("org.springframework.boot:spring-boot-starter-oauth2-client")
-
-	implementation("io.jsonwebtoken:jjwt-api:0.12.6")
-	runtimeOnly("io.jsonwebtoken:jjwt-impl:0.12.6")
-	runtimeOnly("io.jsonwebtoken:jjwt-jackson:0.12.6")
 
 	testImplementation("org.springframework.boot:spring-boot-starter-webmvc-test")
 	testImplementation("org.springframework.boot:spring-boot-starter-security-test")

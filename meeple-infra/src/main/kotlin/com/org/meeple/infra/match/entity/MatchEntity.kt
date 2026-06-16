@@ -7,7 +7,6 @@ import jakarta.persistence.Column
 import jakarta.persistence.Entity
 import jakarta.persistence.EnumType
 import jakarta.persistence.Enumerated
-import jakarta.persistence.Index
 import jakarta.persistence.Table
 import jakarta.persistence.UniqueConstraint
 import org.hibernate.annotations.SQLRestriction
@@ -15,10 +14,9 @@ import java.time.LocalDate
 import java.time.LocalDateTime
 
 /**
- * 남녀 1:1 매칭(소개) 영속성 엔티티.
- * (male_user_id, female_user_id) 유니크 제약으로 같은 쌍의 중복 소개를 차단한다. (재소개 방지)
- * introduced_date로 "하루에 한 번만 소개" 제약을 판단한다.
- * 복합 인덱스 (성별 컬럼, introduced_date)는 일별 소개 존재 확인 + 성별 컬럼 단독 조회를 모두 커버한다.
+ * 매칭(소개)의 헤더 영속성 엔티티. 참가자는 [MatchMemberEntity]가 정규화해 보관한다. (1:1·N:N 공통)
+ * member_key(참가자 조합의 정규화 키)에 유니크 제약을 걸어 같은 조합의 중복 소개를 차단한다. (재소개 방지)
+ * introduced_date로 "하루에 한 번만 소개" 제약을 판단한다. (사용자별 일일 소개 존재 확인은 match_members와 조인해 본다)
  * 도메인 로직은 [com.org.meeple.core.match.domain.Match] 모델에 정의한다.
  */
 @Entity
@@ -26,19 +24,13 @@ import java.time.LocalDateTime
 @Table(
 	name = "matches",
 	uniqueConstraints = [
-		UniqueConstraint(name = "udx_male_user_id_female_user_id", columnNames = ["male_user_id", "female_user_id"]),
-	],
-	indexes = [
-		Index(name = "idx_male_user_id_introduced_date", columnList = "male_user_id, introduced_date"),
-		Index(name = "idx_female_user_id_introduced_date", columnList = "female_user_id, introduced_date"),
+		UniqueConstraint(name = "udx_member_key", columnNames = ["member_key"]),
 	],
 )
 class MatchEntity(
-	@Column(name = "male_user_id", nullable = false)
-	val maleUserId: Long,
-
-	@Column(name = "female_user_id", nullable = false)
-	val femaleUserId: Long,
+	/** 참가자 조합을 식별하는 정규화 키(정렬된 userId 결합). 재소개 방지 유니크 키. */
+	@Column(name = "member_key", nullable = false, length = 255)
+	val memberKey: String,
 
 	@Column(name = "introduced_date", nullable = false)
 	val introducedDate: LocalDate,
@@ -46,12 +38,6 @@ class MatchEntity(
 	/** 소개 만료 시각. 이 시각 이후로는 만료된 소개로 본다. */
 	@Column(name = "expires_at", nullable = false)
 	val expiresAt: LocalDateTime,
-
-	@Column(name = "male_accepted")
-	var maleAccepted: Boolean? = null,
-
-	@Column(name = "female_accepted")
-	var femaleAccepted: Boolean? = null,
 
 	@Enumerated(EnumType.STRING)
 	@Column(name = "status", nullable = false, length = 20)
