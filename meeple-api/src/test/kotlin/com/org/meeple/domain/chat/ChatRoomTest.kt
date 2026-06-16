@@ -1,8 +1,8 @@
 package com.org.meeple.domain.chat
 
 import com.org.meeple.common.chat.ChatRoomStatus
-import com.org.meeple.core.chat.application.ChatErrorCode
-import com.org.meeple.core.chat.domain.ChatRoom
+import com.org.meeple.core.chat.ChatErrorCode
+import com.org.meeple.core.chat.command.domain.ChatRoom
 import com.org.meeple.core.common.error.BusinessException
 import com.org.meeple.core.fixture.ChatRoomFixture
 import io.kotest.assertions.throwables.shouldThrow
@@ -13,7 +13,7 @@ import java.time.LocalDateTime
 /**
  * [ChatRoom] 도메인 유닛 테스트.
  * 프레임워크·인프라 없이 순수 도메인 로직(상태 전이·검증)을 검증한다. 시각은 파라미터로 주입한다.
- * 참가자(누가 방에 있는지)는 방이 아니라 [com.org.meeple.core.chat.domain.ChatRoomMembers]가 보관하므로, 참가 검증은 그쪽 테스트에서 다룬다.
+ * 참가자(누가 방에 있는지)는 방이 아니라 [com.org.meeple.core.chat.command.domain.ChatRoomMembers]가 보관하므로, 참가 검증은 그쪽 테스트에서 다룬다.
  * 생성 자체(open)는 ChatRoom.open으로 검증하고, 그 외 동작의 시작 채팅방은 core testFixtures의 [ChatRoomFixture]로 만든다.
  */
 class ChatRoomTest : DescribeSpec({

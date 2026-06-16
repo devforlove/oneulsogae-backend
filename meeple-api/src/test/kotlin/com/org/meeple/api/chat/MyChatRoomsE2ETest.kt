@@ -5,9 +5,9 @@ import com.org.meeple.common.integration.AbstractIntegrationSupport
 import com.org.meeple.common.integration.expect
 import com.org.meeple.common.integration.get
 import com.org.meeple.common.user.Gender
-import com.org.meeple.infra.chat.entity.ChatRoomEntity
-import com.org.meeple.infra.chat.entity.QChatRoomEntity
-import com.org.meeple.infra.chat.entity.QChatRoomMemberEntity
+import com.org.meeple.infra.chat.command.entity.ChatRoomEntity
+import com.org.meeple.infra.chat.command.entity.QChatRoomEntity
+import com.org.meeple.infra.chat.command.entity.QChatRoomMemberEntity
 import com.org.meeple.infra.fixture.ChatRoomEntityFixture
 import com.org.meeple.infra.fixture.ChatRoomMemberEntityFixture
 import com.org.meeple.infra.fixture.IntegrationUtil

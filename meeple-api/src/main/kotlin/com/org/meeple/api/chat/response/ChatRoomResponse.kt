@@ -1,7 +1,7 @@
 package com.org.meeple.api.chat.response
 
 import com.org.meeple.common.chat.ChatRoomStatus
-import com.org.meeple.core.chat.domain.ChatRoomSummary
+import com.org.meeple.core.chat.query.dto.ChatRoomSummary
 import java.time.LocalDateTime
 
 /**

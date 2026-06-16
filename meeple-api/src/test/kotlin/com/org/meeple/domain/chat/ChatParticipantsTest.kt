@@ -1,9 +1,9 @@
 package com.org.meeple.domain.chat
 
 import com.org.meeple.common.user.Gender
-import com.org.meeple.core.chat.application.ChatErrorCode
-import com.org.meeple.core.chat.domain.ChatParticipant
-import com.org.meeple.core.chat.domain.ChatParticipants
+import com.org.meeple.core.chat.ChatErrorCode
+import com.org.meeple.core.chat.query.dto.ChatParticipant
+import com.org.meeple.core.chat.query.dto.ChatParticipants
 import com.org.meeple.core.common.error.BusinessException
 import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.core.spec.style.DescribeSpec

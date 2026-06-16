@@ -1,7 +1,7 @@
 package com.org.meeple.domain.chat
 
-import com.org.meeple.core.chat.domain.ChatRoomMember
-import com.org.meeple.core.chat.domain.ChatRoomMembers
+import com.org.meeple.core.chat.command.domain.ChatRoomMember
+import com.org.meeple.core.chat.command.domain.ChatRoomMembers
 import io.kotest.core.spec.style.DescribeSpec
 import io.kotest.matchers.collections.shouldContainExactlyInAnyOrder
 import java.time.LocalDateTime

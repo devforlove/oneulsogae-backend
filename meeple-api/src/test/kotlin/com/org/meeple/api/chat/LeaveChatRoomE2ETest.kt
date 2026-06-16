@@ -5,8 +5,8 @@ import com.org.meeple.common.integration.delete
 import com.org.meeple.common.integration.expect
 import com.org.meeple.common.integration.get
 import com.org.meeple.common.chat.ChatRoomStatus
-import com.org.meeple.infra.chat.entity.QChatRoomEntity
-import com.org.meeple.infra.chat.entity.QChatRoomMemberEntity
+import com.org.meeple.infra.chat.command.entity.QChatRoomEntity
+import com.org.meeple.infra.chat.command.entity.QChatRoomMemberEntity
 import com.org.meeple.infra.fixture.ChatRoomEntityFixture
 import com.org.meeple.infra.fixture.ChatRoomMemberEntityFixture
 import com.org.meeple.infra.fixture.IntegrationUtil

@@ -1,6 +1,6 @@
 package com.org.meeple.infra.fixture
 
-import com.org.meeple.infra.chat.entity.ChatRoomMemberEntity
+import com.org.meeple.infra.chat.command.entity.ChatRoomMemberEntity
 import java.time.LocalDateTime
 
 /**

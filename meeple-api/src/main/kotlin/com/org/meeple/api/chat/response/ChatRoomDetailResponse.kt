@@ -2,9 +2,9 @@ package com.org.meeple.api.chat.response
 
 import com.org.meeple.common.chat.ChatRoomStatus
 import com.org.meeple.common.user.Gender
-import com.org.meeple.core.chat.domain.ChatMessage
-import com.org.meeple.core.chat.domain.ChatParticipant
-import com.org.meeple.core.chat.domain.ChatRoomDetail
+import com.org.meeple.core.chat.query.dto.ChatMessageView
+import com.org.meeple.core.chat.query.dto.ChatParticipant
+import com.org.meeple.core.chat.query.dto.ChatRoomDetail
 import java.time.LocalDateTime
 
 /**
@@ -60,7 +60,7 @@ data class ChatMessageResponse(
 	val sentAt: LocalDateTime,
 ) {
 	companion object {
-		fun of(message: ChatMessage): ChatMessageResponse =
+		fun of(message: ChatMessageView): ChatMessageResponse =
 			ChatMessageResponse(
 				messageId = message.id,
 				senderId = message.senderId,

@@ -10,8 +10,8 @@ import com.org.meeple.common.user.Gender
 import com.org.meeple.core.match.domain.MatchMembers
 import com.org.meeple.infra.alarm.entity.AlarmEntity
 import com.org.meeple.infra.alarm.entity.QAlarmEntity
-import com.org.meeple.infra.chat.entity.QChatRoomEntity
-import com.org.meeple.infra.chat.entity.QChatRoomMemberEntity
+import com.org.meeple.infra.chat.command.entity.QChatRoomEntity
+import com.org.meeple.infra.chat.command.entity.QChatRoomMemberEntity
 import com.org.meeple.infra.coin.entity.QCoinBalanceEntity
 import com.org.meeple.infra.coin.entity.QCoinHistoryEntity
 import com.org.meeple.infra.fixture.CoinBalanceEntityFixture

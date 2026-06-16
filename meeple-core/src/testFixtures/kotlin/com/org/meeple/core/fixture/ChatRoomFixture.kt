@@ -1,7 +1,7 @@
 package com.org.meeple.core.fixture
 
 import com.org.meeple.common.chat.ChatRoomStatus
-import com.org.meeple.core.chat.domain.ChatRoom
+import com.org.meeple.core.chat.command.domain.ChatRoom
 import java.time.LocalDateTime
 
 /** [ChatRoom] 도메인 모델 테스트 픽스처. 기본은 활성(ACTIVE) 상태의 신규 채팅방이다. */

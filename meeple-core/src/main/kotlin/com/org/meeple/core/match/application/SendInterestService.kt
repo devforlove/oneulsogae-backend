@@ -2,8 +2,8 @@ package com.org.meeple.core.match.application
 
 import com.org.meeple.common.coin.CoinUsageType
 import com.org.meeple.common.match.MatchStatus
-import com.org.meeple.core.chat.application.port.`in`.SaveChatRoomUseCase
-import com.org.meeple.core.chat.application.port.`in`.command.SaveChatRoomCommand
+import com.org.meeple.core.chat.command.service.port.`in`.SaveChatRoomUseCase
+import com.org.meeple.core.chat.command.service.port.`in`.command.SaveChatRoomCommand
 import com.org.meeple.core.coin.application.port.`in`.SpendCoinUseCase
 import com.org.meeple.core.coin.application.port.`in`.command.SpendCoinCommand
 import com.org.meeple.core.common.error.BusinessException

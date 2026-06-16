@@ -1,6 +1,6 @@
 package com.org.meeple.core.fixture
 
-import com.org.meeple.core.chat.domain.ChatRoomMember
+import com.org.meeple.core.chat.command.domain.ChatRoomMember
 import java.time.LocalDateTime
 
 /** [ChatRoomMember] 도메인 모델 테스트 픽스처. 기본은 갓 참가한(읽음 0, 미퇴장) 참가자다. */

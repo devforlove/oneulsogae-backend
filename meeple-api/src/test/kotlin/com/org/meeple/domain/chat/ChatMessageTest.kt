@@ -1,7 +1,7 @@
 package com.org.meeple.domain.chat
 
-import com.org.meeple.core.chat.application.ChatErrorCode
-import com.org.meeple.core.chat.domain.ChatMessage
+import com.org.meeple.core.chat.ChatErrorCode
+import com.org.meeple.core.chat.command.domain.ChatMessage
 import com.org.meeple.core.common.error.BusinessException
 import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.core.spec.style.DescribeSpec

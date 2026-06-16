@@ -1,6 +1,6 @@
 package com.org.meeple.domain.chat
 
-import com.org.meeple.core.chat.domain.ChatRoomMember
+import com.org.meeple.core.chat.command.domain.ChatRoomMember
 import com.org.meeple.core.fixture.ChatRoomMemberFixture
 import io.kotest.core.spec.style.DescribeSpec
 import io.kotest.matchers.shouldBe

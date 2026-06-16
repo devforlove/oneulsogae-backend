@@ -1,6 +1,6 @@
 package com.org.meeple.core.fixture
 
-import com.org.meeple.core.chat.domain.ChatMessage
+import com.org.meeple.core.chat.command.domain.ChatMessage
 import java.time.LocalDateTime
 
 /** [ChatMessage] 도메인 모델 테스트 픽스처. */

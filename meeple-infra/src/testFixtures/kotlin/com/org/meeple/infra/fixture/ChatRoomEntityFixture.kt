@@ -1,7 +1,7 @@
 package com.org.meeple.infra.fixture
 
 import com.org.meeple.common.chat.ChatRoomStatus
-import com.org.meeple.infra.chat.entity.ChatRoomEntity
+import com.org.meeple.infra.chat.command.entity.ChatRoomEntity
 import java.time.LocalDateTime
 
 /**

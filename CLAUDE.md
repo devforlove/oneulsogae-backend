@@ -58,8 +58,8 @@ meeple-common ──> (없음)                                                  
   - **어댑터는 도메인을 직접 다루지 않는다**: 유스케이스는 도메인 모델이 아니라 **결과 리드 모델(`port/in/result`, 예 `SentChatMessageResult`)**을 반환하고, 컨트롤러는 입력 `command`·결과 `result`·표현 `DTO`만 다룬다. (도메인 모델은 application 안쪽에 머문다)
   에러는 `...chat.application.ChatErrorCode`(도메인 에러 enum)와 `...common.error.ChatException`(자체 예외)로 두며, core의 `BusinessException`/`ErrorCode`를 쓰지 않는다.
   (core가 도메인 `<Domain>ErrorCode`는 application에, 공용 `BusinessException`은 `common.error`에 두는 것과 같은 배치)
-  - 영속성은 chatting이 **자기 out-port**로 정의하고, **infra 어댑터가 직접 구현**한다(scheduler는 core 도메인에 위임하지만, chatting은 같은 JPA 엔티티를 **자체 도메인으로 직접 매핑**해 구현한다).
-    예: `ChatRoomChattingAdapter`/`ChatRoomMemberChattingAdapter`/`ChatMessageChattingAdapter`, 매퍼는 core 매퍼와 이름을 구분(`toChattingDomain`/`toChattingEntity`).
+  - 영속성은 chatting이 **자기 out-port**로 정의하고, **infra 어댑터가 직접 구현**한다(scheduler는 core 도메인에 위임하지만, chatting은 같은 JPA 엔티티를 **자체 도메인으로 직접 매핑**해 구현한다). 매퍼는 core 매퍼와 이름을 구분한다(`toChattingDomain`/`toChattingEntity`).
+    단, chat의 infra 어댑터는 **엔티티별 단일 어댑터**(`ChatRoomAdapter`/`ChatMessageAdapter`/`ChatRoomMemberAdapter`)가 core out-port와 chatting out-port를 함께 구현한다. (아래 [chat 도메인 CQRS 패키지 분리](#chat-도메인-cqrs-패키지-분리) 참고)
   - 시각도 chatting이 자체 제공한다(`SystemChatTimeGenerator`; core·scheduler의 TimeGenerator 빈과 클래스명을 구분).
   - **트레이드오프**: 같은 chat 테이블을 core(HTTP 조회/방 생성)와 chatting(WS 발송)이 **각자 도메인으로 다루므로 일부 규칙이 이중화**된다. 자립(별도 인스턴스 분리 용이)의 대가로 수용한다.
   - 토큰 검증은 `meeple-auth`의 `TokenProvider`로 하고(STOMP CONNECT 프레임), 핸드셰이크 경로(`/ws/chat/**`)는 `SecurityConfig`에서 permitAll로 열어 둔다.
@@ -89,7 +89,7 @@ meeple-common ──> (없음)                                                  
 - **네이밍**: `<동사><명사>UseCase` / `<동사><명사>Service` (Get/Register/Recommend/Acquire …).
 - **에러 처리**: 도메인별 `ErrorCode` enum + `BusinessException` 사용. (예: `MatchErrorCode.MATCH_NOT_FOUND`)
 - **`user` 도메인이 사용자 프로필을 소유한다.** 계정/식별(`User`, 회사 이메일 인증)뿐 아니라 **프로필(`UserDetail`·`UserWithDetail`, 닉네임·프로필이미지·성별·나이 등)도 `user` 도메인**에 둔다. (엔티티 `com.org.meeple.infra.user.entity.UserDetailEntity`, 에러코드 `UserErrorCode.USER_DETAIL_NOT_FOUND` 등) 프로필은 매칭 산출물이 아니라 여러 도메인이 읽는 공유 사용자 데이터이므로 특정 도메인(match 등)에 두지 않는다.
-  - match·chat·alarm 등 **다른 도메인이 프로필을 필요로 하면**: core에서는 user의 in-port(`GetUserDetailUseCase`/`GetUserWithDetailUseCase`)로 참조하고, 목록·상세의 **표시용 프로필 조인**은 infra 읽기 어댑터가 `UserDetailEntity`를 조인해 자기 도메인 read model로 투영한다. (예: `ChatRoomQueryCoreAdapter` → `ChatParticipant`, `MatchQueryCoreAdapter` → 상대 프로필)
+  - match·chat·alarm 등 **다른 도메인이 프로필을 필요로 하면**: core에서는 user의 in-port(`GetUserDetailUseCase`/`GetUserWithDetailUseCase`)로 참조하고, 목록·상세의 **표시용 프로필 조인**은 infra 읽기 어댑터가 `UserDetailEntity`를 조인해 자기 도메인 read model로 투영한다. (예: `ChatParticipantQueryDaoImpl` → `ChatParticipant`, `MatchQueryCoreAdapter` → 상대 프로필)
 
 ## 도메인 간 참조 규칙
 
@@ -121,7 +121,7 @@ class GetMatchesService(
 - **메서드**: 명령은 상태만 바꾸고 결과 반환을 최소화한다(저장된 식별자/엔티티 정도). 조회는 **부수효과 없이** 값만 반환한다. 조회 경로에서 저장·상태 변경 포트를 호출하지 않는다.
 - **UseCase/Service**: `Get…UseCase`(조회)와 `Save/Register/Respond/Acquire…UseCase`(명령)를 나눈다.
   - 조회 서비스는 `@Transactional(readOnly = true)`, 명령 서비스는 `@Transactional`. (예: `GetChatRoomDetailService` ↔ `SaveChatRoomService`)
-- **아웃포트**: `Get…Port`(조회)와 `Save…Port`(명령)를 **하나의 포트에 섞지 않는다**. (예: `GetChatParticipantPort` / `SaveChatRoomMemberPort`)
+- **아웃포트**: `Get…Port`(조회)와 `Save…Port`(명령)를 **하나의 포트에 섞지 않는다**. (예: `GetMatchWithPartnerPort` / `SaveMatchPort`. chat은 여기서 더 나아가 조회를 `dao`로 분리한다 — 아래 [chat 도메인 CQRS 패키지 분리](#chat-도메인-cqrs-패키지-분리) 참고)
 - **어댑터**: 위 [영속성 어댑터 구성](#영속성-어댑터-구성-엔티티--모듈-querydsl-분리) 규칙과 맞물린다. 저장·단건은 Spring Data 어댑터, 조인·동적 조회는 QueryDSL 어댑터(`JPAQueryFactory`만 주입)로 나눈다.
 - **읽기 모델 분리**: 조회는 도메인 모델 대신 **전용 read model(DTO/프로젝션)**을 반환할 수 있다. 명령은 도메인 모델을 다룬다.
   - 조회 read model 예: `ChatRoomSummary`, `ChatParticipant`(+ 일급 컬렉션 `ChatParticipants`). 명령이 다루는 도메인: `ChatRoom`, `ChatRoomMember`.
@@ -133,7 +133,7 @@ class GetMatchesService(
 @Service
 @Transactional(readOnly = true)
 class GetChatRoomDetailService(
-    private val getChatParticipantPort: GetChatParticipantPort,   // 조회 전용 포트
+    private val chatParticipantQueryDao: ChatParticipantQueryDao,   // 조회 전용 dao (query는 dao에만 의존)
 ) : GetChatRoomDetailUseCase { ... }
 
 // ✅ 명령: 상태 변경, 도메인 모델, 쓰기 트랜잭션
@@ -151,6 +151,72 @@ fun getChatRoom(id: Long): ChatRoom {
     return room
 }
 ```
+
+## chat 도메인 CQRS 패키지 분리
+
+`chat` 도메인은 위 [CQS](#명령조회-분리-cqs-command-query-separation)를 **패키지 수준의 CQRS**로 한 단계 더 분리한 사례다. 명령(쓰기)과 조회(읽기)를 `command`/`query` 패키지로 나누고, 각 측의 영속성 구현 기법까지 구분한다. **이 구조는 chat 한정**이며, 다른 도메인(user/match/coin 등)은 표준 헥사고날(`application` + `domain`) + CQS를 유지한다.
+
+### core (`meeple-core/.../chat/`)
+
+```
+chat/
+├── ChatErrorCode.kt                 # command·query 공유라 chat 루트에 둔다
+├── command/                         # 상태 변경
+│   ├── service/                     # <Verb>Service + port/in(+command) + port/out
+│   │   ├── SaveChatRoomService / LeaveChatRoomService / MarkChatRoomAsReadService
+│   │   └── port/{in(+command), out}
+│   └── domain/                      # 행위를 가진 도메인 모델: ChatRoom, ChatRoomMember(s), ChatMessage
+└── query/                           # 조회
+    ├── service/                     # 조회 서비스 + port/in (UseCase)
+    │   ├── GetChatRoomsService / GetChatRoomDetailService
+    │   └── port/in
+    ├── dao/                         # 조회 out-port 인터페이스 (*QueryDao)
+    └── dto/                         # 읽기 모델 (read model / 일급 컬렉션)
+```
+
+- 명령·조회 서비스 모두 `application` 대신 **`service`** 패키지명을 쓴다(`command/service`, `query/service`).
+- 조회 측은 `port/out` 대신 **`dao`(조회 인터페이스, `*QueryDao`) + `dto`(읽기 모델)**로 둔다. dao는 도메인이 아니라 read model만 반환한다.
+- read model(`query/dto`): `ChatRoomSummary`(목록), `ChatRoomDetail`(상세), `ChatRoomView`(상세 헤더용 방 상태), `ChatParticipant`(+`ChatParticipants`), `ChatMessageView`(+ 일급 컬렉션 `ChatMessageViews`). 일급 컬렉션은 감싸는 read model에 맞춰 명명한다(`ChatMessageViews` ⊃ `ChatMessageView`).
+- `ChatErrorCode`는 command 도메인과 query read model 양쪽이 쓰므로 **chat 루트**(`com.org.meeple.core.chat.ChatErrorCode`)에 둔다. (command에 두면 query→command 결합이 생긴다)
+
+### infra (`meeple-infra/.../chat/`)
+
+```
+chat/
+├── command/
+│   ├── adapter/      # out-port 구현체 *Adapter (Spring Data JPA 메서드 쿼리) — core·chatting 어댑터
+│   ├── entity/       # JPA 엔티티
+│   ├── mapper/       # toDomain/toEntity (+ chatting용 toChattingDomain/toChattingEntity)
+│   └── repository/   # Spring Data JpaRepository
+└── query/            # dao 구현체 *DaoImpl (QueryDSL)
+```
+
+- **out-port 구현체 = `*Adapter`**, **Spring Data JPA 메서드 쿼리**로 구현한다.
+- **dao 구현체 = `*DaoImpl`**(인터페이스명 + `Impl`), **QueryDSL**로 구현한다. (chat은 [영속성 어댑터 구성](#영속성-어댑터-구성-엔티티--모듈-querydsl-분리)의 `*QueryCoreAdapter` 대신 이 `*DaoImpl`을 쓴다)
+- **같은 단건 조회가 command·query 양쪽에 있어도 공유하지 않고 각자 구현**한다. command adapter는 메서드 쿼리로, query daoImpl은 QueryDSL로 둔다.
+  - 예: 방 단건 — command `GetChatRoomPort.findById`(메서드 쿼리) ↔ query `ChatRoomQueryDao.findById`→`ChatRoomView`(QueryDSL). 참가자 존재 — command `GetChatRoomMemberPort` ↔ query `ChatRoomMemberQueryDao.existsByChatRoomIdAndUserId`(QueryDSL).
+- `entity`·`mapper`·`repository`는 `command` 아래 두고 query daoImpl이 이를 참조한다(infra 내부 query→command 참조는 허용).
+- **command 어댑터는 엔티티별로 하나만 둔다.** 같은 chat 테이블을 쓰는 core·chatting 두 모듈의 out-port를 한 어댑터(`ChatRoomAdapter`/`ChatMessageAdapter`/`ChatRoomMemberAdapter`)에서 함께 구현한다. ([영속성 어댑터 구성](#영속성-어댑터-구성-엔티티--모듈-querydsl-분리)의 "모듈별 분리" 기본 규칙과 달리, chat은 모듈이 아닌 **엔티티 단위**로 묶는다)
+
+### 인터페이스 → 구현체 매핑
+
+엔티티별 command 어댑터는 **core·chatting 두 모듈의 out-port를 한 클래스에서 함께 구현**한다(모듈별로 쪼개지 않는다). 단순명이 겹치는 포트·도메인(`SaveChatMessagePort`, `GetChatRoomMemberPort`, `ChatMessage`)은 chatting 쪽을 import alias로 구분한다.
+
+| 구분 | 인터페이스 (core / chatting) | 구현체 (infra) | 기법 |
+|---|---|---|---|
+| command | core `SaveChatRoomPort`·`GetChatRoomPort` / chatting `UpdateChatRoomPort` | `ChatRoomAdapter` | Spring Data 메서드 쿼리 |
+| command | core `SaveChatMessagePort` / chatting `SaveChatMessagePort` | `ChatMessageAdapter` | Spring Data 메서드 쿼리 |
+| command | core `GetChatRoomMemberPort`·`SaveChatRoomMemberPort` / chatting `GetChatRoomMemberPort`·`IncreaseUnreadCountPort` | `ChatRoomMemberAdapter` | Spring Data 메서드 쿼리 |
+| query | `ChatRoomQueryDao` | `ChatRoomQueryDaoImpl` | QueryDSL |
+| query | `ChatMessageQueryDao` | `ChatMessageQueryDaoImpl` | QueryDSL |
+| query | `ChatParticipantQueryDao` | `ChatParticipantQueryDaoImpl` | QueryDSL |
+| query | `ChatRoomMemberQueryDao` | `ChatRoomMemberQueryDaoImpl` | QueryDSL |
+
+### 의존 규칙 & 트레이드오프
+
+- **query는 자기 dao에만 의존한다.** command의 out-port·도메인 모델을 참조하지 않는다(조회 서비스가 command 포트를 주입하지 않는다). 그래서 query는 명령 도메인(`ChatRoom`/`ChatMessage`) 대신 **자체 read model**(`ChatRoomView`/`ChatMessageView`)을 쓴다.
+- 같은 데이터를 command 도메인과 query read model로 **이중으로 모델링**하는 비용을 감수하고 command↔query 결합을 끊는다. (chat 한정 적용)
+- 컨트롤러(api)는 command in-port(`SaveChatRoom`/`LeaveChatRoom`/`MarkChatRoomAsReadUseCase`)와 query in-port(`GetChatRooms`/`GetChatRoomDetailUseCase`)를 그대로 주입한다.
 
 ## 코딩 원칙
 
@@ -213,7 +279,7 @@ where m.maleUserId = :userId
   - 실제로는 **해당 모듈에 구현할 포트가 있는 어댑터만** 만든다. (scheduler에 QueryDSL 조회가 없으면 `MatchQuerySchedulerAdapter`는 만들지 않는다)
 - **scheduler용 어댑터**는 scheduler 자신의 out-port를 구현하되(scheduler는 core에 의존하지 않는다), 실제 동작은 core 도메인/포트에 위임한다. core 도메인을 아는 infra가 둘을 잇는다.
 - QueryDSL 조회는 **전용 out-port**(예: `GetMatchWithPartnerPort`)로 두고, Query 어댑터에는 `JPAQueryFactory`만 주입한다.
-- `chat`도 같은 규칙을 따른다: `ChatRoomEntity`(core) → `ChatRoomCoreAdapter`(`SaveChatRoomPort`) + `ChatRoomQueryCoreAdapter`(`GetChatRoomPort`, QueryDSL).
+- `chat` 도메인은 이 규칙을 **CQRS 패키지 분리**로 확장했다: out-port 구현은 `*Adapter`(Spring Data 메서드 쿼리), 조회 dao 구현은 `*DaoImpl`(QueryDSL)로 나누고 infra도 `command`/`query`로 가른다. (아래 [chat 도메인 CQRS 패키지 분리](#chat-도메인-cqrs-패키지-분리) 참고)
 
 ```kotlin
 // ✅ core / Spring Data: 단건·존재 조회 + 저장
