@@ -2,7 +2,7 @@ package com.org.meeple.core.chat.query.dao
 
 /**
  * 채팅방 참가자 존재 조회 리포지토리(query out-port 인터페이스). (접근 검증용, Spring Data 파생 쿼리로 충분)
- * 변경 대상 참가자 로드는 command 쪽 [com.org.meeple.core.chat.command.service.port.out.GetChatRoomMemberPort]가,
+ * 변경 대상 참가자 로드는 command 쪽 [com.org.meeple.core.chat.command.application.port.out.GetChatRoomMemberPort]가,
  * 프로필 조인 조회는 [ChatParticipantQueryDao]가 담당한다.
  */
 interface ChatRoomMemberQueryDao {

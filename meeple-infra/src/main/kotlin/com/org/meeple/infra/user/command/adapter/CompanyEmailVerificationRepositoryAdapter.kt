@@ -1,7 +1,7 @@
 package com.org.meeple.infra.user.command.adapter
 
-import com.org.meeple.core.user.command.service.port.out.GetCompanyEmailVerificationPort
-import com.org.meeple.core.user.command.service.port.out.SaveCompanyEmailVerificationPort
+import com.org.meeple.core.user.command.application.port.out.GetCompanyEmailVerificationPort
+import com.org.meeple.core.user.command.application.port.out.SaveCompanyEmailVerificationPort
 import com.org.meeple.core.user.command.domain.CompanyEmailVerification
 import com.org.meeple.infra.user.command.mapper.toDomain
 import com.org.meeple.infra.user.command.mapper.toEntity

@@ -1,7 +1,7 @@
 package com.org.meeple.api.user
 
 import com.org.meeple.common.user.UserStatus
-import com.org.meeple.infra.coin.entity.QCoinBalanceEntity
+import com.org.meeple.infra.coin.command.entity.QCoinBalanceEntity
 import com.org.meeple.infra.fixture.IntegrationUtil
 import com.org.meeple.infra.user.command.entity.QUserDetailEntity
 import com.org.meeple.infra.user.command.entity.UserDetailEntity

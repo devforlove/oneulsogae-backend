@@ -1,7 +1,7 @@
 package com.org.meeple.api.coin.response
 
-import com.org.meeple.core.coin.domain.CoinItem
-import com.org.meeple.core.coin.domain.CoinItems
+import com.org.meeple.core.coin.query.dto.CoinItem
+import com.org.meeple.core.coin.query.dto.CoinItems
 
 /** 코인 상점에 노출할 코인 상품 응답. */
 data class CoinItemResponse(

@@ -19,7 +19,7 @@ import java.time.LocalDateTime
  * 매칭 헤더·내 참가자·상대 참가자·상대 프로필을 명시적 조인으로 한 번에 가져와(1+N 방지) 평탄 read model로 투영한다. (조회 전용)
  * core 도메인/매퍼에 의존하지 않고 엔티티 필드에서 [MatchWithPartner]를 직접 구성한다.
  * (관심 여부는 참가자 수락 플래그 myMember/partnerMember.accepted로 산출)
- * 단건/존재 조회·저장 out-port는 [com.org.meeple.infra.match.command.adapter.MatchCoreAdapter]가 메서드 쿼리로 따로 구현한다.
+ * 단건/존재 조회·저장 out-port는 [com.org.meeple.infra.match.command.adapter.MatchAdapter]가 메서드 쿼리로 따로 구현한다.
  */
 @Component
 class MatchWithPartnerQueryDaoImpl(

@@ -11,7 +11,7 @@ import org.springframework.stereotype.Component
 /**
  * [ChatMessageQueryDao]의 QueryDSL 구현체.
  * (chat_room_id, id) 인덱스 역방향 스캔으로 최신부터 끊어 읽는 키셋 페이지네이션을 QueryDSL로 구현한다. (조회 전용)
- * 저장 out-port([com.org.meeple.core.chat.command.service.port.out.SaveChatMessagePort])는 [ChatMessageAdapter]가 메서드 쿼리로 따로 구현한다.
+ * 저장 out-port([com.org.meeple.core.chat.command.application.port.out.SaveChatMessagePort])는 [ChatMessageAdapter]가 메서드 쿼리로 따로 구현한다.
  */
 @Component
 class ChatMessageQueryDaoImpl(

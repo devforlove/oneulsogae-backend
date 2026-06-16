@@ -6,7 +6,7 @@ import com.org.meeple.common.user.Gender
 import com.org.meeple.common.user.MaritalStatus
 import com.org.meeple.common.user.Religion
 import com.org.meeple.common.user.SmokingStatus
-import com.org.meeple.core.user.command.service.port.`in`.command.UpdateUserDetailCommand
+import com.org.meeple.core.user.command.application.port.`in`.command.UpdateUserDetailCommand
 import jakarta.validation.constraints.Email
 import jakarta.validation.constraints.Max
 import jakarta.validation.constraints.Min

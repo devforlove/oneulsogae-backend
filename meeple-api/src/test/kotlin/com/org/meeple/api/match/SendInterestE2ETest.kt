@@ -12,8 +12,8 @@ import com.org.meeple.infra.alarm.entity.AlarmEntity
 import com.org.meeple.infra.alarm.entity.QAlarmEntity
 import com.org.meeple.infra.chat.command.entity.QChatRoomEntity
 import com.org.meeple.infra.chat.command.entity.QChatRoomMemberEntity
-import com.org.meeple.infra.coin.entity.QCoinBalanceEntity
-import com.org.meeple.infra.coin.entity.QCoinHistoryEntity
+import com.org.meeple.infra.coin.command.entity.QCoinBalanceEntity
+import com.org.meeple.infra.coin.command.entity.QCoinHistoryEntity
 import com.org.meeple.infra.fixture.CoinBalanceEntityFixture
 import com.org.meeple.infra.fixture.IntegrationUtil
 import com.org.meeple.infra.fixture.MatchEntityFixture

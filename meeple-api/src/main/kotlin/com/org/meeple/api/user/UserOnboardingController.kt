@@ -8,9 +8,9 @@ import com.org.meeple.api.user.response.VerifyCompanyEmailResponse
 import com.org.meeple.auth.AuthUser
 import com.org.meeple.auth.LoginUser
 import com.org.meeple.core.common.response.ApiResponse
-import com.org.meeple.core.user.command.service.port.`in`.RequestCompanyEmailVerificationUseCase
-import com.org.meeple.core.user.command.service.port.`in`.ResolveCompanyNameUseCase
-import com.org.meeple.core.user.command.service.port.`in`.VerifyCompanyEmailUseCase
+import com.org.meeple.core.user.command.application.port.`in`.RequestCompanyEmailVerificationUseCase
+import com.org.meeple.core.user.command.application.port.`in`.ResolveCompanyNameUseCase
+import com.org.meeple.core.user.command.application.port.`in`.VerifyCompanyEmailUseCase
 import jakarta.validation.Valid
 import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.RequestBody

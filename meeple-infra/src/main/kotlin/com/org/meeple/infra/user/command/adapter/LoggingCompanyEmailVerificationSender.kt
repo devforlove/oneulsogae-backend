@@ -1,6 +1,6 @@
 package com.org.meeple.infra.user.command.adapter
 
-import com.org.meeple.core.user.command.service.port.out.SendCompanyEmailVerificationPort
+import com.org.meeple.core.user.command.application.port.out.SendCompanyEmailVerificationPort
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Component
 

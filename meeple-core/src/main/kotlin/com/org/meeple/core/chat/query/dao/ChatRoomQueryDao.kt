@@ -19,7 +19,7 @@ interface ChatRoomQueryDao {
 
 	/**
 	 * 채팅방의 식별·공통 상태를 단건 조회한다. 없으면 null. (상세 첫 페이지 헤더용)
-	 * 변경 대상 로드용 단건 조회는 command 쪽 [com.org.meeple.core.chat.command.service.port.out.GetChatRoomPort]가 따로 둔다. (adapter=메서드 쿼리 / dao=QueryDSL 분리)
+	 * 변경 대상 로드용 단건 조회는 command 쪽 [com.org.meeple.core.chat.command.application.port.out.GetChatRoomPort]가 따로 둔다. (adapter=메서드 쿼리 / dao=QueryDSL 분리)
 	 */
 	fun findById(chatRoomId: Long): ChatRoomView?
 }

@@ -2,8 +2,8 @@ package com.org.meeple.infra.chat.command.adapter
 
 import com.org.meeple.chatting.chat.application.port.out.UpdateChatRoomPort
 import com.org.meeple.core.chat.command.domain.ChatRoom
-import com.org.meeple.core.chat.command.service.port.out.GetChatRoomPort
-import com.org.meeple.core.chat.command.service.port.out.SaveChatRoomPort
+import com.org.meeple.core.chat.command.application.port.out.GetChatRoomPort
+import com.org.meeple.core.chat.command.application.port.out.SaveChatRoomPort
 import com.org.meeple.infra.chat.command.mapper.toDomain
 import com.org.meeple.infra.chat.command.mapper.toEntity
 import com.org.meeple.infra.chat.command.repository.ChatRoomJpaRepository

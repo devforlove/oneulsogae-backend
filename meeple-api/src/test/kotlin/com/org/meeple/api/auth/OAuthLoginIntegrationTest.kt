@@ -4,7 +4,7 @@ import com.org.meeple.common.integration.AbstractIntegrationSupport
 import com.org.meeple.common.user.UserStatus
 import com.org.meeple.core.common.error.BusinessException
 import com.org.meeple.core.user.UserErrorCode
-import com.org.meeple.core.user.command.service.port.`in`.RegisterUserUseCase
+import com.org.meeple.core.user.command.application.port.`in`.RegisterUserUseCase
 import com.org.meeple.core.user.command.domain.User
 import com.org.meeple.infra.fixture.IntegrationUtil
 import com.org.meeple.infra.fixture.UserEntityFixture

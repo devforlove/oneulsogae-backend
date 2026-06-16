@@ -1,7 +1,7 @@
 package com.org.meeple.api.coin.request
 
 import com.org.meeple.common.coin.CoinGetType
-import com.org.meeple.core.coin.application.port.`in`.command.AcquireCoinCommand
+import com.org.meeple.core.coin.command.application.port.`in`.command.AcquireCoinCommand
 import jakarta.validation.constraints.NotNull
 import jakarta.validation.constraints.Positive
 

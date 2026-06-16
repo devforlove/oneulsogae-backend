@@ -8,7 +8,7 @@ import org.springframework.stereotype.Component
 /**
  * [ChatRoomMemberQueryDao]의 QueryDSL 구현체.
  * 접근 검증용 단건 존재 조회만 전담한다. (조회 전용)
- * 같은 (chat_room_id, user_id) 단건 조회라도 변경 대상 로드용 out-port([com.org.meeple.core.chat.command.service.port.out.GetChatRoomMemberPort])는
+ * 같은 (chat_room_id, user_id) 단건 조회라도 변경 대상 로드용 out-port([com.org.meeple.core.chat.command.application.port.out.GetChatRoomMemberPort])는
  * [ChatRoomMemberAdapter]가 메서드 쿼리로 따로 구현한다. (adapter=메서드 쿼리 / dao=QueryDSL 분리)
  */
 @Component

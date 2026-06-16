@@ -9,7 +9,7 @@ import org.springframework.data.repository.query.Param
 /**
  * 매칭 참가자 영속성 엔티티에 대한 Spring Data JPA 리포지토리.
  * 참가자 저장·매칭별 참가자 조회(파생 쿼리)와, 참가자↔매칭 조인이 필요한 조회(일일 소개 존재·성사 사용자, JPQL)를 담당한다.
- * [com.org.meeple.infra.match.command.adapter.MatchCoreAdapter]가 매칭 애그리거트(헤더+참가자) 영속화에서 사용한다.
+ * [com.org.meeple.infra.match.command.adapter.MatchAdapter]가 매칭 애그리거트(헤더+참가자) 영속화에서 사용한다.
  */
 interface MatchMemberJpaRepository : JpaRepository<MatchMemberEntity, Long> {
 

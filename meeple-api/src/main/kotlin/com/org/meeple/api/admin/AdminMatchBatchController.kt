@@ -4,8 +4,8 @@ import com.org.meeple.api.admin.response.MatchBatchResponse
 import com.org.meeple.core.common.error.BusinessException
 import com.org.meeple.core.common.response.ApiResponse
 import com.org.meeple.core.match.MatchErrorCode
-import com.org.meeple.scheduler.match.application.MatchBatchJob
-import com.org.meeple.scheduler.match.domain.MatchBatchResult
+import com.org.meeple.scheduler.match.command.application.MatchBatchJob
+import com.org.meeple.scheduler.match.command.domain.MatchBatchResult
 import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RestController

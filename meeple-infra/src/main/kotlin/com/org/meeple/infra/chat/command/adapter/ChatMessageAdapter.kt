@@ -3,7 +3,7 @@ package com.org.meeple.infra.chat.command.adapter
 import com.org.meeple.chatting.chat.application.port.out.SaveChatMessagePort as ChattingSaveChatMessagePort
 import com.org.meeple.chatting.chat.domain.ChatMessage as ChattingChatMessage
 import com.org.meeple.core.chat.command.domain.ChatMessage
-import com.org.meeple.core.chat.command.service.port.out.SaveChatMessagePort
+import com.org.meeple.core.chat.command.application.port.out.SaveChatMessagePort
 import com.org.meeple.infra.chat.command.mapper.toChattingDomain
 import com.org.meeple.infra.chat.command.mapper.toChattingEntity
 import com.org.meeple.infra.chat.command.mapper.toDomain

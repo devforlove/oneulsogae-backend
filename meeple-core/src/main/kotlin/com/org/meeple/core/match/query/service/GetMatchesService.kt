@@ -3,7 +3,7 @@ package com.org.meeple.core.match.query.service
 import com.org.meeple.common.user.Gender
 import com.org.meeple.core.common.time.TimeGenerator
 import com.org.meeple.core.match.query.service.port.`in`.GetMatchesUseCase
-import com.org.meeple.core.match.command.service.port.`in`.RecommendMatchUseCase
+import com.org.meeple.core.match.command.application.port.`in`.RecommendMatchUseCase
 import com.org.meeple.core.match.query.dao.MatchWithPartnerQueryDao
 import com.org.meeple.core.user.query.service.port.`in`.GetUserWithDetailUseCase
 import com.org.meeple.core.match.query.dto.MatchWithPartner

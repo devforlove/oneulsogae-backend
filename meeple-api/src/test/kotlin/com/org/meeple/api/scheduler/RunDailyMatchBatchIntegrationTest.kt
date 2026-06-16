@@ -17,8 +17,8 @@ import com.org.meeple.infra.match.command.entity.QMatchEntity
 import com.org.meeple.infra.match.command.entity.QMatchMemberEntity
 import com.org.meeple.infra.user.command.entity.QUserDetailEntity
 import com.org.meeple.infra.user.command.entity.QUserEntity
-import com.org.meeple.scheduler.match.application.port.`in`.RunDailyMatchBatchUseCase
-import com.org.meeple.scheduler.match.domain.MatchBatchResult
+import com.org.meeple.scheduler.match.command.application.port.`in`.RunDailyMatchBatchUseCase
+import com.org.meeple.scheduler.match.command.domain.MatchBatchResult
 import io.kotest.matchers.collections.shouldBeEmpty
 import io.kotest.matchers.collections.shouldContainExactlyInAnyOrder
 import io.kotest.matchers.nulls.shouldBeNull

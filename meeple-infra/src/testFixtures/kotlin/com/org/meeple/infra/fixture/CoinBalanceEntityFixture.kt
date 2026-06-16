@@ -1,6 +1,6 @@
 package com.org.meeple.infra.fixture
 
-import com.org.meeple.infra.coin.entity.CoinBalanceEntity
+import com.org.meeple.infra.coin.command.entity.CoinBalanceEntity
 
 /**
  * [CoinBalanceEntity] 테스트 픽스처. 기본 잔액은 차감 시나리오를 넉넉히 커버하도록 100으로 둔다.

@@ -2,7 +2,7 @@ package com.org.meeple.auth.oauth
 
 import com.org.meeple.auth.PrincipalDetails
 import com.org.meeple.core.common.error.BusinessException
-import com.org.meeple.core.user.command.service.port.`in`.RegisterUserUseCase
+import com.org.meeple.core.user.command.application.port.`in`.RegisterUserUseCase
 import com.org.meeple.core.user.command.domain.User
 import org.springframework.security.core.authority.SimpleGrantedAuthority
 import org.springframework.security.oauth2.client.userinfo.DefaultOAuth2UserService

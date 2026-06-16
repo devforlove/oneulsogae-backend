@@ -7,7 +7,7 @@ import com.org.meeple.auth.AuthUser
 import com.org.meeple.auth.LoginUser
 import com.org.meeple.core.common.response.ApiResponse
 import com.org.meeple.core.user.query.service.port.`in`.GetUserDetailUseCase
-import com.org.meeple.core.user.command.service.port.`in`.UpdateProfileUseCase
+import com.org.meeple.core.user.command.application.port.`in`.UpdateProfileUseCase
 import jakarta.validation.Valid
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PutMapping

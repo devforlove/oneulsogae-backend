@@ -4,8 +4,8 @@ import com.org.meeple.chatting.chat.application.port.out.GetChatRoomMemberPort a
 import com.org.meeple.chatting.chat.application.port.out.IncreaseUnreadCountPort
 import com.org.meeple.core.chat.command.domain.ChatRoomMember
 import com.org.meeple.core.chat.command.domain.ChatRoomMembers
-import com.org.meeple.core.chat.command.service.port.out.GetChatRoomMemberPort
-import com.org.meeple.core.chat.command.service.port.out.SaveChatRoomMemberPort
+import com.org.meeple.core.chat.command.application.port.out.GetChatRoomMemberPort
+import com.org.meeple.core.chat.command.application.port.out.SaveChatRoomMemberPort
 import com.org.meeple.infra.chat.command.entity.ChatRoomMemberEntity
 import com.org.meeple.infra.chat.command.mapper.toDomain
 import com.org.meeple.infra.chat.command.mapper.toEntity

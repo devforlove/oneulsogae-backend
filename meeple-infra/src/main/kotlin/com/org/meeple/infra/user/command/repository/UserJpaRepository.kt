@@ -5,7 +5,7 @@ import org.springframework.data.jpa.repository.JpaRepository
 
 /**
  * 사용자 영속성 엔티티에 대한 Spring Data JPA 리포지토리.
- * 도메인 포트([com.org.meeple.core.user.command.service.port.out.GetUserPort])는 [UserRepositoryAdapter]가 구현한다.
+ * 도메인 포트([com.org.meeple.core.user.command.application.port.out.GetUserPort])는 [UserRepositoryAdapter]가 구현한다.
  */
 interface UserJpaRepository : JpaRepository<UserEntity, Long> {
 

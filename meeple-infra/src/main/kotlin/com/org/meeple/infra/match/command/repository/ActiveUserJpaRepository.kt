@@ -2,7 +2,7 @@ package com.org.meeple.infra.match.command.repository
 
 import com.org.meeple.common.user.UserStatus
 import com.org.meeple.infra.user.command.entity.UserEntity
-import com.org.meeple.scheduler.match.domain.ActiveUser
+import com.org.meeple.scheduler.match.query.dto.ActiveUser
 import org.springframework.data.jpa.repository.JpaRepository
 import org.springframework.data.jpa.repository.Query
 import org.springframework.data.repository.query.Param
@@ -20,7 +20,7 @@ interface ActiveUserJpaRepository : JpaRepository<UserEntity, Long> {
 
 	@Query(
 		"""
-		select new com.org.meeple.scheduler.match.domain.ActiveUser(u.id, d.gender, d.regionCode)
+		select new com.org.meeple.scheduler.match.query.dto.ActiveUser(u.id, d.gender, d.regionCode)
 		from UserEntity u
 		join UserDetailEntity d on d.userId = u.id
 		where u.status = :status

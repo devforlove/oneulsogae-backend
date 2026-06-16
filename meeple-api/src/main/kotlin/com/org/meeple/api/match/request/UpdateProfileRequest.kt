@@ -5,7 +5,7 @@ import com.org.meeple.common.user.DrinkingStatus
 import com.org.meeple.common.user.MaritalStatus
 import com.org.meeple.common.user.Religion
 import com.org.meeple.common.user.SmokingStatus
-import com.org.meeple.core.user.command.service.port.`in`.command.UpdateProfileCommand
+import com.org.meeple.core.user.command.application.port.`in`.command.UpdateProfileCommand
 import jakarta.validation.constraints.NotBlank
 import jakarta.validation.constraints.NotEmpty
 import jakarta.validation.constraints.NotNull

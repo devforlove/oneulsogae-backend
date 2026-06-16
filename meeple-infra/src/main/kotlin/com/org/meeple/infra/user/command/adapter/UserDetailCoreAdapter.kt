@@ -1,8 +1,8 @@
 package com.org.meeple.infra.user.command.adapter
 
 import com.org.meeple.core.user.command.domain.UserDetail
-import com.org.meeple.core.user.command.service.port.out.GetUserDetailPort
-import com.org.meeple.core.user.command.service.port.out.SaveUserDetailPort
+import com.org.meeple.core.user.command.application.port.out.GetUserDetailPort
+import com.org.meeple.core.user.command.application.port.out.SaveUserDetailPort
 import com.org.meeple.infra.user.command.mapper.toDomain
 import com.org.meeple.infra.user.command.mapper.toEntity
 import com.org.meeple.infra.user.command.repository.UserDetailJpaRepository

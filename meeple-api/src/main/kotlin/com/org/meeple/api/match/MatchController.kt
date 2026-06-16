@@ -6,7 +6,7 @@ import com.org.meeple.auth.AuthUser
 import com.org.meeple.auth.LoginUser
 import com.org.meeple.core.common.response.ApiResponse
 import com.org.meeple.core.match.query.service.port.`in`.GetMatchesUseCase
-import com.org.meeple.core.match.command.service.port.`in`.SendInterestUseCase
+import com.org.meeple.core.match.command.application.port.`in`.SendInterestUseCase
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.PostMapping

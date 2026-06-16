@@ -5,9 +5,9 @@ import com.org.meeple.api.coin.response.CoinBalanceResponse
 import com.org.meeple.api.coin.response.CoinItemResponse
 import com.org.meeple.auth.AuthUser
 import com.org.meeple.auth.LoginUser
-import com.org.meeple.core.coin.application.port.`in`.AcquireCoinUseCase
-import com.org.meeple.core.coin.application.port.`in`.GetCoinBalanceUseCase
-import com.org.meeple.core.coin.application.port.`in`.GetCoinShopUseCase
+import com.org.meeple.core.coin.command.application.port.`in`.AcquireCoinUseCase
+import com.org.meeple.core.coin.query.service.port.`in`.GetCoinBalanceUseCase
+import com.org.meeple.core.coin.query.service.port.`in`.GetCoinShopUseCase
 import com.org.meeple.core.common.response.ApiResponse
 import jakarta.validation.Valid
 import org.springframework.web.bind.annotation.GetMapping

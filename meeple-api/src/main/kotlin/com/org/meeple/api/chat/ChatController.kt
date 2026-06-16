@@ -4,8 +4,8 @@ import com.org.meeple.api.chat.response.ChatRoomDetailResponse
 import com.org.meeple.api.chat.response.ChatRoomResponse
 import com.org.meeple.auth.AuthUser
 import com.org.meeple.auth.LoginUser
-import com.org.meeple.core.chat.command.service.port.`in`.LeaveChatRoomUseCase
-import com.org.meeple.core.chat.command.service.port.`in`.MarkChatRoomAsReadUseCase
+import com.org.meeple.core.chat.command.application.port.`in`.LeaveChatRoomUseCase
+import com.org.meeple.core.chat.command.application.port.`in`.MarkChatRoomAsReadUseCase
 import com.org.meeple.core.chat.query.service.port.`in`.GetChatRoomDetailUseCase
 import com.org.meeple.core.chat.query.service.port.`in`.GetChatRoomsUseCase
 import com.org.meeple.core.common.response.ApiResponse

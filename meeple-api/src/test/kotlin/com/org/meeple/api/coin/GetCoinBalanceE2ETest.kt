@@ -3,7 +3,7 @@ package com.org.meeple.api.coin
 import com.org.meeple.common.integration.AbstractIntegrationSupport
 import com.org.meeple.common.integration.expect
 import com.org.meeple.common.integration.get
-import com.org.meeple.infra.coin.entity.QCoinBalanceEntity
+import com.org.meeple.infra.coin.command.entity.QCoinBalanceEntity
 import com.org.meeple.infra.fixture.CoinBalanceEntityFixture
 import com.org.meeple.infra.fixture.IntegrationUtil
 import io.kotest.matchers.shouldBe

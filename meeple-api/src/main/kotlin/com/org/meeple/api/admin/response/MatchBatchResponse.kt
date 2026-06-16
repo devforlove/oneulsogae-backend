@@ -1,6 +1,6 @@
 package com.org.meeple.api.admin.response
 
-import com.org.meeple.scheduler.match.domain.MatchBatchResult
+import com.org.meeple.scheduler.match.command.domain.MatchBatchResult
 
 /**
  * 매칭 배치 실행 결과 응답. (관리자 수동 트리거)
