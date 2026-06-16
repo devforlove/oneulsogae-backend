@@ -14,6 +14,7 @@ object ChatRoomMemberFixture {
 		lastReadAt: LocalDateTime? = null,
 		joinedAt: LocalDateTime = LocalDateTime.of(2026, 1, 1, 0, 0),
 		exitedAt: LocalDateTime? = null,
+		deletedAt: LocalDateTime? = null,
 	): ChatRoomMember =
 		ChatRoomMember(
 			id = id,
@@ -23,5 +24,6 @@ object ChatRoomMemberFixture {
 			lastReadAt = lastReadAt,
 			joinedAt = joinedAt,
 			exitedAt = exitedAt,
+			deletedAt = deletedAt,
 		)
 }

@@ -6,8 +6,10 @@ import com.org.meeple.auth.AuthUser
 import com.org.meeple.auth.LoginUser
 import com.org.meeple.core.chat.application.port.`in`.GetChatRoomDetailUseCase
 import com.org.meeple.core.chat.application.port.`in`.GetChatRoomsUseCase
+import com.org.meeple.core.chat.application.port.`in`.LeaveChatRoomUseCase
 import com.org.meeple.core.chat.application.port.`in`.MarkChatRoomAsReadUseCase
 import com.org.meeple.core.common.response.ApiResponse
+import org.springframework.web.bind.annotation.DeleteMapping
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.PutMapping
@@ -20,6 +22,7 @@ import org.springframework.web.bind.annotation.RestController
  * - GET /rooms: 현재 로그인 사용자에게 할당된 ACTIVE 상태의 채팅방 목록을 조회한다.
  * - GET /rooms/{chatRoomId}: 특정 채팅방의 참여자 정보와 채팅 메세지를 조회한다.
  * - PUT /rooms/{chatRoomId}/read: 특정 채팅방의 안 읽은 메세지 개수를 0으로 초기화한다. (읽음 상태를 0으로 두는 멱등 연산)
+ * - DELETE /rooms/{chatRoomId}/members: 현재 로그인 사용자가 해당 채팅방에서 나간다. (본인의 참가자 행을 소프트 삭제)
  */
 @RestController
 @RequestMapping("/chat/v1")
@@ -27,6 +30,7 @@ class ChatController(
 	private val getChatRoomsUseCase: GetChatRoomsUseCase,
 	private val getChatRoomDetailUseCase: GetChatRoomDetailUseCase,
 	private val markChatRoomAsReadUseCase: MarkChatRoomAsReadUseCase,
+	private val leaveChatRoomUseCase: LeaveChatRoomUseCase,
 ) {
 
 	/**
@@ -72,6 +76,20 @@ class ChatController(
 		@PathVariable chatRoomId: Long,
 	): ApiResponse<Unit> {
 		markChatRoomAsReadUseCase.markAsRead(userId = user.id, chatRoomId = chatRoomId)
+		return ApiResponse.success()
+	}
+
+	/**
+	 * 현재 로그인 사용자가 해당 채팅방에서 나간다. (요청 사용자는 그 방의 참가자여야 한다)
+	 * 본인의 참가자 행만 소프트 삭제되어 본인의 채팅방 목록·접근에서 제외된다. (상대 참가자에는 영향이 없다)
+	 * 방 자체를 삭제하는 것이 아니라 "내 참여(member)"를 삭제하는 의미이므로 DELETE로 둔다.
+	 */
+	@DeleteMapping("/rooms/{chatRoomId}/members")
+	fun leaveChatRoom(
+		@LoginUser user: AuthUser,
+		@PathVariable chatRoomId: Long,
+	): ApiResponse<Unit> {
+		leaveChatRoomUseCase.leave(userId = user.id, chatRoomId = chatRoomId)
 		return ApiResponse.success()
 	}
 }

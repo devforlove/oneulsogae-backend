@@ -26,6 +26,9 @@ class ChatRoomMemberCoreAdapter(
 	override fun findByChatRoomIdAndUserId(chatRoomId: Long, userId: Long): ChatRoomMember? =
 		chatRoomMemberJpaRepository.findByChatRoomIdAndUserId(chatRoomId, userId)?.toDomain()
 
+	override fun countByChatRoomId(chatRoomId: Long): Long =
+		chatRoomMemberJpaRepository.countByChatRoomId(chatRoomId)
+
 	// id가 0이면 INSERT, 0이 아니면 기존 행 UPDATE(merge). 둘 다 Spring Data save가 처리한다.
 	override fun save(member: ChatRoomMember): ChatRoomMember =
 		chatRoomMemberJpaRepository.save(member.toEntity()).toDomain()

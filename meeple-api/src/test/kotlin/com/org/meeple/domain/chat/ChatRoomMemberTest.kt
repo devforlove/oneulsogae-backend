@@ -67,4 +67,22 @@ class ChatRoomMemberTest : DescribeSpec({
 			member.isExited shouldBe true
 		}
 	}
+
+	describe("delete") {
+		it("삭제 시각을 채우고 소프트 삭제(나가기) 상태로 본다") {
+			val member: ChatRoomMember = ChatRoomMemberFixture.create()
+				.delete(now)
+
+			member.deletedAt shouldBe now
+			member.isDeleted shouldBe true
+		}
+
+		it("나가기는 읽음 개수·퇴장 등 다른 상태를 건드리지 않는다") {
+			val member: ChatRoomMember = ChatRoomMemberFixture.create(unreadCount = 3)
+				.delete(now)
+
+			member.unreadCount shouldBe 3
+			member.isExited shouldBe false
+		}
+	}
 })

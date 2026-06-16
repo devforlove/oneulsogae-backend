@@ -182,6 +182,41 @@ class MyChatRoomsE2ETest : AbstractIntegrationSupport({
 			}
 		}
 
+		context("상대가 채팅방을 나가(소프트 삭제) 본인만 남아도") {
+			it("나간 상대의 프로필을 participants에 그대로 노출한다 (deleted_at 필터 미적용)") {
+				val userId = 7006L
+				val left = 8301L
+
+				IntegrationUtil.persist(
+					UserDetailEntityFixture.create(userId = left, nickname = "떠난사람", profileImageCode = "IMG_LEFT", gender = Gender.FEMALE),
+				)
+
+				val roomId: Long = openRoomWithMembers(
+					matchId = 13L,
+					members = listOf(userId to 0),
+					lastMessage = "마지막 인사",
+				)
+				// 상대는 나가기로 소프트 삭제된 상태 (deleted_at 채워짐) — 그래도 프로필은 노출돼야 한다
+				IntegrationUtil.persist(
+					ChatRoomMemberEntityFixture.create(chatRoomId = roomId, userId = left)
+						.also { it.softDelete() },
+				)
+
+				get("/chat/v1/rooms") {
+					bearer(accessTokenFor(userId))
+				} expect {
+					status(200)
+					body("data.size()", 1)
+					// 소프트 삭제된 상대도 프로필과 함께 노출
+					body("data[0].participants.size()", 1)
+					body("data[0].participants[0].userId", left.toInt())
+					body("data[0].participants[0].nickname", "떠난사람")
+					body("data[0].participants[0].profileImageCode", "IMG_LEFT")
+					body("data[0].participants[0].gender", Gender.FEMALE.name)
+				}
+			}
+		}
+
 		context("본인이 참가한 1:1 방을 조회하면") {
 			it("상대 프로필과 본인 관점의 안 읽은 개수로 반환한다") {
 				val userId = 7003L

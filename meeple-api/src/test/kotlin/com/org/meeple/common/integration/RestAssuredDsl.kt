@@ -66,6 +66,9 @@ fun put(path: String, configure: HttpRequestSpec.() -> Unit = {}): ValidatableRe
 fun get(path: String, configure: HttpRequestSpec.() -> Unit = {}): ValidatableResponse =
 	HttpRequestSpec().apply(configure).spec.get(path).then()
 
+fun delete(path: String, configure: HttpRequestSpec.() -> Unit = {}): ValidatableResponse =
+	HttpRequestSpec().apply(configure).spec.delete(path).then()
+
 /** 응답 검증 블록을 연다. */
 infix fun ValidatableResponse.expect(assertions: HttpResponseSpec.() -> Unit) {
 	HttpResponseSpec(this).apply(assertions)

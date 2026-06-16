@@ -8,6 +8,7 @@ import java.time.LocalDateTime
  * 이 모델은 (chatRoomId, userId) 한 쌍을 한 행으로 두어 참가자별 읽음 상태를 정규화한다.
  * [unreadCount]/[lastReadAt]은 해당 참가자 본인의 읽음 상태이며, 상대가 보낸 메세지가 쌓이면 증가하고 본인이 읽으면 0으로 되돌린다.
  * [exitedAt]이 채워지면 채팅방을 나간 것으로 본다.
+ * [deletedAt]이 채워지면 소프트 삭제된(나가기로 목록·조회에서 제외된) 참가자다.
  * 영속성은 [com.org.meeple.infra.chat.entity.ChatRoomMemberEntity]가 담당한다.
  */
 data class ChatRoomMember(
@@ -18,11 +19,16 @@ data class ChatRoomMember(
 	val lastReadAt: LocalDateTime? = null,
 	val joinedAt: LocalDateTime,
 	val exitedAt: LocalDateTime? = null,
+	val deletedAt: LocalDateTime? = null,
 ) {
 
 	/** 채팅방을 나갔는지 여부. */
 	val isExited: Boolean
 		get() = exitedAt != null
+
+	/** 소프트 삭제(나가기) 되었는지 여부. */
+	val isDeleted: Boolean
+		get() = deletedAt != null
 
 	/**
 	 * 이 참가자가 메세지 한 건을 새로 받은 것으로 보고, 안 읽은 개수만 1 증가시킨 새 모델을 반환한다.
@@ -41,6 +47,13 @@ data class ChatRoomMember(
 	/** 이 참가자가 [now]에 채팅방을 나간 것으로 전이한 새 모델을 반환한다. */
 	fun exit(now: LocalDateTime): ChatRoomMember =
 		copy(exitedAt = now)
+
+	/**
+	 * 이 참가자를 [now]에 소프트 삭제(나가기)한 새 모델을 반환한다. 저장하면 [deletedAt]이 채워져 조회·접근에서 제외된다.
+	 * (참가자 검증은 호출 측 책임)
+	 */
+	fun delete(now: LocalDateTime): ChatRoomMember =
+		copy(deletedAt = now)
 
 	companion object {
 

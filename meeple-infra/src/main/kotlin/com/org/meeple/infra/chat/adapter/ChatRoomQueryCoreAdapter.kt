@@ -9,7 +9,8 @@ import com.org.meeple.core.chat.domain.ChatRoomSummary
 import com.org.meeple.infra.chat.entity.QChatRoomEntity
 import com.org.meeple.infra.chat.entity.QChatRoomMemberEntity
 import com.org.meeple.infra.chat.mapper.toDomain
-import com.org.meeple.infra.user.entity.QUserDetailEntity
+import com.org.meeple.infra.chat.repository.ChatRoomMemberJpaRepository
+import com.org.meeple.infra.chat.repository.PartnerParticipantRow
 import com.querydsl.core.types.Projections
 import com.querydsl.jpa.impl.JPAQueryFactory
 import org.springframework.stereotype.Component
@@ -17,12 +18,15 @@ import java.time.LocalDateTime
 
 /**
  * core 모듈이 쓰는 [ChatRoomEntity]의 QueryDSL 어댑터.
- * 동적 컬럼·조인이 필요한 조회([GetChatRoomPort])만 전담하며, `JPAQueryFactory`만 주입한다.
+ * 동적 컬럼·조인이 필요한 조회([GetChatRoomPort])를 전담한다.
+ * 원칙적으로 `JPAQueryFactory`만 주입하지만, 참가자 프로필 조회는 나간(소프트 삭제된) 참가자도 포함해야 해
+ * QueryDSL로는 끌 수 없는 @SQLRestriction을 우회하려고 [ChatRoomMemberJpaRepository]의 네이티브 쿼리를 함께 쓴다.
  * 저장은 [ChatRoomCoreAdapter]가 별도로 둔다.
  */
 @Component
 class ChatRoomQueryCoreAdapter(
 	private val queryFactory: JPAQueryFactory,
+	private val chatRoomMemberJpaRepository: ChatRoomMemberJpaRepository,
 ) : GetChatRoomPort {
 
 	// id 단건 조회. 상세 조회의 참가자 검증·참가자 식별에 쓰며, 엔티티를 도메인 모델로 변환해 반환한다.
@@ -104,37 +108,25 @@ class ChatRoomQueryCoreAdapter(
 
 	/**
 	 * 2단계: 주어진 방들의 참가자와 프로필을 모아 방별로 묶는다.
-	 * WHERE를 복합 유니크 인덱스 udx_chat_room_id_user_id의 선두 컬럼 IN(chat_room_id) 하나로만 두어 인덱스 레인지 스캔만 타게 한다.
-	 * - 시크에 못 쓰는 부등호(user_id <> :userId)는 SQL에서 빼고, 조회자(나) 제외는 애플리케이션에서 [filter]한다.
-	 * - exited_at은 인덱스가 없어 잔여 필터가 되는 데다 나간 참가자도 목록에 포함하므로 조건에서 뺀다.
-	 * - 정렬(chat_room_id, user_id)은 그 인덱스 순서와 동일해 추가 정렬 비용을 최소화한다. (member 측은 인덱스만으로 커버)
+	 * **나간(소프트 삭제된) 참가자도 그 사람의 프로필을 계속 노출해야 하므로**, QueryDSL로는 끌 수 없는 @SQLRestriction을 우회하려고
+	 * [ChatRoomMemberJpaRepository.findPartnerParticipants] 네이티브 쿼리로 조회한다. (chat_room_members의 deleted_at 필터를 적용하지 않음)
+	 * - 조회자(나) 제외는 SQL이 아니라 애플리케이션에서 [filter]한다.
+	 * - gender는 네이티브에서 문자열로 내려오므로 여기서 [Gender]로 변환한다.
 	 */
-	private fun findPartnerParticipants(roomIds: List<Long>, userId: Long): Map<Long, List<ChatParticipant>> {
-		val partnerMember: QChatRoomMemberEntity = QChatRoomMemberEntity.chatRoomMemberEntity
-		val partnerDetail: QUserDetailEntity = QUserDetailEntity.userDetailEntity
-
-		return queryFactory
-			.select(
-				Projections.constructor(
-					PartnerRow::class.java,
-					partnerMember.chatRoomId,
-					partnerMember.userId,
-					partnerDetail.nickname,
-					partnerDetail.profileImageCode,
-					partnerDetail.gender,
-				),
-			)
-			.from(partnerMember)
-			.join(partnerDetail).on(partnerDetail.userId.eq(partnerMember.userId))
-			.where(partnerMember.chatRoomId.`in`(roomIds))
-			.orderBy(partnerMember.chatRoomId.asc(), partnerMember.userId.asc())
-			.fetch()
+	private fun findPartnerParticipants(roomIds: List<Long>, userId: Long): Map<Long, List<ChatParticipant>> =
+		chatRoomMemberJpaRepository.findPartnerParticipants(roomIds)
 			.filter { it.userId != userId }
 			.groupBy(
 				{ it.chatRoomId },
-				{ ChatParticipant(userId = it.userId, nickname = it.nickname, profileImageCode = it.profileImageCode, gender = it.gender) },
+				{ row: PartnerParticipantRow ->
+					ChatParticipant(
+						userId = row.userId,
+						nickname = row.nickname,
+						profileImageCode = row.profileImageCode,
+						gender = row.gender?.let { Gender.valueOf(it) },
+					)
+				},
 			)
-	}
 
 	// 1단계 프로젝션 홀더: 방 공통 상태 + 조회 사용자 관점의 안 읽은 개수. (참가자 목록은 2단계에서 채운다)
 	data class ActiveRoomRow(
@@ -144,14 +136,5 @@ class ChatRoomQueryCoreAdapter(
 		val unreadCount: Int,
 		val lastMessage: String?,
 		val lastMessageAt: LocalDateTime?,
-	)
-
-	// 2단계 프로젝션 홀더: 어느 방의 어떤 상대 참가자(프로필·성별 포함)인지. (chatRoomId로 묶어 ChatParticipant로 변환한다)
-	data class PartnerRow(
-		val chatRoomId: Long,
-		val userId: Long,
-		val nickname: String?,
-		val profileImageCode: String?,
-		val gender: Gender?,
 	)
 }
