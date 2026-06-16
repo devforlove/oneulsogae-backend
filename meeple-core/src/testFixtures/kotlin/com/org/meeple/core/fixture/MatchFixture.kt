@@ -3,9 +3,9 @@ package com.org.meeple.core.fixture
 import com.org.meeple.common.match.MatchStatus
 import com.org.meeple.common.match.MatchType
 import com.org.meeple.common.user.Gender
-import com.org.meeple.core.match.domain.Match
-import com.org.meeple.core.match.domain.MatchMember
-import com.org.meeple.core.match.domain.MatchMembers
+import com.org.meeple.core.match.command.domain.Match
+import com.org.meeple.core.match.command.domain.MatchMember
+import com.org.meeple.core.match.command.domain.MatchMembers
 import java.time.LocalDate
 import java.time.LocalDateTime
 

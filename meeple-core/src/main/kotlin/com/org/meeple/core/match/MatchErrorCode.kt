@@ -1,0 +1,21 @@
+package com.org.meeple.core.match
+
+import com.org.meeple.core.common.error.ErrorCode
+import org.springframework.http.HttpStatus
+
+/**
+ * 매칭 도메인 에러 코드.
+ * [com.org.meeple.core.common.error.BusinessException]에 넘겨 사용한다.
+ */
+enum class MatchErrorCode(
+	override val code: String,
+	override val message: String,
+	override val status: HttpStatus,
+) : ErrorCode {
+
+	MATCH_NOT_FOUND("MATCH-001", "매칭을 찾을 수 없습니다.", HttpStatus.NOT_FOUND),
+	NOT_MATCH_PARTICIPANT("MATCH-002", "해당 매칭의 참가자가 아닙니다.", HttpStatus.FORBIDDEN),
+	MATCH_ALREADY_CLOSED("MATCH-003", "이미 종료된 매칭입니다.", HttpStatus.CONFLICT),
+	PROFILE_INCOMPLETE("MATCH-005", "매칭을 위해 프로필(성별·닉네임·나이)을 먼저 완성해 주세요.", HttpStatus.BAD_REQUEST),
+	MATCH_BATCH_ALREADY_RUNNING("MATCH-008", "매칭 배치가 이미 실행 중입니다.", HttpStatus.CONFLICT),
+}

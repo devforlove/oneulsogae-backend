@@ -1,0 +1,127 @@
+package com.org.meeple.core.match.command.domain
+
+import com.org.meeple.common.coin.CoinUsageType
+import com.org.meeple.common.match.MatchStatus
+import com.org.meeple.common.match.MatchType
+import com.org.meeple.common.user.Gender
+import com.org.meeple.core.common.error.BusinessException
+import com.org.meeple.core.match.MatchErrorCode
+import java.time.Duration
+import java.time.LocalDate
+import java.time.LocalDateTime
+
+/**
+ * 매칭(소개) 도메인 모델.
+ * 참가자는 더 이상 (male, female) 두 자리로 고정하지 않고, 참가자([MatchMembers])로 정규화해 1:1·N:N(2:2·3:3)을 모두 표현한다.
+ * 재소개 방지는 참가자 조합의 정규화 키([memberKey])에 유니크 제약을 걸어 막는다.
+ * [introducedDate]로 "하루에 한 번만 소개" 제약을 판단하고, [expiresAt]까지 응답이 없으면 만료된 소개로 본다.
+ * 각 참가자의 수락 여부는 [members]가 보관하며, 전원 수락하면 성사([MatchStatus.MATCHED])된다.
+ * [datingInitAmount]/[datingAcceptAmount]는 소개팅 신청/수락 코인 비용([CoinUsageType])이고, [matchType]은 생성 경로(일일 배치/온보딩/필수 신청)다.
+ * 영속성은 [com.org.meeple.infra.match.command.entity.MatchEntity](헤더) + [com.org.meeple.infra.match.command.entity.MatchMemberEntity](참가자)가 담당한다.
+ */
+data class Match(
+	val id: Long = 0,
+	val members: MatchMembers,
+	val introducedDate: LocalDate,
+	val expiresAt: LocalDateTime,
+	val matchType: MatchType,
+	val status: MatchStatus = MatchStatus.PROPOSED,
+	val datingInitAmount: Int = CoinUsageType.DATING_INIT.coinAmount,
+	val datingAcceptAmount: Int = CoinUsageType.DATING_ACCEPT.coinAmount,
+) {
+
+	/** 더 이상 응답을 받지 않는 종료 상태인지 여부. */
+	val isClosed: Boolean
+		get() = status.isClosed()
+
+	/** 해당 사용자가 이 매칭의 참가자인지 여부. */
+	fun isParticipant(userId: Long): Boolean =
+		members.isParticipant(userId)
+
+	/** 주어진 참가자의 상대 userId. (1:1 전제, 참가자가 아니면 호출하지 않는다) */
+	fun partnerOf(userId: Long): Long =
+		members.partnersOf(userId).first().userId
+
+	/** 참가자 userId 전체. (채팅방 생성 등 참가자 목록이 필요할 때) */
+	fun participantUserIds(): List<Long> =
+		members.userIds()
+
+	/** 참가자 조합을 식별하는 정규화 키. (재소개 방지 유니크 키) */
+	fun memberKey(): String =
+		members.memberKey()
+
+	/** 조회 사용자가 이 매칭에 관심(수락)을 보냈는지 여부. (아직 응답 전이면 false) */
+	fun hasUserInterest(userId: Long): Boolean =
+		members.find(userId)?.isAccepted == true
+
+	/** 상대(조회 사용자의 반대편 참가자)가 이 매칭에 관심(수락)을 보냈는지 여부. (아직 응답 전이면 false) */
+	fun hasPartnerInterest(userId: Long): Boolean =
+		members.partnersOf(userId).any { it.isAccepted }
+
+	/**
+	 * 해당 사용자가 이 매칭에 응답/관심 보내기를 할 수 있는 상태인지 검증한다.
+	 * 참가자가 아니면 [MatchErrorCode.NOT_MATCH_PARTICIPANT], 이미 종료된 매칭이면 [MatchErrorCode.MATCH_ALREADY_CLOSED]를 던진다.
+	 */
+	fun validateRespondable(userId: Long) {
+		if (!isParticipant(userId)) {
+			throw BusinessException(MatchErrorCode.NOT_MATCH_PARTICIPANT)
+		}
+		if (isClosed) {
+			throw BusinessException(MatchErrorCode.MATCH_ALREADY_CLOSED)
+		}
+	}
+
+	/**
+	 * 참가자의 수락을 반영한 새 상태를 만든다. (참가자/미종료 검증은 호출 측 책임)
+	 * 전원 수락하면 MATCHED, 일부만 수락이면 PARTIALLY_ACCEPTED, 아무도 응답 전이면 PROPOSED 유지.
+	 * 성사(MATCHED)되면 새 소개를 더 하지 않으므로, 만료로 목록에서 사라지지 않게 만료 시각을 100년 뒤로 미룬다.
+	 */
+	fun respond(userId: Long): Match {
+		val responded: Match = copy(members = members.accept(userId))
+		val recomputed: Match = responded.withRecomputedStatus()
+		return if (recomputed.status == MatchStatus.MATCHED) recomputed.extendExpirationForMatched() else recomputed
+	}
+
+	private fun withRecomputedStatus(): Match =
+		copy(
+			status = when {
+				members.allAccepted() -> MatchStatus.MATCHED
+				members.anyAccepted() -> MatchStatus.PARTIALLY_ACCEPTED
+				else -> MatchStatus.PROPOSED
+			},
+		)
+
+	// 성사된 매칭의 만료 시각을 [MATCHED_EXPIRATION_EXTENSION_YEARS]년 뒤로 미룬다. (성사 후엔 새 소개를 안 해 사실상 만료 없음)
+	private fun extendExpirationForMatched(): Match =
+		copy(expiresAt = expiresAt.plusYears(MATCHED_EXPIRATION_EXTENSION_YEARS))
+
+	companion object {
+
+		/** 소개(매칭)의 유효 기간. 생성 시각으로부터 이 기간이 지나면 만료된 것으로 본다. */
+		val EXPIRATION: Duration = Duration.ofDays(1)
+
+		/** 성사 매칭의 만료 연장 연수. 성사 후엔 새 소개를 안 해, 사실상 만료되지 않도록 만료 시각에 100년을 더한다. */
+		const val MATCHED_EXPIRATION_EXTENSION_YEARS: Long = 100L
+
+		/**
+		 * 요청자와 상대를 참가자로 하는 신규 소개를 생성한다. (status PROPOSED)
+		 * 참가자는 요청자([requesterId], [requesterGender])와 상대([partnerId], 반대 성별)로 구성한다.
+		 * 소개 일자(introducedDate)는 [now]의 날짜, 만료 시각(expiresAt)은 [now] + [EXPIRATION]으로 설정한다.
+		 * 소개팅 신청/수락 코인 비용은 [CoinUsageType]에서 가져오고, 소개 경로는 [matchType]으로 기록한다.
+		 */
+		fun propose(requesterId: Long, requesterGender: Gender, partnerId: Long, matchType: MatchType, now: LocalDateTime): Match =
+			Match(
+				members = MatchMembers.of(
+					listOf(
+						requesterId to requesterGender,
+						partnerId to requesterGender.opposite(),
+					),
+				),
+				introducedDate = now.toLocalDate(),
+				expiresAt = now.plus(EXPIRATION),
+				matchType = matchType,
+				datingInitAmount = CoinUsageType.DATING_INIT.coinAmount,
+				datingAcceptAmount = CoinUsageType.DATING_ACCEPT.coinAmount,
+			)
+	}
+}

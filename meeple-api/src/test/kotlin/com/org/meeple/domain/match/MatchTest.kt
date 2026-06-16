@@ -2,9 +2,9 @@ package com.org.meeple.domain.match
 
 import com.org.meeple.common.match.MatchStatus
 import com.org.meeple.core.fixture.MatchFixture
-import com.org.meeple.core.match.domain.Match
-import com.org.meeple.core.match.domain.event.InterestSent
-import com.org.meeple.core.match.domain.event.MatchAccepted
+import com.org.meeple.core.match.command.domain.Match
+import com.org.meeple.core.match.command.domain.event.InterestSent
+import com.org.meeple.core.match.command.domain.event.MatchAccepted
 import io.kotest.core.spec.style.DescribeSpec
 import io.kotest.matchers.shouldBe
 

@@ -1,7 +1,7 @@
 package com.org.meeple.infra.fixture
 
 import com.org.meeple.common.user.Gender
-import com.org.meeple.infra.match.entity.MatchMemberEntity
+import com.org.meeple.infra.match.command.entity.MatchMemberEntity
 
 /**
  * [MatchMemberEntity] 테스트 픽스처. 합리적 기본값을 주고, 필요한 값만 덮어쓴다.

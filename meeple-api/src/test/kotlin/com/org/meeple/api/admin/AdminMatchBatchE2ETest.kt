@@ -4,8 +4,8 @@ import com.org.meeple.common.integration.AbstractIntegrationSupport
 import com.org.meeple.common.integration.expect
 import com.org.meeple.common.integration.post
 import com.org.meeple.infra.fixture.IntegrationUtil
-import com.org.meeple.infra.match.entity.QMatchEntity
-import com.org.meeple.infra.match.entity.QMatchMemberEntity
+import com.org.meeple.infra.match.command.entity.QMatchEntity
+import com.org.meeple.infra.match.command.entity.QMatchMemberEntity
 import org.hamcrest.Matchers.greaterThanOrEqualTo
 
 /**

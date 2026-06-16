@@ -3,7 +3,7 @@ package com.org.meeple.api.admin
 import com.org.meeple.api.admin.response.MatchBatchResponse
 import com.org.meeple.core.common.error.BusinessException
 import com.org.meeple.core.common.response.ApiResponse
-import com.org.meeple.core.match.application.MatchErrorCode
+import com.org.meeple.core.match.MatchErrorCode
 import com.org.meeple.scheduler.match.application.MatchBatchJob
 import com.org.meeple.scheduler.match.domain.MatchBatchResult
 import org.springframework.web.bind.annotation.PostMapping

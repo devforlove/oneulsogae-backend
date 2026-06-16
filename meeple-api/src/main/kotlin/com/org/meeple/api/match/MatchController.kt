@@ -5,8 +5,8 @@ import com.org.meeple.api.match.response.MatchStatusResponse
 import com.org.meeple.auth.AuthUser
 import com.org.meeple.auth.LoginUser
 import com.org.meeple.core.common.response.ApiResponse
-import com.org.meeple.core.match.application.port.`in`.GetMatchesUseCase
-import com.org.meeple.core.match.application.port.`in`.SendInterestUseCase
+import com.org.meeple.core.match.query.service.port.`in`.GetMatchesUseCase
+import com.org.meeple.core.match.command.service.port.`in`.SendInterestUseCase
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.PostMapping
