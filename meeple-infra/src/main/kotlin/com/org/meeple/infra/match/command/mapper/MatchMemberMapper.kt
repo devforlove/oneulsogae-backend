@@ -12,6 +12,7 @@ fun MatchMemberEntity.toDomain(): MatchMember =
 		userId = userId,
 		gender = gender,
 		accepted = accepted,
+		status = status,
 		deletedAt = deletedAt,
 	)
 
@@ -26,6 +27,7 @@ fun MatchMember.toEntity(): MatchMemberEntity =
 		userId = userId,
 		gender = gender,
 		accepted = accepted,
+		status = status,
 	).also {
 		if (id != 0L) it.id = id
 		deletedAt?.let { at: LocalDateTime -> it.softDelete(at) }

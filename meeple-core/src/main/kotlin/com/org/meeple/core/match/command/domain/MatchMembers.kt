@@ -51,6 +51,10 @@ data class MatchMembers(
 	fun accept(userId: Long): MatchMembers =
 		MatchMembers(values.map { if (it.userId == userId) it.accept() else it })
 
+	/** [userId] 참가자만 비활성([MatchMember.deactivate]) 전이한 새 컬렉션을 반환한다. (없으면 그대로) */
+	fun deactivate(userId: Long): MatchMembers =
+		MatchMembers(values.map { if (it.userId == userId) it.deactivate() else it })
+
 	/** 모든 참가자를 [now]에 소프트 삭제(제거)한 새 컬렉션을 반환한다. */
 	fun delete(now: LocalDateTime): MatchMembers =
 		MatchMembers(values.map { it.delete(now) })

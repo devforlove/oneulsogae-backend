@@ -1,6 +1,7 @@
 package com.org.meeple.core.match.command.domain
 
 import com.org.meeple.common.coin.CoinUsageType
+import com.org.meeple.common.match.MatchMemberStatus
 import com.org.meeple.common.match.MatchStatus
 import com.org.meeple.common.match.MatchType
 import com.org.meeple.common.user.Gender
@@ -41,6 +42,13 @@ data class Match(
 	 */
 	fun delete(now: LocalDateTime): Match =
 		copy(status = MatchStatus.CLOSED, deletedAt = now, members = members.delete(now))
+
+	/**
+	 * [userId] 참가자를 비활성([MatchMemberStatus.DEACTIVE])으로 전이한 새 모델을 반환한다.
+	 * 한 참가자가 채팅방을 나갔지만 방은 닫히지 않을 때(매칭은 유지) 그 참가자의 매칭 참가만 비활성화한다.
+	 */
+	fun deactivateMember(userId: Long): Match =
+		copy(members = members.deactivate(userId))
 
 	/** 해당 사용자가 이 매칭의 참가자인지 여부. */
 	fun isParticipant(userId: Long): Boolean =

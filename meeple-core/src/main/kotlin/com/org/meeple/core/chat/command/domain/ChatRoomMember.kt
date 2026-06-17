@@ -62,11 +62,11 @@ data class ChatRoomMember(
 		copy(status = ChatRoomMemberStatus.DEACTIVE)
 
 	/**
-	 * 이 참가자를 [now]에 소프트 삭제(나가기)한 새 모델을 반환한다. 저장하면 [deletedAt]이 채워져 조회·접근에서 제외된다.
-	 * (참가자 검증은 호출 측 책임)
+	 * 이 참가자를 [now]에 비활성([ChatRoomMemberStatus.DEACTIVE]) 전이 + 소프트 삭제(나가기)한 새 모델을 반환한다.
+	 * 저장하면 status가 DEACTIVE가 되고 [deletedAt]이 채워져 조회·접근에서 제외된다. (참가자 검증은 호출 측 책임)
 	 */
 	fun delete(now: LocalDateTime): ChatRoomMember =
-		copy(deletedAt = now)
+		copy(status = ChatRoomMemberStatus.DEACTIVE, deletedAt = now)
 
 	companion object {
 

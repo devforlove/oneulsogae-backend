@@ -11,6 +11,7 @@ import com.org.meeple.core.chat.command.domain.ChatRoomMember
 import com.org.meeple.core.chat.command.domain.ChatRoomMembers
 import com.org.meeple.core.common.error.BusinessException
 import com.org.meeple.core.common.time.TimeGenerator
+import com.org.meeple.core.match.command.application.port.`in`.DeactivateMatchMemberUseCase
 import com.org.meeple.core.match.command.application.port.`in`.RemoveMatchUseCase
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
@@ -34,6 +35,7 @@ class LeaveChatRoomService(
 	private val getChatRoomPort: GetChatRoomPort,
 	private val saveChatRoomPort: SaveChatRoomPort,
 	private val removeMatchUseCase: RemoveMatchUseCase,
+	private val deactivateMatchMemberUseCase: DeactivateMatchMemberUseCase,
 	private val timeGenerator: TimeGenerator,
 ) : LeaveChatRoomUseCase {
 
@@ -54,7 +56,7 @@ class LeaveChatRoomService(
 		if (isLastMember) {
 			closeChatRoom(chatRoom)
 		} else {
-			deactivateMember(member)
+			deactivateMember(chatRoom, member)
 		}
 	}
 
@@ -66,8 +68,9 @@ class LeaveChatRoomService(
 		removeMatchUseCase.remove(chatRoom.matchId)
 	}
 
-	// 남은 참가자가 있으면 나가는 사용자의 참가자 행만 비활성화한다. (방·상대는 그대로)
-	private fun deactivateMember(member: ChatRoomMember) {
+	// 남은 참가자가 있으면 방·상대는 그대로 두고, 나가는 사용자의 채팅 참가자 행과 매칭 참가자를 비활성화한다.
+	private fun deactivateMember(chatRoom: ChatRoom, member: ChatRoomMember) {
 		saveChatRoomMemberPort.save(member.deactivate())
+		deactivateMatchMemberUseCase.deactivate(chatRoom.matchId, member.userId)
 	}
 }

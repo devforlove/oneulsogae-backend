@@ -1,5 +1,6 @@
 package com.org.meeple.domain.match
 
+import com.org.meeple.common.match.MatchMemberStatus
 import com.org.meeple.common.match.MatchStatus
 import com.org.meeple.core.fixture.MatchFixture
 import com.org.meeple.core.match.command.domain.Match
@@ -52,13 +53,14 @@ class MatchTest : DescribeSpec({
 	}
 
 	describe("delete - 제거 시 종료/소프트삭제") {
-		it("상태를 CLOSED로 바꾸고 헤더·참가자에 deletedAt을 채운다") {
+		it("헤더는 CLOSED, 참가자는 DEACTIVE로 바꾸고 헤더·참가자에 deletedAt을 채운다") {
 			val now: LocalDateTime = LocalDateTime.of(2026, 6, 17, 12, 0)
 
 			val deleted: Match = proposedMatch(id = 7L).delete(now)
 
 			deleted.status shouldBe MatchStatus.CLOSED
 			deleted.deletedAt shouldBe now
+			deleted.members.values.all { it.status == MatchMemberStatus.DEACTIVE } shouldBe true
 			deleted.members.values.all { it.deletedAt == now } shouldBe true
 		}
 	}

@@ -6,6 +6,7 @@ import com.org.meeple.common.integration.expect
 import com.org.meeple.common.integration.get
 import com.org.meeple.common.chat.ChatRoomMemberStatus
 import com.org.meeple.common.chat.ChatRoomStatus
+import com.org.meeple.common.match.MatchMemberStatus
 import com.org.meeple.common.user.Gender
 import com.org.meeple.infra.chat.command.entity.QChatRoomEntity
 import com.org.meeple.infra.chat.command.entity.QChatRoomMemberEntity
@@ -80,13 +81,26 @@ class LeaveChatRoomE2ETest : AbstractIntegrationSupport({
 			.fetchFirst() != null
 	}
 
+	// 매칭 참가자의 현재 status. (소프트 삭제 안 된 행을 조회)
+	fun matchMemberStatusOf(matchId: Long, userId: Long): MatchMemberStatus {
+		val matchMember: QMatchMemberEntity = QMatchMemberEntity.matchMemberEntity
+		return IntegrationUtil.getQuery()
+			.select(matchMember.status)
+			.from(matchMember)
+			.where(matchMember.matchId.eq(matchId), matchMember.userId.eq(userId))
+			.fetchOne()!!
+	}
+
 	describe("DELETE /chat/v1/rooms/{chatRoomId}/members") {
 
 		context("다른 참가자가 남아 있는 채팅방에서 한 명이 나가면") {
-			it("본인 행만 비활성화하고 상대 행은 유지하며 방은 ACTIVE로 둔다 (200)") {
+			it("본인 채팅·매칭 참가자만 비활성화하고 상대는 유지하며 방은 ACTIVE로 둔다 (200)") {
 				val me = 9101L
 				val partner = 9102L
-				val roomId: Long = IntegrationUtil.persist(ChatRoomEntityFixture.create(matchId = 91L)).id!!
+				val matchId: Long = IntegrationUtil.persist(MatchEntityFixture.create(memberKey = "9101-9102")).id!!
+				IntegrationUtil.persist(MatchMemberEntityFixture.create(matchId = matchId, userId = me, gender = Gender.MALE))
+				IntegrationUtil.persist(MatchMemberEntityFixture.create(matchId = matchId, userId = partner, gender = Gender.FEMALE))
+				val roomId: Long = IntegrationUtil.persist(ChatRoomEntityFixture.create(matchId = matchId)).id!!
 				IntegrationUtil.persist(ChatRoomMemberEntityFixture.create(chatRoomId = roomId, userId = me))
 				IntegrationUtil.persist(ChatRoomMemberEntityFixture.create(chatRoomId = roomId, userId = partner))
 
@@ -97,11 +111,13 @@ class LeaveChatRoomE2ETest : AbstractIntegrationSupport({
 					body("success", true)
 				}
 
-				// 본인 행은 비활성(DEACTIVE)으로 빠지고, 상대 행은 그대로(ACTIVE)
+				// 본인 채팅 참가자 행은 비활성(DEACTIVE)으로 빠지고, 상대 행은 그대로(ACTIVE)
 				activeMemberExists(roomId, me) shouldBe false
 				activeMemberExists(roomId, partner) shouldBe true
-				// 남은 참가자가 있으므로 방은 유지(ACTIVE)
+				// 남은 참가자가 있으므로 방·매칭은 유지(ACTIVE), 매칭 참가자도 본인만 DEACTIVE
 				roomStatusOf(roomId) shouldBe ChatRoomStatus.ACTIVE
+				matchMemberStatusOf(matchId, me) shouldBe MatchMemberStatus.DEACTIVE
+				matchMemberStatusOf(matchId, partner) shouldBe MatchMemberStatus.ACTIVE
 			}
 		}
 

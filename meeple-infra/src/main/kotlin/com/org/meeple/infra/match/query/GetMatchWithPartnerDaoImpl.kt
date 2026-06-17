@@ -1,5 +1,6 @@
 package com.org.meeple.infra.match.query
 
+import com.org.meeple.common.match.MatchMemberStatus
 import com.org.meeple.common.user.Gender
 import com.org.meeple.core.match.query.dao.GetMatchWithPartnerDao
 import com.org.meeple.core.match.query.dto.MatchWithPartner
@@ -71,10 +72,13 @@ class GetMatchWithPartnerDaoImpl(
 			.join(partnerMember).on(
 				partnerMember.matchId.eq(match.id),
 				partnerMember.userId.ne(myMember.userId),
+				// 상대 status는 거르지 않는다. 상대가 나갔어도(DEACTIVE) 내 목록엔 남겨 상대 프로필과 함께 보여준다.
 			)
 			.join(partnerDetail).on(partnerDetail.userId.eq(partnerMember.userId))
 			.where(
 				myMember.userId.eq(userId),
+				// 내가 나간(DEACTIVE) 매칭은 내 목록에서 제외한다. (나는 활성 참가자만)
+				myMember.status.eq(MatchMemberStatus.ACTIVE),
 				match.expiresAt.goe(now),
 			)
 			.fetch()
