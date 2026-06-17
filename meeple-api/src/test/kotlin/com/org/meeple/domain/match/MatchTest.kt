@@ -7,6 +7,7 @@ import com.org.meeple.core.match.command.domain.event.InterestSent
 import com.org.meeple.core.match.command.domain.event.MatchAccepted
 import io.kotest.core.spec.style.DescribeSpec
 import io.kotest.matchers.shouldBe
+import java.time.LocalDateTime
 
 /**
  * [Match] 도메인 유닛 테스트.
@@ -47,6 +48,18 @@ class MatchTest : DescribeSpec({
 
 			responded.hasUserInterest(maleUserId) shouldBe true
 			responded.hasPartnerInterest(maleUserId) shouldBe false
+		}
+	}
+
+	describe("delete - 제거 시 종료/소프트삭제") {
+		it("상태를 CLOSED로 바꾸고 헤더·참가자에 deletedAt을 채운다") {
+			val now: LocalDateTime = LocalDateTime.of(2026, 6, 17, 12, 0)
+
+			val deleted: Match = proposedMatch(id = 7L).delete(now)
+
+			deleted.status shouldBe MatchStatus.CLOSED
+			deleted.deletedAt shouldBe now
+			deleted.members.values.all { it.deletedAt == now } shouldBe true
 		}
 	}
 

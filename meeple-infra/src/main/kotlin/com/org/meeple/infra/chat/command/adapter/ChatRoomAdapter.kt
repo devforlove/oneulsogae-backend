@@ -30,11 +30,15 @@ class ChatRoomAdapter(
 	override fun findById(chatRoomId: Long): ChatRoom? =
 		chatRoomJpaRepository.findById(chatRoomId).orElse(null)?.toDomain()
 
+	// 변경 흐름에서 방 행을 비관적 쓰기 락(FOR UPDATE)으로 로드한다. (방 락을 가장 먼저 잡아 동시 변경 직렬화 → 데드락 방지)
+	override fun findByIdForUpdate(chatRoomId: Long): ChatRoom? =
+		chatRoomJpaRepository.findByIdForUpdate(chatRoomId)?.toDomain()
+
 	// 매칭 id 단건 조회. (match_id 유니크라 단건) 멱등 생성에서 기존 방 존재 확인에 쓴다.
 	override fun findByMatchId(matchId: Long): ChatRoom? =
 		chatRoomJpaRepository.findByMatchId(matchId)?.toDomain()
 
-	// 발송 경로(chatting): ACTIVE인 방만 마지막 메세지/시각을 조건부 UPDATE. (방을 로드하지 않는다)
+	// 발송 경로(chatting): ACTIVE인 방만 마지막 메세지/시각을 조건부 UPDATE. (방을 로드하지 않는다. 이 UPDATE가 방 X락을 잡아 발송의 락 게이트도 겸한다)
 	override fun updateLastMessageIfActive(chatRoomId: Long, lastMessage: String, lastMessageAt: LocalDateTime): Boolean =
 		chatRoomJpaRepository.updateLastMessageIfActive(chatRoomId, lastMessage, lastMessageAt) > 0
 }

@@ -1,6 +1,7 @@
 package com.org.meeple.core.match.command.domain
 
 import com.org.meeple.common.user.Gender
+import java.time.LocalDateTime
 
 /**
  * 한 매칭의 참가자([MatchMember]) 목록의 일급 컬렉션(first-class collection).
@@ -49,6 +50,10 @@ data class MatchMembers(
 	/** [userId] 참가자를 수락 처리한 새 컬렉션을 반환한다. */
 	fun accept(userId: Long): MatchMembers =
 		MatchMembers(values.map { if (it.userId == userId) it.accept() else it })
+
+	/** 모든 참가자를 [now]에 소프트 삭제(제거)한 새 컬렉션을 반환한다. */
+	fun delete(now: LocalDateTime): MatchMembers =
+		MatchMembers(values.map { it.delete(now) })
 
 	companion object {
 

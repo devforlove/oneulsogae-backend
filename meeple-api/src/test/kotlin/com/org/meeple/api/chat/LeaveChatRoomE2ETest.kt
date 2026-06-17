@@ -6,11 +6,16 @@ import com.org.meeple.common.integration.expect
 import com.org.meeple.common.integration.get
 import com.org.meeple.common.chat.ChatRoomMemberStatus
 import com.org.meeple.common.chat.ChatRoomStatus
+import com.org.meeple.common.user.Gender
 import com.org.meeple.infra.chat.command.entity.QChatRoomEntity
 import com.org.meeple.infra.chat.command.entity.QChatRoomMemberEntity
 import com.org.meeple.infra.fixture.ChatRoomEntityFixture
 import com.org.meeple.infra.fixture.ChatRoomMemberEntityFixture
 import com.org.meeple.infra.fixture.IntegrationUtil
+import com.org.meeple.infra.fixture.MatchEntityFixture
+import com.org.meeple.infra.fixture.MatchMemberEntityFixture
+import com.org.meeple.infra.match.command.entity.QMatchEntity
+import com.org.meeple.infra.match.command.entity.QMatchMemberEntity
 import io.kotest.matchers.shouldBe
 
 /**
@@ -45,6 +50,36 @@ class LeaveChatRoomE2ETest : AbstractIntegrationSupport({
 			.fetchOne()!!
 	}
 
+	// 제거되지 않은(소프트 삭제 안 된) 매칭이 존재하는지. (@SQLRestriction으로 deleted_at is null 행만 조회된다)
+	fun matchExists(matchId: Long): Boolean {
+		val match: QMatchEntity = QMatchEntity.matchEntity
+		return IntegrationUtil.getQuery()
+			.selectOne()
+			.from(match)
+			.where(match.id.eq(matchId))
+			.fetchFirst() != null
+	}
+
+	// 제거되지 않은(소프트 삭제 안 된) 방이 존재하는지. (@SQLRestriction으로 deleted_at is null 행만 조회된다)
+	fun chatRoomExists(chatRoomId: Long): Boolean {
+		val room: QChatRoomEntity = QChatRoomEntity.chatRoomEntity
+		return IntegrationUtil.getQuery()
+			.selectOne()
+			.from(room)
+			.where(room.id.eq(chatRoomId))
+			.fetchFirst() != null
+	}
+
+	// 소프트 삭제 안 된 참가자 행이 하나라도 있는지. (방 종료 시 참가자 전체가 소프트 삭제되면 false)
+	fun anyMemberExists(chatRoomId: Long): Boolean {
+		val member: QChatRoomMemberEntity = QChatRoomMemberEntity.chatRoomMemberEntity
+		return IntegrationUtil.getQuery()
+			.selectOne()
+			.from(member)
+			.where(member.chatRoomId.eq(chatRoomId))
+			.fetchFirst() != null
+	}
+
 	describe("DELETE /chat/v1/rooms/{chatRoomId}/members") {
 
 		context("다른 참가자가 남아 있는 채팅방에서 한 명이 나가면") {
@@ -70,8 +105,41 @@ class LeaveChatRoomE2ETest : AbstractIntegrationSupport({
 			}
 		}
 
+		context("마지막 참가자가 나가 방이 닫히면") {
+			it("그 방을 만든 매칭도 제거(소프트 삭제)된다 (200)") {
+				val me = 9201L
+				val partner = 9202L
+				val matchId: Long = IntegrationUtil.persist(MatchEntityFixture.create(memberKey = "9201-9202")).id!!
+				IntegrationUtil.persist(MatchMemberEntityFixture.create(matchId = matchId, userId = me, gender = Gender.MALE))
+				IntegrationUtil.persist(MatchMemberEntityFixture.create(matchId = matchId, userId = partner, gender = Gender.FEMALE))
+				val roomId: Long = IntegrationUtil.persist(ChatRoomEntityFixture.create(matchId = matchId)).id!!
+				IntegrationUtil.persist(ChatRoomMemberEntityFixture.create(chatRoomId = roomId, userId = me))
+				// 상대는 이미 나간(비활성) 상태 → me가 마지막 활성 참가자라 나가면 방이 닫히고 매칭도 제거된다.
+				IntegrationUtil.persist(
+					ChatRoomMemberEntityFixture.create(
+						chatRoomId = roomId,
+						userId = partner,
+						status = ChatRoomMemberStatus.DEACTIVE,
+					),
+				)
+
+				matchExists(matchId) shouldBe true
+
+				delete("/chat/v1/rooms/$roomId/members") {
+					bearer(accessTokenFor(me))
+				} expect {
+					status(200)
+					body("success", true)
+				}
+
+				// 마지막 참가자가 나가 관계가 끝났으므로 방·연결 매칭이 모두 소프트 삭제된다. (같은 트랜잭션에서 동기 처리)
+				chatRoomExists(roomId) shouldBe false
+				matchExists(matchId) shouldBe false
+			}
+		}
+
 		context("마지막 참가자가 나가면") {
-			it("방을 CLOSED로 전이한다 (200)") {
+			it("방과 참가자 전체를 종료하고 소프트 삭제한다 (200)") {
 				val me = 9131L
 				val partner = 9132L
 				val roomId: Long = IntegrationUtil.persist(ChatRoomEntityFixture.create(matchId = 94L)).id!!
@@ -92,9 +160,9 @@ class LeaveChatRoomE2ETest : AbstractIntegrationSupport({
 					body("success", true)
 				}
 
-				// 마지막 참가자가 나갔으므로 방은 종료(CLOSED)
-				activeMemberExists(roomId, me) shouldBe false
-				roomStatusOf(roomId) shouldBe ChatRoomStatus.CLOSED
+				// 마지막 참가자가 나갔으므로 방·참가자 전체가 소프트 삭제되어 더는 조회되지 않는다.
+				chatRoomExists(roomId) shouldBe false
+				anyMemberExists(roomId) shouldBe false
 			}
 		}
 
@@ -153,5 +221,7 @@ class LeaveChatRoomE2ETest : AbstractIntegrationSupport({
 	afterTest {
 		IntegrationUtil.deleteAll(QChatRoomMemberEntity.chatRoomMemberEntity)
 		IntegrationUtil.deleteAll(QChatRoomEntity.chatRoomEntity)
+		IntegrationUtil.deleteAll(QMatchMemberEntity.matchMemberEntity)
+		IntegrationUtil.deleteAll(QMatchEntity.matchEntity)
 	}
 })

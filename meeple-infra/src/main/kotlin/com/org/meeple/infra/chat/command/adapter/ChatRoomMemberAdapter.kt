@@ -29,6 +29,10 @@ class ChatRoomMemberAdapter(
 	override fun findByChatRoomIdAndUserId(chatRoomId: Long, userId: Long): ChatRoomMember? =
 		chatRoomMemberJpaRepository.findByChatRoomIdAndUserId(chatRoomId, userId)?.toDomain()
 
+	// 방의 참가자 전체를 로드한다. (소프트삭제 제외) 방 종료 시 일괄 소프트 삭제용.
+	override fun findAllByChatRoomId(chatRoomId: Long): ChatRoomMembers =
+		ChatRoomMembers(chatRoomMemberJpaRepository.findByChatRoomId(chatRoomId).map { it.toDomain() })
+
 	override fun countActiveByChatRoomId(chatRoomId: Long): Long =
 		chatRoomMemberJpaRepository.countByChatRoomIdAndStatus(chatRoomId, ChatRoomMemberStatus.ACTIVE)
 

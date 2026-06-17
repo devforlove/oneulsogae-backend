@@ -4,6 +4,7 @@ import com.querydsl.core.types.EntityPath
 import com.querydsl.jpa.impl.JPAQueryFactory
 import jakarta.persistence.EntityManager
 import jakarta.persistence.EntityManagerFactory
+import jakarta.persistence.Table
 
 /**
  * 통합테스트 DB 유틸 (QueryDSL).
@@ -49,10 +50,19 @@ class IntegrationUtil(
 			inTransaction { block(queryFactory) }
 		}
 
-		/** 해당 엔티티 경로의 모든 행을 삭제한다. */
+		/**
+		 * 해당 엔티티 경로의 모든 행을 삭제한다. (테스트 정리)
+		 * JPQL bulk delete는 @SQLRestriction(소프트삭제 필터)이 적용돼 소프트삭제 행이 남으므로,
+		 * @Table 이름을 알면 네이티브 DELETE로 소프트삭제 행까지 모두 지운다. (이름을 못 구하면 JPQL로 폴백)
+		 */
 		fun <T> deleteAll(path: EntityPath<T>) {
+			val tableName: String? = path.type.getAnnotation(Table::class.java)?.name?.takeIf { it.isNotBlank() }
 			inTransaction {
-				queryFactory.delete(path).execute()
+				if (tableName != null) {
+					entityManager.createNativeQuery("delete from `$tableName`").executeUpdate()
+				} else {
+					queryFactory.delete(path).execute()
+				}
 			}
 		}
 

@@ -19,6 +19,9 @@ interface ChatRoomMemberJpaRepository : JpaRepository<ChatRoomMemberEntity, Long
 
 	fun findByChatRoomIdAndUserId(chatRoomId: Long, userId: Long): ChatRoomMemberEntity?
 
+	/** 한 채팅방의 참가자 전체. (소프트삭제 행은 @SQLRestriction으로 제외) 방 종료 시 일괄 소프트 삭제용. */
+	fun findByChatRoomId(chatRoomId: Long): List<ChatRoomMemberEntity>
+
 	fun countByChatRoomIdAndStatus(chatRoomId: Long, status: ChatRoomMemberStatus): Long
 
 	/**

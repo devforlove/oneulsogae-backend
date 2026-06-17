@@ -82,6 +82,16 @@ class ChatRoomTest : DescribeSpec({
 		}
 	}
 
+	describe("delete") {
+		it("CLOSED로 전이하고 deletedAt을 채운다 (방 닫기 + 소프트 삭제)") {
+			val room: ChatRoom = ChatRoomFixture.create().delete(now)
+
+			room.status shouldBe ChatRoomStatus.CLOSED
+			room.isClosed shouldBe true
+			room.deletedAt shouldBe now
+		}
+	}
+
 	describe("receiveMessage") {
 		it("방의 마지막 메세지와 수신 시각만 갱신한다 (안 읽은 개수는 ChatRoomMember가 담당)") {
 			val sentAt: LocalDateTime = now.plusMinutes(5)

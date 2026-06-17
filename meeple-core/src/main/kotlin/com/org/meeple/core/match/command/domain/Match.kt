@@ -28,11 +28,19 @@ data class Match(
 	val status: MatchStatus = MatchStatus.PROPOSED,
 	val datingInitAmount: Int = CoinUsageType.DATING_INIT.coinAmount,
 	val datingAcceptAmount: Int = CoinUsageType.DATING_ACCEPT.coinAmount,
+	val deletedAt: LocalDateTime? = null,
 ) {
 
 	/** 더 이상 응답을 받지 않는 종료 상태인지 여부. */
 	val isClosed: Boolean
 		get() = status.isClosed()
+
+	/**
+	 * 이 매칭(헤더+참가자)을 [now]에 종료([MatchStatus.CLOSED])하고 소프트 삭제(제거)한 새 모델을 반환한다.
+	 * 채팅방 나가기 등으로 관계가 끝났을 때 호출한다. 저장하면 상태가 CLOSED가 되고 deletedAt이 채워져 이후 조회에서 제외된다.
+	 */
+	fun delete(now: LocalDateTime): Match =
+		copy(status = MatchStatus.CLOSED, deletedAt = now, members = members.delete(now))
 
 	/** 해당 사용자가 이 매칭의 참가자인지 여부. */
 	fun isParticipant(userId: Long): Boolean =

@@ -1,5 +1,7 @@
 package com.org.meeple.core.chat.command.domain
 
+import java.time.LocalDateTime
+
 /**
  * 한 채팅방의 참가자([ChatRoomMember]) 목록의 일급 컬렉션(first-class collection).
  * 원시 List를 그대로 노출하지 않고 감싸, 참가자 목록에 대한 동작을 한곳에 응집시킨다.
@@ -25,6 +27,10 @@ data class ChatRoomMembers(
 	/** [userId]를 제외한 나머지(상대방) 참가자들. (1:1 채팅이면 한 명, 그룹챗이면 여러 명, 나간 참가자도 포함) */
 	fun partnersOf(userId: Long): List<ChatRoomMember> =
 		values.filter { it.userId != userId }
+
+	/** 모든 참가자를 [now]에 소프트 삭제(제거)한 새 컬렉션을 반환한다. (방이 닫힐 때 일괄 제거) */
+	fun delete(now: LocalDateTime): ChatRoomMembers =
+		ChatRoomMembers(values.map { it.delete(now) })
 
 	companion object {
 

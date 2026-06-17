@@ -12,8 +12,11 @@ enum class MatchStatus(val description: String) {
 	/** 양쪽 모두 수락해 성사된 상태. */
 	MATCHED("성사됨"),
 
+	/** 종료된 상태. (채팅방 나가기 등으로 관계가 끝나 제거된 매칭) */
+	CLOSED("종료됨"),
+
 	;
 
 	/** 더 이상 응답을 받지 않는 종료 상태인지 여부. */
-	fun isClosed(): Boolean = this == MATCHED
+	fun isClosed(): Boolean = this == MATCHED || this == CLOSED
 }

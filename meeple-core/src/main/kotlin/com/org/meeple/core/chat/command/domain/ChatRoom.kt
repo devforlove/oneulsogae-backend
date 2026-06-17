@@ -23,6 +23,7 @@ data class ChatRoom(
 	val expiredAt: LocalDateTime,
 	val lastMessage: String? = null,
 	val lastMessageAt: LocalDateTime? = null,
+	val deletedAt: LocalDateTime? = null,
 ) {
 
 	/** 더 이상 대화를 주고받지 않는 종료 상태인지 여부. */
@@ -51,6 +52,14 @@ data class ChatRoom(
 	/** 채팅방을 종료 상태로 전이한 새 모델을 반환한다. */
 	fun close(): ChatRoom =
 		copy(status = ChatRoomStatus.CLOSED)
+
+	/**
+	 * 이 채팅방을 [now]에 종료([ChatRoomStatus.CLOSED])하고 소프트 삭제(제거)한 새 모델을 반환한다.
+	 * 마지막 참가자가 나가 방이 닫힐 때 호출한다. 저장하면 상태가 CLOSED가 되고 deletedAt이 채워져 이후 조회에서 제외된다.
+	 * 참가자(ChatRoomMember) 소프트 삭제는 별도 행이라 호출 측이 함께 처리한다.
+	 */
+	fun delete(now: LocalDateTime): ChatRoom =
+		copy(status = ChatRoomStatus.CLOSED, deletedAt = now)
 
 	/**
 	 * 새 메세지([content])를 방의 마지막 메세지/수신 시각([now])으로 반영한 새 모델을 반환한다.

@@ -46,11 +46,14 @@ class SendChatMessageService(
 		}
 
 		// 1) 발행자 참가 검증 — SYSTEM 메세지도 그 방의 활성 참가자만 발행할 수 있다. (외부인 위조 차단)
+		// (방 last_message를 쓰는 2)보다 먼저 검증해, 비참가자 내용이 방에 써지지 않게 한다)
 		if (!getChatRoomMemberPort.existsByChatRoomIdAndUserId(command.chatRoomId, command.senderId)) {
 			throw ChatException(ChatErrorCode.NOT_CHAT_ROOM_PARTICIPANT)
 		}
 
 		// 2) 활성 방에 한해 마지막 메세지 갱신 (종료 검증을 원자적으로 겸함)
+		// 데드락 방지: 이 UPDATE가 chat_rooms 행 X락을 잡는 발송의 첫 락이다. (나가기도 방 락을 먼저 잡음 → 락 순서 일치)
+		// 주의: 참가자 안 읽은 개수(chat_room_members) 등 다른 쓰기를 이 UPDATE보다 앞에 두면 락 순서가 엇갈려 데드락이 생길 수 있다.
 		if (!updateChatRoomPort.updateLastMessageIfActive(command.chatRoomId, message.content, now)) {
 			throw ChatException(ChatErrorCode.CHAT_ROOM_CLOSED)
 		}
