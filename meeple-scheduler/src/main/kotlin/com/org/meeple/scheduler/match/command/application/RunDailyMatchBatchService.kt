@@ -7,9 +7,9 @@ import com.org.meeple.scheduler.match.command.application.port.out.TimeGenerator
 import com.org.meeple.scheduler.match.command.domain.MatchBatchResult
 import com.org.meeple.scheduler.match.command.domain.MatchPoolByGender
 import com.org.meeple.scheduler.match.command.domain.MatchPoolGroup
-import com.org.meeple.scheduler.match.query.dao.ActiveUserQueryDao
-import com.org.meeple.scheduler.match.query.dao.MatchBatchTargetQueryDao
-import com.org.meeple.scheduler.match.query.dao.MatchRecordQueryDao
+import com.org.meeple.scheduler.match.query.dao.ActiveUserDao
+import com.org.meeple.scheduler.match.query.dao.MatchBatchTargetDao
+import com.org.meeple.scheduler.match.query.dao.MatchRecordDao
 import com.org.meeple.scheduler.match.query.dto.ActiveUser
 import com.org.meeple.scheduler.match.query.dto.MatchBatchCursor
 import com.org.meeple.scheduler.match.query.dto.MatchBatchTarget
@@ -29,9 +29,9 @@ import java.time.LocalDateTime
  */
 @Service
 class RunDailyMatchBatchService(
-	private val matchBatchTargetQueryDao: MatchBatchTargetQueryDao,
-	private val matchRecordQueryDao: MatchRecordQueryDao,
-	private val activeUserQueryDao: ActiveUserQueryDao,
+	private val matchBatchTargetDao: MatchBatchTargetDao,
+	private val matchRecordDao: MatchRecordDao,
+	private val activeUserDao: ActiveUserDao,
 	private val saveMatchPoolPort: SaveMatchPoolPort,
 	private val matchIntroducer: MatchIntroducer,
 	private val timeGenerator: TimeGenerator,
@@ -44,7 +44,7 @@ class RunDailyMatchBatchService(
 		val loginAfter: LocalDateTime = now.minusWeeks(RECENT_LOGIN_WEEKS)
 
 		// 이미 성사(MATCHED)된 매칭에 속한 사용자 ID를 배치 시작에 한 번 적재한다. (풀 적재·대상 순회 양쪽에서 재사용)
-		val matchedUserIds: MatchedUserIds = matchRecordQueryDao.findMatchedUserIds()
+		val matchedUserIds: MatchedUserIds = matchRecordDao.findMatchedUserIds()
 
 		// 이번 배치 실행에서 이미 소개한 사용자 집합. (빈 Set으로 시작)
 		// 실행 중 소개한 두 사람을 추가해, 같은 배치에서 한 사람이 두 번 소개되는 것만 막는다.
@@ -65,7 +65,7 @@ class RunDailyMatchBatchService(
 		var failed = 0
 
 		while (true) {
-			val page: List<MatchBatchTarget> = matchBatchTargetQueryDao.findTargets(loginAfter, cursor, PAGE_SIZE)
+			val page: List<MatchBatchTarget> = matchBatchTargetDao.findTargets(loginAfter, cursor, PAGE_SIZE)
 			if (page.isEmpty()) break
 
 			for (target: MatchBatchTarget in page) {
@@ -129,7 +129,7 @@ class RunDailyMatchBatchService(
 	 * 성별 풀은 같은 권역 후보가 마른 경우의 폴백용이다. 반환한 목록은 이후 대상 순회의 권역 조회표 산출에 재사용한다.
 	 */
 	private fun loadMatchPools(loginAfter: LocalDateTime, matchedUserIds: MatchedUserIds): List<ActiveUser> {
-		val activeUsers: List<ActiveUser> = matchedUserIds.exclude(activeUserQueryDao.findActiveUsers(loginAfter))
+		val activeUsers: List<ActiveUser> = matchedUserIds.exclude(activeUserDao.findActiveUsers(loginAfter))
 
 		val groups: List<MatchPoolGroup> = MatchPoolGroup.group(activeUsers)
 		groups.forEach { group: MatchPoolGroup -> saveMatchPoolPort.save(group.shuffled()) }

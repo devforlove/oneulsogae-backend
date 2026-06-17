@@ -47,8 +47,8 @@ meeple-common ──> (없음)                (공용 enum/상수)
 - 조회는 도메인 모델 대신 **전용 read model(DTO/프로젝션)**을 반환한다. 명령은 도메인 모델을 다룬다.
 - **CQRS 패키지 분리**: `chat`·`user`·`match`·`coin`·`scheduler`는 `command`/`query` 패키지로 한 단계 더 나눈다.
   - command: `command/application`(chat은 `command/service`) + `port/{in,out}` + `command/domain`.
-  - query: `query/{service(+port/in), dao(*QueryDao), dto(read model)}`. **query는 자기 dao에만 의존**하고 command 도메인·포트를 참조하지 않는다.
-  - 같은 단건 조회가 command·query 양쪽에 있어도 공유하지 않고 각자 구현한다. (예: coin command `GetCoinBalancePort`(잠금) ↔ query `CoinBalanceQueryDao`)
+  - query: `query/{service(+port/in), dao(*Dao), dto(read model)}`. **query는 자기 dao에만 의존**하고 command 도메인·포트를 참조하지 않는다.
+  - 같은 단건 조회가 command·query 양쪽에 있어도 공유하지 않고 각자 구현한다. (예: coin command `GetCoinBalancePort`(잠금) ↔ query `CoinBalanceDao`)
 
 ## 영속성 어댑터  ([상세](docs/architecture/hexagonal-cqrs.md#영속성-어댑터-구성-엔티티-단위-querydsl-분리))
 

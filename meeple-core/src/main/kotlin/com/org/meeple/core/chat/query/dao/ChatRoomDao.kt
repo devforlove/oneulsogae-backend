@@ -7,7 +7,7 @@ import com.org.meeple.core.chat.query.dto.ChatRoomView
  * 채팅방 조회 dao(query out-port 인터페이스).
  * 조회 결과 read model([ChatRoomSummary]/[ChatRoomView])을 반환하며, 실제 QueryDSL 구현은 infra 레이어의 어댑터가 담당한다.
  */
-interface ChatRoomQueryDao {
+interface ChatRoomDao {
 
 	/**
 	 * 해당 사용자가 참가한 ACTIVE 상태의 채팅방을 상대 참가자들의 닉네임·프로필 이미지, 사용자 관점의 안 읽은 개수와 함께 조회한다.

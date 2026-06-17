@@ -1,7 +1,7 @@
 package com.org.meeple.core.coin.query.service
 
 import com.org.meeple.core.coin.query.service.port.`in`.GetCoinShopUseCase
-import com.org.meeple.core.coin.query.dao.CoinItemQueryDao
+import com.org.meeple.core.coin.query.dao.CoinItemDao
 import com.org.meeple.core.coin.query.dto.CoinItems
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
@@ -13,9 +13,9 @@ import org.springframework.transaction.annotation.Transactional
 @Service
 @Transactional(readOnly = true)
 class GetCoinShopService(
-	private val coinItemQueryDao: CoinItemQueryDao,
+	private val coinItemDao: CoinItemDao,
 ) : GetCoinShopUseCase {
 
 	override fun getCoinShop(): CoinItems =
-		coinItemQueryDao.findAll()
+		coinItemDao.findAll()
 }

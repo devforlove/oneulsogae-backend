@@ -2,7 +2,7 @@ package com.org.meeple.infra.chat.query
 
 import com.org.meeple.common.chat.ChatRoomStatus
 import com.org.meeple.common.user.Gender
-import com.org.meeple.core.chat.query.dao.ChatRoomQueryDao
+import com.org.meeple.core.chat.query.dao.ChatRoomDao
 import com.org.meeple.core.chat.query.dto.ChatParticipant
 import com.org.meeple.core.chat.query.dto.ChatRoomSummary
 import com.org.meeple.core.chat.query.dto.ChatRoomView
@@ -16,16 +16,16 @@ import org.springframework.stereotype.Component
 import java.time.LocalDateTime
 
 /**
- * [ChatRoomQueryDao]의 QueryDSL 구현체.
+ * [ChatRoomDao]의 QueryDSL 구현체.
  * 동적 컬럼·조인이 필요한 채팅방 목록 조회를 전담한다. (조회 전용 — out-port는 [ChatRoomAdapter]가 메서드 쿼리로 따로 구현)
  * 원칙적으로 `JPAQueryFactory`만 주입하지만, 참가자 프로필 조회는 나간(소프트 삭제된) 참가자도 포함해야 해
  * QueryDSL로는 끌 수 없는 @SQLRestriction을 우회하려고 [ChatRoomMemberJpaRepository]의 네이티브 쿼리를 함께 쓴다.
  */
 @Component
-class ChatRoomQueryDaoImpl(
+class ChatRoomDaoImpl(
 	private val queryFactory: JPAQueryFactory,
 	private val chatRoomMemberJpaRepository: ChatRoomMemberJpaRepository,
-) : ChatRoomQueryDao {
+) : ChatRoomDao {
 
 	/**
 	 * 사용자가 참가한 ACTIVE 채팅방을 상대 참가자들의 프로필·사용자 관점의 안 읽은 개수와 함께 [ChatRoomSummary]로 반환한다.

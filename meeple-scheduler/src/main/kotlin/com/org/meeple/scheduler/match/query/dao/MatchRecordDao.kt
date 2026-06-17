@@ -7,7 +7,7 @@ import com.org.meeple.scheduler.match.query.dto.MatchedUserIds
  * 매칭 도메인/영속성은 core·infra가 갖고 있으므로, scheduler는 자기 관점의 이 dao만 정의하고
  * 실제 구현(core의 매칭 포트 위임)은 infra 어댑터가 담당한다. (scheduler는 core에 의존하지 않는다)
  */
-interface MatchRecordQueryDao {
+interface MatchRecordDao {
 
 	/** 두 사용자가 함께 소개된 이력이 있는지 여부. (재소개 방지용) */
 	fun existsByPair(userIdA: Long, userIdB: Long): Boolean

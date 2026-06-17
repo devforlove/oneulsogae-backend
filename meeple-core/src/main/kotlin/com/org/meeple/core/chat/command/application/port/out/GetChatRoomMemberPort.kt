@@ -4,8 +4,8 @@ import com.org.meeple.core.chat.command.domain.ChatRoomMember
 
 /**
  * 채팅방 참가자 단순 조회 아웃포트. (명령 흐름에서 변경 대상 참가자를 로드하거나 종료 판정에 쓰는 Spring Data 파생 쿼리)
- * 접근 검증용 존재 조회는 query 쪽 [com.org.meeple.core.chat.query.dao.ChatRoomMemberQueryDao]가,
- * 프로필 조인이 필요한 참가자 조회는 [com.org.meeple.core.chat.query.dao.ChatParticipantQueryDao]가 담당한다.
+ * 접근 검증용 존재 조회는 query 쪽 [com.org.meeple.core.chat.query.dao.ChatRoomMemberDao]가,
+ * 프로필 조인이 필요한 참가자 조회는 [com.org.meeple.core.chat.query.dao.ChatParticipantDao]가 담당한다.
  */
 interface GetChatRoomMemberPort {
 

@@ -57,16 +57,16 @@ fun validate(code: String, now: LocalDateTime) {
 
 - 포트(out/in)·dao·도메인 함수가 여러 건을 반환할 때 `List<X>`가 아니라 `Xs`(복수형) 형태의 래퍼를 반환한다.
 - 래퍼는 원시 리스트를 `values` 프로퍼티로 보관하고, 컬렉션 관련 동작을 메서드로 제공한다. (서비스/어댑터에 흩어진 `map`/`filter`/`sum`을 한곳에 모은다)
-- 참고 선례: `CoinItems`(코인 상품 목록 일급 컬렉션, `CoinItemQueryDao.findAll(): CoinItems`).
+- 참고 선례: `CoinItems`(코인 상품 목록 일급 컬렉션, `CoinItemDao.findAll(): CoinItems`).
 
 ```kotlin
 // ❌ 지양: 원시 List를 그대로 반환
-interface CoinItemQueryDao {
+interface CoinItemDao {
     fun findAll(): List<CoinItem>
 }
 
 // ✅ 지향: 일급 컬렉션으로 감싸 반환
-interface CoinItemQueryDao {
+interface CoinItemDao {
     fun findAll(): CoinItems
 }
 

@@ -5,7 +5,7 @@ import com.org.meeple.core.chat.command.domain.ChatRoom
 /**
  * 채팅방 조회 아웃포트. (명령 흐름에서 변경 대상 애그리거트를 로드하는 단건 조회)
  * 도메인 모델([ChatRoom])을 반환하며, 실제 구현은 infra 레이어의 어댑터가 담당한다.
- * 목록(read model) 조회는 query 쪽 [com.org.meeple.core.chat.query.dao.ChatRoomQueryDao]가 담당한다.
+ * 목록(read model) 조회는 query 쪽 [com.org.meeple.core.chat.query.dao.ChatRoomDao]가 담당한다.
  */
 interface GetChatRoomPort {
 

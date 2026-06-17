@@ -1,6 +1,6 @@
 package com.org.meeple.infra.user.query
 
-import com.org.meeple.core.user.query.dao.UserDetailQueryDao
+import com.org.meeple.core.user.query.dao.UserDetailDao
 import com.org.meeple.core.user.query.dto.UserDetailView
 import com.org.meeple.infra.user.command.entity.QUserDetailEntity
 import com.org.meeple.infra.user.command.entity.UserDetailEntity
@@ -8,14 +8,14 @@ import com.querydsl.jpa.impl.JPAQueryFactory
 import org.springframework.stereotype.Component
 
 /**
- * [UserDetailQueryDao]의 QueryDSL 구현체. (조회 전용)
+ * [UserDetailDao]의 QueryDSL 구현체. (조회 전용)
  * traits/interests가 JSON 컨버터 컬럼이라 Projections 대신 엔티티를 가져와 read model로 투영한다.
  * 명령 흐름의 단건 로드는 command 쪽 [com.org.meeple.infra.user.command.adapter.UserDetailCoreAdapter]가 메서드 쿼리로 따로 구현한다.
  */
 @Component
-class UserDetailQueryDaoImpl(
+class UserDetailDaoImpl(
 	private val queryFactory: JPAQueryFactory,
-) : UserDetailQueryDao {
+) : UserDetailDao {
 
 	override fun findByUserId(userId: Long): UserDetailView? {
 		val detail: QUserDetailEntity = QUserDetailEntity.userDetailEntity

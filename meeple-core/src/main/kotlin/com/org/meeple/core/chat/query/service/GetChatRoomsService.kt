@@ -2,7 +2,7 @@ package com.org.meeple.core.chat.query.service
 
 import com.org.meeple.core.chat.query.service.port.`in`.GetChatRoomsUseCase
 import com.org.meeple.core.chat.query.dto.ChatRoomSummary
-import com.org.meeple.core.chat.query.dao.ChatRoomQueryDao
+import com.org.meeple.core.chat.query.dao.ChatRoomDao
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 
@@ -14,9 +14,9 @@ import org.springframework.transaction.annotation.Transactional
 @Service
 @Transactional(readOnly = true)
 class GetChatRoomsService(
-	private val chatRoomQueryDao: ChatRoomQueryDao,
+	private val chatRoomDao: ChatRoomDao,
 ) : GetChatRoomsUseCase {
 
 	override fun getActiveChatRooms(userId: Long): List<ChatRoomSummary> =
-		chatRoomQueryDao.findActiveByUserId(userId)
+		chatRoomDao.findActiveByUserId(userId)
 }

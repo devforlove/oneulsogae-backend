@@ -9,7 +9,7 @@ import java.time.LocalDateTime
  * (이미 성사(MATCHED)된 매칭이 있는 사용자 제외는 배치 서비스가 MatchedUserIds로 따로 걸러낸다)
  * (그룹핑이 목적이라 페이징 없이 한 번에 가져오며, 키 산출에 필요한 성별·지역만 담은 경량 read model을 반환한다)
  */
-interface ActiveUserQueryDao {
+interface ActiveUserDao {
 
 	fun findActiveUsers(loginAfter: LocalDateTime): List<ActiveUser>
 }

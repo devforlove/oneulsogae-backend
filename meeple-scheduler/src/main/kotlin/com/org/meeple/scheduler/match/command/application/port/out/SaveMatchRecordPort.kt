@@ -4,7 +4,7 @@ import com.org.meeple.common.user.Gender
 import java.time.LocalDateTime
 
 /**
- * 배치가 매칭(소개) 이력을 기록하기 위한 아웃포트. (기록 전용 — 조회는 [com.org.meeple.scheduler.match.query.dao.MatchRecordQueryDao]가 담당)
+ * 배치가 매칭(소개) 이력을 기록하기 위한 아웃포트. (기록 전용 — 조회는 [com.org.meeple.scheduler.match.query.dao.MatchRecordDao]가 담당)
  * 매칭 도메인/영속성은 core·infra가 갖고 있으므로, scheduler는 자기 관점의 이 포트만 정의하고
  * 실제 구현(core의 Match·매칭 포트 위임)은 infra 어댑터가 담당한다. (scheduler는 core에 의존하지 않는다)
  */

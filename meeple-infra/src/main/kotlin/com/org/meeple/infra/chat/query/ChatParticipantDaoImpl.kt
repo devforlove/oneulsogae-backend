@@ -1,6 +1,6 @@
 package com.org.meeple.infra.chat.query
 
-import com.org.meeple.core.chat.query.dao.ChatParticipantQueryDao
+import com.org.meeple.core.chat.query.dao.ChatParticipantDao
 import com.org.meeple.core.chat.query.dto.ChatParticipant
 import com.org.meeple.core.chat.query.dto.ChatParticipants
 import com.org.meeple.infra.chat.command.entity.QChatRoomMemberEntity
@@ -10,13 +10,13 @@ import com.querydsl.jpa.impl.JPAQueryFactory
 import org.springframework.stereotype.Component
 
 /**
- * [ChatParticipantQueryDao]의 QueryDSL 구현체.
+ * [ChatParticipantDao]의 QueryDSL 구현체.
  * 참가자 프로필 조인 조회만 전담하며, `JPAQueryFactory`만 주입한다. (조회 전용)
  */
 @Component
-class ChatParticipantQueryDaoImpl(
+class ChatParticipantDaoImpl(
 	private val queryFactory: JPAQueryFactory,
-) : ChatParticipantQueryDao {
+) : ChatParticipantDao {
 
 	/**
 	 * 한 채팅방의 참가자를 프로필(닉네임·이미지·성별)과 함께 조회한다. (나간 참가자 포함)

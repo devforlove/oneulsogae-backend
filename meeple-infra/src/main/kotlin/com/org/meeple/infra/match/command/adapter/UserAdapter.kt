@@ -11,7 +11,7 @@ import java.util.concurrent.ThreadLocalRandom
 
 /**
  * [UserEntity]의 command 영속성 어댑터. 매칭 후보 단건 조회([GetMatchCandidatePort])를 구현한다.
- * 소개 배치가 보는 사용자 조회(`ActiveUserQueryDao`/`MatchBatchTargetQueryDao`)는 query 패키지의 `*DaoImpl`이 별도로 구현한다.
+ * 소개 배치가 보는 사용자 조회(`ActiveUserDao`/`MatchBatchTargetDao`)는 query 패키지의 `*DaoImpl`이 별도로 구현한다.
  */
 @Component
 class UserAdapter(

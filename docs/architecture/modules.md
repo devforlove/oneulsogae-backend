@@ -36,11 +36,11 @@ meeple-common ──> (없음)                                                  
   (예: command `com.org.meeple.scheduler.match.command.application.RunDailyMatchBatchService`,
   command `...command.application.port.out.{SaveMatchPoolPort, MatchPoolPort, SaveMatchRecordPort, TimeGenerator}`,
   command `...command.domain.{MatchBatchResult, MatchPoolGroup, MatchPoolByGender}`,
-  query `...query.dao.{ActiveUserQueryDao, MatchBatchTargetQueryDao, MatchRecordQueryDao}`,
+  query `...query.dao.{ActiveUserDao, MatchBatchTargetDao, MatchRecordDao}`,
   query `...query.dto.{ActiveUser, MatchBatchTarget, MatchBatchCursor, MatchedUserIds}`).
 - `meeple-scheduler`는 **`meeple-core`에 의존하지 않으므로**, 배치가 쓰는 매칭 이력 기록/조회·시각 등 공유 동작도
-  scheduler가 **자기 out-port·dao**(`SaveMatchRecordPort`·`MatchRecordQueryDao`, `TimeGenerator`)로 정의하고, **infra가 core 도메인에 위임해 구현**한다
-  (command out-port는 `command/adapter`의 `MatchAdapter` → core `Match.propose`/`GetMatchPort`/`SaveMatchPort`, 조회 dao는 `query`의 `MatchRecordQueryDaoImpl`로 분리). 시각 구현은 scheduler가 직접 제공한다
+  scheduler가 **자기 out-port·dao**(`SaveMatchRecordPort`·`MatchRecordDao`, `TimeGenerator`)로 정의하고, **infra가 core 도메인에 위임해 구현**한다
+  (command out-port는 `command/adapter`의 `MatchAdapter` → core `Match.propose`/`GetMatchPort`/`SaveMatchPort`, 조회 dao는 `query`의 `MatchRecordDaoImpl`로 분리). 시각 구현은 scheduler가 직접 제공한다
   (`SystemBatchTimeGenerator`; core의 `SystemTimeGenerator`와 빈 이름이 겹치지 않게 클래스명을 구분).
 - `@Scheduled` **크론 트리거**는 `meeple-api`의 `scheduler` 패키지(`com.org.meeple.scheduler.match.MatchBatchScheduler`)에
   `@Component`로 두고, scheduler 모듈의 실행 로직(`MatchBatchJob` → `RunDailyMatchBatchUseCase`)을 호출한다.

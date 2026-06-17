@@ -9,7 +9,7 @@ import org.springframework.data.repository.query.Param
 /**
  * 채팅방 참가자 영속성 엔티티에 대한 Spring Data JPA 리포지토리.
  * 단순 존재 조회(파생 쿼리)와, 발송 경로의 안 읽은 개수 벌크 증가([increaseUnreadCountForOthers])를 담당한다.
- * 프로필 조인 조회는 별도 Query 어댑터([com.org.meeple.infra.chat.query.ChatParticipantQueryDaoImpl])에 있다.
+ * 프로필 조인 조회는 별도 Query 어댑터([com.org.meeple.infra.chat.query.ChatParticipantDaoImpl])에 있다.
  */
 interface ChatRoomMemberJpaRepository : JpaRepository<ChatRoomMemberEntity, Long> {
 

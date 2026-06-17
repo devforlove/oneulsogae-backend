@@ -29,7 +29,7 @@
 - **네이밍**: `<동사><명사>UseCase` / `<동사><명사>Service` (Get/Register/Recommend/Acquire …).
 - **에러 처리**: 도메인별 `ErrorCode` enum + `BusinessException` 사용. (예: `MatchErrorCode.MATCH_NOT_FOUND`)
 - **`user` 도메인이 사용자 프로필을 소유한다.** 계정/식별(`User`, 회사 이메일 인증)뿐 아니라 **프로필(command 도메인 `UserDetail`·query read model `UserDetailView`/`UserWithDetailView`, 닉네임·프로필이미지·성별·나이 등)도 `user` 도메인**에 둔다. (엔티티 `com.org.meeple.infra.user.command.entity.UserDetailEntity`, 에러코드 `UserErrorCode.USER_DETAIL_NOT_FOUND` 등) 프로필은 매칭 산출물이 아니라 여러 도메인이 읽는 공유 사용자 데이터이므로 특정 도메인(match 등)에 두지 않는다.
-  - match·chat·alarm 등 **다른 도메인이 프로필을 필요로 하면**: core에서는 user의 in-port(`GetUserDetailUseCase`/`GetUserWithDetailUseCase`)로 참조하고, 목록·상세의 **표시용 프로필 조인**은 infra 읽기 어댑터가 `UserDetailEntity`를 조인해 자기 도메인 read model로 투영한다. (예: `ChatParticipantQueryDaoImpl` → `ChatParticipant`, `MatchWithPartnerQueryDaoImpl` → 상대 프로필)
+  - match·chat·alarm 등 **다른 도메인이 프로필을 필요로 하면**: core에서는 user의 in-port(`GetUserDetailUseCase`/`GetUserWithDetailUseCase`)로 참조하고, 목록·상세의 **표시용 프로필 조인**은 infra 읽기 어댑터가 `UserDetailEntity`를 조인해 자기 도메인 read model로 투영한다. (예: `ChatParticipantDaoImpl` → `ChatParticipant`, `MatchWithPartnerDaoImpl` → 상대 프로필)
 
 ## 도메인 간 참조 규칙
 
@@ -40,7 +40,7 @@
 @Service
 class GetMatchesService(
     private val getUserWithDetailUseCase: GetUserWithDetailUseCase, // user 도메인의 in-port
-    private val matchWithPartnerQueryDao: MatchWithPartnerQueryDao, // 자기 도메인의 조회 dao
+    private val matchWithPartnerDao: MatchWithPartnerDao, // 자기 도메인의 조회 dao
 ) : GetMatchesUseCase { ... }
 
 // ❌ 지양: 다른 도메인의 out-port 직접 주입
@@ -73,7 +73,7 @@ class GetMatchesService(
 @Service
 @Transactional(readOnly = true)
 class GetChatRoomDetailService(
-    private val chatParticipantQueryDao: ChatParticipantQueryDao,   // 조회 전용 dao (query는 dao에만 의존)
+    private val chatParticipantDao: ChatParticipantDao,   // 조회 전용 dao (query는 dao에만 의존)
 ) : GetChatRoomDetailUseCase { ... }
 
 // ✅ 명령: 상태 변경, 도메인 모델, 쓰기 트랜잭션
@@ -110,12 +110,12 @@ chat/
     ├── service/                     # 조회 서비스 + port/in (UseCase)
     │   ├── GetChatRoomsService / GetChatRoomDetailService
     │   └── port/in
-    ├── dao/                         # 조회 out-port 인터페이스 (*QueryDao)
+    ├── dao/                         # 조회 out-port 인터페이스 (*Dao)
     └── dto/                         # 읽기 모델 (read model / 일급 컬렉션)
 ```
 
 - 명령·조회 서비스 모두 `application` 대신 **`service`** 패키지명을 쓴다(`command/service`, `query/service`). (chat 한정 — user/match/coin은 `command/application`, `query/service`를 쓴다)
-- 조회 측은 `port/out` 대신 **`dao`(조회 인터페이스, `*QueryDao`) + `dto`(읽기 모델)**로 둔다. dao는 도메인이 아니라 read model만 반환한다.
+- 조회 측은 `port/out` 대신 **`dao`(조회 인터페이스, `*Dao`) + `dto`(읽기 모델)**로 둔다. dao는 도메인이 아니라 read model만 반환한다.
 - read model(`query/dto`): `ChatRoomSummary`(목록), `ChatRoomDetail`(상세), `ChatRoomView`(상세 헤더용 방 상태), `ChatParticipant`(+`ChatParticipants`), `ChatMessageView`(+ 일급 컬렉션 `ChatMessageViews`). 일급 컬렉션은 감싸는 read model에 맞춰 명명한다(`ChatMessageViews` ⊃ `ChatMessageView`).
 - `<Domain>ErrorCode`는 command 도메인과 query read model 양쪽이 쓰므로 **도메인 루트**(예 `com.org.meeple.core.chat.ChatErrorCode`, `com.org.meeple.core.coin.CoinErrorCode`)에 둔다. (command에 두면 query→command 결합이 생긴다)
 
@@ -134,7 +134,7 @@ chat/
 - **out-port 구현체 = `*Adapter`**, **Spring Data JPA 메서드 쿼리**로 구현한다.
 - **dao 구현체 = `*DaoImpl`**(인터페이스명 + `Impl`). 자기 도메인 조인은 **QueryDSL**, 단순 조회는 전용 리포지토리에 위임한다. (별도 QueryDSL 어댑터(`<Entity>Query...Adapter`) 대신 이 `*DaoImpl`을 쓴다)
 - **같은 단건 조회가 command·query 양쪽에 있어도 공유하지 않고 각자 구현**한다. command adapter는 메서드 쿼리로, query daoImpl은 QueryDSL(또는 위임)로 둔다.
-  - 예: 방 단건 — command `GetChatRoomPort.findById`(메서드 쿼리) ↔ query `ChatRoomQueryDao.findById`→`ChatRoomView`(QueryDSL). 참가자 존재 — command `GetChatRoomMemberPort` ↔ query `ChatRoomMemberQueryDao.existsByChatRoomIdAndUserId`(QueryDSL).
+  - 예: 방 단건 — command `GetChatRoomPort.findById`(메서드 쿼리) ↔ query `ChatRoomDao.findById`→`ChatRoomView`(QueryDSL). 참가자 존재 — command `GetChatRoomMemberPort` ↔ query `ChatRoomMemberDao.existsByChatRoomIdAndUserId`(QueryDSL).
 - `entity`·`mapper`·`repository`는 `command` 아래 두고 query daoImpl이 이를 참조한다(infra 내부 query→command 참조는 허용).
 - **command 어댑터는 엔티티별로 하나만 둔다.** 같은 테이블을 쓰는 여러 모듈(core·chatting, core·scheduler)의 out-port를 한 어댑터에서 함께 구현한다. ([영속성 어댑터 구성](#영속성-어댑터-구성-엔티티-단위-querydsl-분리) 참고)
 
@@ -147,15 +147,15 @@ chat/
 | command | core `SaveChatRoomPort`·`GetChatRoomPort` / chatting `UpdateChatRoomPort` | `ChatRoomAdapter` | Spring Data 메서드 쿼리 |
 | command | core `SaveChatMessagePort` / chatting `SaveChatMessagePort` | `ChatMessageAdapter` | Spring Data 메서드 쿼리 |
 | command | core `GetChatRoomMemberPort`·`SaveChatRoomMemberPort` / chatting `GetChatRoomMemberPort`·`IncreaseUnreadCountPort` | `ChatRoomMemberAdapter` | Spring Data 메서드 쿼리 |
-| query | `ChatRoomQueryDao` | `ChatRoomQueryDaoImpl` | QueryDSL |
-| query | `ChatMessageQueryDao` | `ChatMessageQueryDaoImpl` | QueryDSL |
-| query | `ChatParticipantQueryDao` | `ChatParticipantQueryDaoImpl` | QueryDSL |
-| query | `ChatRoomMemberQueryDao` | `ChatRoomMemberQueryDaoImpl` | QueryDSL |
+| query | `ChatRoomDao` | `ChatRoomDaoImpl` | QueryDSL |
+| query | `ChatMessageDao` | `ChatMessageDaoImpl` | QueryDSL |
+| query | `ChatParticipantDao` | `ChatParticipantDaoImpl` | QueryDSL |
+| query | `ChatRoomMemberDao` | `ChatRoomMemberDaoImpl` | QueryDSL |
 
 ### 의존 규칙 & 트레이드오프
 
 - **query는 자기 dao에만 의존한다.** command의 out-port·도메인 모델을 참조하지 않는다(조회 서비스가 command 포트를 주입하지 않는다). 그래서 query는 명령 도메인(`ChatRoom`/`ChatMessage`) 대신 **자체 read model**(`ChatRoomView`/`ChatMessageView`)을 쓴다.
-- 같은 데이터를 command 도메인과 query read model로 **이중으로 모델링**하는 비용을 감수하고 command↔query 결합을 끊는다. (CQRS를 적용한 모든 도메인 공통. 예: coin은 command `CoinBalance` ↔ query `CoinBalanceResult`, command `GetCoinBalancePort`(잠금 조회) ↔ query `CoinBalanceQueryDao`)
+- 같은 데이터를 command 도메인과 query read model로 **이중으로 모델링**하는 비용을 감수하고 command↔query 결합을 끊는다. (CQRS를 적용한 모든 도메인 공통. 예: coin은 command `CoinBalance` ↔ query `CoinBalanceResult`, command `GetCoinBalancePort`(잠금 조회) ↔ query `CoinBalanceDao`)
 - 컨트롤러(api)는 command in-port(`SaveChatRoom`/`LeaveChatRoom`/`MarkChatRoomAsReadUseCase`)와 query in-port(`GetChatRooms`/`GetChatRoomDetailUseCase`)를 그대로 주입한다.
 
 ## 영속성 어댑터 구성 (엔티티 단위, QueryDSL 분리)
@@ -163,10 +163,10 @@ chat/
 영속성 어댑터는 **엔티티마다 하나씩** 둔다. 같은 엔티티를 **여러 모듈(core, scheduler 등)이 써도 모듈별로 쪼개지 않고**, 한 어댑터에서 각 모듈의 out-port(+ scheduler dao)를 **함께 구현**한다. (chat의 엔티티별 단일 어댑터 규칙과 동일)
 
 - **단, QueryDSL 조회는 별도 어댑터로 분리한다.** Spring Data(파생 쿼리·단건 조회·저장)와 QueryDSL을 한 어댑터에 섞지 않는다.
-- 네이밍: `<Entity>Adapter`(Spring Data) / `<Entity>...QueryDaoImpl`·`<Entity>Query...Adapter`(QueryDSL).
+- 네이밍: `<Entity>Adapter`(Spring Data) / `<Entity>...DaoImpl`·`<Entity>Query...Adapter`(QueryDSL).
 - **scheduler out-port도 같은 엔티티 어댑터가 함께 구현한다**(scheduler는 core에 의존하지 않고 자기 포트·dao만 보유). 실제 동작은 core 도메인/엔티티에 위임하며, 둘을 아는 infra가 한 어댑터에서 잇는다. 단순명이 겹치는 포트는 import alias로 구분한다.
 - QueryDSL 조회 어댑터에는 `JPAQueryFactory`만 주입한다.
-- `chat`·`match`·`coin` 도메인은 이 규칙을 **CQRS 패키지 분리**로 확장했다: command out-port 구현은 `command/adapter`의 `*Adapter`(Spring Data 메서드 쿼리), 조회 dao 구현은 `query`의 `*DaoImpl`로 나눈다(자기 도메인 조인은 QueryDSL, 전용 리포지토리에 위임하면 그 기법을 따른다). (예: command `MatchAdapter`(core `GetMatchPort`·`SaveMatchPort` + scheduler `SaveMatchRecordPort`) ↔ query `MatchWithPartnerQueryDaoImpl`(core `MatchWithPartnerQueryDao`)·`MatchRecordQueryDaoImpl`(scheduler `MatchRecordQueryDao`))
+- `chat`·`match`·`coin` 도메인은 이 규칙을 **CQRS 패키지 분리**로 확장했다: command out-port 구현은 `command/adapter`의 `*Adapter`(Spring Data 메서드 쿼리), 조회 dao 구현은 `query`의 `*DaoImpl`로 나눈다(자기 도메인 조인은 QueryDSL, 전용 리포지토리에 위임하면 그 기법을 따른다). (예: command `MatchAdapter`(core `GetMatchPort`·`SaveMatchPort` + scheduler `SaveMatchRecordPort`) ↔ query `MatchWithPartnerDaoImpl`(core `MatchWithPartnerDao`)·`MatchRecordDaoImpl`(scheduler `MatchRecordDao`))
 
 ```kotlin
 // ✅ command/adapter Spring Data: 한 엔티티 어댑터가 core·scheduler의 command out-port를 함께 구현 (단건·저장)
@@ -178,16 +178,16 @@ class MatchAdapter(
 
 // ✅ query/*DaoImpl: 조회 dao 구현은 query 패키지로 분리한다. (조인은 QueryDSL, JPAQueryFactory만 주입)
 @Component
-class MatchWithPartnerQueryDaoImpl(
+class MatchWithPartnerDaoImpl(
     private val queryFactory: JPAQueryFactory,
-) : MatchWithPartnerQueryDao { ... }
+) : MatchWithPartnerDao { ... }
 
 // ✅ query/*DaoImpl: 전용 리포지토리에 위임하는 조회 dao도 query 패키지에 둔다. (query→command 리포지토리 참조는 허용)
 @Component
-class MatchRecordQueryDaoImpl(
+class MatchRecordDaoImpl(
     private val matchJpaRepository: MatchJpaRepository,
     private val matchMemberJpaRepository: MatchMemberJpaRepository,
-) : MatchRecordQueryDao { ... }
+) : MatchRecordDao { ... }
 ```
 
 ### 조회 구현 우선순위 (단순할수록 위쪽)
