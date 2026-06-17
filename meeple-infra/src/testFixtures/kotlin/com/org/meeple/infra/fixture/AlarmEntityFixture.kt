@@ -1,7 +1,7 @@
 package com.org.meeple.infra.fixture
 
 import com.org.meeple.common.alarm.AlarmType
-import com.org.meeple.infra.alarm.entity.AlarmEntity
+import com.org.meeple.infra.alarm.command.entity.AlarmEntity
 
 /**
  * [AlarmEntity] 테스트 픽스처. 합리적 기본값을 주고, 필요한 값만 덮어쓴다.
@@ -11,11 +11,12 @@ object AlarmEntityFixture {
 
 	fun create(
 		userId: Long = 1L,
-		type: AlarmType = AlarmType.INTEREST_RECEIVED,
+		type: AlarmType = AlarmType.ONE_TO_ONE_INTEREST_RECEIVED,
 		title: String = "새로운 관심",
 		description: String = "회원님에게 관심을 보낸 상대가 있어요.",
 		link: String = "/",
 		fromUserId: Long? = null,
+		fromTeamId: Long? = null,
 		isRead: Boolean = false,
 	): AlarmEntity =
 		AlarmEntity(
@@ -25,6 +26,7 @@ object AlarmEntityFixture {
 			description = description,
 			link = link,
 			fromUserId = fromUserId,
+			fromTeamId = fromTeamId,
 			isRead = isRead,
 		)
 }

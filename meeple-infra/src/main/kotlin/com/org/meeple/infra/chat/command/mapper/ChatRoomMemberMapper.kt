@@ -10,6 +10,7 @@ fun ChatRoomMemberEntity.toDomain(): ChatRoomMember =
 		id = id ?: 0,
 		chatRoomId = chatRoomId,
 		userId = userId,
+		status = status,
 		unreadCount = unreadCount,
 		lastReadAt = lastReadAt,
 		joinedAt = joinedAt,
@@ -26,6 +27,7 @@ fun ChatRoomMember.toEntity(): ChatRoomMemberEntity =
 	ChatRoomMemberEntity(
 		chatRoomId = chatRoomId,
 		userId = userId,
+		status = status,
 		unreadCount = unreadCount,
 		lastReadAt = lastReadAt,
 		joinedAt = joinedAt,

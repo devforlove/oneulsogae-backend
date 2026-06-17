@@ -4,16 +4,21 @@ import com.org.meeple.common.alarm.AlarmType
 import com.org.meeple.common.integration.AbstractIntegrationSupport
 import com.org.meeple.common.integration.expect
 import com.org.meeple.common.integration.get
-import com.org.meeple.infra.alarm.entity.QAlarmEntity
+import com.org.meeple.common.user.Gender
+import com.org.meeple.infra.alarm.command.entity.QAlarmEntity
 import com.org.meeple.infra.fixture.AlarmEntityFixture
 import com.org.meeple.infra.fixture.IntegrationUtil
+import com.org.meeple.infra.fixture.UserDetailEntityFixture
+import com.org.meeple.infra.user.command.entity.QUserDetailEntity
 import org.hamcrest.Matchers.notNullValue
+import org.hamcrest.Matchers.nullValue
 import java.time.LocalDateTime
 
 /**
  * `GET /alarms/v1` E2E 테스트.
  *
- * 현재 로그인 사용자의 알람을 최신순(id 내림차순)으로 조회한다.
+ * 현재 로그인 사용자의 알람을 최신순(id 내림차순)으로 조회하고, 알람을 유발한 발신 유저 프로필을
+ * 정규화된 `from` 배열(fromUserId IN 조회)로 함께 반환한다.
  * 실제 서버(RANDOM_PORT) + Testcontainers(MySQL)를 기동하고 HTTP를 호출한다.
  * 데이터 준비/정리는 [IntegrationUtil], 요청/검증은 [get]/[expect] Kotlin DSL로 한다.
  */
@@ -22,9 +27,13 @@ class MyAlarmsE2ETest : AbstractIntegrationSupport({
 	describe("GET /alarms/v1") {
 
 		context("최근 1개월 이내/이전 알람과 타인 알람이 섞여 있으면") {
-			it("본인의 최근 1개월 이내 알람만 생성 시각 최신순으로 반환한다") {
+			it("본인의 최근 1개월 이내 알람만 최신순으로, 각 알람에 발신자 프로필(froms)을 담아 반환한다") {
 				val userId = 7101L
 				val now: LocalDateTime = LocalDateTime.now()
+
+				// 발신 유저 프로필. 살아남는 알람의 발신자(8102/8101)는 froms에 채워지고, 발신자 없는 알람은 froms가 빈 배열.
+				persistUserDetail(userId = 8102L, profileImageCode = "M03", gender = Gender.MALE)
+				persistUserDetail(userId = 8101L, profileImageCode = "F07", gender = Gender.FEMALE)
 
 				// 2일 전(최신), 20일 전, 40일 전(1개월 초과 → 제외), 타인 알람 → 제외
 				val recentId: Long = persistAlarmAt(userId, "2일전 알람", fromUserId = 8102L, createdAt = now.minusDays(2))
@@ -42,7 +51,7 @@ class MyAlarmsE2ETest : AbstractIntegrationSupport({
 					// 생성 시각 최신순: 2일 전 → 20일 전
 					body("data[0].id", recentId.toInt())
 					body("data[0].title", "2일전 알람")
-					body("data[0].type", AlarmType.INTEREST_RECEIVED.name)
+					body("data[0].type", AlarmType.ONE_TO_ONE_INTEREST_RECEIVED.name)
 					body("data[0].description", "회원님에게 관심을 보낸 상대가 있어요.")
 					body("data[0].link", "/")
 					body("data[0].fromUserId", 8102)
@@ -50,6 +59,32 @@ class MyAlarmsE2ETest : AbstractIntegrationSupport({
 					body("data[0].createdAt", notNullValue())
 					body("data[1].id", olderId.toInt())
 					body("data[1].title", "20일전 알람")
+					// froms: 각 알람의 발신자 프로필. (발신자 fromUserId에 해당하는 프로필 1건)
+					body("data[0].froms.size()", 1)
+					body("data[0].froms[0].userId", 8102)
+					body("data[0].froms[0].profileImageCode", "M03")
+					body("data[0].froms[0].gender", Gender.MALE.name)
+					body("data[1].froms.size()", 1)
+					body("data[1].froms[0].userId", 8101)
+					body("data[1].froms[0].profileImageCode", "F07")
+					body("data[1].froms[0].gender", Gender.FEMALE.name)
+				}
+			}
+		}
+
+		context("발신자(fromUserId)가 없는 알람이면") {
+			it("froms가 빈 배열로 반환된다") {
+				val userId = 7103L
+				persistAlarmAt(userId, "시스템 알람", fromUserId = null, createdAt = LocalDateTime.now().minusDays(1))
+
+				get("/alarms/v1") {
+					bearer(accessTokenFor(userId))
+				} expect {
+					status(200)
+					body("success", true)
+					body("data.size()", 1)
+					body("data[0].fromUserId", nullValue())
+					body("data[0].froms.size()", 0)
 				}
 			}
 		}
@@ -77,8 +112,16 @@ class MyAlarmsE2ETest : AbstractIntegrationSupport({
 
 	afterTest {
 		IntegrationUtil.deleteAll(QAlarmEntity.alarmEntity)
+		IntegrationUtil.deleteAll(QUserDetailEntity.userDetailEntity)
 	}
 })
+
+// 발신 유저 프로필(user_details)을 저장한다. from 배열 조회(IN 쿼리) 검증용.
+private fun persistUserDetail(userId: Long, profileImageCode: String, gender: Gender) {
+	IntegrationUtil.persist(
+		UserDetailEntityFixture.create(userId = userId, profileImageCode = profileImageCode, gender = gender),
+	)
+}
 
 // 알람을 저장한 뒤 생성 시각(created_at)을 원하는 값으로 백데이트하고 id를 반환한다.
 // created_at은 JPA Auditing이 저장 시 now로 채우므로, 1개월 컷오프/정렬 검증을 위해 QueryDSL 업데이트로 덮어쓴다.

@@ -1,0 +1,48 @@
+package com.org.meeple.api.user
+
+import com.org.meeple.common.integration.AbstractIntegrationSupport
+import com.org.meeple.common.integration.expect
+import com.org.meeple.common.integration.get
+import com.org.meeple.infra.fixture.IntegrationUtil
+import com.org.meeple.infra.user.command.entity.UserDetailEntity
+import org.hamcrest.Matchers.contains
+
+/**
+ * `GET /users/v1/profile` E2E 테스트.
+ *
+ * 프로필 조회가 QueryDSL 투영으로 [com.org.meeple.core.user.query.dto.UserDetailView]를 바로 만들 때,
+ * `@Convert`(JSON) 컬럼인 traits/interests가 컨버터를 거쳐 `List<String>`으로 올바로 복원되는지 검증한다.
+ */
+class GetMyProfileE2ETest : AbstractIntegrationSupport({
+
+	describe("GET /users/v1/profile") {
+
+		context("traits/interests가 채워진 사용자가 조회하면") {
+			it("JSON 컨버터 컬럼이 리스트로 복원돼 응답에 그대로 내려온다 (200)") {
+				val userId: Long = 5001L
+				IntegrationUtil.persist(
+					UserDetailEntity(
+						userId = userId,
+						nickname = "투영유저",
+						traits = listOf("운동", "독서"),
+						interests = listOf("영화", "여행", "코딩"),
+					),
+				)
+
+				get("/users/v1/profile") {
+					bearer(accessTokenFor(userId))
+				} expect {
+					status(200)
+					body("success", true)
+					body("data.nickname", "투영유저")
+					body("data.traits", contains("운동", "독서"))
+					body("data.interests", contains("영화", "여행", "코딩"))
+				}
+			}
+		}
+	}
+
+	afterTest {
+		cleanupOnboarding()
+	}
+})

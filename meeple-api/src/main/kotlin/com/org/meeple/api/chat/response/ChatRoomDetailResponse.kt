@@ -1,5 +1,6 @@
 package com.org.meeple.api.chat.response
 
+import com.org.meeple.common.chat.ChatMessageType
 import com.org.meeple.common.chat.ChatRoomStatus
 import com.org.meeple.common.user.Gender
 import com.org.meeple.core.chat.query.dto.ChatMessageView
@@ -52,11 +53,12 @@ data class ChatParticipantResponse(
 	}
 }
 
-/** 채팅 메세지 한 건. */
+/** 채팅 메세지 한 건. [type]이 SYSTEM(예: 상대방 나감 안내)이면 보낸 사람이 없어 [senderId]가 null이다. */
 data class ChatMessageResponse(
 	val messageId: Long,
-	val senderId: Long,
+	val senderId: Long?,
 	val content: String,
+	val type: ChatMessageType,
 	val sentAt: LocalDateTime,
 ) {
 	companion object {
@@ -65,6 +67,7 @@ data class ChatMessageResponse(
 				messageId = message.id,
 				senderId = message.senderId,
 				content = message.content,
+				type = message.type,
 				sentAt = message.sentAt,
 			)
 	}

@@ -1,8 +1,11 @@
 package com.org.meeple.infra.chat.command.entity
 
+import com.org.meeple.common.chat.ChatRoomMemberStatus
 import com.org.meeple.infra.common.BaseEntity
 import jakarta.persistence.Column
 import jakarta.persistence.Entity
+import jakarta.persistence.EnumType
+import jakarta.persistence.Enumerated
 import jakarta.persistence.Index
 import jakarta.persistence.Table
 import jakarta.persistence.UniqueConstraint
@@ -33,6 +36,11 @@ class ChatRoomMemberEntity(
 
 	@Column(name = "user_id", nullable = false)
 	val userId: Long,
+
+	/** 이 참가자의 활성 상태. (기본 활성) */
+	@Enumerated(EnumType.STRING)
+	@Column(name = "status", nullable = false, length = 20)
+	var status: ChatRoomMemberStatus = ChatRoomMemberStatus.ACTIVE,
 
 	/** 이 참가자가 아직 확인하지 않은 메세지 개수. (상대가 보낸 메세지가 쌓이면 증가, 본인이 읽으면 0) */
 	@Column(name = "unread_count", nullable = false)

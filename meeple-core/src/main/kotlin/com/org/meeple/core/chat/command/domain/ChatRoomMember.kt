@@ -1,5 +1,6 @@
 package com.org.meeple.core.chat.command.domain
 
+import com.org.meeple.common.chat.ChatRoomMemberStatus
 import java.time.LocalDateTime
 
 /**
@@ -15,12 +16,17 @@ data class ChatRoomMember(
 	val id: Long = 0,
 	val chatRoomId: Long,
 	val userId: Long,
+	val status: ChatRoomMemberStatus = ChatRoomMemberStatus.ACTIVE,
 	val unreadCount: Int = 0,
 	val lastReadAt: LocalDateTime? = null,
 	val joinedAt: LocalDateTime,
 	val exitedAt: LocalDateTime? = null,
 	val deletedAt: LocalDateTime? = null,
 ) {
+
+	/** 활성(참가 중) 상태인지 여부. (나간(DEACTIVE) 참가자는 false) */
+	val isActive: Boolean
+		get() = status == ChatRoomMemberStatus.ACTIVE
 
 	/** 채팅방을 나갔는지 여부. */
 	val isExited: Boolean
@@ -47,6 +53,13 @@ data class ChatRoomMember(
 	/** 이 참가자가 [now]에 채팅방을 나간 것으로 전이한 새 모델을 반환한다. */
 	fun exit(now: LocalDateTime): ChatRoomMember =
 		copy(exitedAt = now)
+
+	/**
+	 * 이 참가자를 비활성([ChatRoomMemberStatus.DEACTIVE]) 상태로 전이한 새 모델을 반환한다. (나가기)
+	 * 행을 소프트 삭제하지 않고 상태만 바꾸므로, 프로필 노출 등은 유지하되 활성 참가자 판정(접근·종료·목록)에서는 제외된다.
+	 */
+	fun deactivate(): ChatRoomMember =
+		copy(status = ChatRoomMemberStatus.DEACTIVE)
 
 	/**
 	 * 이 참가자를 [now]에 소프트 삭제(나가기)한 새 모델을 반환한다. 저장하면 [deletedAt]이 채워져 조회·접근에서 제외된다.

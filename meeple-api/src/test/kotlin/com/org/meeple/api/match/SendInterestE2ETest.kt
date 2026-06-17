@@ -8,8 +8,8 @@ import com.org.meeple.common.integration.post
 import com.org.meeple.common.match.MatchStatus
 import com.org.meeple.common.user.Gender
 import com.org.meeple.core.match.command.domain.MatchMembers
-import com.org.meeple.infra.alarm.entity.AlarmEntity
-import com.org.meeple.infra.alarm.entity.QAlarmEntity
+import com.org.meeple.infra.alarm.command.entity.AlarmEntity
+import com.org.meeple.infra.alarm.command.entity.QAlarmEntity
 import com.org.meeple.infra.chat.command.entity.QChatRoomEntity
 import com.org.meeple.infra.chat.command.entity.QChatRoomMemberEntity
 import com.org.meeple.infra.coin.command.entity.QCoinBalanceEntity
@@ -87,7 +87,7 @@ class SendInterestE2ETest : AbstractIntegrationSupport({
 				val alarms: List<AlarmEntity> = alarmsOf(femaleUserId)
 				alarms.size shouldBe 1
 				val alarm: AlarmEntity = alarms[0]
-				alarm.type shouldBe AlarmType.INTEREST_RECEIVED
+				alarm.type shouldBe AlarmType.ONE_TO_ONE_INTEREST_RECEIVED
 				alarm.fromUserId shouldBe maleUserId
 				alarm.description shouldBe "철수님이 회원님에게 관심을 보냈어요."
 				alarm.link shouldBe "/"
@@ -128,13 +128,13 @@ class SendInterestE2ETest : AbstractIntegrationSupport({
 				// 상대(여성)에게는 수락자(남성)를 가리키는 '매칭 성사' 알람이 저장된다.
 				val femaleAlarms: List<AlarmEntity> = alarmsOf(femaleUserId)
 				femaleAlarms.size shouldBe 1
-				femaleAlarms[0].type shouldBe AlarmType.MATCHED
+				femaleAlarms[0].type shouldBe AlarmType.ONE_TO_ONE_MATCHED
 				femaleAlarms[0].fromUserId shouldBe maleUserId
 				femaleAlarms[0].description shouldBe "철수님과 매칭되었어요!"
 				// 수락한 본인(남성)에게도 상대(여성)를 가리키는 '매칭 성사' 알람이 저장된다.
 				val maleAlarms: List<AlarmEntity> = alarmsOf(maleUserId)
 				maleAlarms.size shouldBe 1
-				maleAlarms[0].type shouldBe AlarmType.MATCHED
+				maleAlarms[0].type shouldBe AlarmType.ONE_TO_ONE_MATCHED
 				maleAlarms[0].fromUserId shouldBe femaleUserId
 				maleAlarms[0].description shouldBe "영희님과 매칭되었어요!"
 			}

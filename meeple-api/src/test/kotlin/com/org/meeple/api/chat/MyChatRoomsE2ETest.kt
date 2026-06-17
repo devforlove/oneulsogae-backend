@@ -1,5 +1,6 @@
 package com.org.meeple.api.chat
 
+import com.org.meeple.common.chat.ChatRoomMemberStatus
 import com.org.meeple.common.chat.ChatRoomStatus
 import com.org.meeple.common.integration.AbstractIntegrationSupport
 import com.org.meeple.common.integration.expect
@@ -182,8 +183,8 @@ class MyChatRoomsE2ETest : AbstractIntegrationSupport({
 			}
 		}
 
-		context("상대가 채팅방을 나가(소프트 삭제) 본인만 남아도") {
-			it("나간 상대의 프로필을 participants에 그대로 노출한다 (deleted_at 필터 미적용)") {
+		context("상대가 채팅방을 나가(비활성) 본인만 남아도") {
+			it("나간(DEACTIVE) 상대의 프로필을 participants에 그대로 노출한다") {
 				val userId = 7006L
 				val left = 8301L
 
@@ -196,10 +197,13 @@ class MyChatRoomsE2ETest : AbstractIntegrationSupport({
 					members = listOf(userId to 0),
 					lastMessage = "마지막 인사",
 				)
-				// 상대는 나가기로 소프트 삭제된 상태 (deleted_at 채워짐) — 그래도 프로필은 노출돼야 한다
+				// 상대는 나가기로 비활성(DEACTIVE)된 상태 — 그래도 프로필은 노출돼야 한다
 				IntegrationUtil.persist(
-					ChatRoomMemberEntityFixture.create(chatRoomId = roomId, userId = left)
-						.also { it.softDelete() },
+					ChatRoomMemberEntityFixture.create(
+						chatRoomId = roomId,
+						userId = left,
+						status = ChatRoomMemberStatus.DEACTIVE,
+					),
 				)
 
 				get("/chat/v1/rooms") {
@@ -207,7 +211,7 @@ class MyChatRoomsE2ETest : AbstractIntegrationSupport({
 				} expect {
 					status(200)
 					body("data.size()", 1)
-					// 소프트 삭제된 상대도 프로필과 함께 노출
+					// 비활성(DEACTIVE) 상대도 프로필과 함께 노출
 					body("data[0].participants.size()", 1)
 					body("data[0].participants[0].userId", left.toInt())
 					body("data[0].participants[0].nickname", "떠난사람")

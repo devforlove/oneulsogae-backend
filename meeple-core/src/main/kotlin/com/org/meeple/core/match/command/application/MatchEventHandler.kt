@@ -1,8 +1,8 @@
 package com.org.meeple.core.match.command.application
 
 import com.org.meeple.common.alarm.AlarmType
-import com.org.meeple.core.alarm.application.port.`in`.SaveAlarmUseCase
-import com.org.meeple.core.alarm.application.port.`in`.command.SaveAlarmCommand
+import com.org.meeple.core.alarm.command.application.port.`in`.SaveAlarmUseCase
+import com.org.meeple.core.alarm.command.application.port.`in`.command.SaveAlarmCommand
 import com.org.meeple.core.user.query.service.port.`in`.GetUserDetailUseCase
 import com.org.meeple.core.match.command.domain.event.InterestSent
 import com.org.meeple.core.match.command.domain.event.MatchAccepted
@@ -34,7 +34,7 @@ class MatchEventHandler(
 		saveAlarmUseCase.save(
 			SaveAlarmCommand(
 				userId = event.recipientUserId,
-				type = AlarmType.INTEREST_RECEIVED,
+				type = AlarmType.ONE_TO_ONE_INTEREST_RECEIVED,
 				title = "새로운 관심",
 				description = senderNickname
 					?.let { "${it}님이 회원님에게 관심을 보냈어요." }
@@ -60,7 +60,7 @@ class MatchEventHandler(
 		val matchedNickname: String? = getUserDetailUseCase.findByUserId(matchedUserId)?.nickname
 		return SaveAlarmCommand(
 			userId = recipientUserId,
-			type = AlarmType.MATCHED,
+			type = AlarmType.ONE_TO_ONE_MATCHED,
 			title = "매칭 성사",
 			description = matchedNickname
 				?.let { "${it}님과 매칭되었어요!" }

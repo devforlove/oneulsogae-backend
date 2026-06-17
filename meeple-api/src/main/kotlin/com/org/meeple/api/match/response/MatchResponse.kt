@@ -6,7 +6,7 @@ import com.org.meeple.core.match.query.dto.MatchWithPartner
 import java.time.LocalDateTime
 
 /**
- * 매칭 응답/목록 조회 결과. 매칭 상태와 상대방 프로필을 한 단계로(중첩 없이) 담는다.
+ * 매칭 응답/목록 조회 결과. 매칭 상태는 최상위에, 상대방 프로필은 [PartnerResponse]로 중첩해 담는다.
  * 노출 가능한 상대 프로필 데이터만 포함한다. (연락처/회사 이메일 등 민감 정보는 제외)
  * status/gender는 enum(name)으로 내려보내고, 나머지 프로필 enum은 사람이 읽을 수 있는 description(한글)으로 내려보낸다.
  */
@@ -18,6 +18,27 @@ data class MatchResponse(
 	val datingAcceptAmount: Int,
 	val hasUserInterest: Boolean,
 	val hasPartnerInterest: Boolean,
+	val partner: PartnerResponse,
+) {
+	companion object {
+		fun of(matchWithPartner: MatchWithPartner): MatchResponse =
+			MatchResponse(
+				matchId = matchWithPartner.matchId,
+				status = matchWithPartner.status,
+				expiresAt = matchWithPartner.expiresAt,
+				datingInitAmount = matchWithPartner.datingInitAmount,
+				datingAcceptAmount = matchWithPartner.datingAcceptAmount,
+				hasUserInterest = matchWithPartner.hasUserInterest,
+				hasPartnerInterest = matchWithPartner.hasPartnerInterest,
+				partner = PartnerResponse.of(matchWithPartner),
+			)
+	}
+}
+
+/**
+ * 매칭 상대방의 노출 가능한 프로필 정보. ([MatchResponse]의 `partner` 필드에 중첩)
+ */
+data class PartnerResponse(
 	val userId: Long,
 	val nickname: String?,
 	val profileImageCode: String?,
@@ -37,15 +58,8 @@ data class MatchResponse(
 	val bodyType: String?,
 ) {
 	companion object {
-		fun of(matchWithPartner: MatchWithPartner): MatchResponse =
-			MatchResponse(
-				matchId = matchWithPartner.matchId,
-				status = matchWithPartner.status,
-				expiresAt = matchWithPartner.expiresAt,
-				datingInitAmount = matchWithPartner.datingInitAmount,
-				datingAcceptAmount = matchWithPartner.datingAcceptAmount,
-				hasUserInterest = matchWithPartner.hasUserInterest,
-				hasPartnerInterest = matchWithPartner.hasPartnerInterest,
+		fun of(matchWithPartner: MatchWithPartner): PartnerResponse =
+			PartnerResponse(
 				userId = matchWithPartner.partnerUserId,
 				nickname = matchWithPartner.nickname,
 				profileImageCode = matchWithPartner.profileImageCode,

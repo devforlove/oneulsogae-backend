@@ -1,5 +1,6 @@
 package com.org.meeple.infra.fixture
 
+import com.org.meeple.common.chat.ChatRoomMemberStatus
 import com.org.meeple.infra.chat.command.entity.ChatRoomMemberEntity
 import java.time.LocalDateTime
 
@@ -12,6 +13,7 @@ object ChatRoomMemberEntityFixture {
 	fun create(
 		chatRoomId: Long = 1L,
 		userId: Long = 1L,
+		status: ChatRoomMemberStatus = ChatRoomMemberStatus.ACTIVE,
 		unreadCount: Int = 0,
 		lastReadAt: LocalDateTime? = null,
 		joinedAt: LocalDateTime = LocalDateTime.now(),
@@ -20,6 +22,7 @@ object ChatRoomMemberEntityFixture {
 		ChatRoomMemberEntity(
 			chatRoomId = chatRoomId,
 			userId = userId,
+			status = status,
 			unreadCount = unreadCount,
 			lastReadAt = lastReadAt,
 			joinedAt = joinedAt,

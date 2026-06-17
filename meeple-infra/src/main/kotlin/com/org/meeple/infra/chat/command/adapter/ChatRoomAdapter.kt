@@ -15,7 +15,7 @@ import java.time.LocalDateTime
  * 같은 엔티티를 쓰는 core·chatting 모듈의 out-port를 한 어댑터에서 함께 구현한다.
  * - core: 저장([SaveChatRoomPort]) + 명령 흐름의 단건 로드([GetChatRoomPort]).
  * - chatting: 발송 경로의 조건부 갱신([UpdateChatRoomPort], 방을 로드하지 않는다).
- * 목록(read model) 조회는 query 쪽 QueryDSL 구현체([ChatRoomDaoImpl])가 따로 담당한다. (adapter=메서드 쿼리 / dao=QueryDSL 분리)
+ * 목록(read model) 조회는 query 쪽 QueryDSL 구현체([GetChatRoomDaoImpl])가 따로 담당한다. (adapter=메서드 쿼리 / dao=QueryDSL 분리)
  */
 @Component
 class ChatRoomAdapter(

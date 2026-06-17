@@ -3,7 +3,7 @@ package com.org.meeple.scheduler.match.command.application
 import com.org.meeple.common.user.Gender
 import com.org.meeple.scheduler.match.command.application.port.out.MatchPoolPort
 import com.org.meeple.scheduler.match.command.application.port.out.SaveMatchRecordPort
-import com.org.meeple.scheduler.match.query.dao.MatchRecordDao
+import com.org.meeple.scheduler.match.query.dao.GetMatchRecordDao
 import org.springframework.stereotype.Component
 import java.time.LocalDateTime
 
@@ -15,7 +15,7 @@ import java.time.LocalDateTime
  */
 @Component
 class MatchIntroducer(
-	private val matchRecordDao: MatchRecordDao,
+	private val getMatchRecordDao: GetMatchRecordDao,
 	private val saveMatchRecordPort: SaveMatchRecordPort,
 	private val matchPoolPort: MatchPoolPort,
 ) {
@@ -83,7 +83,7 @@ class MatchIntroducer(
 				// 남/녀 자리를 배치해 (maleUserId, femaleUserId) 쌍으로 재소개 이력을 확인한다.
 				val maleId: Long = if (gender == Gender.MALE) targetId else candidate
 				val femaleId: Long = if (gender == Gender.MALE) candidate else targetId
-				if (matchRecordDao.existsByPair(maleId, femaleId)) {
+				if (getMatchRecordDao.existsByPair(maleId, femaleId)) {
 					rejected.add(candidate)
 					continue
 				}

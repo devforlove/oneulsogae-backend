@@ -1,6 +1,6 @@
 package com.org.meeple.core.coin.query.service
 
-import com.org.meeple.core.coin.query.dao.CoinBalanceDao
+import com.org.meeple.core.coin.query.dao.GetCoinBalanceDao
 import com.org.meeple.core.coin.query.dto.CoinBalanceResult
 import com.org.meeple.core.coin.query.service.port.`in`.GetCoinBalanceUseCase
 import org.springframework.stereotype.Service
@@ -14,9 +14,9 @@ import org.springframework.transaction.annotation.Transactional
 @Service
 @Transactional(readOnly = true)
 class GetCoinBalanceService(
-	private val coinBalanceDao: CoinBalanceDao,
+	private val getCoinBalanceDao: GetCoinBalanceDao,
 ) : GetCoinBalanceUseCase {
 
 	override fun getBalance(userId: Long): CoinBalanceResult =
-		coinBalanceDao.findByUserId(userId) ?: CoinBalanceResult(balance = 0)
+		getCoinBalanceDao.findByUserId(userId) ?: CoinBalanceResult(balance = 0)
 }

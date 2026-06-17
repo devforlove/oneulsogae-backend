@@ -43,7 +43,7 @@ class ChatMessageController(
 		val senderId: Long = principal.userIdOrNull() ?: throw ChatException(ChatErrorCode.AUTHENTICATION_REQUIRED)
 
 		val sentMessage: SentChatMessageResult = sendChatMessageUseCase.send(
-			SendChatMessageCommand(chatRoomId = roomId, senderId = senderId, content = request.message),
+			SendChatMessageCommand(chatRoomId = roomId, senderId = senderId, content = request.message, type = request.type),
 		)
 
 		messageTemplate.convertAndSend("/topic/$roomId", ChatMessageDto.from(sentMessage))

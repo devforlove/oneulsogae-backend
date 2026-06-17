@@ -10,6 +10,7 @@ fun ChatMessageEntity.toDomain(): ChatMessage =
 		chatRoomId = chatRoomId,
 		senderId = senderId,
 		content = content,
+		type = type,
 		sentAt = sentAt,
 	)
 
@@ -22,5 +23,6 @@ fun ChatMessage.toEntity(): ChatMessageEntity =
 		chatRoomId = chatRoomId,
 		senderId = senderId,
 		content = content,
+		type = type,
 		sentAt = sentAt,
 	).also { if (id != 0L) it.id = id }

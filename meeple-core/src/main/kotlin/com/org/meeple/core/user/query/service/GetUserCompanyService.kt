@@ -1,6 +1,6 @@
 package com.org.meeple.core.user.query.service
 
-import com.org.meeple.core.user.query.dao.UserCompanyDao
+import com.org.meeple.core.user.query.dao.GetUserCompanyDao
 import com.org.meeple.core.user.query.service.port.`in`.GetUserCompanyUseCase
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
@@ -11,13 +11,13 @@ import org.springframework.transaction.annotation.Transactional
  */
 @Service
 class GetUserCompanyService(
-	private val userCompanyDao: UserCompanyDao,
+	private val getUserCompanyDao: GetUserCompanyDao,
 ) : GetUserCompanyUseCase {
 
 	@Transactional(readOnly = true)
 	override fun findCompanyNameByEmail(companyEmail: String): String? {
 		val domain: String = companyEmail.substringAfter('@', "").lowercase()
 		if (domain.isBlank()) return null
-		return userCompanyDao.findByEmailDomain(domain)?.companyName
+		return getUserCompanyDao.findByEmailDomain(domain)?.companyName
 	}
 }

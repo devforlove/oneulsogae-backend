@@ -14,7 +14,7 @@ import org.springframework.stereotype.Component
 /**
  * [com.org.meeple.infra.chat.command.entity.ChatMessageEntity]의 out-port 어댑터. (Spring Data 메서드 쿼리)
  * 같은 엔티티를 쓰는 core·chatting 모듈의 메세지 저장 out-port를 한 어댑터에서 함께 구현한다. (각 모듈의 도메인 모델·매퍼로 매핑)
- * 메세지 조회(키셋 페이지네이션)는 query 쪽 QueryDSL 구현체([ChatMessageDaoImpl])가 따로 담당한다.
+ * 메세지 조회(키셋 페이지네이션)는 query 쪽 QueryDSL 구현체([GetChatMessageDaoImpl])가 따로 담당한다.
  */
 @Component
 class ChatMessageAdapter(

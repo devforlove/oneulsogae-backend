@@ -4,7 +4,7 @@ import com.org.meeple.common.user.Gender
 import com.org.meeple.core.common.time.TimeGenerator
 import com.org.meeple.core.match.query.service.port.`in`.GetMatchesUseCase
 import com.org.meeple.core.match.command.application.port.`in`.RecommendMatchUseCase
-import com.org.meeple.core.match.query.dao.MatchWithPartnerDao
+import com.org.meeple.core.match.query.dao.GetMatchWithPartnerDao
 import com.org.meeple.core.user.query.service.port.`in`.GetUserWithDetailUseCase
 import com.org.meeple.core.match.query.dto.MatchWithPartner
 import com.org.meeple.core.user.query.dto.UserWithDetailView
@@ -23,7 +23,7 @@ import java.time.LocalDateTime
 @Service
 class GetMatchesService(
 	private val getUserWithDetailUseCase: GetUserWithDetailUseCase,
-	private val matchWithPartnerDao: MatchWithPartnerDao,
+	private val getMatchWithPartnerDao: GetMatchWithPartnerDao,
 	private val recommendMatchUseCase: RecommendMatchUseCase,
 	private val timeGenerator: TimeGenerator,
 ) : GetMatchesUseCase {
@@ -40,6 +40,6 @@ class GetMatchesService(
 		// 만료된 소개는 조회에서 제외한다. (포트/쿼리에서 now 기준으로 필터)
 		val gender: Gender = userWithDetail.getGender()
 		val now: LocalDateTime = timeGenerator.now()
-		return matchWithPartnerDao.findAllWithPartnerByUserId(userId, gender, now)
+		return getMatchWithPartnerDao.findAllWithPartnerByUserId(userId, gender, now)
 	}
 }

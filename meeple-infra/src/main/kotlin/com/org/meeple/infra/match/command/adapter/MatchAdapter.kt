@@ -20,7 +20,7 @@ import java.time.LocalDateTime
  * 매칭은 헤더(matches) + 참가자(match_members)로 이뤄진 하나의 애그리거트이므로, 이 어댑터가 두 테이블의 영속화를 함께 책임진다.
  * core는 단건 조회([GetMatchPort])·저장([SaveMatchPort])을, scheduler는 매칭 이력 기록([SaveMatchRecordPort])을 쓴다.
  * scheduler는 core에 의존하지 않으므로(자기 포트만 보유), core의 [Match]·엔티티를 아는 infra가 둘을 한 어댑터에서 잇는다.
- * 조회 dao(core `MatchWithPartnerDao`, scheduler `MatchRecordDao`)는 query 패키지의 `*DaoImpl`이 별도로 구현한다.
+ * 조회 dao(core `GetMatchWithPartnerDao`, scheduler `GetMatchRecordDao`)는 query 패키지의 `*DaoImpl`이 별도로 구현한다.
  */
 @Component
 class MatchAdapter(

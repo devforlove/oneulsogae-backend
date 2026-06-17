@@ -10,6 +10,7 @@ import com.org.meeple.chatting.chat.application.port.out.TimeGenerator
 import com.org.meeple.chatting.chat.application.port.out.UpdateChatRoomPort
 import com.org.meeple.chatting.chat.domain.ChatMessage
 import com.org.meeple.chatting.common.error.ChatException
+import com.org.meeple.common.chat.ChatMessageType
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import java.time.LocalDateTime
@@ -38,10 +39,13 @@ class SendChatMessageService(
 	override fun send(command: SendChatMessageCommand): SentChatMessageResult {
 		val now: LocalDateTime = timeGenerator.now()
 
-		// 본문 검증(빈 값/길이) — DB 접근 없음
-		val message: ChatMessage = ChatMessage.create(command.chatRoomId, command.senderId, command.content, now)
+		// 본문 검증(빈 값/길이) — DB 접근 없음. SYSTEM이면 보낸이 없이 시스템 메세지로, USER면 발신자를 담아 만든다.
+		val message: ChatMessage = when (command.type) {
+			ChatMessageType.SYSTEM -> ChatMessage.createSystem(command.chatRoomId, command.content, now)
+			ChatMessageType.USER -> ChatMessage.create(command.chatRoomId, command.senderId, command.content, now)
+		}
 
-		// 1) 발신자 참가 검증
+		// 1) 발행자 참가 검증 — SYSTEM 메세지도 그 방의 활성 참가자만 발행할 수 있다. (외부인 위조 차단)
 		if (!getChatRoomMemberPort.existsByChatRoomIdAndUserId(command.chatRoomId, command.senderId)) {
 			throw ChatException(ChatErrorCode.NOT_CHAT_ROOM_PARTICIPANT)
 		}
@@ -62,6 +66,7 @@ class SendChatMessageService(
 			chatRoomId = savedMessage.chatRoomId,
 			senderId = savedMessage.senderId,
 			content = savedMessage.content,
+			type = savedMessage.type,
 			sentAt = savedMessage.sentAt,
 		)
 	}

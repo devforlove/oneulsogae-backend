@@ -1,20 +1,23 @@
 package com.org.meeple.core.chat.command.domain
 
+import com.org.meeple.common.chat.ChatMessageType
 import com.org.meeple.core.chat.ChatErrorCode
 import com.org.meeple.core.common.error.BusinessException
 import java.time.LocalDateTime
 
 /**
- * 채팅방에서 한 참가자가 보낸 메세지 도메인 모델.
+ * 채팅방에서 오간 메세지 도메인 모델.
  * 채팅방 행(json)에 묶지 않고 메세지마다 한 건씩 보관한다. (append 시 전체 재기록·동시 쓰기 유실 회피, 키셋 페이징 가능)
- * [chatRoomId]가 속한 채팅방, [senderId]가 보낸 사람, [content]가 본문, [sentAt]이 보낸 시각이다.
+ * [chatRoomId]가 속한 채팅방, [senderId]가 보낸 사람, [content]가 본문, [sentAt]이 보낸(또는 생성된) 시각이다.
+ * [type]이 SYSTEM(예: 상대방 나감 안내)이면 보낸 사람이 없어 [senderId]가 null이다.
  * 영속성은 [com.org.meeple.infra.chat.command.entity.ChatMessageEntity]가 담당한다.
  */
 data class ChatMessage(
 	val id: Long = 0,
 	val chatRoomId: Long,
-	val senderId: Long,
+	val senderId: Long?,
 	val content: String,
+	val type: ChatMessageType = ChatMessageType.USER,
 	val sentAt: LocalDateTime,
 ) {
 
