@@ -3,6 +3,7 @@ package com.org.meeple.auth.jwt
 import com.org.meeple.auth.PrincipalDetails
 import com.org.meeple.infra.auth.entity.RefreshTokenEntity
 import com.org.meeple.infra.auth.repository.RefreshTokenRepository
+import com.org.meeple.infra.auth.session.ActiveSessionStore
 import org.springframework.security.core.Authentication
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
@@ -16,13 +17,19 @@ import java.util.UUID
 class RefreshTokenService(
 	private val tokenProvider: TokenProvider,
 	private val refreshTokenRepository: RefreshTokenRepository,
+	private val activeSessionStore: ActiveSessionStore,
 ) {
 
-	/** 로그인 성공 시 access/refresh 토큰을 발급하고 refresh를 저장한다. */
+	/**
+	 * 로그인 성공 시 access/refresh 토큰을 발급하고 refresh를 저장한다.
+	 * 새 sessionId를 활성 세션으로 등록(덮어쓰기)해, 이전 기기/브라우저의 세션은 다음 요청에서 무효가 된다.
+	 */
 	@Transactional
 	fun issue(authentication: Authentication): IssuedTokens {
-		val accessToken: String = tokenProvider.generateAccessToken(authentication)
-		val refreshToken: String = createAndStore(authentication)
+		val sessionId: String = UUID.randomUUID().toString()
+		val accessToken: String = tokenProvider.generateAccessToken(authentication, sessionId)
+		val refreshToken: String = createAndStore(authentication, sessionId)
+		activeSessionStore.activate(userIdOf(authentication), sessionId)
 		return IssuedTokens(accessToken, refreshToken)
 	}
 
@@ -48,17 +55,28 @@ class RefreshTokenService(
 			throw InvalidRefreshTokenException("재사용이 감지된 refresh token")
 		}
 
+		// 단일 활성 세션 확인: 다른 기기/브라우저의 새 로그인에 밀려났으면 회전을 거부한다.
+		// (밀려나지 않았을 때만 TTL을 미뤄, 활동 중인 세션은 유지되게 한다)
+		val sessionId: String = tokenProvider.getSessionId(refreshToken)
+			?: throw InvalidRefreshTokenException("session_id가 없는 refresh token")
+		if (!activeSessionStore.renew(stored.userId, sessionId)) {
+			throw SessionTakenOverException("다른 기기/브라우저의 로그인으로 종료된 세션")
+		}
+
 		// 기존 refreshToken 폐기
 		stored.revoke()
 		refreshTokenRepository.save(stored)
 
 		val authentication: Authentication = tokenProvider.getAuthentication(refreshToken)
-		val accessToken: String = tokenProvider.generateAccessToken(authentication)
-		val newRefreshToken: String = createAndStore(authentication)
+		val accessToken: String = tokenProvider.generateAccessToken(authentication, sessionId)
+		val newRefreshToken: String = createAndStore(authentication, sessionId)
 		return IssuedTokens(accessToken, newRefreshToken)
 	}
 
-	/** 로그아웃: 전달된 refresh token을 폐기한다. (유효하지 않으면 조용히 무시) */
+	/**
+	 * 로그아웃: 전달된 refresh token을 폐기하고, 그 세션이 현재 활성 세션이면 활성 마커도 제거한다.
+	 * (유효하지 않으면 조용히 무시. 이미 다른 세션에 밀려난 세션의 로그아웃은 활성 세션을 건드리지 않는다)
+	 */
 	@Transactional
 	fun revoke(refreshToken: String?) {
 		if (refreshToken.isNullOrBlank() || !tokenProvider.validateToken(refreshToken)) return
@@ -66,20 +84,25 @@ class RefreshTokenService(
 		refreshTokenRepository.findByTokenId(tokenId)?.let {
 			it.revoke()
 			refreshTokenRepository.save(it)
+			tokenProvider.getSessionId(refreshToken)?.let { sessionId: String ->
+				activeSessionStore.clear(it.userId, sessionId)
+			}
 		}
 	}
 
-	private fun createAndStore(authentication: Authentication): String {
+	private fun createAndStore(authentication: Authentication, sessionId: String): String {
 		val tokenId: String = UUID.randomUUID().toString()
-		val refreshToken: String = tokenProvider.generateRefreshToken(authentication, tokenId)
-		val userId: Long = (authentication.principal as PrincipalDetails).id
+		val refreshToken: String = tokenProvider.generateRefreshToken(authentication, tokenId, sessionId)
 		refreshTokenRepository.save(
 			RefreshTokenEntity(
 				tokenId = tokenId,
-				userId = userId,
+				userId = userIdOf(authentication),
 				expiresAt = tokenProvider.getExpiration(refreshToken),
 			),
 		)
 		return refreshToken
 	}
+
+	private fun userIdOf(authentication: Authentication): Long =
+		(authentication.principal as PrincipalDetails).id
 }
