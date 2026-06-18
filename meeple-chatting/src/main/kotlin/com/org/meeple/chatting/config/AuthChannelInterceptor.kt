@@ -1,4 +1,4 @@
-package com.org.meeple.chatting.chat.adapter.web
+package com.org.meeple.chatting.config
 
 import com.org.meeple.auth.jwt.TokenProvider
 import com.org.meeple.auth.userIdOrNull
@@ -26,7 +26,8 @@ import org.springframework.stereotype.Component
  * - CONNECT: `Authorization` 헤더의 JWT를 검증하고 인증 주체(Authentication)를 STOMP 세션에 주입한다.
  *   유효하지 않으면 예외를 던져 연결을 거부한다(ERROR 프레임). (핸드셰이크 경로는 SecurityConfig에서 permitAll)
  *   토큰이 유효해도 다른 기기/브라우저의 새 로그인에 밀려난 세션이면([CheckActiveSessionPort]) 연결을 거부한다.
- *   (동시 접속 차단은 CONNECT 시점에서만 한다. CONNECT가 막히면 그 연결로는 SEND도 못 하므로 발행마다 재대조하지 않는다.)
+ *   인증을 통과하면 [WebSocketSessionRegistry]로 같은 사용자의 **이전 연결(다른 JWT session_id)을 물리적으로 끊어**,
+ *   이미 열려 있던 다른 브라우저의 소켓까지 단일 활성 세션으로 강제한다. (발행마다 재대조하지 않아도 됨)
  * - SUBSCRIBE: 방 브로드캐스트(`/topic/{chatRoomId}`) 구독 시 그 방의 참가자인지 인가한다.
  *   거부되면 **연결은 유지한 채** 그 SUBSCRIBE만 버리고, 사유를 발신자 개인 큐(`/user/queue/errors`)로 통지한다.
  *
@@ -40,6 +41,7 @@ class AuthChannelInterceptor(
 	private val tokenProvider: TokenProvider,
 	private val verifyChatRoomParticipantUseCase: VerifyChatRoomParticipantUseCase,
 	private val checkActiveSessionPort: CheckActiveSessionPort,
+	private val webSocketSessionRegistry: WebSocketSessionRegistry,
 	@Lazy private val messagingTemplate: SimpMessagingTemplate,
 ) : ChannelInterceptor {
 
@@ -59,7 +61,7 @@ class AuthChannelInterceptor(
 		}
 	}
 
-	// CONNECT: 토큰 검증 + 활성 세션 대조 후 Authentication을 세션에 주입한다.
+	// CONNECT: 토큰 검증 + 활성 세션 대조 후 Authentication을 세션에 주입하고, 같은 사용자의 이전 연결을 끊는다.
 	private fun authenticate(accessor: StompHeaderAccessor) {
 		val token: String = accessor.getFirstNativeHeader(AUTHORIZATION)?.removePrefix(BEARER_PREFIX)
 			?: throw ChatException(ChatErrorCode.AUTHENTICATION_REQUIRED)
@@ -69,6 +71,15 @@ class AuthChannelInterceptor(
 		val authentication: Authentication = tokenProvider.getAuthentication(token)
 		verifyActiveSession(token, authentication)
 		accessor.user = authentication
+		evictPreviousConnections(accessor, token, authentication)
+	}
+
+	// 새 연결을 사용자에 바인딩하고, 같은 사용자의 이전 연결(다른 JWT session_id)을 물리적으로 끊는다. (새 연결 우선)
+	private fun evictPreviousConnections(accessor: StompHeaderAccessor, token: String, authentication: Authentication) {
+		val userId: Long = authentication.userIdOrNull() ?: return
+		val jwtSessionId: String = tokenProvider.getSessionId(token) ?: return
+		val wsSessionId: String = accessor.sessionId ?: return
+		webSocketSessionRegistry.bindAndEvictPrevious(userId, jwtSessionId, wsSessionId)
 	}
 
 	// 토큰의 session_id가 사용자의 현재 활성 세션과 일치하는지 확인한다. 밀려났으면 SESSION_TAKEN_OVER로 거부한다.

@@ -1,4 +1,4 @@
-package com.org.meeple.chatting.chat.adapter.web
+package com.org.meeple.chatting.config
 
 import com.org.meeple.auth.PrincipalDetails
 import com.org.meeple.auth.jwt.TokenProvider
@@ -19,6 +19,7 @@ import org.springframework.messaging.support.MessageBuilder
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken
 import org.springframework.security.core.Authentication
 import org.springframework.security.core.authority.SimpleGrantedAuthority
+import org.springframework.web.socket.WebSocketSession
 
 /**
  * [AuthChannelInterceptor]의 단일 활성 세션 대조 유닛 테스트.
@@ -45,11 +46,17 @@ class AuthChannelInterceptorTest : DescribeSpec({
 	}
 	val noopChannel = MessageChannel { _: Message<*>, _: Long -> true }
 	val messagingTemplate = SimpMessagingTemplate(noopChannel)
+	val sessionRegistry = object : WebSocketSessionRegistry {
+		override fun register(session: WebSocketSession) = Unit
+		override fun unregister(wsSessionId: String) = Unit
+		override fun bindAndEvictPrevious(userId: Long, jwtSessionId: String, wsSessionId: String) = Unit
+	}
 
 	val interceptor = AuthChannelInterceptor(
 		tokenProvider = tokenProvider,
 		verifyChatRoomParticipantUseCase = verifyParticipant,
 		checkActiveSessionPort = checkActiveSessionPort,
+		webSocketSessionRegistry = sessionRegistry,
 		messagingTemplate = messagingTemplate,
 	)
 

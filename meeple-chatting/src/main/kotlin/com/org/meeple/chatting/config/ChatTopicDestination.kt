@@ -1,4 +1,4 @@
-package com.org.meeple.chatting.chat.adapter.web
+package com.org.meeple.chatting.config
 
 /**
  * 방 브로드캐스트 구독 목적지 `/topic/{chatRoomId}`.
