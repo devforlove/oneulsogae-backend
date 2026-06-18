@@ -5,6 +5,7 @@ import com.org.meeple.auth.userIdOrNull
 import com.org.meeple.chatting.chat.adapter.web.response.ChatErrorResponse
 import com.org.meeple.chatting.chat.application.ChatErrorCode
 import com.org.meeple.chatting.chat.application.port.`in`.VerifyChatRoomParticipantUseCase
+import com.org.meeple.chatting.chat.application.port.out.CheckActiveSessionPort
 import com.org.meeple.chatting.common.error.ChatException
 import org.springframework.context.annotation.Lazy
 import org.springframework.messaging.Message
@@ -16,6 +17,7 @@ import org.springframework.messaging.simp.stomp.StompCommand
 import org.springframework.messaging.simp.stomp.StompHeaderAccessor
 import org.springframework.messaging.support.ChannelInterceptor
 import org.springframework.messaging.support.MessageHeaderAccessor
+import org.springframework.security.core.Authentication
 import org.springframework.stereotype.Component
 
 /**
@@ -23,6 +25,8 @@ import org.springframework.stereotype.Component
  *
  * - CONNECT: `Authorization` 헤더의 JWT를 검증하고 인증 주체(Authentication)를 STOMP 세션에 주입한다.
  *   유효하지 않으면 예외를 던져 연결을 거부한다(ERROR 프레임). (핸드셰이크 경로는 SecurityConfig에서 permitAll)
+ *   토큰이 유효해도 다른 기기/브라우저의 새 로그인에 밀려난 세션이면([CheckActiveSessionPort]) 연결을 거부한다.
+ *   (동시 접속 차단은 CONNECT 시점에서만 한다. CONNECT가 막히면 그 연결로는 SEND도 못 하므로 발행마다 재대조하지 않는다.)
  * - SUBSCRIBE: 방 브로드캐스트(`/topic/{chatRoomId}`) 구독 시 그 방의 참가자인지 인가한다.
  *   거부되면 **연결은 유지한 채** 그 SUBSCRIBE만 버리고, 사유를 발신자 개인 큐(`/user/queue/errors`)로 통지한다.
  *
@@ -35,6 +39,7 @@ import org.springframework.stereotype.Component
 class AuthChannelInterceptor(
 	private val tokenProvider: TokenProvider,
 	private val verifyChatRoomParticipantUseCase: VerifyChatRoomParticipantUseCase,
+	private val checkActiveSessionPort: CheckActiveSessionPort,
 	@Lazy private val messagingTemplate: SimpMessagingTemplate,
 ) : ChannelInterceptor {
 
@@ -54,14 +59,27 @@ class AuthChannelInterceptor(
 		}
 	}
 
-	// CONNECT: 토큰 검증 후 Authentication을 세션에 주입한다.
+	// CONNECT: 토큰 검증 + 활성 세션 대조 후 Authentication을 세션에 주입한다.
 	private fun authenticate(accessor: StompHeaderAccessor) {
 		val token: String = accessor.getFirstNativeHeader(AUTHORIZATION)?.removePrefix(BEARER_PREFIX)
 			?: throw ChatException(ChatErrorCode.AUTHENTICATION_REQUIRED)
 		if (!tokenProvider.validateToken(token)) {
 			throw ChatException(ChatErrorCode.AUTHENTICATION_REQUIRED)
 		}
-		accessor.user = tokenProvider.getAuthentication(token)
+		val authentication: Authentication = tokenProvider.getAuthentication(token)
+		verifyActiveSession(token, authentication)
+		accessor.user = authentication
+	}
+
+	// 토큰의 session_id가 사용자의 현재 활성 세션과 일치하는지 확인한다. 밀려났으면 SESSION_TAKEN_OVER로 거부한다.
+	private fun verifyActiveSession(token: String, authentication: Authentication) {
+		val userId: Long = authentication.userIdOrNull()
+			?: throw ChatException(ChatErrorCode.AUTHENTICATION_REQUIRED)
+		val sessionId: String = tokenProvider.getSessionId(token)
+			?: throw ChatException(ChatErrorCode.SESSION_TAKEN_OVER)
+		if (!checkActiveSessionPort.isActive(userId, sessionId)) {
+			throw ChatException(ChatErrorCode.SESSION_TAKEN_OVER)
+		}
 	}
 
 	// SUBSCRIBE: 방 구독은 그 방 참가자만 허용한다. 통과하면 원본 메세지를, 거부되면 개인 큐로 통지한 뒤 null(버림)을 반환한다.

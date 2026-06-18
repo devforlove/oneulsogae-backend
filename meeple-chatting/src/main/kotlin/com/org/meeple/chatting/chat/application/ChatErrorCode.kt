@@ -13,6 +13,9 @@ enum class ChatErrorCode(
 	/** CONNECT 시점에 토큰이 없거나 만료·위조되어 유효하지 않은 경우. */
 	AUTHENTICATION_REQUIRED("CHAT-WS-001", "인증이 필요합니다. 다시 로그인해 주세요."),
 
+	/** 토큰은 유효하나 다른 기기/브라우저의 새 로그인에 밀려난(단일 활성 세션에서 탈락한) 세션인 경우. */
+	SESSION_TAKEN_OVER("CHAT-WS-007", "다른 기기/브라우저의 로그인으로 종료된 세션입니다. 다시 로그인해 주세요."),
+
 	/** 참가하지 않은 채팅방을 구독·발송하려는 경우. */
 	NOT_CHAT_ROOM_PARTICIPANT("CHAT-WS-002", "해당 채팅방의 참가자가 아닙니다."),
 

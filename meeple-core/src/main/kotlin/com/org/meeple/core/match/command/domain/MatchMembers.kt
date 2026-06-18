@@ -47,6 +47,10 @@ data class MatchMembers(
 	fun anyAccepted(): Boolean =
 		values.any { it.isAccepted }
 
+	/** 수락(코인 지불)한 참가자들. (환불 대상 산정에 쓴다) */
+	fun accepted(): List<MatchMember> =
+		values.filter { it.isAccepted }
+
 	/** [userId] 참가자를 수락 처리한 새 컬렉션을 반환한다. */
 	fun accept(userId: Long): MatchMembers =
 		MatchMembers(values.map { if (it.userId == userId) it.accept() else it })

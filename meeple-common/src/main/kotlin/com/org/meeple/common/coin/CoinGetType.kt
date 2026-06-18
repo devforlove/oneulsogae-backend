@@ -1,17 +1,17 @@
 package com.org.meeple.common.coin
 
 /**
- * 코인 거래 유형. 적립(FREE/PURCHASE)과 차감(SPEND)을 구분한다.
- * coins 원장에서 적립은 양수 amount, 차감은 음수 amount로 기록되어 합(SUM)이 곧 잔액이 된다.
+ * 코인 적립(획득) 유형. 무료 획득(DAILY)과 결제 구매(PURCHASE)를 구분한다.
+ * 적립은 coins 원장에 양수 amount로 기록된다. (차감은 적립 유형이 아니라 [CoinUsageType]으로 구분한다)
  */
-enum class CoinGetType(val description: String, val isSpending: Boolean) {
+enum class CoinGetType(val description: String) {
 
 	/** 무료로 획득한 코인. (출석/이벤트 등) */
-	DAILY("출석 획득", false),
+	DAILY("출석 획득"),
 
 	/** 결제로 구매한 코인. */
-	PURCHASE("구매", false),
+	PURCHASE("구매"),
 
-	/** 사용(차감)된 코인. coins 원장에는 음수 amount로 기록된다. */
-	SPEND("사용 차감", true),
+	/** 소개팅 매칭 실패 등으로 사용한 코인의 일부를 되돌려준(환불) 코인. */
+	REFUND("환불"),
 }

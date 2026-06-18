@@ -62,6 +62,16 @@ data class Match(
 	fun participantUserIds(): List<Long> =
 		members.userIds()
 
+	/**
+	 * 매칭 실패(미성사 만료/채팅 종료)로 제거될 때, 참가자별 환불 금액 목록을 산정한다.
+	 * 실제로 코인을 지불한(수락한) 참가자에게만, 신청 비용([datingInitAmount])의 절반(내림)을 돌려준다.
+	 * (소개팅 신청·수락 비용이 동일하다는 전제이며, 0코인 환불은 제외한다)
+	 */
+	fun failureRefunds(): List<MatchRefund> =
+		members.accepted()
+			.map { member: MatchMember -> MatchRefund(userId = member.userId, amount = datingInitAmount / 2) }
+			.filter { refund: MatchRefund -> refund.amount > 0 }
+
 	/** 참가자 조합을 식별하는 정규화 키. (재소개 방지 유니크 키) */
 	fun memberKey(): String =
 		members.memberKey()

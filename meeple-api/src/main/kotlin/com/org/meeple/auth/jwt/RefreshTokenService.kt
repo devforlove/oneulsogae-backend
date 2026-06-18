@@ -1,6 +1,8 @@
 package com.org.meeple.auth.jwt
 
+import com.org.meeple.auth.AuthErrorCode
 import com.org.meeple.auth.PrincipalDetails
+import com.org.meeple.core.common.error.BusinessException
 import com.org.meeple.infra.auth.entity.RefreshTokenEntity
 import com.org.meeple.infra.auth.repository.RefreshTokenRepository
 import com.org.meeple.infra.auth.session.ActiveSessionStore
@@ -40,27 +42,27 @@ class RefreshTokenService(
 	@Transactional
 	fun rotate(refreshToken: String): IssuedTokens {
 		if (!tokenProvider.validateToken(refreshToken)) {
-			throw InvalidRefreshTokenException("유효하지 않거나 만료된 refresh token")
+			throw BusinessException(AuthErrorCode.AUTHENTICATION_REQUIRED, "유효하지 않거나 만료된 refresh token")
 		}
 
 		val tokenId: String = tokenProvider.getTokenId(refreshToken)
-			?: throw InvalidRefreshTokenException("jti가 없는 refresh token")
+			?: throw BusinessException(AuthErrorCode.AUTHENTICATION_REQUIRED, "jti가 없는 refresh token")
 
 		val stored: RefreshTokenEntity = refreshTokenRepository.findByTokenId(tokenId)
-			?: throw InvalidRefreshTokenException("추적되지 않는 refresh token")
+			?: throw BusinessException(AuthErrorCode.AUTHENTICATION_REQUIRED, "추적되지 않는 refresh token")
 
 		if (!stored.isActive) {
 			// 이미 폐기/회전된 토큰의 재사용 → 탈취 의심, 사용자 전체 세션 무효화
 			refreshTokenRepository.revokeAllByUserId(stored.userId)
-			throw InvalidRefreshTokenException("재사용이 감지된 refresh token")
+			throw BusinessException(AuthErrorCode.AUTHENTICATION_REQUIRED, "재사용이 감지된 refresh token")
 		}
 
 		// 단일 활성 세션 확인: 다른 기기/브라우저의 새 로그인에 밀려났으면 회전을 거부한다.
 		// (밀려나지 않았을 때만 TTL을 미뤄, 활동 중인 세션은 유지되게 한다)
 		val sessionId: String = tokenProvider.getSessionId(refreshToken)
-			?: throw InvalidRefreshTokenException("session_id가 없는 refresh token")
+			?: throw BusinessException(AuthErrorCode.AUTHENTICATION_REQUIRED, "session_id가 없는 refresh token")
 		if (!activeSessionStore.renew(stored.userId, sessionId)) {
-			throw SessionTakenOverException("다른 기기/브라우저의 로그인으로 종료된 세션")
+			throw BusinessException(AuthErrorCode.SESSION_TAKEN_OVER, "다른 기기/브라우저의 로그인으로 종료된 세션")
 		}
 
 		// 기존 refreshToken 폐기

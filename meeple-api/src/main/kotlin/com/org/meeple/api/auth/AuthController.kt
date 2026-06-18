@@ -4,11 +4,10 @@ import com.org.meeple.api.auth.response.MeResponse
 import com.org.meeple.auth.AuthErrorCode
 import com.org.meeple.auth.AuthUser
 import com.org.meeple.auth.LoginUser
-import com.org.meeple.auth.jwt.InvalidRefreshTokenException
 import com.org.meeple.auth.jwt.IssuedTokens
 import com.org.meeple.auth.jwt.RefreshTokenService
-import com.org.meeple.auth.jwt.SessionTakenOverException
 import com.org.meeple.auth.jwt.TokenCookieFactory
+import com.org.meeple.core.common.error.BusinessException
 import com.org.meeple.core.common.error.ErrorResponse
 import com.org.meeple.core.common.response.ApiResponse
 import com.org.meeple.core.user.query.service.port.`in`.GetUserByIdUseCase
@@ -50,13 +49,13 @@ class AuthController(
 			response.addHeader(HttpHeaders.SET_COOKIE, tokenCookieFactory.accessTokenCookie(tokens.accessToken).toString())
 			response.addHeader(HttpHeaders.SET_COOKIE, tokenCookieFactory.refreshTokenCookie(tokens.refreshToken).toString())
 			ResponseEntity.ok(ApiResponse.success())
-		} catch (e: SessionTakenOverException) {
-			// 다른 기기/브라우저의 새 로그인에 밀려난 세션 → 일반 인증 실패와 구분해 안내한다.
+		} catch (e: BusinessException) {
+			// 예측 가능한 인증 실패(무효/재사용 토큰, 세션 밀림 등): 죽은 쿠키를 비우고 에러 코드에 맞춰 응답한다.
+			// (쿠키 삭제는 전역 핸들러가 못 하는 부수효과라 여기서 잡고, 상태·코드는 errorCode가 결정한다)
 			clearAuthCookies(response)
-			unauthorized(AuthErrorCode.SESSION_TAKEN_OVER)
-		} catch (e: InvalidRefreshTokenException) {
-			clearAuthCookies(response)
-			unauthorized()
+			ResponseEntity
+				.status(e.errorCode.status)
+				.body(ApiResponse.error(ErrorResponse.of(e.errorCode)))
 		}
 	}
 
@@ -71,11 +70,11 @@ class AuthController(
 		return ApiResponse.success()
 	}
 
-	/** 인증 실패(401) 응답을 공통 봉투로 내려준다. */
-	private fun unauthorized(errorCode: AuthErrorCode = AuthErrorCode.AUTHENTICATION_REQUIRED): ResponseEntity<ApiResponse<Unit>> =
+	/** refresh 쿠키 부재 등 토큰 검증 이전 단계의 인증 실패(401) 응답. */
+	private fun unauthorized(): ResponseEntity<ApiResponse<Unit>> =
 		ResponseEntity
 			.status(HttpStatus.UNAUTHORIZED)
-			.body(ApiResponse.error(ErrorResponse.of(errorCode)))
+			.body(ApiResponse.error(ErrorResponse.of(AuthErrorCode.AUTHENTICATION_REQUIRED)))
 
 	private fun clearAuthCookies(response: HttpServletResponse) {
 		response.addHeader(HttpHeaders.SET_COOKIE, tokenCookieFactory.expiredAccessTokenCookie().toString())

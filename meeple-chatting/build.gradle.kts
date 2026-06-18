@@ -17,4 +17,7 @@ dependencies {
 	implementation("org.springframework.boot:spring-boot-starter-websocket")
 
 	testImplementation("org.springframework.boot:spring-boot-starter-websocket-test")
+	// 어댑터(인터셉터) 유닛 테스트용. meeple-api와 동일 버전 고정. (Kotest 6.x 비호환 회피)
+	testImplementation("io.kotest:kotest-runner-junit5:5.9.1")
+	testImplementation("io.kotest:kotest-assertions-core:5.9.1")
 }

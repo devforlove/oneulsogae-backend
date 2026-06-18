@@ -7,14 +7,14 @@ import java.time.LocalDateTime
 /**
  * 코인 거래 내역(원장) 도메인 모델. 적립(구매/무료 획득)과 차감(사용)이 한 건씩 쌓인다.
  * 적립은 양수 [amount], 차감은 음수 [amount]로 기록되어, 전체 합(SUM)이 곧 사용자의 잔액이 된다.
- * [coinUsageType]은 차감(사용) 작업의 유형으로, 적립 내역에는 해당이 없어 null이다.
+ * [coinType]은 적립(획득) 유형으로 차감 내역에는 해당이 없어 null이고, [coinUsageType]은 차감(사용) 유형으로 적립 내역에는 해당이 없어 null이다.
  * 영속성은 [com.org.meeple.infra.coin.command.entity.CoinHistoryEntity]가 담당한다.
  */
 data class CoinHistory(
 	val id: Long = 0,
 	val userId: Long,
 	val amount: Int,
-	val coinType: CoinGetType,
+	val coinType: CoinGetType? = null,
 	val acquiredAt: LocalDateTime,
 	val coinUsageType: CoinUsageType? = null,
 ) {
@@ -52,7 +52,6 @@ data class CoinHistory(
 			return CoinHistory(
 				userId = userId,
 				amount = -amount,
-				coinType = CoinGetType.SPEND,
 				acquiredAt = occurredAt,
 				coinUsageType = coinUsageType,
 			)

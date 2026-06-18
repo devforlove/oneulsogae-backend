@@ -11,6 +11,5 @@ enum class CoinErrorCode(
 ) : ErrorCode {
 
 	INSUFFICIENT_COIN_BALANCE("COIN-001", "코인 잔액이 부족합니다.", HttpStatus.BAD_REQUEST),
-	INVALID_ACQUIRE_COIN_TYPE("COIN-002", "적립에 사용할 수 없는 코인 타입입니다.", HttpStatus.BAD_REQUEST),
 	DAILY_COIN_ALREADY_ACQUIRED("COIN-003", "오늘은 이미 출석 코인을 받았습니다.", HttpStatus.CONFLICT),
 }

@@ -38,10 +38,10 @@ class CoinHistoryEntity(
 	@Column(name = "amount", nullable = false)
 	var amount: Int,
 
-	/** 코인 획득 유형. (무료 획득/구매) */
+	/** 코인 획득(적립) 유형. (무료 획득/구매) 차감 내역에는 해당 없어 null이다. */
 	@Enumerated(EnumType.STRING)
-	@Column(name = "coin_get_type", nullable = false, length = 20)
-	var coinGetType: CoinGetType,
+	@Column(name = "coin_get_type", length = 20)
+	var coinGetType: CoinGetType? = null,
 
 	/** 코인 사용(차감) 작업 유형. (소개팅/미팅 신청·수락) 적립 내역에는 해당 없어 null이다. */
 	@Enumerated(EnumType.STRING)

@@ -32,11 +32,6 @@ class AcquireCoinService(
 
 	@Transactional
 	override fun acquire(userId: Long, command: AcquireCoinCommand): CoinBalance {
-		// 차감 전용 타입(SPEND)은 적립 경로로 들어올 수 없다. (차감은 SpendCoinUseCase로만)
-		if (command.coinType.isSpending) {
-			throw BusinessException(CoinErrorCode.INVALID_ACQUIRE_COIN_TYPE)
-		}
-
 		val now: LocalDateTime = timeGenerator.now()
 
 		// DAILY 코인은 하루에 한 번만 적립할 수 있다.

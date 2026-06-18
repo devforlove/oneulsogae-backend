@@ -30,8 +30,8 @@ class CoinController(
 		ApiResponse.success(CoinItemResponse.listOf(getCoinShopUseCase.getCoinShop()))
 
 	/** 현재 로그인 사용자가 코인을 구매/무료 획득하여 적립한다. 적립 후 잔액을 반환한다. */
-	@PostMapping("/me")
-	fun acquireMyCoin(
+	@PostMapping("/acquisitions")
+	fun acquireCoin(
 		@LoginUser user: AuthUser,
 		@Valid @RequestBody request: AcquireCoinRequest,
 	): ApiResponse<CoinBalanceResponse> =
