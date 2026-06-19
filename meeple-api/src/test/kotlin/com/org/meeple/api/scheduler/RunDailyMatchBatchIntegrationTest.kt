@@ -9,12 +9,14 @@ import com.org.meeple.core.match.command.domain.MatchMembers
 import com.org.meeple.infra.fixture.IntegrationUtil
 import com.org.meeple.infra.fixture.MatchEntityFixture
 import com.org.meeple.infra.fixture.MatchMemberEntityFixture
+import com.org.meeple.infra.fixture.MatchUserEntityFixture
 import com.org.meeple.infra.fixture.UserDetailEntityFixture
 import com.org.meeple.infra.fixture.UserEntityFixture
 import com.org.meeple.infra.match.command.entity.MatchEntity
 import com.org.meeple.infra.match.command.entity.MatchMemberEntity
 import com.org.meeple.infra.match.command.entity.QMatchEntity
 import com.org.meeple.infra.match.command.entity.QMatchMemberEntity
+import com.org.meeple.infra.match.command.entity.QMatchUserEntity
 import com.org.meeple.infra.user.command.entity.QUserDetailEntity
 import com.org.meeple.infra.user.command.entity.QUserEntity
 import com.org.meeple.scheduler.match.command.application.port.`in`.RunDailyMatchBatchUseCase
@@ -110,6 +112,7 @@ class RunDailyMatchBatchIntegrationTest(
 	afterTest {
 		IntegrationUtil.deleteAll(QMatchMemberEntity.matchMemberEntity)
 		IntegrationUtil.deleteAll(QMatchEntity.matchEntity)
+		IntegrationUtil.deleteAll(QMatchUserEntity.matchUserEntity)
 		IntegrationUtil.deleteAll(QUserDetailEntity.userDetailEntity)
 		IntegrationUtil.deleteAll(QUserEntity.userEntity)
 		val poolKeys: Set<String> = redisTemplate.keys("match:pool:*")
@@ -118,16 +121,21 @@ class RunDailyMatchBatchIntegrationTest(
 })
 
 // 정식 가입(ACTIVE) + 최근 로그인 + 성별·권역이 채워진 매칭 대상 사용자를 만들고 userId를 반환한다.
+// 배치 대상 조회는 매칭 읽기 모델(match_user)을 보므로, 정식 가입 사용자에 해당하는 match_user 행도 함께 적재한다.
 private fun persistActiveUser(providerId: String, gender: Gender, regionCode: Int): Long {
+	val lastLoginAt: LocalDateTime = LocalDateTime.now().minusDays(1)
 	val userId: Long = IntegrationUtil.persist(
 		UserEntityFixture.create(
 			providerId = providerId,
 			status = UserStatus.ACTIVE,
-			lastLoginAt = LocalDateTime.now().minusDays(1),
+			lastLoginAt = lastLoginAt,
 		),
 	).id!!
 	IntegrationUtil.persist(
 		UserDetailEntityFixture.create(userId = userId, gender = gender, regionCode = regionCode),
+	)
+	IntegrationUtil.persist(
+		MatchUserEntityFixture.create(userId = userId, gender = gender, regionCode = regionCode, lastLoginAt = lastLoginAt),
 	)
 	return userId
 }

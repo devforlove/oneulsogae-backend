@@ -2,6 +2,8 @@ package com.org.meeple.core.user.command.application
 
 import com.org.meeple.core.common.error.BusinessException
 import com.org.meeple.core.user.UserErrorCode
+import com.org.meeple.core.common.event.DomainEventPublisher
+import com.org.meeple.core.common.event.UserLoggedIn
 import com.org.meeple.core.common.time.TimeGenerator
 import com.org.meeple.core.user.command.application.port.`in`.RegisterUserUseCase
 import com.org.meeple.core.user.command.application.port.out.GetUserPort
@@ -20,6 +22,7 @@ class RegisterUserService(
 	private val getUserPort: GetUserPort,
 	private val saveUserPort: SaveUserPort,
 	private val timeGenerator: TimeGenerator,
+	private val domainEventPublisher: DomainEventPublisher,
 ) : RegisterUserUseCase {
 
 	@Transactional
@@ -50,9 +53,13 @@ class RegisterUserService(
 		return recordLogin(savedUser)
 	}
 
-	/** 사용자의 마지막 로그인 시점을 기록한다. */
+	/** 사용자의 마지막 로그인 시점을 기록하고, 매칭 읽기 모델(match_user) 갱신을 위해 로그인 이벤트를 발행한다. */
 	private fun recordLogin(user: User): User {
 		val now: LocalDateTime = timeGenerator.now()
-		return saveUserPort.save(user.recordLogin(now))
+		val saved: User = saveUserPort.save(user.recordLogin(now))
+
+		// 이미 매칭 풀에 적재된 사용자라면 마지막 로그인 시각만 갱신된다. (미적재 사용자는 수신측에서 무시)
+		domainEventPublisher.publish(UserLoggedIn(saved.id, now))
+		return saved
 	}
 }

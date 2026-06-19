@@ -7,7 +7,6 @@ import com.org.meeple.core.match.command.application.port.`in`.RecommendMatchUse
 import com.org.meeple.core.match.query.dao.GetMatchWithPartnerDao
 import com.org.meeple.core.user.query.service.port.`in`.GetUserWithDetailUseCase
 import com.org.meeple.core.match.query.dto.MatchWithPartner
-import com.org.meeple.core.user.query.dto.UserWithDetailView
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import java.time.LocalDateTime
@@ -30,15 +29,14 @@ class GetMatchesService(
 
 	@Transactional
 	override fun getMatches(userId: Long, isAfterOnboarding: Boolean): List<MatchWithPartner> {
-		val userWithDetail: UserWithDetailView = getUserWithDetailUseCase.getByUserId(userId)
-
-		// 온보딩 직후 사용자에게만 신규 매칭을 1건 만들어 준다.
+		// 온보딩 직후 사용자에게만 신규 매칭을 1건 만들어 준다. (요청자의 매칭 가능 여부는 recommend 내부에서 판단)
 		if (isAfterOnboarding) {
-			recommendMatchUseCase.recommend(userWithDetail)
+			recommendMatchUseCase.recommend(userId)
 		}
 
 		// 만료된 소개는 조회에서 제외한다. (포트/쿼리에서 now 기준으로 필터)
-		val gender: Gender = userWithDetail.getGender()
+		// 상대 프로필 표시 조인에 필요한 요청자 성별은 user 도메인 in-port로 읽는다. (표시 경로는 user_details에 의존)
+		val gender: Gender = getUserWithDetailUseCase.getByUserId(userId).getGender()
 		val now: LocalDateTime = timeGenerator.now()
 		return getMatchWithPartnerDao.findAllWithPartnerByUserId(userId, gender, now)
 	}

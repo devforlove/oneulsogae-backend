@@ -1,8 +1,10 @@
 package com.org.meeple.core.user.command.application
 
 import com.org.meeple.core.common.error.BusinessException
+import com.org.meeple.core.common.event.DomainEventPublisher
 import com.org.meeple.core.user.UserErrorCode
 import com.org.meeple.core.common.time.TimeGenerator
+import com.org.meeple.core.user.command.domain.event.UserProfileChanged
 import com.org.meeple.core.user.query.service.port.`in`.GetUserCompanyUseCase
 import com.org.meeple.core.user.command.application.port.`in`.VerifyCompanyEmailUseCase
 import com.org.meeple.core.user.command.application.port.`in`.result.VerifyCompanyEmailResult
@@ -36,6 +38,7 @@ class VerifyCompanyEmailService(
 	private val getUserPort: GetUserPort,
 	private val saveUserPort: SaveUserPort,
 	private val timeGenerator: TimeGenerator,
+	private val domainEventPublisher: DomainEventPublisher,
 ) : VerifyCompanyEmailUseCase {
 
 	@Transactional
@@ -56,6 +59,9 @@ class VerifyCompanyEmailService(
 
 		// 회사명 조회 결과에 따라 사용자 가입 상태(ACTIVE / COMPANY_NOT_RESOLVED)를 확정한다.
 		finalizeStatus(verification.userId, companyName)
+
+		// 가입 상태가 바뀌었음을 알린다. (UserEventHandler가 매칭 읽기 모델 동기화로 이어간다)
+		domainEventPublisher.publish(UserProfileChanged(verification.userId))
 
 		return VerifyCompanyEmailResult(companyName)
 	}

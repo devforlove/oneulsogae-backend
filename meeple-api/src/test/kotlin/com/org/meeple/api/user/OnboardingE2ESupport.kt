@@ -3,6 +3,7 @@ package com.org.meeple.api.user
 import com.org.meeple.common.user.UserStatus
 import com.org.meeple.infra.coin.command.entity.QCoinBalanceEntity
 import com.org.meeple.infra.fixture.IntegrationUtil
+import com.org.meeple.infra.match.command.entity.QMatchUserEntity
 import com.org.meeple.infra.user.command.entity.QUserDetailEntity
 import com.org.meeple.infra.user.command.entity.UserDetailEntity
 import com.org.meeple.infra.user.command.entity.QCompanyEmailVerificationEntity
@@ -21,6 +22,8 @@ internal fun cleanupOnboarding() {
 	IntegrationUtil.deleteAll(QCompanyEmailVerificationEntity.companyEmailVerificationEntity)
 	IntegrationUtil.deleteAll(QUserCompanyEntity.userCompanyEntity)
 	IntegrationUtil.deleteAll(QCoinBalanceEntity.coinBalanceEntity)
+	// 정식 가입(ACTIVE) 전이 시 매칭 읽기 모델에 적재되므로 함께 정리한다.
+	IntegrationUtil.deleteAll(QMatchUserEntity.matchUserEntity)
 	IntegrationUtil.deleteAll(QUserDetailEntity.userDetailEntity)
 	IntegrationUtil.deleteAll(QUserEntity.userEntity)
 }

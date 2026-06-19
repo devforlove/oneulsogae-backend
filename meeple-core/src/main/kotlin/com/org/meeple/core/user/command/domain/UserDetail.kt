@@ -7,9 +7,12 @@ import com.org.meeple.common.user.MaritalStatus
 import com.org.meeple.common.user.Region
 import com.org.meeple.common.user.Religion
 import com.org.meeple.common.user.SmokingStatus
+import com.org.meeple.common.user.UserStatus
 import com.org.meeple.core.common.error.BusinessException
+import com.org.meeple.core.common.event.MatchProfileSnapshot
 import com.org.meeple.core.user.UserErrorCode
 import java.security.SecureRandom
+import java.time.LocalDateTime
 
 /**
  * 사용자 프로필 상세 도메인 모델. [com.org.meeple.core.user.command.domain.User]와 1:1로 연결되며 닉네임/프로필 이미지 및
@@ -154,6 +157,23 @@ data class UserDetail(
 	 */
 	fun assignProfileImageCodeIfAbsent(): UserDetail =
 		if (profileImageCode == null) copy(profileImageCode = generateProfileImageCode()) else this
+
+	/**
+	 * 매칭에 필요한 기준 필드가 모두 채워졌으면 [MatchProfileSnapshot]을, 하나라도 비어 있으면 null을 반환한다.
+	 * 정식 가입([status].isRegistered)이 아니거나 [lastLoginAt]이 없으면 매칭 불가로 보고 null을 반환한다.
+	 * 매칭 가능 여부 판단(완성도 규칙)을 한곳에 캡슐화해, user 도메인이 match 읽기 모델 동기화용 스냅샷을 만들 때 쓴다.
+	 */
+	fun matchProfileSnapshotOrNull(status: UserStatus, lastLoginAt: LocalDateTime?): MatchProfileSnapshot? {
+		if (!status.isRegistered()) return null
+		return MatchProfileSnapshot(
+			gender = gender ?: return null,
+			age = age ?: return null,
+			regionCode = regionCode ?: return null,
+			maritalStatus = maritalStatus ?: return null,
+			nickname = nickname ?: return null,
+			lastLoginAt = lastLoginAt ?: return null,
+		)
+	}
 
 	companion object {
 

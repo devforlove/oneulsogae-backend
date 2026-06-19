@@ -1,12 +1,14 @@
 package com.org.meeple.core.user.command.application
 
 import com.org.meeple.core.common.error.BusinessException
+import com.org.meeple.core.common.event.DomainEventPublisher
 import com.org.meeple.core.user.UserErrorCode
 import com.org.meeple.core.user.command.application.port.`in`.UpdateProfileUseCase
 import com.org.meeple.core.user.command.application.port.`in`.command.UpdateProfileCommand
 import com.org.meeple.core.user.command.application.port.out.GetUserDetailPort
 import com.org.meeple.core.user.command.application.port.out.SaveUserDetailPort
 import com.org.meeple.core.user.command.domain.UserDetail
+import com.org.meeple.core.user.command.domain.event.UserProfileChanged
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 
@@ -19,6 +21,7 @@ import org.springframework.transaction.annotation.Transactional
 class UpdateProfileService(
 	private val getUserDetailPort: GetUserDetailPort,
 	private val saveUserDetailPort: SaveUserDetailPort,
+	private val domainEventPublisher: DomainEventPublisher,
 ) : UpdateProfileUseCase {
 
 	@Transactional
@@ -41,6 +44,10 @@ class UpdateProfileService(
 			bodyType = command.bodyType,
 		)
 
-		return saveUserDetailPort.save(updated)
+		val saved: UserDetail = saveUserDetailPort.save(updated)
+
+		// 프로필이 편집됐음을 알린다. (UserEventHandler가 매칭 읽기 모델 동기화로 이어간다)
+		domainEventPublisher.publish(UserProfileChanged(userId))
+		return saved
 	}
 }

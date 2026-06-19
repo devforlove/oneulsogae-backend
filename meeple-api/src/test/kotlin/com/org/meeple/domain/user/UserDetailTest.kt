@@ -1,13 +1,17 @@
 package com.org.meeple.domain.user
 
 import com.org.meeple.common.user.Gender
+import com.org.meeple.common.user.UserStatus
 import com.org.meeple.core.common.error.BusinessException
+import com.org.meeple.core.common.event.MatchProfileSnapshot
 import com.org.meeple.core.fixture.UserDetailFixture
 import com.org.meeple.core.user.UserErrorCode
 import com.org.meeple.core.user.command.domain.UserDetail
 import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.core.spec.style.DescribeSpec
+import io.kotest.matchers.nulls.shouldBeNull
 import io.kotest.matchers.shouldBe
+import java.time.LocalDateTime
 
 /**
  * [UserDetail] 도메인 유닛 테스트.
@@ -137,6 +141,48 @@ class UserDetailTest : DescribeSpec({
 			}
 
 			ex.errorCode shouldBe UserErrorCode.REGION_NOT_RESOLVED
+		}
+	}
+
+	describe("matchProfileSnapshotOrNull") {
+		val loginAt: LocalDateTime = LocalDateTime.of(2026, 6, 19, 10, 0)
+
+		it("정식 가입 + 필수 필드가 모두 채워지면 매칭 스냅샷을 만든다") {
+			val complete: UserDetail = UserDetailFixture.create(
+				userId = 7L,
+				gender = Gender.FEMALE,
+				age = 27,
+				regionCode = 2,
+			)
+
+			val snapshot: MatchProfileSnapshot? = complete.matchProfileSnapshotOrNull(UserStatus.ACTIVE, loginAt)
+
+			snapshot shouldBe MatchProfileSnapshot(
+				gender = Gender.FEMALE,
+				age = 27,
+				regionCode = 2,
+				maritalStatus = complete.maritalStatus!!,
+				nickname = complete.nickname!!,
+				lastLoginAt = loginAt,
+			)
+		}
+
+		it("정식 가입이 아니면(미완성 단계) null을 반환한다") {
+			val complete: UserDetail = UserDetailFixture.create()
+
+			complete.matchProfileSnapshotOrNull(UserStatus.EMAIL_VERIFICATION_PENDING, loginAt).shouldBeNull()
+		}
+
+		it("필수 필드(권역)가 비어 있으면 null을 반환한다") {
+			val incomplete: UserDetail = UserDetailFixture.create(regionCode = null)
+
+			incomplete.matchProfileSnapshotOrNull(UserStatus.ACTIVE, loginAt).shouldBeNull()
+		}
+
+		it("마지막 로그인 시각이 없으면 null을 반환한다") {
+			val complete: UserDetail = UserDetailFixture.create()
+
+			complete.matchProfileSnapshotOrNull(UserStatus.ACTIVE, null).shouldBeNull()
 		}
 	}
 })
