@@ -1,6 +1,8 @@
 package com.org.meeple.api.match
 
 import com.org.meeple.api.match.request.InviteTeamRequest
+import com.org.meeple.api.match.request.SearchInvitableUsersRequest
+import com.org.meeple.api.match.response.InvitableUserResponse
 import com.org.meeple.api.match.response.TeamResponse
 import com.org.meeple.auth.AuthUser
 import com.org.meeple.auth.LoginUser
@@ -9,8 +11,13 @@ import com.org.meeple.core.match.command.application.port.`in`.AcceptTeamInvitat
 import com.org.meeple.core.match.command.application.port.`in`.DisbandTeamUseCase
 import com.org.meeple.core.match.command.application.port.`in`.InviteTeamUseCase
 import com.org.meeple.core.match.command.application.port.`in`.WithdrawTeamInvitationUseCase
+import com.org.meeple.core.match.query.service.port.`in`.SearchInvitableUsersUseCase
+import jakarta.validation.ConstraintViolationException
 import jakarta.validation.Valid
+import jakarta.validation.Validator
 import org.springframework.web.bind.annotation.DeleteMapping
+import org.springframework.web.bind.annotation.GetMapping
+import org.springframework.web.bind.annotation.ModelAttribute
 import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.RequestBody
@@ -31,6 +38,8 @@ class TeamController(
 	private val acceptTeamInvitationUseCase: AcceptTeamInvitationUseCase,
 	private val withdrawTeamInvitationUseCase: WithdrawTeamInvitationUseCase,
 	private val disbandTeamUseCase: DisbandTeamUseCase,
+	private val searchInvitableUsersUseCase: SearchInvitableUsersUseCase,
+	private val validator: Validator,
 ) {
 
 	/**
@@ -67,4 +76,23 @@ class TeamController(
 		@PathVariable teamId: Long,
 	): ApiResponse<TeamResponse> =
 		ApiResponse.success(TeamResponse.of(disbandTeamUseCase.disband(user.id, teamId)))
+
+	/**
+	 * 닉네임이 정확히 일치하는 초대 가능 유저를 검색한다. (같은 성별·매칭 가능·활성 팀 없음·자기 제외)
+	 * 결과 항목은 식별자·닉네임·직업·회사명을 담는다.
+	 */
+	@GetMapping("/invitable-users")
+	fun searchInvitableUsers(
+		@LoginUser user: AuthUser,
+		@ModelAttribute @Valid request: SearchInvitableUsersRequest,
+	): ApiResponse<List<InvitableUserResponse>> {
+		val violations: Set<jakarta.validation.ConstraintViolation<SearchInvitableUsersRequest>> =
+			validator.validate(request)
+		if (violations.isNotEmpty()) {
+			throw ConstraintViolationException(violations)
+		}
+		return ApiResponse.success(
+			searchInvitableUsersUseCase.search(user.id, request.nickname!!).map { InvitableUserResponse.of(it) },
+		)
+	}
 }

@@ -9,6 +9,9 @@ import com.org.meeple.core.match.query.dto.InvitableUser
  */
 interface SearchInvitableUsersDao {
 
+	/** 요청자의 성별을 match_user 에서 조회한다. 매칭 불가 상태이면 null을 반환한다. */
+	fun findRequesterGender(requesterId: Long): Gender?
+
 	/** [nickname]이 정확히 일치하는 초대 가능 유저 목록을 userId 오름차순으로 반환한다. */
 	fun search(requesterGender: Gender, requesterId: Long, nickname: String): List<InvitableUser>
 }

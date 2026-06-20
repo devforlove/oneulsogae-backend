@@ -21,6 +21,15 @@ class SearchInvitableUsersDaoImpl(
 	private val queryFactory: JPAQueryFactory,
 ) : SearchInvitableUsersDao {
 
+	override fun findRequesterGender(requesterId: Long): Gender? {
+		val matchUser: QMatchUserEntity = QMatchUserEntity.matchUserEntity
+		return queryFactory
+			.select(matchUser.gender)
+			.from(matchUser)
+			.where(matchUser.userId.eq(requesterId))
+			.fetchOne()
+	}
+
 	override fun search(requesterGender: Gender, requesterId: Long, nickname: String): List<InvitableUser> {
 		val candidate: QMatchUserEntity = QMatchUserEntity.matchUserEntity
 		val detail: QUserDetailEntity = QUserDetailEntity.userDetailEntity

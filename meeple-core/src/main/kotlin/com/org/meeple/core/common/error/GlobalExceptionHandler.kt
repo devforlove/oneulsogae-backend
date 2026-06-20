@@ -1,6 +1,7 @@
 package com.org.meeple.core.common.error
 
 import com.org.meeple.core.common.response.ApiResponse
+import jakarta.validation.ConstraintViolationException
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import org.springframework.http.HttpStatus
@@ -10,6 +11,7 @@ import org.springframework.validation.FieldError
 import org.springframework.web.bind.MethodArgumentNotValidException
 import org.springframework.web.bind.annotation.ExceptionHandler
 import org.springframework.web.bind.annotation.RestControllerAdvice
+import org.springframework.web.method.annotation.HandlerMethodValidationException
 
 /**
  * 전역 예외 핸들러.
@@ -40,6 +42,40 @@ class GlobalExceptionHandler {
 			.ifBlank { "요청 값 검증에 실패했습니다." }
 		// 클라이언트 입력 오류(4xx)는 처리된 예외이므로 info로 남긴다.
 		log.info("MethodArgumentNotValidException: {}", message)
+		return ResponseEntity
+			.status(HttpStatus.BAD_REQUEST)
+			.body(ApiResponse.error(ErrorResponse("INVALID_REQUEST", message)))
+	}
+
+	/**
+	 * Spring 7.x 메서드 수준 검증 실패 처리. (@Validated 컨트롤러 + @Valid/@NotBlank 파라미터)
+	 * [MethodArgumentNotValidException]이 [HandlerMethodValidationException]의 하위 타입이므로
+	 * 이 핸들러는 @ModelAttribute/@RequestParam 검증 실패를 400으로 내린다.
+	 * (단, [MethodArgumentNotValidException]이 먼저 매칭되어 우선 처리된다)
+	 */
+	@ExceptionHandler(HandlerMethodValidationException::class)
+	fun handleMethodValidation(e: HandlerMethodValidationException): ResponseEntity<ApiResponse<Nothing>> {
+		val message: String = e.allErrors
+			.joinToString("; ") { error: org.springframework.context.MessageSourceResolvable ->
+				error.defaultMessage ?: "검증 실패"
+			}
+			.ifBlank { "요청 값 검증에 실패했습니다." }
+		log.info("HandlerMethodValidationException: {}", message)
+		return ResponseEntity
+			.status(HttpStatus.BAD_REQUEST)
+			.body(ApiResponse.error(ErrorResponse("INVALID_REQUEST", message)))
+	}
+
+	/**
+	 * Jakarta Bean Validation 제약 위반 처리. (수동 validator.validate() 호출 결과)
+	 * 컨트롤러에서 명시적으로 검증을 호출하고 [ConstraintViolationException]을 던지는 경우 400으로 내린다.
+	 */
+	@ExceptionHandler(ConstraintViolationException::class)
+	fun handleConstraintViolation(e: ConstraintViolationException): ResponseEntity<ApiResponse<Nothing>> {
+		val message: String = e.constraintViolations
+			.joinToString("; ") { it.message }
+			.ifBlank { "요청 값 검증에 실패했습니다." }
+		log.info("ConstraintViolationException: {}", message)
 		return ResponseEntity
 			.status(HttpStatus.BAD_REQUEST)
 			.body(ApiResponse.error(ErrorResponse("INVALID_REQUEST", message)))
