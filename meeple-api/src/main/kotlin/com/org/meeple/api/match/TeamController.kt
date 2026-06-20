@@ -5,8 +5,10 @@ import com.org.meeple.api.match.response.TeamResponse
 import com.org.meeple.auth.AuthUser
 import com.org.meeple.auth.LoginUser
 import com.org.meeple.core.common.response.ApiResponse
+import com.org.meeple.core.match.command.application.port.`in`.AcceptTeamInvitationUseCase
 import com.org.meeple.core.match.command.application.port.`in`.InviteTeamUseCase
 import jakarta.validation.Valid
+import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RequestMapping
@@ -15,11 +17,13 @@ import org.springframework.web.bind.annotation.RestController
 /**
  * 2:2(팀) 매칭의 팀 엔드포인트. (모두 인증 필요)
  * - POST /: 다른 사용자를 초대해 팀을 결성한다. 초대 대상은 즉시 구성원으로 합류하고 팀은 초대중(INVITING) 상태로 만들어진다.
+ * - POST /{teamId}/acceptance: 초대받은 사용자가 팀 초대를 수락한다. 전원 수락 시 팀이 결성(FORMED)된다.
  */
 @RestController
 @RequestMapping("/teams/v1")
 class TeamController(
 	private val inviteTeamUseCase: InviteTeamUseCase,
+	private val acceptTeamInvitationUseCase: AcceptTeamInvitationUseCase,
 ) {
 
 	/**
@@ -32,4 +36,12 @@ class TeamController(
 		@RequestBody @Valid request: InviteTeamRequest,
 	): ApiResponse<TeamResponse> =
 		ApiResponse.success(TeamResponse.of(inviteTeamUseCase.invite(user.id, request.toCommand())))
+
+	/** 초대받은 사용자가 팀 초대를 수락한다. 전원 수락 시 팀이 결성(FORMED)된다. */
+	@PostMapping("/{teamId}/acceptance")
+	fun accept(
+		@LoginUser user: AuthUser,
+		@PathVariable teamId: Long,
+	): ApiResponse<TeamResponse> =
+		ApiResponse.success(TeamResponse.of(acceptTeamInvitationUseCase.accept(user.id, teamId)))
 }

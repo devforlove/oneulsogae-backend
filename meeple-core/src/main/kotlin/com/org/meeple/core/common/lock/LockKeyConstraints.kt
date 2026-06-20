@@ -17,4 +17,10 @@ object LockKeyConstraints {
 	 * lost update·코인 이중 차감을 막는다.
 	 */
 	const val MATCH_INTEREST: String = "MATCH_INTEREST"
+
+	/**
+	 * 팀 결성 라이프사이클(수락/철회/해체) 처리 락. teamId로 잠가 한 팀의 상태 변경을 직렬화한다.
+	 * 수락(invited)과 초대취소(owner) 동시 요청으로 인한 FORMED↔DEACTIVATED lost update를 막는다.
+	 */
+	const val TEAM_LIFECYCLE: String = "TEAM_LIFECYCLE"
 }
