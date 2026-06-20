@@ -13,6 +13,7 @@ fun ChatRoomMemberEntity.toDomain(): ChatRoomMember =
 		status = status,
 		unreadCount = unreadCount,
 		lastReadAt = lastReadAt,
+		lastReadMessageId = lastReadMessageId,
 		joinedAt = joinedAt,
 		exitedAt = exitedAt,
 		deletedAt = deletedAt,
@@ -30,6 +31,7 @@ fun ChatRoomMember.toEntity(): ChatRoomMemberEntity =
 		status = status,
 		unreadCount = unreadCount,
 		lastReadAt = lastReadAt,
+		lastReadMessageId = lastReadMessageId,
 		joinedAt = joinedAt,
 		exitedAt = exitedAt,
 	).also {

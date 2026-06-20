@@ -16,6 +16,7 @@ object ChatRoomMemberEntityFixture {
 		status: ChatRoomMemberStatus = ChatRoomMemberStatus.ACTIVE,
 		unreadCount: Int = 0,
 		lastReadAt: LocalDateTime? = null,
+		lastReadMessageId: Long? = null,
 		joinedAt: LocalDateTime = LocalDateTime.now(),
 		exitedAt: LocalDateTime? = null,
 	): ChatRoomMemberEntity =
@@ -25,6 +26,7 @@ object ChatRoomMemberEntityFixture {
 			status = status,
 			unreadCount = unreadCount,
 			lastReadAt = lastReadAt,
+			lastReadMessageId = lastReadMessageId,
 			joinedAt = joinedAt,
 			exitedAt = exitedAt,
 		)

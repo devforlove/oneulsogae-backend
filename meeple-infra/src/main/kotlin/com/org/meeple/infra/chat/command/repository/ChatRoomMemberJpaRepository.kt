@@ -45,4 +45,31 @@ interface ChatRoomMemberJpaRepository : JpaRepository<ChatRoomMemberEntity, Long
 		@Param("senderId") senderId: Long,
 		@Param("status") status: ChatRoomMemberStatus,
 	): Int
+
+	/**
+	 * [chatRoomId] 방의 활성 참가자 [userId]의 읽음 포인터([messageId])를 전진시키고 뱃지를 0으로 리셋한다. 갱신된 행 수를 반환한다.
+	 * forward-only: 현재 포인터가 null이거나 [messageId]보다 작을 때만 갱신해 역행을 막는다(순서 뒤바뀐 읽음 프레임 방어).
+	 * 벌크 JPQL UPDATE는 @SQLRestriction이 자동 적용되지 않으므로 `deleted_at` 조건을 명시하고, 나간(DEACTIVE) 참가자는 status로 제외한다.
+	 */
+	@Modifying
+	@Query(
+		"""
+		update ChatRoomMemberEntity m
+		set m.lastReadMessageId = :messageId,
+		    m.unreadCount = 0,
+		    m.lastReadAt = :now
+		where m.chatRoomId = :chatRoomId
+		  and m.userId = :userId
+		  and m.status = :status
+		  and m.deletedAt is null
+		  and (m.lastReadMessageId is null or m.lastReadMessageId < :messageId)
+		""",
+	)
+	fun advanceReadPointer(
+		@Param("chatRoomId") chatRoomId: Long,
+		@Param("userId") userId: Long,
+		@Param("messageId") messageId: Long,
+		@Param("now") now: java.time.LocalDateTime,
+		@Param("status") status: ChatRoomMemberStatus,
+	): Int
 }

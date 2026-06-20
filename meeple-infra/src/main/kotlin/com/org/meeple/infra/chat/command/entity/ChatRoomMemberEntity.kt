@@ -50,6 +50,10 @@ class ChatRoomMemberEntity(
 	@Column(name = "last_read_at")
 	var lastReadAt: LocalDateTime? = null,
 
+	/** 이 참가자가 마지막으로 읽은 메세지 id. (한 번도 안 읽었으면 null) 말풍선별 안 읽은 사람 수 계산의 읽음 포인터다. */
+	@Column(name = "last_read_message_id")
+	var lastReadMessageId: Long? = null,
+
 	/** 이 참가자가 채팅방에 참가한 시각. */
 	@Column(name = "joined_at", nullable = false)
 	val joinedAt: LocalDateTime,

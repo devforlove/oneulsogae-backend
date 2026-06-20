@@ -1,7 +1,9 @@
 package com.org.meeple.infra.chat.command.adapter
 
+import com.org.meeple.chatting.chat.application.port.out.AdvanceReadPointerPort
 import com.org.meeple.chatting.chat.application.port.out.GetChatRoomMemberPort as ChattingGetChatRoomMemberPort
 import com.org.meeple.chatting.chat.application.port.out.IncreaseUnreadCountPort
+import java.time.LocalDateTime
 import com.org.meeple.core.chat.command.domain.ChatRoomMember
 import com.org.meeple.core.chat.command.domain.ChatRoomMembers
 import com.org.meeple.common.chat.ChatRoomMemberStatus
@@ -23,7 +25,7 @@ import org.springframework.stereotype.Component
 @Component
 class ChatRoomMemberAdapter(
 	private val chatRoomMemberJpaRepository: ChatRoomMemberJpaRepository,
-) : GetChatRoomMemberPort, SaveChatRoomMemberPort, ChattingGetChatRoomMemberPort, IncreaseUnreadCountPort {
+) : GetChatRoomMemberPort, SaveChatRoomMemberPort, ChattingGetChatRoomMemberPort, IncreaseUnreadCountPort, AdvanceReadPointerPort {
 
 	// 참가자 행을 status와 무관하게 로드한다. ((chat_room_id, user_id) 유니크라 최대 한 건)
 	override fun findByChatRoomIdAndUserId(chatRoomId: Long, userId: Long): ChatRoomMember? =
@@ -55,4 +57,8 @@ class ChatRoomMemberAdapter(
 	override fun increaseForOthers(chatRoomId: Long, senderId: Long) {
 		chatRoomMemberJpaRepository.increaseUnreadCountForOthers(chatRoomId, senderId, ChatRoomMemberStatus.ACTIVE)
 	}
+
+	// chatting(읽음 경로): 한 참가자의 읽음 포인터를 forward-only로 전진시키고 뱃지를 리셋한다. (갱신 행 수 반환)
+	override fun advance(chatRoomId: Long, userId: Long, lastReadMessageId: Long, now: LocalDateTime): Int =
+		chatRoomMemberJpaRepository.advanceReadPointer(chatRoomId, userId, lastReadMessageId, now, ChatRoomMemberStatus.ACTIVE)
 }
