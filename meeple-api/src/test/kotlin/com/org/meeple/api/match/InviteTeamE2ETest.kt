@@ -150,6 +150,58 @@ class InviteTeamE2ETest : AbstractIntegrationSupport({
 				}
 			}
 		}
+
+		context("초대자(owner)가 이미 활성 팀에 속해 있으면") {
+			it("409(TEAM-009)을 반환한다") {
+				val ownerId = 1001L
+				val invited1 = 1002L
+				val invited2 = 1003L
+				persistMatchUser(ownerId, Gender.MALE)
+				persistMatchUser(invited1, Gender.MALE)
+				persistMatchUser(invited2, Gender.MALE)
+
+				// 첫 팀 결성(owner는 활성 구성원이 됨)
+				post("/teams/v1") {
+					bearer(accessTokenFor(ownerId))
+					jsonBody("""{"invitedUserId": $invited1, "name": "팀1", "introduction": null}""")
+				} expect { status(200) }
+
+				// 같은 owner가 또 초대 → 한 팀만 위반
+				post("/teams/v1") {
+					bearer(accessTokenFor(ownerId))
+					jsonBody("""{"invitedUserId": $invited2, "name": "팀2", "introduction": null}""")
+				} expect {
+					status(409)
+					body("error.code", "TEAM-009")
+				}
+			}
+		}
+
+		context("초대 대상이 이미 활성 팀에 속해 있으면") {
+			it("409(TEAM-009)을 반환한다") {
+				val owner1 = 1001L
+				val owner2 = 1004L
+				val invitedUserId = 1002L
+				persistMatchUser(owner1, Gender.MALE)
+				persistMatchUser(owner2, Gender.MALE)
+				persistMatchUser(invitedUserId, Gender.MALE)
+
+				// invitedUserId가 owner1 팀의 구성원이 됨
+				post("/teams/v1") {
+					bearer(accessTokenFor(owner1))
+					jsonBody("""{"invitedUserId": $invitedUserId, "name": "팀1", "introduction": null}""")
+				} expect { status(200) }
+
+				// owner2가 같은 사람을 초대 → 한 팀만 위반
+				post("/teams/v1") {
+					bearer(accessTokenFor(owner2))
+					jsonBody("""{"invitedUserId": $invitedUserId, "name": "팀2", "introduction": null}""")
+				} expect {
+					status(409)
+					body("error.code", "TEAM-009")
+				}
+			}
+		}
 	}
 
 	afterTest {
