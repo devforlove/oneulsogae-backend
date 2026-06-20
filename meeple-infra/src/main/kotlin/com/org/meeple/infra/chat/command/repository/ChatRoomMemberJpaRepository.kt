@@ -2,6 +2,7 @@ package com.org.meeple.infra.chat.command.repository
 
 import com.org.meeple.common.chat.ChatRoomMemberStatus
 import com.org.meeple.infra.chat.command.entity.ChatRoomMemberEntity
+import java.time.LocalDateTime
 import org.springframework.data.jpa.repository.JpaRepository
 import org.springframework.data.jpa.repository.Modifying
 import org.springframework.data.jpa.repository.Query
@@ -51,7 +52,7 @@ interface ChatRoomMemberJpaRepository : JpaRepository<ChatRoomMemberEntity, Long
 	 * forward-only: 현재 포인터가 null이거나 [messageId]보다 작을 때만 갱신해 역행을 막는다(순서 뒤바뀐 읽음 프레임 방어).
 	 * 벌크 JPQL UPDATE는 @SQLRestriction이 자동 적용되지 않으므로 `deleted_at` 조건을 명시하고, 나간(DEACTIVE) 참가자는 status로 제외한다.
 	 */
-	@Modifying
+	@Modifying(clearAutomatically = true)
 	@Query(
 		"""
 		update ChatRoomMemberEntity m
@@ -69,7 +70,7 @@ interface ChatRoomMemberJpaRepository : JpaRepository<ChatRoomMemberEntity, Long
 		@Param("chatRoomId") chatRoomId: Long,
 		@Param("userId") userId: Long,
 		@Param("messageId") messageId: Long,
-		@Param("now") now: java.time.LocalDateTime,
+		@Param("now") now: LocalDateTime,
 		@Param("status") status: ChatRoomMemberStatus,
 	): Int
 }

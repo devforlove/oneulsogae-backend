@@ -19,7 +19,7 @@ import org.springframework.stereotype.Component
  * [ChatRoomMemberEntity]의 out-port 어댑터. (Spring Data 메서드 쿼리)
  * 같은 엔티티를 쓰는 core·chatting 모듈의 out-port를 한 어댑터에서 함께 구현한다.
  * - core: 변경 대상 로드·종료 판정([GetChatRoomMemberPort]) + 참가자 저장([SaveChatRoomMemberPort]).
- * - chatting: 발신자 존재 검증([ChattingGetChatRoomMemberPort]) + 안 읽은 개수 벌크 증가([IncreaseUnreadCountPort]).
+ * - chatting: 발신자 존재 검증([ChattingGetChatRoomMemberPort]) + 안 읽은 개수 벌크 증가([IncreaseUnreadCountPort]) + 읽음 포인터 전진([AdvanceReadPointerPort]).
  * 접근 검증용 존재 조회·프로필 조인 조회는 query 쪽 QueryDSL 구현체([ExistsChatRoomMemberDaoImpl], [GetChatParticipantDaoImpl])가 따로 담당한다.
  */
 @Component

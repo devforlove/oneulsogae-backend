@@ -10,7 +10,9 @@ import com.org.meeple.infra.fixture.ChatRoomEntityFixture
 import com.org.meeple.infra.fixture.ChatRoomMemberEntityFixture
 import com.org.meeple.infra.fixture.IntegrationUtil
 import io.kotest.assertions.throwables.shouldThrow
+import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
+import java.time.LocalDateTime
 import org.springframework.beans.factory.annotation.Autowired
 
 /**
@@ -41,6 +43,15 @@ class MarkMessagesAsReadServiceIntegrationTest : AbstractIntegrationSupport() {
 				.fetchOne()!!
 		}
 
+		fun lastReadAtOf(chatRoomId: Long, userId: Long): LocalDateTime? {
+			val member: QChatRoomMemberEntity = QChatRoomMemberEntity.chatRoomMemberEntity
+			return IntegrationUtil.getQuery()
+				.select(member.lastReadAt)
+				.from(member)
+				.where(member.chatRoomId.eq(chatRoomId), member.userId.eq(userId))
+				.fetchOne()
+		}
+
 		describe("MarkMessagesAsReadService.markAsRead") {
 
 			context("활성 참가자가 읽음을 보고하면") {
@@ -56,6 +67,7 @@ class MarkMessagesAsReadServiceIntegrationTest : AbstractIntegrationSupport() {
 					result.changed shouldBe true
 					pointerOf(roomId, me) shouldBe 42L
 					unreadOf(roomId, me) shouldBe 0
+					lastReadAtOf(roomId, me).shouldNotBeNull()
 				}
 			}
 
