@@ -22,6 +22,32 @@ data class Team(
 	val deletedAt: LocalDateTime? = null,
 ) {
 
+	/**
+	 * 초대받은([TeamMemberStatus.INVITED]) 구성원([userId])이 초대를 수락한다.
+	 * 그 구성원을 ACTIVE로 전환하고, 전원 ACTIVE가 되면 팀을 [TeamStatus.FORMED]로 전이한 새 모델을 반환한다.
+	 * 상태·구성원 자격은 [validateAcceptable]로 검증한다.
+	 */
+	fun acceptInvitation(userId: Long): Team {
+		validateAcceptable(userId)
+		val accepted: TeamMembers = members.accept(userId)
+		return copy(
+			members = accepted,
+			status = if (accepted.allActive()) TeamStatus.FORMED else status,
+		)
+	}
+
+	// INVITING 상태가 아니면 INVALID_TEAM_STATUS, 구성원이 아니면 NOT_TEAM_MEMBER, INVITED 상태가 아니면 NOT_INVITED_MEMBER.
+	private fun validateAcceptable(userId: Long) {
+		if (status != TeamStatus.INVITING) {
+			throw BusinessException(TeamErrorCode.INVALID_TEAM_STATUS)
+		}
+		val member: TeamMember = members.find(userId)
+			?: throw BusinessException(TeamErrorCode.NOT_TEAM_MEMBER)
+		if (member.status != TeamMemberStatus.INVITED) {
+			throw BusinessException(TeamErrorCode.NOT_INVITED_MEMBER)
+		}
+	}
+
 	companion object {
 
 		/** 팀 이름 최대 길이. */

@@ -18,4 +18,9 @@ enum class TeamErrorCode(
 	INVALID_TEAM_NAME("TEAM-002", "팀 이름이 올바르지 않습니다.", HttpStatus.BAD_REQUEST),
 	INVALID_TEAM_INTRODUCTION("TEAM-003", "팀 소개가 너무 깁니다.", HttpStatus.BAD_REQUEST),
 	MUST_INVITE_SAME_GENDER("TEAM-004", "같은 성별만 팀에 초대할 수 있습니다.", HttpStatus.BAD_REQUEST),
+	TEAM_NOT_FOUND("TEAM-005", "팀을 찾을 수 없습니다.", HttpStatus.NOT_FOUND),
+	NOT_TEAM_MEMBER("TEAM-006", "해당 팀의 구성원이 아닙니다.", HttpStatus.FORBIDDEN),
+	NOT_INVITED_MEMBER("TEAM-007", "초대를 받은 구성원만 수락할 수 있습니다.", HttpStatus.BAD_REQUEST),
+	INVALID_TEAM_STATUS("TEAM-008", "현재 팀 상태에서 할 수 없는 작업입니다.", HttpStatus.CONFLICT),
+	ALREADY_IN_TEAM("TEAM-009", "이미 다른 팀에 속해 있습니다.", HttpStatus.CONFLICT),
 }

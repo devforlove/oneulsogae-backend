@@ -6,6 +6,8 @@ import com.org.meeple.common.user.Gender
 import com.org.meeple.core.common.error.BusinessException
 import com.org.meeple.core.match.TeamErrorCode
 import com.org.meeple.core.match.command.domain.Team
+import com.org.meeple.core.match.command.domain.TeamMember
+import com.org.meeple.core.match.command.domain.TeamMembers
 import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.core.spec.style.DescribeSpec
 import io.kotest.matchers.collections.shouldContainExactlyInAnyOrder
@@ -87,6 +89,47 @@ class TeamTest : DescribeSpec({
 			}
 
 			ex.errorCode shouldBe TeamErrorCode.INVALID_TEAM_INTRODUCTION
+		}
+	}
+
+	describe("acceptInvitation - 초대 수락") {
+		fun invitingTeam(): Team =
+			Team(
+				name = "우리팀",
+				members = TeamMembers(
+					listOf(
+						TeamMember(teamId = 0, userId = ownerId, gender = Gender.MALE, status = TeamMemberStatus.ACTIVE),
+						TeamMember(teamId = 0, userId = invitedUserId, gender = Gender.MALE, status = TeamMemberStatus.INVITED),
+					),
+				),
+				status = TeamStatus.INVITING,
+			)
+
+		it("초대받은 구성원이 수락하면 ACTIVE가 되고 전원 ACTIVE이므로 FORMED로 전이한다") {
+			val formed: Team = invitingTeam().acceptInvitation(invitedUserId)
+
+			formed.status shouldBe TeamStatus.FORMED
+			formed.members.find(invitedUserId)!!.status shouldBe TeamMemberStatus.ACTIVE
+		}
+
+		it("INVITING이 아니면 INVALID_TEAM_STATUS를 던진다") {
+			val ex: BusinessException = shouldThrow {
+				invitingTeam().copy(status = TeamStatus.FORMED).acceptInvitation(invitedUserId)
+			}
+
+			ex.errorCode shouldBe TeamErrorCode.INVALID_TEAM_STATUS
+		}
+
+		it("구성원이 아니면 NOT_TEAM_MEMBER를 던진다") {
+			val ex: BusinessException = shouldThrow { invitingTeam().acceptInvitation(999L) }
+
+			ex.errorCode shouldBe TeamErrorCode.NOT_TEAM_MEMBER
+		}
+
+		it("이미 ACTIVE인(초대받지 않은) 구성원이 수락하면 NOT_INVITED_MEMBER를 던진다") {
+			val ex: BusinessException = shouldThrow { invitingTeam().acceptInvitation(ownerId) }
+
+			ex.errorCode shouldBe TeamErrorCode.NOT_INVITED_MEMBER
 		}
 	}
 })
