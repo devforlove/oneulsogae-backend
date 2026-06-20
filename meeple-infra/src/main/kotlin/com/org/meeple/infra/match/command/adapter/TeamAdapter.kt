@@ -14,7 +14,7 @@ import org.springframework.stereotype.Component
 
 /**
  * [TeamEntity]의 command 영속성 어댑터. (팀은 헤더(teams) + 구성원(team_members)으로 이뤄진 하나의 애그리거트)
- * 이 어댑터가 두 테이블의 영속화를 함께 책임진다. core는 팀 저장([SaveTeamPort])을 쓴다.
+ * 이 어댑터가 두 테이블의 영속화·조회를 함께 책임진다. core는 팀 저장([SaveTeamPort])과 조회([GetTeamPort])를 쓴다.
  */
 @Component
 class TeamAdapter(

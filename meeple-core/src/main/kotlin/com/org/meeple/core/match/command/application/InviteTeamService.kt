@@ -14,7 +14,7 @@ import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 
 /**
- * [InviteTeamUseCase] 구현. 초대자가 다른 사용자를 초대해 팀을 결성한다. (초대 대상은 즉시 구성원으로 합류)
+ * [InviteTeamUseCase] 구현. 초대자가 다른 사용자를 초대해 팀을 결성한다. (초대 대상은 초대중(INVITED)으로 담기고, 수락해야 합류)
  * 구성원의 성별은 팀 구성(성별 균형)에 필요하므로, match 도메인 소유 읽기 모델([GetMatchUserPort], match_user)에서 읽어 채운다.
  * (자기 도메인 내부 영속성 접근은 자기 out-port를 쓴다. match_user 행이 없으면 매칭 불가이므로 PROFILE_INCOMPLETE를 던진다)
  * 이름·소개·자기 초대·동일 성별 검증은 [Team.invite] 도메인 팩토리가 담당한다.

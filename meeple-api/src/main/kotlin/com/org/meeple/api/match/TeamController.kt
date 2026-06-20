@@ -19,7 +19,7 @@ import org.springframework.web.bind.annotation.RestController
 
 /**
  * 2:2(팀) 매칭의 팀 엔드포인트. (모두 인증 필요)
- * - POST /: 다른 사용자를 초대해 팀을 결성한다. 초대 대상은 즉시 구성원으로 합류하고 팀은 초대중(INVITING) 상태로 만들어진다.
+ * - POST /: 다른 사용자를 초대해 팀을 결성한다. 초대 대상은 초대중(INVITED) 구성원으로 담기고 팀은 초대중(INVITING) 상태로 만들어진다.
  * - POST /{teamId}/acceptance: 초대받은 사용자가 팀 초대를 수락한다. 전원 수락 시 팀이 결성(FORMED)된다.
  * - DELETE /{teamId}/invitation: 초대 단계(INVITING) 팀의 초대를 철회한다. (초대받은 사람의 거절 / 초대자의 취소)
  * - DELETE /{teamId}: 결성(FORMED)된 팀을 구성원이 해체한다. (떠나면 2인 팀이 유지될 수 없어 팀 전체 비활성화)
