@@ -36,6 +36,48 @@ data class Team(
 		)
 	}
 
+	/**
+	 * 초대 단계([TeamStatus.INVITING])의 팀을 철회한다. (초대받은 사람의 거절 / 초대자의 취소 공통)
+	 * 팀을 [TeamStatus.DEACTIVATED]로 전이하고 팀·구성원을 [now]로 소프트 삭제한 새 모델을 반환한다.
+	 */
+	fun withdrawInvitation(userId: Long, now: LocalDateTime): Team {
+		validateWithdrawable(userId)
+		return deactivate(now)
+	}
+
+	/**
+	 * 결성([TeamStatus.FORMED])된 팀을 해체한다. (구성원이 떠나면 2인 팀이 유지될 수 없어 팀 전체를 비활성화)
+	 * 팀을 [TeamStatus.DEACTIVATED]로 전이하고 팀·구성원을 [now]로 소프트 삭제한 새 모델을 반환한다.
+	 */
+	fun disband(userId: Long, now: LocalDateTime): Team {
+		validateDisbandable(userId)
+		return deactivate(now)
+	}
+
+	// INVITING 상태가 아니면 INVALID_TEAM_STATUS, 구성원이 아니면 NOT_TEAM_MEMBER.
+	private fun validateWithdrawable(userId: Long) {
+		if (status != TeamStatus.INVITING) {
+			throw BusinessException(TeamErrorCode.INVALID_TEAM_STATUS)
+		}
+		if (!members.isMember(userId)) {
+			throw BusinessException(TeamErrorCode.NOT_TEAM_MEMBER)
+		}
+	}
+
+	// FORMED 상태가 아니면 INVALID_TEAM_STATUS, 구성원이 아니면 NOT_TEAM_MEMBER.
+	private fun validateDisbandable(userId: Long) {
+		if (status != TeamStatus.FORMED) {
+			throw BusinessException(TeamErrorCode.INVALID_TEAM_STATUS)
+		}
+		if (!members.isMember(userId)) {
+			throw BusinessException(TeamErrorCode.NOT_TEAM_MEMBER)
+		}
+	}
+
+	// 팀과 구성원을 비활성·소프트 삭제한다. (withdraw/disband 공통)
+	private fun deactivate(now: LocalDateTime): Team =
+		copy(status = TeamStatus.DEACTIVATED, deletedAt = now, members = members.deactivateAll(now))
+
 	// INVITING 상태가 아니면 INVALID_TEAM_STATUS, 구성원이 아니면 NOT_TEAM_MEMBER, INVITED 상태가 아니면 NOT_INVITED_MEMBER.
 	private fun validateAcceptable(userId: Long) {
 		if (status != TeamStatus.INVITING) {

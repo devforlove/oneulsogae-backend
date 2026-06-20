@@ -12,6 +12,7 @@ import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.core.spec.style.DescribeSpec
 import io.kotest.matchers.collections.shouldContainExactlyInAnyOrder
 import io.kotest.matchers.shouldBe
+import java.time.LocalDateTime
 
 /**
  * [Team] 도메인 유닛 테스트.
@@ -130,6 +131,72 @@ class TeamTest : DescribeSpec({
 			val ex: BusinessException = shouldThrow { invitingTeam().acceptInvitation(ownerId) }
 
 			ex.errorCode shouldBe TeamErrorCode.NOT_INVITED_MEMBER
+		}
+	}
+
+	describe("withdrawInvitation - 거절·초대취소") {
+		val now: LocalDateTime = LocalDateTime.of(2026, 6, 20, 12, 0)
+
+		fun invitingTeam(): Team =
+			Team(
+				name = "우리팀",
+				members = TeamMembers(
+					listOf(
+						TeamMember(teamId = 0, userId = ownerId, gender = Gender.MALE, status = TeamMemberStatus.ACTIVE),
+						TeamMember(teamId = 0, userId = invitedUserId, gender = Gender.MALE, status = TeamMemberStatus.INVITED),
+					),
+				),
+				status = TeamStatus.INVITING,
+			)
+
+		it("INVITING 팀의 구성원이 철회하면 DEACTIVATED + 전원 비활성·soft delete가 된다") {
+			val deactivated: Team = invitingTeam().withdrawInvitation(ownerId, now)
+
+			deactivated.status shouldBe TeamStatus.DEACTIVATED
+			deactivated.deletedAt shouldBe now
+			deactivated.members.values.forEach { it.status shouldBe TeamMemberStatus.DEACTIVE }
+		}
+
+		it("INVITING이 아니면 INVALID_TEAM_STATUS를 던진다") {
+			val ex: BusinessException = shouldThrow {
+				invitingTeam().copy(status = TeamStatus.FORMED).withdrawInvitation(ownerId, now)
+			}
+			ex.errorCode shouldBe TeamErrorCode.INVALID_TEAM_STATUS
+		}
+
+		it("구성원이 아니면 NOT_TEAM_MEMBER를 던진다") {
+			val ex: BusinessException = shouldThrow { invitingTeam().withdrawInvitation(999L, now) }
+			ex.errorCode shouldBe TeamErrorCode.NOT_TEAM_MEMBER
+		}
+	}
+
+	describe("disband - 해체·떠나기") {
+		val now: LocalDateTime = LocalDateTime.of(2026, 6, 20, 12, 0)
+
+		fun formedTeam(): Team =
+			Team(
+				name = "우리팀",
+				members = TeamMembers(
+					listOf(
+						TeamMember(teamId = 0, userId = ownerId, gender = Gender.MALE, status = TeamMemberStatus.ACTIVE),
+						TeamMember(teamId = 0, userId = invitedUserId, gender = Gender.MALE, status = TeamMemberStatus.ACTIVE),
+					),
+				),
+				status = TeamStatus.FORMED,
+			)
+
+		it("FORMED 팀의 구성원이 해체하면 DEACTIVATED + soft delete가 된다") {
+			val deactivated: Team = formedTeam().disband(invitedUserId, now)
+
+			deactivated.status shouldBe TeamStatus.DEACTIVATED
+			deactivated.deletedAt shouldBe now
+		}
+
+		it("FORMED가 아니면 INVALID_TEAM_STATUS를 던진다") {
+			val ex: BusinessException = shouldThrow {
+				formedTeam().copy(status = TeamStatus.INVITING).disband(ownerId, now)
+			}
+			ex.errorCode shouldBe TeamErrorCode.INVALID_TEAM_STATUS
 		}
 	}
 })
