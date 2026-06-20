@@ -3,6 +3,7 @@ package com.org.meeple.chatting.chat.application
 import com.org.meeple.chatting.chat.application.port.`in`.SendChatMessageUseCase
 import com.org.meeple.chatting.chat.application.port.`in`.command.SendChatMessageCommand
 import com.org.meeple.chatting.chat.application.port.`in`.result.SentChatMessageResult
+import com.org.meeple.chatting.chat.application.port.out.AdvanceReadPointerPort
 import com.org.meeple.chatting.chat.application.port.out.GetChatRoomMemberPort
 import com.org.meeple.chatting.chat.application.port.out.IncreaseUnreadCountPort
 import com.org.meeple.chatting.chat.application.port.out.SaveChatMessagePort
@@ -18,11 +19,12 @@ import java.time.LocalDateTime
 /**
  * [SendChatMessageUseCase] 구현. (chatting 자체 서비스 레이어, core 비의존)
  *
- * 메세지 1건당 DB 접근을 **4쿼리**로 줄였다. (방·참가자를 도메인으로 로드하지 않고 타깃 쿼리로 처리)
+ * 메세지 1건당 DB 접근을 **5쿼리**로 줄였다. (방·참가자를 도메인으로 로드하지 않고 타깃 쿼리로 처리)
  * 1) 발신자 참가 검증 — 단건 존재(exists)
  * 2) 방 종료검증 + 마지막 메세지 갱신 — **조건부 UPDATE 한 번** (활성 방만, 영향 0이면 거부)
  * 3) 메세지 저장 — INSERT
  * 4) 상대방(들) 안 읽은 개수 +1 — **벌크 UPDATE 한 번** (인원수 무관, N+1 제거)
+ * 5) 발신자 읽음 포인터 전진 — **조건부 UPDATE 한 번** (자기 메세지까지 읽음 처리, forward-only)
  *
  * 본문 검증(빈 값/길이)은 DB 접근 전에 도메인([ChatMessage.create])에서 먼저 한다.
  */
@@ -33,6 +35,7 @@ class SendChatMessageService(
 	private val updateChatRoomPort: UpdateChatRoomPort,
 	private val saveChatMessagePort: SaveChatMessagePort,
 	private val increaseUnreadCountPort: IncreaseUnreadCountPort,
+	private val advanceReadPointerPort: AdvanceReadPointerPort,
 	private val timeGenerator: TimeGenerator,
 ) : SendChatMessageUseCase {
 
@@ -63,6 +66,9 @@ class SendChatMessageService(
 
 		// 4) 상대방(들) 안 읽은 개수 +1
 		increaseUnreadCountPort.increaseForOthers(command.chatRoomId, command.senderId)
+
+		// 5) 발신자는 자기 메세지(및 이전 메세지)를 읽은 것으로 보고 읽음 포인터를 새 메세지로 전진시킨다. (forward-only, 비활성/나간 발신자면 0행)
+		advanceReadPointerPort.advance(command.chatRoomId, command.senderId, savedMessage.id, now)
 
 		return SentChatMessageResult(
 			id = savedMessage.id,
