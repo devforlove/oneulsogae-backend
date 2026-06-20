@@ -1,7 +1,7 @@
 package com.org.meeple.common.match
 
-/** 남녀 1:1 매칭(소개)이 생성된 경로(유형). */
-enum class MatchType(val description: String) {
+/** 1:1(솔로) 매칭(소개)이 생성된 경로(유형). */
+enum class SoloMatchType(val description: String) {
 
 	/** 일일 매칭 배치로 생성된 소개. */
 	DAILY("일일 매칭"),

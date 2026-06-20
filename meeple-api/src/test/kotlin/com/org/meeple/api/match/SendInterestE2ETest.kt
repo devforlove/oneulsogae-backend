@@ -16,12 +16,12 @@ import com.org.meeple.infra.coin.command.entity.QCoinBalanceEntity
 import com.org.meeple.infra.coin.command.entity.QCoinHistoryEntity
 import com.org.meeple.infra.fixture.CoinBalanceEntityFixture
 import com.org.meeple.infra.fixture.IntegrationUtil
-import com.org.meeple.infra.fixture.MatchEntityFixture
-import com.org.meeple.infra.fixture.MatchMemberEntityFixture
+import com.org.meeple.infra.fixture.SoloMatchEntityFixture
+import com.org.meeple.infra.fixture.SoloMatchMemberEntityFixture
 import com.org.meeple.infra.fixture.UserDetailEntityFixture
-import com.org.meeple.infra.match.command.entity.MatchEntity
-import com.org.meeple.infra.match.command.entity.QMatchEntity
-import com.org.meeple.infra.match.command.entity.QMatchMemberEntity
+import com.org.meeple.infra.match.command.entity.SoloMatchEntity
+import com.org.meeple.infra.match.command.entity.QSoloMatchEntity
+import com.org.meeple.infra.match.command.entity.QSoloMatchMemberEntity
 import com.org.meeple.infra.user.command.entity.QUserDetailEntity
 import io.kotest.matchers.shouldBe
 
@@ -41,19 +41,19 @@ class SendInterestE2ETest : AbstractIntegrationSupport({
 		maleAccepted: Boolean? = null,
 		femaleAccepted: Boolean? = null,
 		status: MatchStatus = MatchStatus.PROPOSED,
-	): MatchEntity {
-		val match: MatchEntity = IntegrationUtil.persist(
-			MatchEntityFixture.create(
+	): SoloMatchEntity {
+		val match: SoloMatchEntity = IntegrationUtil.persist(
+			SoloMatchEntityFixture.create(
 				memberKey = MatchMembers.memberKeyOf(listOf(maleUserId, femaleUserId)),
 				status = status,
 			),
 		)
 		val matchId: Long = match.id!!
 		IntegrationUtil.persist(
-			MatchMemberEntityFixture.create(matchId = matchId, userId = maleUserId, gender = Gender.MALE, accepted = maleAccepted),
+			SoloMatchMemberEntityFixture.create(matchId = matchId, userId = maleUserId, gender = Gender.MALE, accepted = maleAccepted),
 		)
 		IntegrationUtil.persist(
-			MatchMemberEntityFixture.create(matchId = matchId, userId = femaleUserId, gender = Gender.FEMALE, accepted = femaleAccepted),
+			SoloMatchMemberEntityFixture.create(matchId = matchId, userId = femaleUserId, gender = Gender.FEMALE, accepted = femaleAccepted),
 		)
 		return match
 	}
@@ -64,7 +64,7 @@ class SendInterestE2ETest : AbstractIntegrationSupport({
 			it("신청 비용이 차감되고 신청이 반영된다 (200, PARTIALLY_ACCEPTED) + 상대에게 '관심 받음' 알람") {
 				val maleUserId = 1001L
 				val femaleUserId = 2001L
-				val match: MatchEntity = persistMatch(maleUserId, femaleUserId)
+				val match: SoloMatchEntity = persistMatch(maleUserId, femaleUserId)
 				// 보낸 사람(남성) 프로필 — 알람 문구에 닉네임이 들어간다.
 				IntegrationUtil.persist(
 					UserDetailEntityFixture.create(userId = maleUserId, gender = Gender.MALE, nickname = "철수"),
@@ -99,7 +99,7 @@ class SendInterestE2ETest : AbstractIntegrationSupport({
 				val maleUserId = 1002L
 				val femaleUserId = 2002L
 				// 상대(여성)가 이미 수락한 PARTIALLY_ACCEPTED 매칭
-				val match: MatchEntity = persistMatch(
+				val match: SoloMatchEntity = persistMatch(
 					maleUserId = maleUserId,
 					femaleUserId = femaleUserId,
 					femaleAccepted = true,
@@ -144,7 +144,7 @@ class SendInterestE2ETest : AbstractIntegrationSupport({
 			it("400(COIN-001)을 반환하고 잔액·매칭 상태가 그대로다") {
 				val maleUserId = 1003L
 				val femaleUserId = 2003L
-				val match: MatchEntity = persistMatch(maleUserId, femaleUserId)
+				val match: SoloMatchEntity = persistMatch(maleUserId, femaleUserId)
 				IntegrationUtil.persist(CoinBalanceEntityFixture.create(userId = maleUserId, balance = 10)) // 32보다 적음
 
 				post("/matches/v1/${match.id}/interest") {
@@ -171,8 +171,8 @@ class SendInterestE2ETest : AbstractIntegrationSupport({
 	}
 
 	afterTest {
-		IntegrationUtil.deleteAll(QMatchMemberEntity.matchMemberEntity)
-		IntegrationUtil.deleteAll(QMatchEntity.matchEntity)
+		IntegrationUtil.deleteAll(QSoloMatchMemberEntity.soloMatchMemberEntity)
+		IntegrationUtil.deleteAll(QSoloMatchEntity.soloMatchEntity)
 		IntegrationUtil.deleteAll(QUserDetailEntity.userDetailEntity)
 		IntegrationUtil.deleteAll(QChatRoomMemberEntity.chatRoomMemberEntity)
 		IntegrationUtil.deleteAll(QChatRoomEntity.chatRoomEntity)
@@ -217,7 +217,7 @@ private fun coinBalanceOf(userId: Long): Int {
 }
 
 private fun matchStatusOf(matchId: Long): MatchStatus {
-	val match: QMatchEntity = QMatchEntity.matchEntity
+	val match: QSoloMatchEntity = QSoloMatchEntity.soloMatchEntity
 	return IntegrationUtil.getQuery()
 		.select(match.status)
 		.from(match)

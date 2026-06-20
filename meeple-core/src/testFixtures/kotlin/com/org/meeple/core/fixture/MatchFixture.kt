@@ -1,7 +1,7 @@
 package com.org.meeple.core.fixture
 
 import com.org.meeple.common.match.MatchStatus
-import com.org.meeple.common.match.MatchType
+import com.org.meeple.common.match.SoloMatchType
 import com.org.meeple.common.user.Gender
 import com.org.meeple.core.match.command.domain.Match
 import com.org.meeple.core.match.command.domain.MatchMember
@@ -20,7 +20,7 @@ object MatchFixture {
 		members: MatchMembers = membersOf(),
 		introducedDate: LocalDate = LocalDate.of(2026, 1, 1),
 		expiresAt: LocalDateTime = LocalDateTime.of(2026, 1, 2, 0, 0),
-		matchType: MatchType = MatchType.DAILY,
+		matchType: SoloMatchType = SoloMatchType.DAILY,
 		status: MatchStatus = MatchStatus.PROPOSED,
 	): Match =
 		Match(

@@ -19,6 +19,7 @@ object MatchUserEntityFixture {
 		maritalStatus: MaritalStatus = MaritalStatus.SINGLE,
 		age: Int = 28,
 		nickname: String = "테스트유저",
+		profileImageCode: String = "1",
 		lastLoginAt: LocalDateTime = LocalDateTime.now(),
 	): MatchUserEntity =
 		MatchUserEntity(
@@ -28,6 +29,7 @@ object MatchUserEntityFixture {
 			maritalStatus = maritalStatus,
 			age = age,
 			nickname = nickname,
+			profileImageCode = profileImageCode,
 			lastLoginAt = lastLoginAt,
 		)
 }

@@ -4,8 +4,8 @@ import com.org.meeple.common.match.MatchMemberStatus
 import com.org.meeple.common.user.Gender
 import com.org.meeple.core.match.query.dao.GetMatchWithPartnerDao
 import com.org.meeple.core.match.query.dto.MatchWithPartner
-import com.org.meeple.infra.match.command.entity.QMatchEntity
-import com.org.meeple.infra.match.command.entity.QMatchMemberEntity
+import com.org.meeple.infra.match.command.entity.QSoloMatchEntity
+import com.org.meeple.infra.match.command.entity.QSoloMatchMemberEntity
 import com.org.meeple.infra.user.command.entity.QUserDetailEntity
 import com.querydsl.core.types.Projections
 import com.querydsl.core.types.dsl.Expressions
@@ -28,13 +28,13 @@ class GetMatchWithPartnerDaoImpl(
 
 	/**
 	 * 사용자가 참가한 매칭 + 상대 프로필을 조인 조회한다. (만료된 소개는 now 기준으로 제외)
-	 * 내 참가자 행(match_members.user_id = :userId, → idx_user_id)에서 출발해 매칭 헤더·상대 참가자·상대 프로필을 명시적 조인으로 가져온다.
+	 * 내 참가자 행(solo_match_members.user_id = :userId, → idx_user_id)에서 출발해 매칭 헤더·상대 참가자·상대 프로필을 명시적 조인으로 가져온다.
 	 * 1:1이라 상대 참가자는 정확히 한 명이다. ([gender]는 컬럼 선택에 쓰지 않아 무시한다)
 	 */
 	override fun findAllWithPartnerByUserId(userId: Long, gender: Gender, now: LocalDateTime): List<MatchWithPartner> {
-		val match: QMatchEntity = QMatchEntity.matchEntity
-		val myMember: QMatchMemberEntity = QMatchMemberEntity.matchMemberEntity
-		val partnerMember: QMatchMemberEntity = QMatchMemberEntity("partnerMember")
+		val match: QSoloMatchEntity = QSoloMatchEntity.soloMatchEntity
+		val myMember: QSoloMatchMemberEntity = QSoloMatchMemberEntity.soloMatchMemberEntity
+		val partnerMember: QSoloMatchMemberEntity = QSoloMatchMemberEntity("partnerMember")
 		val partnerDetail: QUserDetailEntity = QUserDetailEntity.userDetailEntity
 
 		return queryFactory

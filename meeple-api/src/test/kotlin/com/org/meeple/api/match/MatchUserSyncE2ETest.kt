@@ -11,8 +11,8 @@ import com.org.meeple.infra.fixture.IntegrationUtil
 import com.org.meeple.infra.fixture.MatchUserEntityFixture
 import com.org.meeple.infra.fixture.UserEntityFixture
 import com.org.meeple.infra.match.command.entity.MatchUserEntity
-import com.org.meeple.infra.match.command.entity.QMatchEntity
-import com.org.meeple.infra.match.command.entity.QMatchMemberEntity
+import com.org.meeple.infra.match.command.entity.QSoloMatchEntity
+import com.org.meeple.infra.match.command.entity.QSoloMatchMemberEntity
 import com.org.meeple.infra.match.command.entity.QMatchUserEntity
 import com.org.meeple.infra.user.command.entity.QUserDetailEntity
 import com.org.meeple.infra.user.command.entity.QUserEntity
@@ -40,11 +40,12 @@ class MatchUserSyncE2ETest : AbstractIntegrationSupport({
 						lastLoginAt = LocalDateTime.now(),
 					),
 				).id!!
-				// 매칭 필수 필드(성별·권역·결혼여부·나이·닉네임)가 모두 채워진 완성 프로필
+				// 매칭 필수 필드(성별·권역·결혼여부·나이·닉네임·프로필이미지코드)가 모두 채워진 완성 프로필
 				IntegrationUtil.persist(
 					UserDetailEntity(
 						userId = userId,
 						nickname = "민수",
+						profileImageCode = "1",
 						gender = Gender.MALE,
 						age = 31,
 						regionCode = 1,
@@ -69,6 +70,7 @@ class MatchUserSyncE2ETest : AbstractIntegrationSupport({
 				row.regionCode shouldBe 1
 				row.maritalStatus shouldBe MaritalStatus.SINGLE
 				row.nickname shouldBe "민수"
+				row.profileImageCode shouldBe "1"
 			}
 		}
 	}
@@ -116,8 +118,8 @@ class MatchUserSyncE2ETest : AbstractIntegrationSupport({
 	}
 
 	afterTest {
-		IntegrationUtil.deleteAll(QMatchMemberEntity.matchMemberEntity)
-		IntegrationUtil.deleteAll(QMatchEntity.matchEntity)
+		IntegrationUtil.deleteAll(QSoloMatchMemberEntity.soloMatchMemberEntity)
+		IntegrationUtil.deleteAll(QSoloMatchEntity.soloMatchEntity)
 		IntegrationUtil.deleteAll(QMatchUserEntity.matchUserEntity)
 		IntegrationUtil.deleteAll(QUserDetailEntity.userDetailEntity)
 		IntegrationUtil.deleteAll(QUserEntity.userEntity)

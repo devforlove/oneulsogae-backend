@@ -171,6 +171,7 @@ data class UserDetail(
 			regionCode = regionCode ?: return null,
 			maritalStatus = maritalStatus ?: return null,
 			nickname = nickname ?: return null,
+			profileImageCode = profileImageCode ?: return null,
 			lastLoginAt = lastLoginAt ?: return null,
 		)
 	}

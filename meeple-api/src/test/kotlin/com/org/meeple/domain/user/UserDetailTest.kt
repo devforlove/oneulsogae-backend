@@ -163,6 +163,7 @@ class UserDetailTest : DescribeSpec({
 				regionCode = 2,
 				maritalStatus = complete.maritalStatus!!,
 				nickname = complete.nickname!!,
+				profileImageCode = complete.profileImageCode!!,
 				lastLoginAt = loginAt,
 			)
 		}

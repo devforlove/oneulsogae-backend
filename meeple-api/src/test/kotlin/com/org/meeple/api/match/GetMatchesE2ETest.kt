@@ -8,12 +8,12 @@ import com.org.meeple.common.user.Gender
 import com.org.meeple.common.user.UserStatus
 import com.org.meeple.core.match.command.domain.MatchMembers
 import com.org.meeple.infra.fixture.IntegrationUtil
-import com.org.meeple.infra.fixture.MatchEntityFixture
-import com.org.meeple.infra.fixture.MatchMemberEntityFixture
+import com.org.meeple.infra.fixture.SoloMatchEntityFixture
+import com.org.meeple.infra.fixture.SoloMatchMemberEntityFixture
 import com.org.meeple.infra.fixture.UserEntityFixture
-import com.org.meeple.infra.match.command.entity.MatchEntity
-import com.org.meeple.infra.match.command.entity.QMatchEntity
-import com.org.meeple.infra.match.command.entity.QMatchMemberEntity
+import com.org.meeple.infra.match.command.entity.SoloMatchEntity
+import com.org.meeple.infra.match.command.entity.QSoloMatchEntity
+import com.org.meeple.infra.match.command.entity.QSoloMatchMemberEntity
 import com.org.meeple.infra.user.command.entity.QUserDetailEntity
 import com.org.meeple.infra.user.command.entity.QUserEntity
 import com.org.meeple.infra.user.command.entity.UserDetailEntity
@@ -40,7 +40,7 @@ class GetMatchesE2ETest : AbstractIntegrationSupport({
 					UserDetailEntity(userId = meUserId, nickname = "철수", gender = Gender.MALE, age = 30),
 				)
 
-				// 상대는 dao 조인 대상(match_members + user_details)만 있으면 된다.
+				// 상대는 dao 조인 대상(solo_match_members + user_details)만 있으면 된다.
 				val partnerUserId = 9001L
 				IntegrationUtil.persist(
 					UserDetailEntity(
@@ -53,8 +53,8 @@ class GetMatchesE2ETest : AbstractIntegrationSupport({
 					),
 				)
 
-				val match: MatchEntity = IntegrationUtil.persist(
-					MatchEntityFixture.create(
+				val match: SoloMatchEntity = IntegrationUtil.persist(
+					SoloMatchEntityFixture.create(
 						memberKey = MatchMembers.memberKeyOf(listOf(meUserId, partnerUserId)),
 						status = MatchStatus.PARTIALLY_ACCEPTED,
 					),
@@ -62,11 +62,11 @@ class GetMatchesE2ETest : AbstractIntegrationSupport({
 				val matchId: Long = match.id!!
 				// 나: 미응답(null) → hasUserInterest=false
 				IntegrationUtil.persist(
-					MatchMemberEntityFixture.create(matchId = matchId, userId = meUserId, gender = Gender.MALE, accepted = null),
+					SoloMatchMemberEntityFixture.create(matchId = matchId, userId = meUserId, gender = Gender.MALE, accepted = null),
 				)
 				// 상대: 수락(true) → hasPartnerInterest=true
 				IntegrationUtil.persist(
-					MatchMemberEntityFixture.create(matchId = matchId, userId = partnerUserId, gender = Gender.FEMALE, accepted = true),
+					SoloMatchMemberEntityFixture.create(matchId = matchId, userId = partnerUserId, gender = Gender.FEMALE, accepted = true),
 				)
 
 				get("/matches/v1") {
@@ -88,8 +88,8 @@ class GetMatchesE2ETest : AbstractIntegrationSupport({
 	}
 
 	afterTest {
-		IntegrationUtil.deleteAll(QMatchMemberEntity.matchMemberEntity)
-		IntegrationUtil.deleteAll(QMatchEntity.matchEntity)
+		IntegrationUtil.deleteAll(QSoloMatchMemberEntity.soloMatchMemberEntity)
+		IntegrationUtil.deleteAll(QSoloMatchEntity.soloMatchEntity)
 		IntegrationUtil.deleteAll(QUserDetailEntity.userDetailEntity)
 		IntegrationUtil.deleteAll(QUserEntity.userEntity)
 	}

@@ -2,20 +2,20 @@ package com.org.meeple.api.scheduler
 
 import com.org.meeple.common.integration.AbstractIntegrationSupport
 import com.org.meeple.common.match.MatchStatus
-import com.org.meeple.common.match.MatchType
+import com.org.meeple.common.match.SoloMatchType
 import com.org.meeple.common.user.Gender
 import com.org.meeple.common.user.UserStatus
 import com.org.meeple.core.match.command.domain.MatchMembers
 import com.org.meeple.infra.fixture.IntegrationUtil
-import com.org.meeple.infra.fixture.MatchEntityFixture
-import com.org.meeple.infra.fixture.MatchMemberEntityFixture
+import com.org.meeple.infra.fixture.SoloMatchEntityFixture
+import com.org.meeple.infra.fixture.SoloMatchMemberEntityFixture
 import com.org.meeple.infra.fixture.MatchUserEntityFixture
 import com.org.meeple.infra.fixture.UserDetailEntityFixture
 import com.org.meeple.infra.fixture.UserEntityFixture
-import com.org.meeple.infra.match.command.entity.MatchEntity
-import com.org.meeple.infra.match.command.entity.MatchMemberEntity
-import com.org.meeple.infra.match.command.entity.QMatchEntity
-import com.org.meeple.infra.match.command.entity.QMatchMemberEntity
+import com.org.meeple.infra.match.command.entity.SoloMatchEntity
+import com.org.meeple.infra.match.command.entity.SoloMatchMemberEntity
+import com.org.meeple.infra.match.command.entity.QSoloMatchEntity
+import com.org.meeple.infra.match.command.entity.QSoloMatchMemberEntity
 import com.org.meeple.infra.match.command.entity.QMatchUserEntity
 import com.org.meeple.infra.user.command.entity.QUserDetailEntity
 import com.org.meeple.infra.user.command.entity.QUserEntity
@@ -55,11 +55,11 @@ class RunDailyMatchBatchIntegrationTest(
 				result.failed shouldBe 0
 
 				// 두 사람 사이에 오늘자 PROPOSED·DAILY 소개가 정확히 하나 생긴다. (단건 조회라 중복 소개가 없음도 함께 보장)
-				val match: MatchEntity = proposedMatchBetween(maleId, femaleId).shouldNotBeNull()
-				match.matchType shouldBe MatchType.DAILY
+				val match: SoloMatchEntity = proposedMatchBetween(maleId, femaleId).shouldNotBeNull()
+				match.matchType shouldBe SoloMatchType.DAILY
 				match.introducedDate shouldBe LocalDate.now()
 
-				// 확장 씨앗: 정규화 참가자 테이블(match_members)에도 두 사람이 성별과 함께 기록된다. (male→MALE, female→FEMALE)
+				// 확장 씨앗: 정규화 참가자 테이블(solo_match_members)에도 두 사람이 성별과 함께 기록된다. (male→MALE, female→FEMALE)
 				matchMembersOf(match.id!!).map { it.userId to it.gender } shouldContainExactlyInAnyOrder
 					listOf(maleId to Gender.MALE, femaleId to Gender.FEMALE)
 			}
@@ -110,8 +110,8 @@ class RunDailyMatchBatchIntegrationTest(
 	}
 
 	afterTest {
-		IntegrationUtil.deleteAll(QMatchMemberEntity.matchMemberEntity)
-		IntegrationUtil.deleteAll(QMatchEntity.matchEntity)
+		IntegrationUtil.deleteAll(QSoloMatchMemberEntity.soloMatchMemberEntity)
+		IntegrationUtil.deleteAll(QSoloMatchEntity.soloMatchEntity)
 		IntegrationUtil.deleteAll(QMatchUserEntity.matchUserEntity)
 		IntegrationUtil.deleteAll(QUserDetailEntity.userDetailEntity)
 		IntegrationUtil.deleteAll(QUserEntity.userEntity)
@@ -142,19 +142,19 @@ private fun persistActiveUser(providerId: String, gender: Gender, regionCode: In
 
 // 1:1 성사(MATCHED) 매칭 헤더 + 두 참가자 행을 저장한다. (이미 매칭된 사용자 제외는 참가자 조인으로 판단되므로 참가자 행이 있어야 한다)
 private fun persistMatchedMatch(maleUserId: Long, femaleUserId: Long) {
-	val match: MatchEntity = IntegrationUtil.persist(
-		MatchEntityFixture.create(
+	val match: SoloMatchEntity = IntegrationUtil.persist(
+		SoloMatchEntityFixture.create(
 			memberKey = MatchMembers.memberKeyOf(listOf(maleUserId, femaleUserId)),
 			status = MatchStatus.MATCHED,
 		),
 	)
-	IntegrationUtil.persist(MatchMemberEntityFixture.create(matchId = match.id!!, userId = maleUserId, gender = Gender.MALE, accepted = true))
-	IntegrationUtil.persist(MatchMemberEntityFixture.create(matchId = match.id!!, userId = femaleUserId, gender = Gender.FEMALE, accepted = true))
+	IntegrationUtil.persist(SoloMatchMemberEntityFixture.create(matchId = match.id!!, userId = maleUserId, gender = Gender.MALE, accepted = true))
+	IntegrationUtil.persist(SoloMatchMemberEntityFixture.create(matchId = match.id!!, userId = femaleUserId, gender = Gender.FEMALE, accepted = true))
 }
 
 // 해당 쌍의 PROPOSED 소개 한 건. (없으면 null) 참가자 조합 키로 찾는다.
-private fun proposedMatchBetween(maleUserId: Long, femaleUserId: Long): MatchEntity? {
-	val match: QMatchEntity = QMatchEntity.matchEntity
+private fun proposedMatchBetween(maleUserId: Long, femaleUserId: Long): SoloMatchEntity? {
+	val match: QSoloMatchEntity = QSoloMatchEntity.soloMatchEntity
 	return IntegrationUtil.getQuery()
 		.selectFrom(match)
 		.where(
@@ -164,10 +164,10 @@ private fun proposedMatchBetween(maleUserId: Long, femaleUserId: Long): MatchEnt
 		.fetchOne()
 }
 
-// 해당 사용자가 참가자로 들어간 매칭 전체. (match_members ⋈ matches)
-private fun matchesInvolving(userId: Long): List<MatchEntity> {
-	val match: QMatchEntity = QMatchEntity.matchEntity
-	val member: QMatchMemberEntity = QMatchMemberEntity.matchMemberEntity
+// 해당 사용자가 참가자로 들어간 매칭 전체. (solo_match_members ⋈ matches)
+private fun matchesInvolving(userId: Long): List<SoloMatchEntity> {
+	val match: QSoloMatchEntity = QSoloMatchEntity.soloMatchEntity
+	val member: QSoloMatchMemberEntity = QSoloMatchMemberEntity.soloMatchMemberEntity
 	return IntegrationUtil.getQuery()
 		.select(match)
 		.from(member)
@@ -176,9 +176,9 @@ private fun matchesInvolving(userId: Long): List<MatchEntity> {
 		.fetch()
 }
 
-// 해당 매칭의 정규화 참가자(match_members) 행 전체.
-private fun matchMembersOf(matchId: Long): List<MatchMemberEntity> {
-	val member: QMatchMemberEntity = QMatchMemberEntity.matchMemberEntity
+// 해당 매칭의 정규화 참가자(solo_match_members) 행 전체.
+private fun matchMembersOf(matchId: Long): List<SoloMatchMemberEntity> {
+	val member: QSoloMatchMemberEntity = QSoloMatchMemberEntity.soloMatchMemberEntity
 	return IntegrationUtil.getQuery()
 		.selectFrom(member)
 		.where(member.matchId.eq(matchId))

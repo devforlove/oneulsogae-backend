@@ -1,6 +1,6 @@
 package com.org.meeple.infra.match.command.repository
 
-import com.org.meeple.infra.match.command.entity.MatchMemberEntity
+import com.org.meeple.infra.match.command.entity.SoloMatchMemberEntity
 import org.springframework.data.jpa.repository.JpaRepository
 
 /**
@@ -9,8 +9,8 @@ import org.springframework.data.jpa.repository.JpaRepository
  * [com.org.meeple.infra.match.command.adapter.MatchAdapter]가 매칭 애그리거트(헤더+참가자) 영속화에서 사용한다.
  * 참가자↔매칭 조인이 필요한 조회(성사 사용자 등)는 [com.org.meeple.infra.match.query]의 QueryDSL dao가 담당한다.
  */
-interface MatchMemberJpaRepository : JpaRepository<MatchMemberEntity, Long> {
+interface MatchMemberJpaRepository : JpaRepository<SoloMatchMemberEntity, Long> {
 
 	/** 한 매칭의 참가자 전체. (매칭 애그리거트 조립용) */
-	fun findByMatchId(matchId: Long): List<MatchMemberEntity>
+	fun findByMatchId(matchId: Long): List<SoloMatchMemberEntity>
 }

@@ -13,10 +13,10 @@ import com.org.meeple.infra.chat.command.entity.QChatRoomMemberEntity
 import com.org.meeple.infra.fixture.ChatRoomEntityFixture
 import com.org.meeple.infra.fixture.ChatRoomMemberEntityFixture
 import com.org.meeple.infra.fixture.IntegrationUtil
-import com.org.meeple.infra.fixture.MatchEntityFixture
-import com.org.meeple.infra.fixture.MatchMemberEntityFixture
-import com.org.meeple.infra.match.command.entity.QMatchEntity
-import com.org.meeple.infra.match.command.entity.QMatchMemberEntity
+import com.org.meeple.infra.fixture.SoloMatchEntityFixture
+import com.org.meeple.infra.fixture.SoloMatchMemberEntityFixture
+import com.org.meeple.infra.match.command.entity.QSoloMatchEntity
+import com.org.meeple.infra.match.command.entity.QSoloMatchMemberEntity
 import io.kotest.matchers.shouldBe
 
 /**
@@ -53,7 +53,7 @@ class LeaveChatRoomE2ETest : AbstractIntegrationSupport({
 
 	// 제거되지 않은(소프트 삭제 안 된) 매칭이 존재하는지. (@SQLRestriction으로 deleted_at is null 행만 조회된다)
 	fun matchExists(matchId: Long): Boolean {
-		val match: QMatchEntity = QMatchEntity.matchEntity
+		val match: QSoloMatchEntity = QSoloMatchEntity.soloMatchEntity
 		return IntegrationUtil.getQuery()
 			.selectOne()
 			.from(match)
@@ -83,7 +83,7 @@ class LeaveChatRoomE2ETest : AbstractIntegrationSupport({
 
 	// 매칭 참가자의 현재 status. (소프트 삭제 안 된 행을 조회)
 	fun matchMemberStatusOf(matchId: Long, userId: Long): MatchMemberStatus {
-		val matchMember: QMatchMemberEntity = QMatchMemberEntity.matchMemberEntity
+		val matchMember: QSoloMatchMemberEntity = QSoloMatchMemberEntity.soloMatchMemberEntity
 		return IntegrationUtil.getQuery()
 			.select(matchMember.status)
 			.from(matchMember)
@@ -97,9 +97,9 @@ class LeaveChatRoomE2ETest : AbstractIntegrationSupport({
 			it("본인 채팅·매칭 참가자만 비활성화하고 상대는 유지하며 방은 ACTIVE로 둔다 (200)") {
 				val me = 9101L
 				val partner = 9102L
-				val matchId: Long = IntegrationUtil.persist(MatchEntityFixture.create(memberKey = "9101-9102")).id!!
-				IntegrationUtil.persist(MatchMemberEntityFixture.create(matchId = matchId, userId = me, gender = Gender.MALE))
-				IntegrationUtil.persist(MatchMemberEntityFixture.create(matchId = matchId, userId = partner, gender = Gender.FEMALE))
+				val matchId: Long = IntegrationUtil.persist(SoloMatchEntityFixture.create(memberKey = "9101-9102")).id!!
+				IntegrationUtil.persist(SoloMatchMemberEntityFixture.create(matchId = matchId, userId = me, gender = Gender.MALE))
+				IntegrationUtil.persist(SoloMatchMemberEntityFixture.create(matchId = matchId, userId = partner, gender = Gender.FEMALE))
 				val roomId: Long = IntegrationUtil.persist(ChatRoomEntityFixture.create(matchId = matchId)).id!!
 				IntegrationUtil.persist(ChatRoomMemberEntityFixture.create(chatRoomId = roomId, userId = me))
 				IntegrationUtil.persist(ChatRoomMemberEntityFixture.create(chatRoomId = roomId, userId = partner))
@@ -125,9 +125,9 @@ class LeaveChatRoomE2ETest : AbstractIntegrationSupport({
 			it("그 방을 만든 매칭도 제거(소프트 삭제)된다 (200)") {
 				val me = 9201L
 				val partner = 9202L
-				val matchId: Long = IntegrationUtil.persist(MatchEntityFixture.create(memberKey = "9201-9202")).id!!
-				IntegrationUtil.persist(MatchMemberEntityFixture.create(matchId = matchId, userId = me, gender = Gender.MALE))
-				IntegrationUtil.persist(MatchMemberEntityFixture.create(matchId = matchId, userId = partner, gender = Gender.FEMALE))
+				val matchId: Long = IntegrationUtil.persist(SoloMatchEntityFixture.create(memberKey = "9201-9202")).id!!
+				IntegrationUtil.persist(SoloMatchMemberEntityFixture.create(matchId = matchId, userId = me, gender = Gender.MALE))
+				IntegrationUtil.persist(SoloMatchMemberEntityFixture.create(matchId = matchId, userId = partner, gender = Gender.FEMALE))
 				val roomId: Long = IntegrationUtil.persist(ChatRoomEntityFixture.create(matchId = matchId)).id!!
 				IntegrationUtil.persist(ChatRoomMemberEntityFixture.create(chatRoomId = roomId, userId = me))
 				// 상대는 이미 나간(비활성) 상태 → me가 마지막 활성 참가자라 나가면 방이 닫히고 매칭도 제거된다.
@@ -237,7 +237,7 @@ class LeaveChatRoomE2ETest : AbstractIntegrationSupport({
 	afterTest {
 		IntegrationUtil.deleteAll(QChatRoomMemberEntity.chatRoomMemberEntity)
 		IntegrationUtil.deleteAll(QChatRoomEntity.chatRoomEntity)
-		IntegrationUtil.deleteAll(QMatchMemberEntity.matchMemberEntity)
-		IntegrationUtil.deleteAll(QMatchEntity.matchEntity)
+		IntegrationUtil.deleteAll(QSoloMatchMemberEntity.soloMatchMemberEntity)
+		IntegrationUtil.deleteAll(QSoloMatchEntity.soloMatchEntity)
 	}
 })

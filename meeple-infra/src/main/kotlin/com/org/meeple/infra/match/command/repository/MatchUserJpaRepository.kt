@@ -10,11 +10,14 @@ import org.springframework.data.repository.query.Param
 import java.time.LocalDateTime
 
 /**
- * 매칭 읽기 모델(match_user) 리포지토리. PK가 user_id이므로 단건 조회/저장(upsert)은 JpaRepository 기본 메서드로 처리한다.
+ * 매칭 읽기 모델(match_user) 리포지토리. PK는 생성 id지만 비즈니스 키는 user_id이므로 단건 조회는 [findByUserId]로 한다.
  * 후보 조회는 반대 성별·같은 권역·최근 로그인 조건만으로 한다. (행의 존재가 곧 정식 가입+프로필 완성이라 status·null 검사가 없다)
  * 후보 수([countCandidates])를 센 뒤 [0, count) 랜덤 오프셋으로 한 명만 뽑는 방식(LIMIT offset, 1)을 위해 id 정렬 + [Pageable]을 받는다.
  */
 interface MatchUserJpaRepository : JpaRepository<MatchUserEntity, Long> {
+
+	/** 비즈니스 키(user_id)로 단건 조회한다. (upsert 분기·매칭 가능 판정에 쓴다) */
+	fun findByUserId(userId: Long): MatchUserEntity?
 
 	/** 후보 풀(반대 성별·같은 권역·최근 로그인)의 사용자 수. 랜덤 오프셋의 상한으로 쓴다. */
 	@Query(

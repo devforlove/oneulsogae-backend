@@ -1,0 +1,35 @@
+package com.org.meeple.api.match
+
+import com.org.meeple.api.match.request.InviteTeamRequest
+import com.org.meeple.api.match.response.TeamResponse
+import com.org.meeple.auth.AuthUser
+import com.org.meeple.auth.LoginUser
+import com.org.meeple.core.common.response.ApiResponse
+import com.org.meeple.core.match.command.application.port.`in`.InviteTeamUseCase
+import jakarta.validation.Valid
+import org.springframework.web.bind.annotation.PostMapping
+import org.springframework.web.bind.annotation.RequestBody
+import org.springframework.web.bind.annotation.RequestMapping
+import org.springframework.web.bind.annotation.RestController
+
+/**
+ * 2:2(팀) 매칭의 팀 엔드포인트. (모두 인증 필요)
+ * - POST /: 다른 사용자를 초대해 팀을 결성한다. 초대 대상은 즉시 구성원으로 합류하고 팀은 초대중(INVITING) 상태로 만들어진다.
+ */
+@RestController
+@RequestMapping("/teams/v1")
+class TeamController(
+	private val inviteTeamUseCase: InviteTeamUseCase,
+) {
+
+	/**
+	 * 다른 사용자를 초대해 팀을 결성한다.
+	 * 요청 본문으로 팀 이름·소개·초대할 사용자 id를 받고, 초대자(인증 사용자)와 초대 대상을 구성원으로 담은 팀을 만든다.
+	 */
+	@PostMapping
+	fun invite(
+		@LoginUser user: AuthUser,
+		@RequestBody @Valid request: InviteTeamRequest,
+	): ApiResponse<TeamResponse> =
+		ApiResponse.success(TeamResponse.of(inviteTeamUseCase.invite(user.id, request.toCommand())))
+}

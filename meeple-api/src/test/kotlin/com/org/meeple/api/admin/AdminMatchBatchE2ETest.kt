@@ -4,8 +4,8 @@ import com.org.meeple.common.integration.AbstractIntegrationSupport
 import com.org.meeple.common.integration.expect
 import com.org.meeple.common.integration.post
 import com.org.meeple.infra.fixture.IntegrationUtil
-import com.org.meeple.infra.match.command.entity.QMatchEntity
-import com.org.meeple.infra.match.command.entity.QMatchMemberEntity
+import com.org.meeple.infra.match.command.entity.QSoloMatchEntity
+import com.org.meeple.infra.match.command.entity.QSoloMatchMemberEntity
 import org.hamcrest.Matchers.greaterThanOrEqualTo
 
 /**
@@ -52,7 +52,7 @@ class AdminMatchBatchE2ETest : AbstractIntegrationSupport({
 	}
 
 	afterTest {
-		IntegrationUtil.deleteAll(QMatchMemberEntity.matchMemberEntity)
-		IntegrationUtil.deleteAll(QMatchEntity.matchEntity)
+		IntegrationUtil.deleteAll(QSoloMatchMemberEntity.soloMatchMemberEntity)
+		IntegrationUtil.deleteAll(QSoloMatchEntity.soloMatchEntity)
 	}
 })

@@ -6,6 +6,8 @@ import com.org.meeple.core.match.command.application.port.out.GetMatchCandidateP
 import com.org.meeple.core.match.command.application.port.out.GetMatchUserPort
 import com.org.meeple.core.match.command.application.port.out.SaveMatchUserPort
 import com.org.meeple.core.match.command.domain.MatchUser
+import com.org.meeple.infra.match.command.entity.MatchUserEntity
+import com.org.meeple.infra.match.command.mapper.applyFrom
 import com.org.meeple.infra.match.command.mapper.toDomain
 import com.org.meeple.infra.match.command.mapper.toEntity
 import com.org.meeple.infra.match.command.repository.MatchUserJpaRepository
@@ -40,16 +42,20 @@ class MatchUserAdapter(
 			.firstOrNull()
 	}
 
-	// user_id가 PK라 save가 upsert로 동작한다(없으면 INSERT, 있으면 UPDATE).
-	override fun save(matchUser: MatchUser): MatchUser =
-		matchUserJpaRepository.save(matchUser.toEntity()).toDomain()
+	// user_id 기준 upsert: 기존 행이 있으면 가변 필드만 갱신(UPDATE), 없으면 새 엔티티로 INSERT.
+	override fun save(matchUser: MatchUser): MatchUser {
+		val entity: MatchUserEntity = matchUserJpaRepository.findByUserId(matchUser.userId)
+			?.also { it.applyFrom(matchUser) }
+			?: matchUser.toEntity()
+		return matchUserJpaRepository.save(entity).toDomain()
+	}
 
 	override fun updateLastLoginAt(userId: Long, lastLoginAt: LocalDateTime) {
 		matchUserJpaRepository.updateLastLoginAt(userId, lastLoginAt)
 	}
 
 	override fun findByUserId(userId: Long): MatchUser? =
-		matchUserJpaRepository.findById(userId).orElse(null)?.toDomain()
+		matchUserJpaRepository.findByUserId(userId)?.toDomain()
 
 	override fun deleteByUserId(userId: Long) {
 		matchUserJpaRepository.deleteByUserId(userId)

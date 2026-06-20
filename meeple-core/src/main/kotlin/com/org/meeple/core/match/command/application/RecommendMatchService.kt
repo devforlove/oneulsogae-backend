@@ -1,6 +1,6 @@
 package com.org.meeple.core.match.command.application
 
-import com.org.meeple.common.match.MatchType
+import com.org.meeple.common.match.SoloMatchType
 import com.org.meeple.core.common.time.TimeGenerator
 import com.org.meeple.core.match.command.application.port.`in`.RecommendMatchUseCase
 import com.org.meeple.core.match.command.application.port.out.GetMatchCandidatePort
@@ -47,7 +47,7 @@ class RecommendMatchService(
 			requesterId = profile.userId,
 			requesterGender = profile.gender,
 			partnerId = candidateId,
-			matchType = MatchType.ONBOARDING,
+			matchType = SoloMatchType.ONBOARDING,
 			now = now,
 		)
 

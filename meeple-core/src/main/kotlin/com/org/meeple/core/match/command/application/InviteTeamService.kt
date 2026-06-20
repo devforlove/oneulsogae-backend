@@ -1,0 +1,46 @@
+package com.org.meeple.core.match.command.application
+
+import com.org.meeple.common.user.Gender
+import com.org.meeple.core.common.error.BusinessException
+import com.org.meeple.core.match.MatchErrorCode
+import com.org.meeple.core.match.command.application.port.`in`.InviteTeamUseCase
+import com.org.meeple.core.match.command.application.port.`in`.command.InviteTeamCommand
+import com.org.meeple.core.match.command.application.port.out.GetMatchUserPort
+import com.org.meeple.core.match.command.application.port.out.SaveTeamPort
+import com.org.meeple.core.match.command.domain.Team
+import org.springframework.stereotype.Service
+import org.springframework.transaction.annotation.Transactional
+
+/**
+ * [InviteTeamUseCase] 구현. 초대자가 다른 사용자를 초대해 팀을 결성한다. (초대 대상은 즉시 구성원으로 합류)
+ * 구성원의 성별은 팀 구성(성별 균형)에 필요하므로, match 도메인 소유 읽기 모델([GetMatchUserPort], match_user)에서 읽어 채운다.
+ * (자기 도메인 내부 영속성 접근은 자기 out-port를 쓴다. match_user 행이 없으면 매칭 불가이므로 PROFILE_INCOMPLETE를 던진다)
+ * 이름·소개·자기 초대·동일 성별 검증은 [Team.invite] 도메인 팩토리가 담당한다.
+ */
+@Service
+class InviteTeamService(
+	private val getMatchUserPort: GetMatchUserPort,
+	private val saveTeamPort: SaveTeamPort,
+) : InviteTeamUseCase {
+
+	@Transactional
+	override fun invite(ownerId: Long, command: InviteTeamCommand): Team {
+		val ownerGender: Gender = genderOf(ownerId)
+		val invitedGender: Gender = genderOf(command.invitedUserId)
+
+		val team: Team = Team.invite(
+			ownerId = ownerId,
+			ownerGender = ownerGender,
+			invitedUserId = command.invitedUserId,
+			invitedGender = invitedGender,
+			name = command.name,
+			introduction = command.introduction,
+		)
+		return saveTeamPort.save(team)
+	}
+
+	// 매칭 읽기 모델(match_user)에서 성별을 읽는다. 행이 없으면 매칭 가능 상태가 아니므로 예외.
+	private fun genderOf(userId: Long): Gender =
+		getMatchUserPort.findByUserId(userId)?.gender
+			?: throw BusinessException(MatchErrorCode.PROFILE_INCOMPLETE)
+}

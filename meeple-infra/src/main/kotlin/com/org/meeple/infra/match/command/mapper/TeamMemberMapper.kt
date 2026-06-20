@@ -1,17 +1,16 @@
 package com.org.meeple.infra.match.command.mapper
 
-import com.org.meeple.core.match.command.domain.MatchMember
-import com.org.meeple.infra.match.command.entity.SoloMatchMemberEntity
+import com.org.meeple.core.match.command.domain.TeamMember
+import com.org.meeple.infra.match.command.entity.TeamMemberEntity
 import java.time.LocalDateTime
 
 /** 영속성 엔티티 -> 도메인 모델 */
-fun SoloMatchMemberEntity.toDomain(): MatchMember =
-	MatchMember(
+fun TeamMemberEntity.toDomain(): TeamMember =
+	TeamMember(
 		id = id ?: 0,
-		matchId = matchId,
+		teamId = teamId,
 		userId = userId,
 		gender = gender,
-		accepted = accepted,
 		status = status,
 		deletedAt = deletedAt,
 	)
@@ -21,12 +20,11 @@ fun SoloMatchMemberEntity.toDomain(): MatchMember =
  * id가 0이면 신규로 저장(INSERT)되고, 0이 아니면 기존 행으로 식별돼 save 시 갱신(merge)된다.
  * deletedAt이 있으면 소프트 삭제 상태로 마킹한다. (deleted_at은 BaseEntity가 protected로 관리하므로 softDelete로 적용)
  */
-fun MatchMember.toEntity(): SoloMatchMemberEntity =
-	SoloMatchMemberEntity(
-		matchId = matchId,
+fun TeamMember.toEntity(): TeamMemberEntity =
+	TeamMemberEntity(
+		teamId = teamId,
 		userId = userId,
 		gender = gender,
-		accepted = accepted,
 		status = status,
 	).also {
 		if (id != 0L) it.id = id

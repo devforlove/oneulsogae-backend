@@ -10,7 +10,7 @@ import java.time.LocalDateTime
  * [gender]는 성별 균형 구성·성별 기반 조회용, [accepted]는 이 참가자의 수락 여부다. (아직 응답 전이면 null)
  * [status]는 참가자의 활성 상태(기본 ACTIVE)로, 채팅방 나가기로 매칭이 제거되면 DEACTIVE가 된다.
  * [deletedAt]이 채워지면 소프트 삭제된(제거된) 참가자다.
- * 영속성은 [com.org.meeple.infra.match.command.entity.MatchMemberEntity]가 담당한다.
+ * 영속성은 [com.org.meeple.infra.match.command.entity.SoloMatchMemberEntity]가 담당한다.
  */
 data class MatchMember(
 	val id: Long = 0,

@@ -17,6 +17,7 @@ data class MatchUser(
 	val regionCode: Int,
 	val maritalStatus: MaritalStatus,
 	val nickname: String,
+	val profileImageCode: String,
 	val lastLoginAt: LocalDateTime,
 ) {
 
@@ -35,6 +36,7 @@ data class MatchUser(
 				regionCode = snapshot.regionCode,
 				maritalStatus = snapshot.maritalStatus,
 				nickname = snapshot.nickname,
+				profileImageCode = snapshot.profileImageCode,
 				lastLoginAt = snapshot.lastLoginAt,
 			)
 	}

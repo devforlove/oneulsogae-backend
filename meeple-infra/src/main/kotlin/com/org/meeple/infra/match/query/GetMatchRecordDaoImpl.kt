@@ -2,8 +2,8 @@ package com.org.meeple.infra.match.query
 
 import com.org.meeple.common.match.MatchStatus
 import com.org.meeple.core.match.command.domain.MatchMembers
-import com.org.meeple.infra.match.command.entity.QMatchEntity
-import com.org.meeple.infra.match.command.entity.QMatchMemberEntity
+import com.org.meeple.infra.match.command.entity.QSoloMatchEntity
+import com.org.meeple.infra.match.command.entity.QSoloMatchMemberEntity
 import com.org.meeple.scheduler.match.query.dao.GetMatchRecordDao
 import com.org.meeple.scheduler.match.query.dto.MatchedUserIds
 import com.querydsl.jpa.impl.JPAQueryFactory
@@ -20,7 +20,7 @@ class GetMatchRecordDaoImpl(
 
 	// 참가자 조합 키(정렬된 userId)로 소개 이력 존재 여부만 확인한다. (udx_member_key)
 	override fun existsByPair(userIdA: Long, userIdB: Long): Boolean {
-		val match: QMatchEntity = QMatchEntity.matchEntity
+		val match: QSoloMatchEntity = QSoloMatchEntity.soloMatchEntity
 		return queryFactory
 			.selectOne()
 			.from(match)
@@ -31,8 +31,8 @@ class GetMatchRecordDaoImpl(
 	// 성사(MATCHED) 매칭에 속한 사용자 ID 전체를 Set으로 정리해 일급 컬렉션으로 감싼다.
 	// 참가자 행에서 출발해 매칭 헤더와 명시 조인하고, 상태만 where로 거른다. (중복 정리는 Set이 맡는다)
 	override fun findMatchedUserIds(): MatchedUserIds {
-		val member: QMatchMemberEntity = QMatchMemberEntity.matchMemberEntity
-		val match: QMatchEntity = QMatchEntity.matchEntity
+		val member: QSoloMatchMemberEntity = QSoloMatchMemberEntity.soloMatchMemberEntity
+		val match: QSoloMatchEntity = QSoloMatchEntity.soloMatchEntity
 		val userIds: List<Long> = queryFactory
 			.select(member.userId)
 			.from(member)

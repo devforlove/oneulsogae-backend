@@ -3,7 +3,7 @@ package com.org.meeple.core.match.command.domain
 import com.org.meeple.common.coin.CoinUsageType
 import com.org.meeple.common.match.MatchMemberStatus
 import com.org.meeple.common.match.MatchStatus
-import com.org.meeple.common.match.MatchType
+import com.org.meeple.common.match.SoloMatchType
 import com.org.meeple.common.user.Gender
 import com.org.meeple.core.common.error.BusinessException
 import com.org.meeple.core.match.MatchErrorCode
@@ -18,14 +18,14 @@ import java.time.LocalDateTime
  * [introducedDate]로 "하루에 한 번만 소개" 제약을 판단하고, [expiresAt]까지 응답이 없으면 만료된 소개로 본다.
  * 각 참가자의 수락 여부는 [members]가 보관하며, 전원 수락하면 성사([MatchStatus.MATCHED])된다.
  * [datingInitAmount]/[datingAcceptAmount]는 소개팅 신청/수락 코인 비용([CoinUsageType])이고, [matchType]은 생성 경로(일일 배치/온보딩/필수 신청)다.
- * 영속성은 [com.org.meeple.infra.match.command.entity.MatchEntity](헤더) + [com.org.meeple.infra.match.command.entity.MatchMemberEntity](참가자)가 담당한다.
+ * 영속성은 [com.org.meeple.infra.match.command.entity.SoloMatchEntity](헤더) + [com.org.meeple.infra.match.command.entity.SoloMatchMemberEntity](참가자)가 담당한다.
  */
 data class Match(
 	val id: Long = 0,
 	val members: MatchMembers,
 	val introducedDate: LocalDate,
 	val expiresAt: LocalDateTime,
-	val matchType: MatchType,
+	val matchType: SoloMatchType,
 	val status: MatchStatus = MatchStatus.PROPOSED,
 	val datingInitAmount: Int = CoinUsageType.DATING_INIT.coinAmount,
 	val datingAcceptAmount: Int = CoinUsageType.DATING_ACCEPT.coinAmount,
@@ -135,7 +135,7 @@ data class Match(
 		 * 소개 일자(introducedDate)는 [now]의 날짜, 만료 시각(expiresAt)은 [now] + [EXPIRATION]으로 설정한다.
 		 * 소개팅 신청/수락 코인 비용은 [CoinUsageType]에서 가져오고, 소개 경로는 [matchType]으로 기록한다.
 		 */
-		fun propose(requesterId: Long, requesterGender: Gender, partnerId: Long, matchType: MatchType, now: LocalDateTime): Match =
+		fun propose(requesterId: Long, requesterGender: Gender, partnerId: Long, matchType: SoloMatchType, now: LocalDateTime): Match =
 			Match(
 				members = MatchMembers.of(
 					listOf(

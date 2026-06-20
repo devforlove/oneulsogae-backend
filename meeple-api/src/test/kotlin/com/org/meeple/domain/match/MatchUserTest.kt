@@ -20,6 +20,7 @@ class MatchUserTest : DescribeSpec({
 		regionCode = 1,
 		maritalStatus = MaritalStatus.SINGLE,
 		nickname = "민수",
+		profileImageCode = "1",
 		lastLoginAt = LocalDateTime.of(2026, 6, 19, 9, 0),
 	)
 
@@ -34,6 +35,7 @@ class MatchUserTest : DescribeSpec({
 				regionCode = 1,
 				maritalStatus = MaritalStatus.SINGLE,
 				nickname = "민수",
+				profileImageCode = "1",
 				lastLoginAt = snapshot.lastLoginAt,
 			)
 		}

@@ -12,13 +12,12 @@ fun MatchUserEntity.toDomain(): MatchUser =
 		regionCode = regionCode,
 		maritalStatus = maritalStatus,
 		nickname = nickname,
+		profileImageCode = profileImageCode,
 		lastLoginAt = lastLoginAt,
 	)
 
 /**
- * 도메인 모델 -> 영속성 엔티티.
- * user_id가 PK(할당 식별자)이므로 save 시 없으면 INSERT, 있으면 UPDATE(merge)로 동작한다(upsert).
- * created_at은 updatable=false라 갱신 경로의 UPDATE에서 제외되어 보존된다.
+ * 도메인 모델 -> 신규 영속성 엔티티. (upsert의 INSERT 경로 — id/감사 컬럼은 영속화 시 채워진다)
  */
 fun MatchUser.toEntity(): MatchUserEntity =
 	MatchUserEntity(
@@ -28,5 +27,20 @@ fun MatchUser.toEntity(): MatchUserEntity =
 		maritalStatus = maritalStatus,
 		age = age,
 		nickname = nickname,
+		profileImageCode = profileImageCode,
 		lastLoginAt = lastLoginAt,
 	)
+
+/**
+ * 기존 엔티티의 가변 필드를 도메인 값으로 갱신한다. (upsert의 UPDATE 경로)
+ * id·user_id·생성 시각은 보존하고, 매칭 기준 필드만 덮어쓴다.
+ */
+fun MatchUserEntity.applyFrom(matchUser: MatchUser) {
+	gender = matchUser.gender
+	regionCode = matchUser.regionCode
+	maritalStatus = matchUser.maritalStatus
+	age = matchUser.age
+	nickname = matchUser.nickname
+	profileImageCode = matchUser.profileImageCode
+	lastLoginAt = matchUser.lastLoginAt
+}
