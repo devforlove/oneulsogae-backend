@@ -49,4 +49,7 @@ dependencies {
 	// E2E 테스트: RestAssured (실 서버 기동 후 HTTP 호출). Spring Boot 4 BOM이 관리하지 않아 버전 명시.
 	testImplementation("io.rest-assured:rest-assured:6.0.0")
 	testImplementation("io.rest-assured:kotlin-extensions:6.0.0")
+
+	// STOMP E2E 테스트: SockJsClient / WebSocketStompClient (meeple-chatting이 runtime으로 가져오나 test compile에는 미포함)
+	testImplementation("org.springframework.boot:spring-boot-starter-websocket")
 }
