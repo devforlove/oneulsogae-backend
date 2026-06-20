@@ -1,5 +1,6 @@
 package com.org.meeple.api.chat
 
+import com.org.meeple.common.chat.ChatRoomMemberStatus
 import com.org.meeple.common.integration.AbstractIntegrationSupport
 import com.org.meeple.common.integration.expect
 import com.org.meeple.common.integration.get
@@ -213,6 +214,46 @@ class GetChatRoomDetailE2ETest : AbstractIntegrationSupport({
 			it("401을 반환한다") {
 				get("/chat/v1/rooms/1") {} expect {
 					status(401)
+				}
+			}
+		}
+
+		context("참가자별 읽음 상태를 함께 조회하면") {
+			it("각 참가자의 읽음 포인터와 활성여부를 반환한다 (200)") {
+				val me = 7501L          // me < left → participants는 userId 오름차순 정렬
+				val left = 7502L
+				val base: LocalDateTime = LocalDateTime.of(2026, 6, 10, 12, 0)
+
+				IntegrationUtil.persist(UserDetailEntityFixture.create(userId = me, nickname = "나"))
+				IntegrationUtil.persist(UserDetailEntityFixture.create(userId = left, nickname = "나간사람"))
+
+				val roomId: Long = IntegrationUtil.persist(ChatRoomEntityFixture.create(matchId = 50L)).id!!
+				IntegrationUtil.persist(
+					ChatRoomMemberEntityFixture.create(chatRoomId = roomId, userId = me, lastReadMessageId = 55L),
+				)
+				IntegrationUtil.persist(
+					ChatRoomMemberEntityFixture.create(
+						chatRoomId = roomId,
+						userId = left,
+						status = ChatRoomMemberStatus.DEACTIVE,
+						lastReadMessageId = 40L,
+						exitedAt = base,
+					),
+				)
+
+				get("/chat/v1/rooms/$roomId") {
+					bearer(accessTokenFor(me))
+				} expect {
+					status(200)
+					body("data.participants.size()", 2)
+					// 활성 참가자(나): 포인터 55, active true
+					body("data.participants[0].userId", me.toInt())
+					body("data.participants[0].lastReadMessageId", 55)
+					body("data.participants[0].active", true)
+					// 나간 참가자: 포인터 40(그대로 노출), active false
+					body("data.participants[1].userId", left.toInt())
+					body("data.participants[1].lastReadMessageId", 40)
+					body("data.participants[1].active", false)
 				}
 			}
 		}

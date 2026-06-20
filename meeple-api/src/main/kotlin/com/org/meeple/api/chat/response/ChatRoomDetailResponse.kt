@@ -34,13 +34,17 @@ data class ChatRoomDetailResponse(
 	}
 }
 
-/** 채팅방 참여자 정보. */
+/** 채팅방 참여자 정보. [lastReadMessageId]는 그 참가자의 읽음 포인터, [active]는 활성(미퇴장) 참가자 여부다. */
 data class ChatParticipantResponse(
 	val userId: Long,
 	val nickname: String?,
 	val profileImageCode: String?,
 	/** 참가자 성별. 아직 설정되지 않았으면 null. */
 	val gender: Gender?,
+	/** 이 참가자가 마지막으로 읽은 메세지 id. 한 번도 안 읽었으면 null. (말풍선별 안 읽은 사람 수 계산용) */
+	val lastReadMessageId: Long?,
+	/** 활성(미퇴장) 참가자 여부. false면 나간 참가자라 안 읽은 사람 수 카운트에서 제외한다. */
+	val active: Boolean,
 ) {
 	companion object {
 		fun of(participant: ChatParticipant): ChatParticipantResponse =
@@ -49,6 +53,8 @@ data class ChatParticipantResponse(
 				nickname = participant.nickname,
 				profileImageCode = participant.profileImageCode,
 				gender = participant.gender,
+				lastReadMessageId = participant.lastReadMessageId,
+				active = participant.active,
 			)
 	}
 }

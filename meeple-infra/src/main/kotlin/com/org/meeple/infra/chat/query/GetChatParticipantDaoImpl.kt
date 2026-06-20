@@ -1,5 +1,6 @@
 package com.org.meeple.infra.chat.query
 
+import com.org.meeple.common.chat.ChatRoomMemberStatus
 import com.org.meeple.core.chat.query.dao.GetChatParticipantDao
 import com.org.meeple.core.chat.query.dto.ChatParticipant
 import com.org.meeple.core.chat.query.dto.ChatParticipants
@@ -38,6 +39,8 @@ class GetChatParticipantDaoImpl(
 						detail.nickname,
 						detail.profileImageCode,
 						detail.gender,
+						member.lastReadMessageId,
+						member.status.eq(ChatRoomMemberStatus.ACTIVE),
 					),
 				)
 				.from(member)
