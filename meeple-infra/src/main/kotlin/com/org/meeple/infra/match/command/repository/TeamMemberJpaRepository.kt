@@ -12,4 +12,7 @@ interface TeamMemberJpaRepository : JpaRepository<TeamMemberEntity, Long> {
 
 	/** 한 팀의 구성원 전체. (팀 애그리거트 조립용) */
 	fun findByTeamId(teamId: Long): List<TeamMemberEntity>
+
+	/** [userId]가 (삭제되지 않은) 팀 구성원으로 존재하는지 여부. (@SQLRestriction이 삭제행을 제외) */
+	fun existsByUserId(userId: Long): Boolean
 }
