@@ -62,6 +62,7 @@ meeple-common ──> (없음)                (공용 enum/상수)
 
 - **타입 명시**: 변수·반환 타입·람다 파라미터 타입을 생략하지 않는다(표현식 본문 함수 포함).
 - **도메인 검증**: 서비스에 `if…throw`를 나열하지 말고 도메인 모델의 `validate<대상>(…)` 함수로 캡슐화한다(필요 입력·`now`는 파라미터 주입).
+- **현재 시각**: `LocalDateTime.now()`를 직접 호출하지 않는다. 애플리케이션/도메인은 `TimeGenerator`(core `common/time`, 모듈별 out-port도 존재)를 주입받아 `now()`로 얻고 도메인엔 파라미터로 넘긴다(테스트에서 시각 고정). 직접 호출은 `SystemTimeGenerator` 구현체·엔티티 픽스처에 한정한다.
 - **일급 컬렉션**: 컬렉션은 원시 `List`/`Set` 대신 `Xs`(복수형) 래퍼로 반환한다(`values` 보관 + 컬렉션 동작 응집).
 
 ## 테스트 전략  ([상세](docs/architecture/testing.md))
