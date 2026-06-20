@@ -20,6 +20,10 @@ import java.util.concurrent.TimeUnit
  */
 class MarkMessagesReadStompE2ETest : AbstractIntegrationSupport() {
 
+	companion object {
+		private const val SUBSCRIBE_PROPAGATION_DELAY_MS: Long = 500L
+	}
+
 	init {
 		fun pointerOf(chatRoomId: Long, userId: Long): Long? {
 			val member: QChatRoomMemberEntity = QChatRoomMemberEntity.chatRoomMemberEntity
@@ -48,7 +52,7 @@ class MarkMessagesReadStompE2ETest : AbstractIntegrationSupport() {
 					try {
 						val received = subscriber.subscribe("/topic/$roomId", MessageReadDto::class.java)
 						// SUBSCRIBE 프레임이 서버에 등록될 시간을 잠시 준 뒤 발행한다. (SEND가 SUBSCRIBE를 앞질러 이벤트를 놓치지 않도록)
-						Thread.sleep(500)
+						Thread.sleep(SUBSCRIBE_PROPAGATION_DELAY_MS)
 
 						reader.send("/app/$roomId/read", ChatReadReportRequest(lastReadMessageId = lastMessageId))
 

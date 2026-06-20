@@ -37,7 +37,11 @@ class StompTestClient(port: Int, accessToken: String) {
 			"http://localhost:$port/ws/chat",
 			WebSocketHttpHeaders(),
 			connectHeaders,
-			object : StompSessionHandlerAdapter() {},
+			object : StompSessionHandlerAdapter() {
+				override fun handleTransportError(session: StompSession, exception: Throwable) {
+					throw RuntimeException("STOMP transport error", exception)
+				}
+			},
 		).get(5, TimeUnit.SECONDS)
 	}
 
