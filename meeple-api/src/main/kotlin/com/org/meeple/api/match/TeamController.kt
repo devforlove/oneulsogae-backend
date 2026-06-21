@@ -72,8 +72,10 @@ class TeamController(
 	fun withdrawInvitation(
 		@LoginUser user: AuthUser,
 		@PathVariable teamId: Long,
-	): ApiResponse<TeamResponse> =
-		ApiResponse.success(TeamResponse.of(withdrawTeamInvitationUseCase.withdraw(user.id, teamId)))
+	): ApiResponse<Unit> {
+		withdrawTeamInvitationUseCase.withdraw(user.id, teamId)
+		return ApiResponse.success()
+	}
 
 	/** 결성(FORMED)된 팀을 구성원이 해체한다. (떠나면 2인 팀이 유지될 수 없어 팀 전체 비활성화) */
 	@Operation(summary = "팀 해체", description = "결성(FORMED)된 팀을 구성원이 해체한다. 구성원이 떠나면 2인 팀이 유지될 수 없어 팀 전체가 비활성화된다.")
