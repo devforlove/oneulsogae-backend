@@ -94,7 +94,7 @@ class SearchInvitableUsersE2ETest : AbstractIntegrationSupport({
 					body("data.userId", containsInAnyOrder(7002, 7003, 7005))
 					body("data.job", containsInAnyOrder("개발자", null, "기획"))
 					body("data.companyName", containsInAnyOrder("토스", null, "라인"))
-					// 신규 필드: 포함 대상 3명 모두 픽스처 기본값(MALE·"1"·28)
+					// 신규 필드: 포함 대상 3명 모두 픽스처 기본값(MALE·"1"·EXPECTED_AGE)
 					body("data.gender", containsInAnyOrder("MALE", "MALE", "MALE"))
 					body("data.profileImageCode", containsInAnyOrder("1", "1", "1"))
 					body("data.age", containsInAnyOrder(EXPECTED_AGE, EXPECTED_AGE, EXPECTED_AGE))

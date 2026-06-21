@@ -9,13 +9,13 @@ import com.org.meeple.common.user.SmokingStatus
 import com.org.meeple.infra.common.BaseEntity
 import com.org.meeple.infra.common.StringListJsonConverter
 import jakarta.persistence.Column
-import java.time.LocalDate
 import jakarta.persistence.Convert
 import jakarta.persistence.Entity
 import jakarta.persistence.EnumType
 import jakarta.persistence.Enumerated
 import jakarta.persistence.Index
 import jakarta.persistence.Table
+import java.time.LocalDate
 import org.hibernate.annotations.SQLRestriction
 
 /**
