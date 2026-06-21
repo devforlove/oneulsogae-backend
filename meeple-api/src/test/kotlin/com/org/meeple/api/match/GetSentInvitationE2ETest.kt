@@ -15,6 +15,7 @@ import com.org.meeple.infra.match.command.entity.QMatchUserEntity
 import com.org.meeple.infra.match.command.entity.QTeamEntity
 import com.org.meeple.infra.match.command.entity.QTeamMemberEntity
 import com.org.meeple.infra.user.command.entity.QUserDetailEntity
+import org.hamcrest.Matchers.hasSize
 import org.hamcrest.Matchers.nullValue
 
 /**
@@ -58,7 +59,7 @@ class GetSentInvitationE2ETest : AbstractIntegrationSupport({
 	describe("GET /teams/v1/invitation") {
 
 		context("초대자가 자신이 보낸 초대를 조회하면") {
-			it("팀 메타와 구성원 프로필·수락 상태(자신 ACTIVE, 대상 INVITED)를 반환한다 (200)") {
+			it("초대받은(INVITED) 구성원만 프로필과 함께 반환하고 초대자 본인(ACTIVE)은 제외한다 (200)") {
 				val ownerId = 3001L
 				val invitedUserId = 3002L
 				persistProfile(ownerId, "초대왕", "10", "PM", "토스")
@@ -74,21 +75,15 @@ class GetSentInvitationE2ETest : AbstractIntegrationSupport({
 					body("data.name", "우리팀")
 					body("data.introduction", "함께 즐겁게 활동할 팀이에요")
 					body("data.status", TeamStatus.INVITING.name)
-					// 구성원은 userId 오름차순 → [0]=초대자(3001, ACTIVE), [1]=초대대상(3002, INVITED)
-					body("data.members[0].userId", ownerId.toInt())
-					body("data.members[0].nickname", "초대왕")
-					body("data.members[0].job", "PM")
-					body("data.members[0].companyName", "토스")
+					// 초대자 본인(3001, ACTIVE)은 제외되고 초대 대상(3002, INVITED)만 노출된다
+					body("data.members", hasSize<Any>(1))
+					body("data.members[0].userId", invitedUserId.toInt())
+					body("data.members[0].nickname", "피초대")
+					body("data.members[0].job", "개발자")
+					body("data.members[0].companyName", "카카오")
 					body("data.members[0].gender", Gender.MALE.name)
-					body("data.members[0].profileImageCode", "10")
-					body("data.members[0].status", TeamMemberStatus.ACTIVE.name)
-					body("data.members[1].userId", invitedUserId.toInt())
-					body("data.members[1].nickname", "피초대")
-					body("data.members[1].job", "개발자")
-					body("data.members[1].companyName", "카카오")
-					body("data.members[1].gender", Gender.MALE.name)
-					body("data.members[1].profileImageCode", "20")
-					body("data.members[1].status", TeamMemberStatus.INVITED.name)
+					body("data.members[0].profileImageCode", "20")
+					body("data.members[0].status", TeamMemberStatus.INVITED.name)
 				}
 			}
 		}
