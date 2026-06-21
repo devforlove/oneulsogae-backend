@@ -1,0 +1,154 @@
+package com.org.meeple.api.match
+
+import com.org.meeple.common.integration.AbstractIntegrationSupport
+import com.org.meeple.common.integration.expect
+import com.org.meeple.common.integration.get
+import com.org.meeple.common.integration.post
+import com.org.meeple.common.user.Gender
+import com.org.meeple.infra.fixture.IntegrationUtil
+import com.org.meeple.infra.fixture.MatchUserEntityFixture
+import com.org.meeple.infra.fixture.UserDetailEntityFixture
+import com.org.meeple.infra.match.command.entity.QMatchUserEntity
+import com.org.meeple.infra.match.command.entity.QTeamEntity
+import com.org.meeple.infra.match.command.entity.QTeamMemberEntity
+import com.org.meeple.infra.user.command.entity.QUserDetailEntity
+import org.hamcrest.Matchers.hasSize
+
+/**
+ * `GET /teams/v1/received-invitations` E2E 테스트. (내가 받은 초대 리스트)
+ * 요청자가 INVITED 구성원인 INVITING 팀들을 초대자 프로필과 함께 최신순으로 반환한다.
+ * 내가 owner(ACTIVE)인 팀·수락(FORMED)된 팀·미소속 팀은 제외된다.
+ */
+class GetReceivedInvitationsE2ETest : AbstractIntegrationSupport({
+
+	// 표시용 프로필을 match_user(닉네임·프로필이미지·나이) + user_details(직업·회사명)에 저장한다. (성별 MALE 고정)
+	fun persistProfile(userId: Long, nickname: String, profileImageCode: String, job: String?, companyName: String?, age: Int = 28) {
+		IntegrationUtil.persist(
+			MatchUserEntityFixture.create(userId = userId, gender = Gender.MALE, nickname = nickname, profileImageCode = profileImageCode, age = age),
+		)
+		IntegrationUtil.persist(
+			UserDetailEntityFixture.create(
+				userId = userId,
+				nickname = nickname,
+				gender = Gender.MALE,
+				profileImageCode = profileImageCode,
+				job = job,
+				companyName = companyName,
+			),
+		)
+	}
+
+	// ownerId가 invitedUserId를 초대해 팀을 결성하고 teamId를 돌려준다. (프로필은 미리 저장돼 있어야 한다)
+	fun invite(ownerId: Long, invitedUserId: Long): Long =
+		post("/teams/v1/invitation") {
+			bearer(accessTokenFor(ownerId))
+			jsonBody("""{"invitedUserId": $invitedUserId, "name": "우리팀", "introduction": "함께 즐겁게 활동할 팀이에요"}""")
+		}.extract().path<Int>("data.teamId").toLong()
+
+	describe("GET /teams/v1/received-invitations") {
+
+		context("초대받은 유저가 여러 초대를 받았으면") {
+			it("초대자 프로필을 담아 team id 최신순으로 반환한다 (200)") {
+				val me = 4002L
+				val ownerA = 4001L
+				val ownerB = 4003L
+				persistProfile(me, "나", "1", null, null)
+				persistProfile(ownerA, "초대자A", "11", "PM", "토스", age = 31)
+				persistProfile(ownerB, "초대자B", "22", "디자이너", "카카오", age = 33)
+
+				val teamA: Long = invite(ownerA, me)
+				val teamB: Long = invite(ownerB, me)
+
+				get("/teams/v1/received-invitations") {
+					bearer(accessTokenFor(me))
+				} expect {
+					status(200)
+					body("success", true)
+					body("data", hasSize<Any>(2))
+					// 최신순(team id desc) → [0]=teamB(초대자B), [1]=teamA(초대자A)
+					body("data[0].teamId", teamB.toInt())
+					body("data[0].name", "우리팀")
+					body("data[0].inviter.userId", ownerB.toInt())
+					body("data[0].inviter.nickname", "초대자B")
+					body("data[0].inviter.job", "디자이너")
+					body("data[0].inviter.companyName", "카카오")
+					body("data[0].inviter.gender", Gender.MALE.name)
+					body("data[0].inviter.profileImageCode", "22")
+					body("data[0].inviter.age", 33)
+					body("data[1].teamId", teamA.toInt())
+					body("data[1].inviter.userId", ownerA.toInt())
+					body("data[1].inviter.nickname", "초대자A")
+				}
+			}
+		}
+
+		context("초대자(owner) 본인이 조회하면") {
+			it("자신은 INVITED가 아니므로 빈 배열이다 (200)") {
+				val owner = 4101L
+				val invited = 4102L
+				persistProfile(owner, "오너", "1", null, null)
+				persistProfile(invited, "초대대상", "1", null, null)
+				invite(owner, invited)
+
+				get("/teams/v1/received-invitations") {
+					bearer(accessTokenFor(owner))
+				} expect {
+					status(200)
+					body("data", hasSize<Any>(0))
+				}
+			}
+		}
+
+		context("초대를 수락(FORMED)한 뒤 조회하면") {
+			it("더 이상 INVITED가 아니므로 빈 배열이다 (200)") {
+				val owner = 4201L
+				val invited = 4202L
+				persistProfile(owner, "오너", "1", null, null)
+				persistProfile(invited, "초대대상", "1", null, null)
+				val teamId: Long = invite(owner, invited)
+
+				post("/teams/v1/$teamId/acceptance") {
+					bearer(accessTokenFor(invited))
+				} expect {
+					status(200)
+				}
+
+				get("/teams/v1/received-invitations") {
+					bearer(accessTokenFor(invited))
+				} expect {
+					status(200)
+					body("data", hasSize<Any>(0))
+				}
+			}
+		}
+
+		context("받은 초대가 없는 유저가 조회하면") {
+			it("빈 배열이다 (200)") {
+				val userId = 4301L
+				persistProfile(userId, "외톨이", "1", null, null)
+
+				get("/teams/v1/received-invitations") {
+					bearer(accessTokenFor(userId))
+				} expect {
+					status(200)
+					body("data", hasSize<Any>(0))
+				}
+			}
+		}
+
+		context("인증 토큰이 없으면") {
+			it("401을 반환한다") {
+				get("/teams/v1/received-invitations") expect {
+					status(401)
+				}
+			}
+		}
+	}
+
+	afterTest {
+		IntegrationUtil.deleteAll(QTeamMemberEntity.teamMemberEntity)
+		IntegrationUtil.deleteAll(QTeamEntity.teamEntity)
+		IntegrationUtil.deleteAll(QMatchUserEntity.matchUserEntity)
+		IntegrationUtil.deleteAll(QUserDetailEntity.userDetailEntity)
+	}
+})

@@ -3,6 +3,7 @@ package com.org.meeple.api.match
 import com.org.meeple.api.match.request.InviteTeamRequest
 import com.org.meeple.api.match.request.SearchInvitableUsersRequest
 import com.org.meeple.api.match.response.InvitableUserResponse
+import com.org.meeple.api.match.response.ReceivedInvitationResponse
 import com.org.meeple.api.match.response.SentInvitationResponse
 import com.org.meeple.api.match.response.TeamResponse
 import com.org.meeple.auth.AuthUser
@@ -12,6 +13,8 @@ import com.org.meeple.core.match.command.application.port.`in`.AcceptTeamInvitat
 import com.org.meeple.core.match.command.application.port.`in`.DisbandTeamUseCase
 import com.org.meeple.core.match.command.application.port.`in`.InviteTeamUseCase
 import com.org.meeple.core.match.command.application.port.`in`.WithdrawTeamInvitationUseCase
+import com.org.meeple.core.match.query.dto.ReceivedInvitation
+import com.org.meeple.core.match.query.service.port.`in`.GetReceivedInvitationsUseCase
 import com.org.meeple.core.match.query.service.port.`in`.GetSentInvitationUseCase
 import com.org.meeple.core.match.query.service.port.`in`.SearchInvitableUsersUseCase
 import jakarta.validation.Valid
@@ -43,6 +46,7 @@ class TeamController(
 	private val disbandTeamUseCase: DisbandTeamUseCase,
 	private val searchInvitableUsersUseCase: SearchInvitableUsersUseCase,
 	private val getSentInvitationUseCase: GetSentInvitationUseCase,
+	private val getReceivedInvitationsUseCase: GetReceivedInvitationsUseCase,
 ) {
 
 	/**
@@ -96,6 +100,18 @@ class TeamController(
 		@LoginUser user: AuthUser,
 	): ApiResponse<SentInvitationResponse?> =
 		ApiResponse.success(SentInvitationResponse.of(getSentInvitationUseCase.get(user.id)))
+
+	/**
+	 * 내가 받은(INVITED) 대기 중 초대 리스트를 최신순으로 조회한다. 각 항목은 팀 메타와 초대자(owner) 프로필을 담는다.
+	 */
+	@Operation(summary = "받은 초대 리스트 조회", description = "요청자가 INVITED 상태인 INVITING 팀들을 최신순으로 반환한다. 각 항목에 팀 메타와 초대자(owner) 프로필을 담는다.")
+	@GetMapping("/received-invitations")
+	fun getReceivedInvitations(
+		@LoginUser user: AuthUser,
+	): ApiResponse<List<ReceivedInvitationResponse>> =
+		ApiResponse.success(
+			getReceivedInvitationsUseCase.get(user.id).map { invitation: ReceivedInvitation -> ReceivedInvitationResponse.of(invitation) },
+		)
 
 	/**
 	 * 닉네임이 정확히 일치하는 초대 가능 유저를 검색한다. (같은 성별·매칭 가능·활성 팀 없음·자기 제외)
