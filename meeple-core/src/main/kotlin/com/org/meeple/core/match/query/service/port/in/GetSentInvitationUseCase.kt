@@ -8,6 +8,6 @@ import com.org.meeple.core.match.query.dto.SentInvitation
  */
 interface GetSentInvitationUseCase {
 
-	/** [requesterId]가 보낸 가장 최근 INVITING 초대 현황을 조회한다. 없으면 null. */
-	fun get(requesterId: Long): SentInvitation?
+	/** [userId]가 보낸 가장 최근 INVITING 초대 현황을 조회한다. 없으면 null. */
+	fun get(userId: Long): SentInvitation?
 }

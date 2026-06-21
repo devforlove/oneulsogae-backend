@@ -51,12 +51,12 @@ class SearchInvitableUsersE2ETest : AbstractIntegrationSupport({
 
 		context("닉네임이 정확히 일치하는 초대 가능 유저가 있으면") {
 			it("같은 성별·매칭가능 유저를 id·닉네임·직업·회사명·성별·프로필이미지·나이와 함께 반환한다 (200)") {
-				val requesterId = 7001L
+				val userId = 7001L
 				val nickname = "홍길동"
 
 				// 요청자: 성별을 match_user에서 읽으므로 match_user 행이 있어야 검색 가능 (닉네임도 동일하지만 자기 자신은 제외돼야 한다)
-				persistUserDetail(requesterId, Gender.MALE, nickname, job = "PM", companyName = "내회사")
-				persistMatchUser(requesterId, Gender.MALE, nickname)
+				persistUserDetail(userId, Gender.MALE, nickname, job = "PM", companyName = "내회사")
+				persistMatchUser(userId, Gender.MALE, nickname)
 
 				// 포함 대상 A, E: 같은 성별(MALE)·매칭가능·동일 닉네임 (동명이인 2명)
 				persistUserDetail(7002L, Gender.MALE, nickname, job = "개발자", companyName = "토스")
@@ -81,7 +81,7 @@ class SearchInvitableUsersE2ETest : AbstractIntegrationSupport({
 				persistMatchUser(7007L, Gender.MALE, "임꺽정")
 
 				get("/teams/v1/invitable-users?nickname=$nickname") {
-					bearer(accessTokenFor(requesterId))
+					bearer(accessTokenFor(userId))
 				} expect {
 					status(200)
 					body("success", true)
@@ -99,12 +99,12 @@ class SearchInvitableUsersE2ETest : AbstractIntegrationSupport({
 
 		context("일치하는 닉네임이 없으면") {
 			it("빈 배열을 반환한다 (200)") {
-				val requesterId = 7101L
-				persistUserDetail(requesterId, Gender.MALE, "내닉네임", job = null, companyName = null)
-				persistMatchUser(requesterId, Gender.MALE, "내닉네임")
+				val userId = 7101L
+				persistUserDetail(userId, Gender.MALE, "내닉네임", job = null, companyName = null)
+				persistMatchUser(userId, Gender.MALE, "내닉네임")
 
 				get("/teams/v1/invitable-users?nickname=없는닉네임") {
-					bearer(accessTokenFor(requesterId))
+					bearer(accessTokenFor(userId))
 				} expect {
 					status(200)
 					body("data", hasSize<Any>(0))
@@ -114,12 +114,12 @@ class SearchInvitableUsersE2ETest : AbstractIntegrationSupport({
 
 		context("nickname 파라미터가 비어 있으면") {
 			it("400을 반환한다") {
-				val requesterId = 7201L
-				persistUserDetail(requesterId, Gender.MALE, "내닉네임", job = null, companyName = null)
+				val userId = 7201L
+				persistUserDetail(userId, Gender.MALE, "내닉네임", job = null, companyName = null)
 
 				// 빈 값이면 @NotBlank 검증에 걸린다. (공백 문자열은 RestAssured가 path를 재인코딩해 리터럴로 전달되므로 빈 값으로 검증한다)
 				get("/teams/v1/invitable-users?nickname=") {
-					bearer(accessTokenFor(requesterId))
+					bearer(accessTokenFor(userId))
 				} expect {
 					status(400)
 					body("success", false)

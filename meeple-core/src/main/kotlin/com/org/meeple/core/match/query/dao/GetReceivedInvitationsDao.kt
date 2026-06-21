@@ -8,6 +8,6 @@ import com.org.meeple.core.match.query.dto.ReceivedInvitation
  */
 interface GetReceivedInvitationsDao {
 
-	/** [requesterId]가 INVITED 구성원인 INVITING 팀들을 초대자 프로필과 함께 최신순으로 반환한다. */
-	fun findInvited(requesterId: Long): List<ReceivedInvitation>
+	/** [userId]가 INVITED 구성원인 INVITING 팀들을 초대자 프로필과 함께 최신순으로 반환한다. */
+	fun findInvited(userId: Long): List<ReceivedInvitation>
 }

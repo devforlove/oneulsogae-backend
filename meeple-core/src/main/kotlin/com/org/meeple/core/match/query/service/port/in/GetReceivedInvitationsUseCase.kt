@@ -8,6 +8,6 @@ import com.org.meeple.core.match.query.dto.ReceivedInvitation
  */
 interface GetReceivedInvitationsUseCase {
 
-	/** [requesterId]가 받은(INVITED) 대기 중 초대들을 최신순으로 조회한다. */
-	fun get(requesterId: Long): List<ReceivedInvitation>
+	/** [userId]가 받은(INVITED) 대기 중 초대들을 최신순으로 조회한다. */
+	fun get(userId: Long): List<ReceivedInvitation>
 }

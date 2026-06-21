@@ -17,6 +17,6 @@ class GetSentInvitationService(
 	private val getSentInvitationDao: GetSentInvitationDao,
 ) : GetSentInvitationUseCase {
 
-	override fun get(requesterId: Long): SentInvitation? =
-		getSentInvitationDao.findLatestInviting(requesterId)
+	override fun get(userId: Long): SentInvitation? =
+		getSentInvitationDao.findLatestInviting(userId)
 }

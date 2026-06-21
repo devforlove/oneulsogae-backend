@@ -16,6 +16,6 @@ class GetReceivedInvitationsService(
 	private val getReceivedInvitationsDao: GetReceivedInvitationsDao,
 ) : GetReceivedInvitationsUseCase {
 
-	override fun get(requesterId: Long): List<ReceivedInvitation> =
-		getReceivedInvitationsDao.findInvited(requesterId)
+	override fun get(userId: Long): List<ReceivedInvitation> =
+		getReceivedInvitationsDao.findInvited(userId)
 }

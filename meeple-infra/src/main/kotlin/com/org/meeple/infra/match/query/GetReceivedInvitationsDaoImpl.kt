@@ -24,7 +24,7 @@ class GetReceivedInvitationsDaoImpl(
 	private val queryFactory: JPAQueryFactory,
 ) : GetReceivedInvitationsDao {
 
-	override fun findInvited(requesterId: Long): List<ReceivedInvitation> {
+	override fun findInvited(userId: Long): List<ReceivedInvitation> {
 		val me: QTeamMemberEntity = QTeamMemberEntity("me")
 		val owner: QTeamMemberEntity = QTeamMemberEntity("owner")
 		val team: QTeamEntity = QTeamEntity.teamEntity
@@ -56,7 +56,7 @@ class GetReceivedInvitationsDaoImpl(
 			.join(ownerMatch).on(ownerMatch.userId.eq(owner.userId))
 			.join(ownerDetail).on(ownerDetail.userId.eq(owner.userId))
 			.where(
-				me.userId.eq(requesterId),
+				me.userId.eq(userId),
 				me.status.eq(TeamMemberStatus.INVITED),
 				team.status.eq(TeamStatus.INVITING),
 			)

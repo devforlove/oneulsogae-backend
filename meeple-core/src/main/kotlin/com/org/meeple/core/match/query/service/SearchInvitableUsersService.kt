@@ -18,9 +18,9 @@ class SearchInvitableUsersService(
 	private val searchInvitableUsersDao: SearchInvitableUsersDao,
 ) : SearchInvitableUsersUseCase {
 
-	override fun search(requesterId: Long, nickname: String): List<InvitableUser> {
-		val requesterGender: Gender = searchInvitableUsersDao.findRequesterGender(requesterId)
+	override fun search(userId: Long, nickname: String): List<InvitableUser> {
+		val requesterGender: Gender = searchInvitableUsersDao.findRequesterGender(userId)
 			?: return emptyList()
-		return searchInvitableUsersDao.search(requesterGender, requesterId, nickname)
+		return searchInvitableUsersDao.search(requesterGender, userId, nickname)
 	}
 }
