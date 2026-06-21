@@ -78,6 +78,35 @@ class GetReceivedInvitationsE2ETest : AbstractIntegrationSupport({
 					body("data[1].teamId", teamA.toInt())
 					body("data[1].inviter.userId", ownerA.toInt())
 					body("data[1].inviter.nickname", "초대자A")
+					body("data[1].inviter.job", "PM")
+					body("data[1].inviter.companyName", "토스")
+					body("data[1].inviter.profileImageCode", "11")
+					body("data[1].inviter.age", 31)
+				}
+			}
+		}
+
+		context("다른 팀의 owner(ACTIVE)이면서 받은 초대도 있으면") {
+			it("내가 INVITED인 팀만 반환하고 내가 owner(ACTIVE)인 팀은 제외한다 (200)") {
+				val me = 4501L
+				val ownerX = 4502L
+				val z = 4503L
+				persistProfile(me, "나", "1", null, null)
+				persistProfile(ownerX, "초대자X", "1", null, null)
+				persistProfile(z, "지", "1", null, null)
+
+				// teamX: ownerX가 나를 초대 → 나는 INVITED. (먼저 해야 아래 teamY 결성 후엔 ALREADY_IN_TEAM으로 막힘)
+				val teamX: Long = invite(ownerX, me)
+				// teamY: 내가 z를 초대 → 나는 ACTIVE(owner). (나는 INVITED 상태라 활성 팀 제약에 안 걸림)
+				invite(me, z)
+
+				get("/teams/v1/received-invitations") {
+					bearer(accessTokenFor(me))
+				} expect {
+					status(200)
+					body("data", hasSize<Any>(1))
+					body("data[0].teamId", teamX.toInt())
+					body("data[0].inviter.userId", ownerX.toInt())
 				}
 			}
 		}

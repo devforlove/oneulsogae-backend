@@ -17,7 +17,7 @@ import org.springframework.stereotype.Component
  * [GetReceivedInvitationsDao]의 QueryDSL 구현체. (조회 전용)
  * 요청자가 INVITED 구성원(me)인 INVITING 팀을 찾고, 같은 팀의 ACTIVE 구성원(owner=초대자)을 self-join해
  * 초대자 프로필(닉네임·프로필이미지·나이=match_user, 직업·회사명=user_details, 성별=team_members)과 함께 team id desc로 투영한다.
- * 팀당 ACTIVE 구성원은 1명이므로 항목당 1행. [org.hibernate.annotations.SQLRestriction]이 소프트 삭제 행을 제외한다.
+ * 팀당 ACTIVE 구성원은 1명이므로 항목당 1행. teams·team_members·user_details의 [org.hibernate.annotations.SQLRestriction]이 소프트 삭제 행을 제외한다. (match_user는 하드 삭제)
  */
 @Component
 class GetReceivedInvitationsDaoImpl(
