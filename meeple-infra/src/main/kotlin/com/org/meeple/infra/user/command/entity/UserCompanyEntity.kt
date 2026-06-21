@@ -16,7 +16,7 @@ import org.hibernate.annotations.SQLRestriction
 @SQLRestriction("deleted_at is null")
 @Table(
 	name = "user_companies",
-	uniqueConstraints = [UniqueConstraint(name = "udx_email_domain", columnNames = ["email_domain"])],
+	uniqueConstraints = [UniqueConstraint(name = "ux_email_domain", columnNames = ["email_domain"])],
 )
 class UserCompanyEntity(
 	/** 회사 이메일의 도메인 부분. (예: "meeple.com") */

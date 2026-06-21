@@ -18,7 +18,7 @@ class GetMatchRecordDaoImpl(
 	private val queryFactory: JPAQueryFactory,
 ) : GetMatchRecordDao {
 
-	// 참가자 조합 키(정렬된 userId)로 소개 이력 존재 여부만 확인한다. (udx_member_key)
+	// 참가자 조합 키(정렬된 userId)로 소개 이력 존재 여부만 확인한다. (ux_member_key)
 	override fun existsByPair(userIdA: Long, userIdB: Long): Boolean {
 		val match: QSoloMatchEntity = QSoloMatchEntity.soloMatchEntity
 		return queryFactory

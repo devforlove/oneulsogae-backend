@@ -22,11 +22,11 @@ import org.hibernate.annotations.SQLRestriction
 @Table(
 	name = "team_members",
 	uniqueConstraints = [
-		UniqueConstraint(name = "udx_team_id_user_id", columnNames = ["team_id", "user_id"]),
+		UniqueConstraint(name = "ux_team_id_user_id", columnNames = ["team_id", "user_id"]),
 	],
 	indexes = [
 		// 사용자별 참가 팀 조회.
-		Index(name = "idx_team_member_user_id", columnList = "user_id"),
+		Index(name = "idx_user_id", columnList = "user_id"),
 	],
 )
 class TeamMemberEntity(

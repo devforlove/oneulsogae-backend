@@ -2,6 +2,7 @@ package com.org.meeple.core.match.command.domain
 
 import com.org.meeple.common.match.TeamMemberStatus
 import com.org.meeple.common.user.Gender
+import java.time.LocalDateTime
 
 /**
  * 한 팀의 구성원([TeamMember]) 목록의 일급 컬렉션(first-class collection).
@@ -22,6 +23,28 @@ data class TeamMembers(
 	/** 구성원 userId 목록. */
 	fun userIds(): List<Long> =
 		values.map { it.userId }
+
+	/** [userId] 구성원을 찾는다. 없으면 null. */
+	fun find(userId: Long): TeamMember? =
+		values.firstOrNull { member: TeamMember -> member.userId == userId }
+
+	/** [userId] 구성원만 ACTIVE로 전환한 새 컬렉션. (나머지는 그대로) */
+	fun accept(userId: Long): TeamMembers =
+		TeamMembers(
+			values.map { member: TeamMember ->
+				if (member.userId == userId) member.copy(status = TeamMemberStatus.ACTIVE) else member
+			},
+		)
+
+	/** 모든 구성원이 ACTIVE인지 여부. */
+	fun allActive(): Boolean =
+		values.all { member: TeamMember -> member.status == TeamMemberStatus.ACTIVE }
+
+	/** 전원을 비활성(DEACTIVE) + 소프트 삭제([now]) 표시한 새 컬렉션. (팀 해체·초대취소 시) */
+	fun deactivateAll(now: LocalDateTime): TeamMembers =
+		TeamMembers(
+			values.map { member: TeamMember -> member.copy(status = TeamMemberStatus.DEACTIVE, deletedAt = now) },
+		)
 
 	companion object {
 

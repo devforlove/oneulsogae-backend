@@ -1,5 +1,6 @@
 package com.org.meeple.infra.match.command.repository
 
+import com.org.meeple.common.match.TeamMemberStatus
 import com.org.meeple.infra.match.command.entity.TeamMemberEntity
 import org.springframework.data.jpa.repository.JpaRepository
 
@@ -12,4 +13,7 @@ interface TeamMemberJpaRepository : JpaRepository<TeamMemberEntity, Long> {
 
 	/** 한 팀의 구성원 전체. (팀 애그리거트 조립용) */
 	fun findByTeamId(teamId: Long): List<TeamMemberEntity>
+
+	/** [userId]가 [status]인 팀 구성원으로 존재하는지 여부. (활성 팀 소속 판정용) */
+	fun existsByUserIdAndStatus(userId: Long, status: TeamMemberStatus): Boolean
 }

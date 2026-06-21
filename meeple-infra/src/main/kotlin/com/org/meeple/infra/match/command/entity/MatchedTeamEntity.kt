@@ -19,11 +19,11 @@ import org.hibernate.annotations.SQLRestriction
 @Table(
 	name = "matched_teams",
 	uniqueConstraints = [
-		UniqueConstraint(name = "udx_team_match_id_team_id", columnNames = ["team_match_id", "team_id"]),
+		UniqueConstraint(name = "ux_team_match_id_team_id", columnNames = ["team_match_id", "team_id"]),
 	],
 	indexes = [
 		// 팀별 참가 매칭 이력 조회.
-		Index(name = "idx_matched_team_team_id", columnList = "team_id"),
+		Index(name = "idx_team_id", columnList = "team_id"),
 	],
 )
 class MatchedTeamEntity(

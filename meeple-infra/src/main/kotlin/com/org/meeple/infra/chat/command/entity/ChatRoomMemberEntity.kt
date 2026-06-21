@@ -24,7 +24,7 @@ import java.time.LocalDateTime
 @Table(
 	name = "chat_room_members",
 	uniqueConstraints = [
-		UniqueConstraint(name = "udx_chat_room_id_user_id", columnNames = ["chat_room_id", "user_id"]),
+		UniqueConstraint(name = "ux_chat_room_id_user_id", columnNames = ["chat_room_id", "user_id"]),
 	],
 	indexes = [
 		Index(name = "idx_user_id", columnList = "user_id"),

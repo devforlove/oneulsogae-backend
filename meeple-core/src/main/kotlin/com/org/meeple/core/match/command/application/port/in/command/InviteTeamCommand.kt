@@ -7,5 +7,5 @@ package com.org.meeple.core.match.command.application.port.`in`.command
 data class InviteTeamCommand(
 	val invitedUserId: Long,
 	val name: String,
-	val introduction: String?,
+	val introduction: String,
 )

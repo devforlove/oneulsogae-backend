@@ -23,13 +23,15 @@ import java.time.LocalDateTime
 @Table(
 	name = "match_user",
 	uniqueConstraints = [
-		UniqueConstraint(name = "uk_match_user_user_id", columnNames = ["user_id"]),
+		UniqueConstraint(name = "ux_user_id", columnNames = ["user_id"]),
 	],
 	indexes = [
 		// 온보딩 추천 후보 선정(반대 성별·같은 권역·최근 로그인)용
-		Index(name = "idx_match_user_candidate", columnList = "gender, region_code, last_login_at"),
+		Index(name = "idx_gender_region_code_last_login_at", columnList = "gender, region_code, last_login_at"),
 		// 일일 배치 대상 (lastLoginAt, userId) 키셋 스캔용
-		Index(name = "idx_match_user_recent_login", columnList = "last_login_at, user_id"),
+		Index(name = "idx_last_login_at_user_id", columnList = "last_login_at, user_id"),
+		// 초대 가능 유저 닉네임 검색(nickname=, gender= seek + userId 정렬)용
+		Index(name = "idx_nickname_gender_user_id", columnList = "nickname, gender, user_id"),
 	],
 )
 class MatchUserEntity(

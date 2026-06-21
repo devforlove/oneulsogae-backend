@@ -25,7 +25,7 @@ import java.time.LocalDateTime
 @Table(
 	name = "team_matches",
 	uniqueConstraints = [
-		UniqueConstraint(name = "udx_team_match_member_key", columnNames = ["member_key"]),
+		UniqueConstraint(name = "ux_member_key", columnNames = ["member_key"]),
 	],
 )
 class TeamMatchEntity(
