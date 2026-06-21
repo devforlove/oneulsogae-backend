@@ -25,7 +25,7 @@ import org.hibernate.annotations.SQLRestriction
 @Table(
 	name = "solo_match_members",
 	uniqueConstraints = [
-		UniqueConstraint(name = "udx_match_id_user_id", columnNames = ["match_id", "user_id"]),
+		UniqueConstraint(name = "ux_match_id_user_id", columnNames = ["match_id", "user_id"]),
 	],
 	indexes = [
 		// 사용자별 참가 매칭 조회. status를 부록으로 둬 "내 활성(ACTIVE) 매칭" 필터가 인덱스에서 DEACTIVE 행을 건너뛰게 한다.

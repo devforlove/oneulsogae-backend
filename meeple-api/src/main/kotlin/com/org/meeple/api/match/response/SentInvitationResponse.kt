@@ -23,13 +23,16 @@ data class SentInvitationResponse(
 	)
 
 	companion object {
-		fun of(invitation: SentInvitation): SentInvitationResponse =
-			SentInvitationResponse(
-				teamId = invitation.teamId,
-				name = invitation.name,
-				introduction = invitation.introduction,
-				status = invitation.status,
-				members = invitation.members.map { member: SentInvitationMember -> Member(userId = member.userId, status = member.status) },
-			)
+		/** 초대 현황이 없으면(null) null을 그대로 돌려준다. (진행 중인 초대 없음 = data:null) */
+		fun of(invitation: SentInvitation?): SentInvitationResponse? =
+			invitation?.let {
+				SentInvitationResponse(
+					teamId = invitation.teamId,
+					name = invitation.name,
+					introduction = invitation.introduction,
+					status = invitation.status,
+					members = invitation.members.map { member: SentInvitationMember -> Member(userId = member.userId, status = member.status) },
+				)
+			}
 	}
 }

@@ -95,8 +95,11 @@ data class Team(
 		/** 팀 이름 최대 길이. */
 		const val MAX_NAME_LENGTH: Int = 50
 
-		/** 팀 소개 최대 길이. */
-		const val MAX_INTRODUCTION_LENGTH: Int = 1000
+		/** 팀 소개 최소 길이. */
+		const val MIN_INTRODUCTION_LENGTH: Int = 10
+
+		/** 팀 소개 최대 길이. (100자 미만 = 99자 이하) */
+		const val MAX_INTRODUCTION_LENGTH: Int = 99
 
 		/**
 		 * [ownerId]가 [invitedUserId]를 초대해 팀을 결성한다. (status INVITING)
@@ -110,12 +113,12 @@ data class Team(
 			invitedUserId: Long,
 			invitedGender: Gender,
 			name: String,
-			introduction: String?,
+			introduction: String,
 		): Team {
 			validateInvite(ownerId, ownerGender, invitedUserId, invitedGender, name, introduction)
 			return Team(
 				name = name.trim(),
-				introduction = introduction,
+				introduction = introduction.trim(),
 				members = TeamMembers.of(
 					listOf(
 						Triple(ownerId, ownerGender, TeamMemberStatus.ACTIVE),
@@ -130,7 +133,7 @@ data class Team(
 		 * 팀 초대 입력을 검증한다.
 		 * 자기 자신을 초대하면 [TeamErrorCode.CANNOT_INVITE_SELF], 초대 대상이 초대자와 다른 성별이면 [TeamErrorCode.MUST_INVITE_SAME_GENDER],
 		 * 이름이 비었거나 [MAX_NAME_LENGTH]를 넘으면 [TeamErrorCode.INVALID_TEAM_NAME],
-		 * 소개가 [MAX_INTRODUCTION_LENGTH]를 넘으면 [TeamErrorCode.INVALID_TEAM_INTRODUCTION]를 던진다.
+		 * 소개가 [MIN_INTRODUCTION_LENGTH]자 미만이거나 [MAX_INTRODUCTION_LENGTH]자를 넘으면 [TeamErrorCode.INVALID_TEAM_INTRODUCTION]를 던진다.
 		 */
 		private fun validateInvite(
 			ownerId: Long,
@@ -138,7 +141,7 @@ data class Team(
 			invitedUserId: Long,
 			invitedGender: Gender,
 			name: String,
-			introduction: String?,
+			introduction: String,
 		) {
 			if (ownerId == invitedUserId) {
 				throw BusinessException(TeamErrorCode.CANNOT_INVITE_SELF)
@@ -150,7 +153,8 @@ data class Team(
 			if (trimmedName.isEmpty() || trimmedName.length > MAX_NAME_LENGTH) {
 				throw BusinessException(TeamErrorCode.INVALID_TEAM_NAME)
 			}
-			if (introduction != null && introduction.length > MAX_INTRODUCTION_LENGTH) {
+			val trimmedIntroduction: String = introduction.trim()
+			if (trimmedIntroduction.length < MIN_INTRODUCTION_LENGTH || trimmedIntroduction.length > MAX_INTRODUCTION_LENGTH) {
 				throw BusinessException(TeamErrorCode.INVALID_TEAM_INTRODUCTION)
 			}
 		}

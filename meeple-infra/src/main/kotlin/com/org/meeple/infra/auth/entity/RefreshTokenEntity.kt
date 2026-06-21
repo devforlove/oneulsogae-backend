@@ -20,7 +20,7 @@ import java.time.LocalDateTime
 @Table(
 	name = "refresh_tokens",
 	indexes = [
-		Index(name = "udx_token_id", columnList = "token_id", unique = true),
+		Index(name = "ux_token_id", columnList = "token_id", unique = true),
 		Index(name = "idx_user_id", columnList = "user_id"),
 	],
 )

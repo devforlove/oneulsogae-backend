@@ -32,7 +32,7 @@ class GetSentInvitationE2ETest : AbstractIntegrationSupport({
 	fun inviteTeam(ownerId: Long, invitedUserId: Long): Long {
 		persistMatchUser(ownerId, Gender.MALE)
 		persistMatchUser(invitedUserId, Gender.MALE)
-		return post("/teams/v1") {
+		return post("/teams/v1/invitation") {
 			bearer(accessTokenFor(ownerId))
 			jsonBody("""{"invitedUserId": $invitedUserId, "name": "우리팀", "introduction": "함께 즐겁게 활동할 팀이에요"}""")
 		}.extract().path<Int>("data.teamId").toLong()

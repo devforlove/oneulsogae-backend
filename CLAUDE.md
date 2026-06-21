@@ -119,6 +119,7 @@ meeple-common ──> (없음)                (공용 enum/상수)
 - **엔티티마다 어댑터 하나.** 여러 모듈(core·scheduler·chatting)이 같은 엔티티를 써도 모듈별로 쪼개지 않고 한 어댑터에서 각 out-port를 함께 구현한다. (단순명 겹치면 import alias)
 - CQRS 도메인(chat·match·coin): command out-port는 `command/adapter`의 `*Adapter`(Spring Data 메서드 쿼리), 조회 dao는 `query`의 `*DaoImpl`로 분리한다.
 - 조회 구현 우선순위: ① Spring Data 파생 쿼리 → ② QueryDSL(`JPAQueryFactory`만 주입, 조인·동적 컬럼) → ③ `@Query`(JPQL).
+- **쿼리를 작성·수정할 때는 항상 인덱스 효율을 고려한다.** 가장 선택적인 `where` 동등 조건과 `order by` 컬럼이 인덱스로 받쳐지는지(테이블 풀스캔/filesort가 아닌 seek) 확인한다. 받쳐줄 인덱스가 없으면 복합 인덱스 추가를 검토하고(동등 조건 컬럼 → 정렬 컬럼 순서), 쓰기 비용·실DB DDL 반영까지 함께 판단한다. (`<>`·`like '%…'` 등 non-sargable 조건은 인덱스 seek에 쓰이지 않으므로 선택적 필터로 의존하지 않는다)
 - `@Query`(JPQL) 조인은 **콤마 암묵 조인 금지, `join … on` 명시 조인**(조인 조건은 `on`, 필터만 `where`).
 - `entity`·`mapper`·`repository`는 `command` 아래 두고 query daoImpl이 참조한다(infra 내부 query→command 참조 허용).
 

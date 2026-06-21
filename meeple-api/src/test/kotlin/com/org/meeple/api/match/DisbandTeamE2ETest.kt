@@ -27,9 +27,9 @@ class DisbandTeamE2ETest : AbstractIntegrationSupport({
 	fun formedTeam(ownerId: Long, invitedUserId: Long): Long {
 		persistMatchUser(ownerId, Gender.MALE)
 		persistMatchUser(invitedUserId, Gender.MALE)
-		val teamId: Long = post("/teams/v1") {
+		val teamId: Long = post("/teams/v1/invitation") {
 			bearer(accessTokenFor(ownerId))
-			jsonBody("""{"invitedUserId": $invitedUserId, "name": "우리팀", "introduction": null}""")
+			jsonBody("""{"invitedUserId": $invitedUserId, "name": "우리팀", "introduction": "함께 즐겁게 활동할 팀이에요"}""")
 		}.extract().path<Int>("data.teamId").toLong()
 		post("/teams/v1/$teamId/acceptance") { bearer(accessTokenFor(invitedUserId)) }
 		return teamId
@@ -60,9 +60,9 @@ class DisbandTeamE2ETest : AbstractIntegrationSupport({
 				val invitedUserId = 4004L
 				persistMatchUser(ownerId, Gender.MALE)
 				persistMatchUser(invitedUserId, Gender.MALE)
-				val teamId: Long = post("/teams/v1") {
+				val teamId: Long = post("/teams/v1/invitation") {
 					bearer(accessTokenFor(ownerId))
-					jsonBody("""{"invitedUserId": $invitedUserId, "name": "우리팀", "introduction": null}""")
+					jsonBody("""{"invitedUserId": $invitedUserId, "name": "우리팀", "introduction": "함께 즐겁게 활동할 팀이에요"}""")
 				}.extract().path<Int>("data.teamId").toLong()
 
 				delete("/teams/v1/$teamId") {

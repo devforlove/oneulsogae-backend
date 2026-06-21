@@ -22,6 +22,7 @@ class TeamTest : DescribeSpec({
 
 	val ownerId: Long = 1L
 	val invitedUserId: Long = 2L
+	val validIntroduction: String = "함께 즐겁게 활동할 팀이에요"
 
 	describe("invite - 팀 결성") {
 		it("초대자와 초대 대상을 구성원으로 담아 초대중(INVITING) 팀을 결성한다") {
@@ -31,12 +32,12 @@ class TeamTest : DescribeSpec({
 				invitedUserId = invitedUserId,
 				invitedGender = Gender.MALE,
 				name = "우리팀",
-				introduction = "잘 부탁드려요",
+				introduction = validIntroduction,
 			)
 
 			team.status shouldBe TeamStatus.INVITING
 			team.name shouldBe "우리팀"
-			team.introduction shouldBe "잘 부탁드려요"
+			team.introduction shouldBe validIntroduction
 			team.members.userIds() shouldContainExactlyInAnyOrder listOf(ownerId, invitedUserId)
 
 			val statusByUserId: Map<Long, TeamMemberStatus> = team.members.values.associate { it.userId to it.status }
@@ -44,17 +45,18 @@ class TeamTest : DescribeSpec({
 			statusByUserId[invitedUserId] shouldBe TeamMemberStatus.INVITED
 		}
 
-		it("앞뒤 공백을 제거한 이름으로 결성한다") {
-			val team: Team = Team.invite(ownerId, Gender.MALE, invitedUserId, Gender.MALE, "  우리팀  ", null)
+		it("앞뒤 공백을 제거한 이름·소개로 결성한다") {
+			val team: Team = Team.invite(ownerId, Gender.MALE, invitedUserId, Gender.MALE, "  우리팀  ", "  $validIntroduction  ")
 
 			team.name shouldBe "우리팀"
+			team.introduction shouldBe validIntroduction
 		}
 	}
 
 	describe("invite - 입력 검증") {
 		it("자기 자신을 초대하면 CANNOT_INVITE_SELF를 던진다") {
 			val ex: BusinessException = shouldThrow {
-				Team.invite(ownerId, Gender.MALE, ownerId, Gender.MALE, "우리팀", null)
+				Team.invite(ownerId, Gender.MALE, ownerId, Gender.MALE, "우리팀", validIntroduction)
 			}
 
 			ex.errorCode shouldBe TeamErrorCode.CANNOT_INVITE_SELF
@@ -62,7 +64,7 @@ class TeamTest : DescribeSpec({
 
 		it("초대 대상이 다른 성별이면 MUST_INVITE_SAME_GENDER를 던진다") {
 			val ex: BusinessException = shouldThrow {
-				Team.invite(ownerId, Gender.MALE, invitedUserId, Gender.FEMALE, "우리팀", null)
+				Team.invite(ownerId, Gender.MALE, invitedUserId, Gender.FEMALE, "우리팀", validIntroduction)
 			}
 
 			ex.errorCode shouldBe TeamErrorCode.MUST_INVITE_SAME_GENDER
@@ -70,7 +72,7 @@ class TeamTest : DescribeSpec({
 
 		it("이름이 공백뿐이면 INVALID_TEAM_NAME을 던진다") {
 			val ex: BusinessException = shouldThrow {
-				Team.invite(ownerId, Gender.MALE, invitedUserId, Gender.MALE, "   ", null)
+				Team.invite(ownerId, Gender.MALE, invitedUserId, Gender.MALE, "   ", validIntroduction)
 			}
 
 			ex.errorCode shouldBe TeamErrorCode.INVALID_TEAM_NAME
@@ -78,10 +80,18 @@ class TeamTest : DescribeSpec({
 
 		it("이름이 최대 길이를 넘으면 INVALID_TEAM_NAME을 던진다") {
 			val ex: BusinessException = shouldThrow {
-				Team.invite(ownerId, Gender.MALE, invitedUserId, Gender.MALE, "가".repeat(Team.MAX_NAME_LENGTH + 1), null)
+				Team.invite(ownerId, Gender.MALE, invitedUserId, Gender.MALE, "가".repeat(Team.MAX_NAME_LENGTH + 1), validIntroduction)
 			}
 
 			ex.errorCode shouldBe TeamErrorCode.INVALID_TEAM_NAME
+		}
+
+		it("소개가 최소 길이 미만이면 INVALID_TEAM_INTRODUCTION을 던진다") {
+			val ex: BusinessException = shouldThrow {
+				Team.invite(ownerId, Gender.MALE, invitedUserId, Gender.MALE, "우리팀", "가".repeat(Team.MIN_INTRODUCTION_LENGTH - 1))
+			}
+
+			ex.errorCode shouldBe TeamErrorCode.INVALID_TEAM_INTRODUCTION
 		}
 
 		it("소개가 최대 길이를 넘으면 INVALID_TEAM_INTRODUCTION을 던진다") {

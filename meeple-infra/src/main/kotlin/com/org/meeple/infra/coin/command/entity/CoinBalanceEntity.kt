@@ -17,7 +17,7 @@ import org.hibernate.annotations.SQLRestriction
 @Table(
 	name = "coin_balances",
 	uniqueConstraints = [
-		UniqueConstraint(name = "uk_coin_balances_user_id", columnNames = ["user_id"]),
+		UniqueConstraint(name = "ux_user_id", columnNames = ["user_id"]),
 	],
 )
 class CoinBalanceEntity(

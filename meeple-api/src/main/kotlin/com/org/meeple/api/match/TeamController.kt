@@ -12,12 +12,9 @@ import com.org.meeple.core.match.command.application.port.`in`.AcceptTeamInvitat
 import com.org.meeple.core.match.command.application.port.`in`.DisbandTeamUseCase
 import com.org.meeple.core.match.command.application.port.`in`.InviteTeamUseCase
 import com.org.meeple.core.match.command.application.port.`in`.WithdrawTeamInvitationUseCase
-import com.org.meeple.core.match.query.dto.SentInvitation
 import com.org.meeple.core.match.query.service.port.`in`.GetSentInvitationUseCase
 import com.org.meeple.core.match.query.service.port.`in`.SearchInvitableUsersUseCase
-import jakarta.validation.ConstraintViolationException
 import jakarta.validation.Valid
-import jakarta.validation.Validator
 import org.springframework.web.bind.annotation.DeleteMapping
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.ModelAttribute
@@ -29,7 +26,7 @@ import org.springframework.web.bind.annotation.RestController
 
 /**
  * 2:2(팀) 매칭의 팀 엔드포인트. (모두 인증 필요)
- * - POST /: 다른 사용자를 초대해 팀을 결성한다. 초대 대상은 초대중(INVITED) 구성원으로 담기고 팀은 초대중(INVITING) 상태로 만들어진다.
+ * - POST /invitation: 다른 사용자를 초대해 팀을 결성한다. 초대 대상은 초대중(INVITED) 구성원으로 담기고 팀은 초대중(INVITING) 상태로 만들어진다.
  * - POST /{teamId}/acceptance: 초대받은 사용자가 팀 초대를 수락한다. 전원 수락 시 팀이 결성(FORMED)된다.
  * - DELETE /{teamId}/invitation: 초대 단계(INVITING) 팀의 초대를 철회한다. (초대받은 사람의 거절 / 초대자의 취소)
  * - DELETE /{teamId}: 결성(FORMED)된 팀을 구성원이 해체한다. (떠나면 2인 팀이 유지될 수 없어 팀 전체 비활성화)
@@ -43,14 +40,13 @@ class TeamController(
 	private val disbandTeamUseCase: DisbandTeamUseCase,
 	private val searchInvitableUsersUseCase: SearchInvitableUsersUseCase,
 	private val getSentInvitationUseCase: GetSentInvitationUseCase,
-	private val validator: Validator,
 ) {
 
 	/**
 	 * 다른 사용자를 초대해 팀을 결성한다.
 	 * 요청 본문으로 팀 이름·소개·초대할 사용자 id를 받고, 초대자(인증 사용자)와 초대 대상을 구성원으로 담은 팀을 만든다.
 	 */
-	@PostMapping
+	@PostMapping("/invitation")
 	fun invite(
 		@LoginUser user: AuthUser,
 		@RequestBody @Valid request: InviteTeamRequest,
@@ -89,7 +85,7 @@ class TeamController(
 	fun getSentInvitation(
 		@LoginUser user: AuthUser,
 	): ApiResponse<SentInvitationResponse?> =
-		ApiResponse.success(getSentInvitationUseCase.get(user.id)?.let { invitation: SentInvitation -> SentInvitationResponse.of(invitation) })
+		ApiResponse.success(SentInvitationResponse.of(getSentInvitationUseCase.get(user.id)))
 
 	/**
 	 * 닉네임이 정확히 일치하는 초대 가능 유저를 검색한다. (같은 성별·매칭 가능·활성 팀 없음·자기 제외)
@@ -99,14 +95,8 @@ class TeamController(
 	fun searchInvitableUsers(
 		@LoginUser user: AuthUser,
 		@ModelAttribute @Valid request: SearchInvitableUsersRequest,
-	): ApiResponse<List<InvitableUserResponse>> {
-		val violations: Set<jakarta.validation.ConstraintViolation<SearchInvitableUsersRequest>> =
-			validator.validate(request)
-		if (violations.isNotEmpty()) {
-			throw ConstraintViolationException(violations)
-		}
-		return ApiResponse.success(
+	): ApiResponse<List<InvitableUserResponse>> =
+		ApiResponse.success(
 			searchInvitableUsersUseCase.search(user.id, request.nickname!!).map { InvitableUserResponse.of(it) },
 		)
-	}
 }

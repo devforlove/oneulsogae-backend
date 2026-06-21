@@ -24,7 +24,7 @@ import java.time.LocalDateTime
 @Table(
 	name = "solo_matches",
 	uniqueConstraints = [
-		UniqueConstraint(name = "udx_member_key", columnNames = ["member_key"]),
+		UniqueConstraint(name = "ux_member_key", columnNames = ["member_key"]),
 	],
 )
 class SoloMatchEntity(

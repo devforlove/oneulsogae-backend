@@ -27,7 +27,7 @@ import org.hibernate.annotations.SQLRestriction
 @Table(
 	name = "user_details",
 	indexes = [
-		Index(name = "udx_user_id", columnList = "user_id", unique = true),
+		Index(name = "ux_user_id", columnList = "user_id", unique = true),
 	],
 )
 class UserDetailEntity(

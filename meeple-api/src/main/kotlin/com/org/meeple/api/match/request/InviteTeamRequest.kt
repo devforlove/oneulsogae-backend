@@ -7,7 +7,7 @@ import jakarta.validation.constraints.Size
 
 /**
  * 팀 초대(결성) 요청. 인증 사용자가 [invitedUserId]를 초대해 [name]/[introduction]의 팀을 결성한다.
- * 이름은 필수(@NotBlank, 50자 이하), 소개는 선택(1000자 이하), 초대 대상 userId는 필수(@NotNull)다.
+ * 이름은 필수(@NotBlank, 50자 이하), 소개는 필수(@NotBlank, 10자 이상 100자 미만), 초대 대상 userId는 필수(@NotNull)다.
  */
 data class InviteTeamRequest(
 	@field:NotNull(message = "초대할 사용자 ID는 필수입니다.")
@@ -17,7 +17,8 @@ data class InviteTeamRequest(
 	@field:Size(max = 50, message = "팀 이름은 50자 이하여야 합니다.")
 	val name: String? = null,
 
-	@field:Size(max = 1000, message = "팀 소개는 1000자 이하여야 합니다.")
+	@field:NotBlank(message = "팀 소개는 필수입니다.")
+	@field:Size(min = 10, max = 99, message = "팀 소개는 10자 이상 100자 미만이어야 합니다.")
 	val introduction: String? = null,
 ) {
 
@@ -26,6 +27,6 @@ data class InviteTeamRequest(
 		InviteTeamCommand(
 			invitedUserId = invitedUserId!!,
 			name = name!!,
-			introduction = introduction,
+			introduction = introduction!!,
 		)
 }

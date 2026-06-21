@@ -23,7 +23,7 @@ import java.time.LocalDateTime
 @Table(
 	name = "chat_rooms",
 	// 매칭당 채팅방은 1개. 동시/재시도로 인한 중복 생성을 DB에서 막는다. (멱등 생성의 최종 가드)
-	uniqueConstraints = [UniqueConstraint(name = "uk_chat_rooms_match_id", columnNames = ["match_id"])],
+	uniqueConstraints = [UniqueConstraint(name = "ux_match_id", columnNames = ["match_id"])],
 )
 class ChatRoomEntity(
 	/** 이 채팅방을 생성시킨 매칭 id. */

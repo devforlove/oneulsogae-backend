@@ -1,5 +1,6 @@
 package com.org.meeple.infra.match.command.adapter
 
+import com.org.meeple.common.match.TeamMemberStatus
 import com.org.meeple.core.match.command.application.port.out.GetTeamPort
 import com.org.meeple.core.match.command.application.port.out.SaveTeamPort
 import com.org.meeple.core.match.command.domain.Team
@@ -46,7 +47,7 @@ class TeamAdapter(
 		return teamEntity.toDomain(members)
 	}
 
-	/** 삭제되지 않은 team_member 행 존재 여부로 활성 팀 소속을 판정한다. */
+	/** 구성원 상태가 ACTIVE인 team_member 행 존재 여부로 활성 팀 소속을 판정한다. (초대중(INVITED)은 여러 팀에서 가능하므로 제외) */
 	override fun existsActiveTeamMember(userId: Long): Boolean =
-		teamMemberJpaRepository.existsByUserId(userId)
+		teamMemberJpaRepository.existsByUserIdAndStatus(userId, TeamMemberStatus.ACTIVE)
 }
