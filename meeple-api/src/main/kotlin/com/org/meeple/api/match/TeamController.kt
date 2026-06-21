@@ -3,6 +3,7 @@ package com.org.meeple.api.match
 import com.org.meeple.api.match.request.InviteTeamRequest
 import com.org.meeple.api.match.request.SearchInvitableUsersRequest
 import com.org.meeple.api.match.response.InvitableUserResponse
+import com.org.meeple.api.match.response.SentInvitationResponse
 import com.org.meeple.api.match.response.TeamResponse
 import com.org.meeple.auth.AuthUser
 import com.org.meeple.auth.LoginUser
@@ -11,6 +12,8 @@ import com.org.meeple.core.match.command.application.port.`in`.AcceptTeamInvitat
 import com.org.meeple.core.match.command.application.port.`in`.DisbandTeamUseCase
 import com.org.meeple.core.match.command.application.port.`in`.InviteTeamUseCase
 import com.org.meeple.core.match.command.application.port.`in`.WithdrawTeamInvitationUseCase
+import com.org.meeple.core.match.query.dto.SentInvitation
+import com.org.meeple.core.match.query.service.port.`in`.GetSentInvitationUseCase
 import com.org.meeple.core.match.query.service.port.`in`.SearchInvitableUsersUseCase
 import jakarta.validation.ConstraintViolationException
 import jakarta.validation.Valid
@@ -39,6 +42,7 @@ class TeamController(
 	private val withdrawTeamInvitationUseCase: WithdrawTeamInvitationUseCase,
 	private val disbandTeamUseCase: DisbandTeamUseCase,
 	private val searchInvitableUsersUseCase: SearchInvitableUsersUseCase,
+	private val getSentInvitationUseCase: GetSentInvitationUseCase,
 	private val validator: Validator,
 ) {
 
@@ -76,6 +80,16 @@ class TeamController(
 		@PathVariable teamId: Long,
 	): ApiResponse<TeamResponse> =
 		ApiResponse.success(TeamResponse.of(disbandTeamUseCase.disband(user.id, teamId)))
+
+	/**
+	 * 내가 보낸 초대 현황을 조회한다. 요청자가 ACTIVE 구성원(=초대자)인 가장 최근 INVITING 팀을 반환한다.
+	 * 진행 중인 초대가 없으면 data=null(200). (초대받은 사람·비구성원은 조회되지 않아 초대자에게만 노출된다)
+	 */
+	@GetMapping("/invitation")
+	fun getSentInvitation(
+		@LoginUser user: AuthUser,
+	): ApiResponse<SentInvitationResponse?> =
+		ApiResponse.success(getSentInvitationUseCase.get(user.id)?.let { invitation: SentInvitation -> SentInvitationResponse.of(invitation) })
 
 	/**
 	 * 닉네임이 정확히 일치하는 초대 가능 유저를 검색한다. (같은 성별·매칭 가능·활성 팀 없음·자기 제외)
