@@ -6,6 +6,7 @@ import com.org.meeple.core.common.event.MatchProfileSnapshot
 import com.org.meeple.core.match.command.domain.MatchUser
 import io.kotest.core.spec.style.DescribeSpec
 import io.kotest.matchers.shouldBe
+import java.time.LocalDate
 import java.time.LocalDateTime
 
 /**
@@ -16,7 +17,7 @@ class MatchUserTest : DescribeSpec({
 
 	val snapshot = MatchProfileSnapshot(
 		gender = Gender.MALE,
-		age = 31,
+		birthday = LocalDate.of(1995, 1, 1),
 		regionCode = 1,
 		maritalStatus = MaritalStatus.SINGLE,
 		nickname = "민수",
@@ -31,7 +32,7 @@ class MatchUserTest : DescribeSpec({
 			matchUser shouldBe MatchUser(
 				userId = 42L,
 				gender = Gender.MALE,
-				age = 31,
+				birthday = LocalDate.of(1995, 1, 1),
 				regionCode = 1,
 				maritalStatus = MaritalStatus.SINGLE,
 				nickname = "민수",

@@ -17,6 +17,7 @@ import com.org.meeple.infra.match.command.entity.QTeamMemberEntity
 import com.org.meeple.infra.user.command.entity.QUserDetailEntity
 import org.hamcrest.Matchers.hasSize
 import org.hamcrest.Matchers.nullValue
+import java.time.LocalDate
 
 /**
  * `GET /teams/v1/invitation` E2E 테스트. (내가 보낸 초대 현황 조회)
@@ -26,9 +27,9 @@ import org.hamcrest.Matchers.nullValue
 class GetSentInvitationE2ETest : AbstractIntegrationSupport({
 
 	// 표시용 프로필을 match_user(닉네임·프로필이미지·나이) + user_details(직업·회사명)에 저장한다. (성별은 MALE 고정)
-	fun persistProfile(userId: Long, nickname: String, profileImageCode: String, job: String?, companyName: String?, age: Int = 28) {
+	fun persistProfile(userId: Long, nickname: String, profileImageCode: String, job: String?, companyName: String?, birthday: LocalDate = LocalDate.of(1998, 1, 1)) {
 		IntegrationUtil.persist(
-			MatchUserEntityFixture.create(userId = userId, gender = Gender.MALE, nickname = nickname, profileImageCode = profileImageCode, age = age),
+			MatchUserEntityFixture.create(userId = userId, gender = Gender.MALE, nickname = nickname, profileImageCode = profileImageCode, birthday = birthday),
 		)
 		IntegrationUtil.persist(
 			UserDetailEntityFixture.create(
@@ -63,7 +64,7 @@ class GetSentInvitationE2ETest : AbstractIntegrationSupport({
 				val ownerId = 3001L
 				val invitedUserId = 3002L
 				persistProfile(ownerId, "초대왕", "10", "PM", "토스")
-				persistProfile(invitedUserId, "피초대", "20", "개발자", "카카오", age = 30)
+				persistProfile(invitedUserId, "피초대", "20", "개발자", "카카오", birthday = LocalDate.now().minusYears(30))
 				val teamId: Long = invite(ownerId, invitedUserId)
 
 				get("/teams/v1/invitation") {
