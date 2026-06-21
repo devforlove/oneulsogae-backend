@@ -74,3 +74,21 @@ meeple:
 logging:
   level:
     com.org.meeple: debug
+
+# API 문서(springdoc): 기본 비활성으로 두어 운영 노출을 차단한다. local·test 프로파일에서만 켠다.
+springdoc:
+  api-docs:
+    enabled: false
+  swagger-ui:
+    enabled: false
+
+---
+spring:
+  config:
+    activate:
+      on-profile: "local | test"
+springdoc:
+  api-docs:
+    enabled: true
+  swagger-ui:
+    enabled: true

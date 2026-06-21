@@ -1,10 +1,12 @@
 package com.org.meeple.config
 
+import com.org.meeple.auth.LoginUser
 import io.swagger.v3.oas.models.Components
 import io.swagger.v3.oas.models.OpenAPI
 import io.swagger.v3.oas.models.info.Info
 import io.swagger.v3.oas.models.security.SecurityRequirement
 import io.swagger.v3.oas.models.security.SecurityScheme
+import org.springdoc.core.utils.SpringDocUtils
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
 
@@ -14,6 +16,11 @@ import org.springframework.context.annotation.Configuration
  */
 @Configuration
 class OpenApiConfig {
+
+	init {
+		// @LoginUser로 주입되는 인증 주체(AuthUser)는 argument resolver가 채우므로, 문서의 요청 파라미터로 노출하지 않는다.
+		SpringDocUtils.getConfig().addAnnotationsToIgnore(LoginUser::class.java)
+	}
 
 	@Bean
 	fun openAPI(): OpenAPI {

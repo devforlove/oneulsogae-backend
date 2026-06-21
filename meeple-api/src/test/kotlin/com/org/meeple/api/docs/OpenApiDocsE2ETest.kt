@@ -3,6 +3,7 @@ package com.org.meeple.api.docs
 import com.org.meeple.common.integration.AbstractIntegrationSupport
 import com.org.meeple.common.integration.expect
 import com.org.meeple.common.integration.get
+import io.kotest.matchers.string.shouldNotContain
 import org.hamcrest.Matchers.hasKey
 import org.hamcrest.Matchers.startsWith
 
@@ -21,6 +22,14 @@ class OpenApiDocsE2ETest : AbstractIntegrationSupport({
 					body("openapi", startsWith("3"))
 					body("paths", hasKey("/teams/v1/invitation"))
 				}
+			}
+		}
+
+		context("인증 주입 파라미터(@LoginUser AuthUser)는") {
+			it("요청 파라미터·스키마로 노출되지 않는다") {
+				val apiDocs: String = get("/v3/api-docs").extract().asString()
+
+				apiDocs shouldNotContain "AuthUser"
 			}
 		}
 	}

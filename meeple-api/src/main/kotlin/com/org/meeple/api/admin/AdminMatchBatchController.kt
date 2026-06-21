@@ -6,6 +6,8 @@ import com.org.meeple.core.common.response.ApiResponse
 import com.org.meeple.core.match.MatchErrorCode
 import com.org.meeple.scheduler.match.command.application.MatchBatchJob
 import com.org.meeple.scheduler.match.command.domain.MatchBatchResult
+import io.swagger.v3.oas.annotations.Operation
+import io.swagger.v3.oas.annotations.tags.Tag
 import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RestController
@@ -14,6 +16,7 @@ import org.springframework.web.bind.annotation.RestController
  * 관리자 전용 매칭 배치 엔드포인트. (admin 경로는 SecurityConfig에서 ROLE_ADMIN으로 제한)
  * 크론과 동일한 진입점([MatchBatchJob])을 호출해 일일 매칭 배치를 즉시(동기) 실행한다.
  */
+@Tag(name = "관리자 - 매칭 배치", description = "관리자 전용 매칭 배치 엔드포인트. 크론과 동일한 진입점을 호출해 일일 매칭 배치를 즉시 실행한다.")
 @RestController
 @RequestMapping("/admin/v1")
 class AdminMatchBatchController(
@@ -24,6 +27,7 @@ class AdminMatchBatchController(
 	 * 일일 매칭 배치를 즉시 실행하고 결과를 반환한다.
 	 * 크론·다른 수동 트리거와 겹쳐 이미 실행 중이면 [MatchErrorCode.MATCH_BATCH_ALREADY_RUNNING](409)을 던진다.
 	 */
+	@Operation(summary = "매칭 배치 즉시 실행", description = "일일 매칭 배치를 즉시(동기) 실행하고 결과를 반환한다. 이미 실행 중이면 409를 반환한다.")
 	@PostMapping("/matches/batch")
 	fun runMatchBatch(): ApiResponse<MatchBatchResponse> {
 		val result: MatchBatchResult = matchBatchJob.run()

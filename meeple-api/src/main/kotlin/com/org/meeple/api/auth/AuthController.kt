@@ -15,12 +15,15 @@ import jakarta.servlet.http.HttpServletResponse
 import org.springframework.http.HttpHeaders
 import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
+import io.swagger.v3.oas.annotations.Operation
+import io.swagger.v3.oas.annotations.tags.Tag
 import org.springframework.web.bind.annotation.CookieValue
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RestController
 
+@Tag(name = "인증", description = "액세스/리프레시 토큰 발급·갱신·폐기 및 로그인 사용자 정보 조회")
 @RestController
 @RequestMapping("/auth/v1")
 class AuthController(
@@ -30,11 +33,13 @@ class AuthController(
 ) {
 
 	/** 현재 로그인 사용자 정보. accessToken(쿠키)으로 식별하고, 조회한 가입 상태(status)를 함께 내려준다. */
+	@Operation(summary = "로그인 사용자 정보 조회", description = "accessToken(쿠키)으로 현재 로그인 사용자를 식별하고 가입 상태(status)를 함께 반환한다.")
 	@GetMapping("/me")
 	fun me(@LoginUser user: AuthUser): ApiResponse<MeResponse> =
 		ApiResponse.success(MeResponse.of(user, getUserByIdUseCase.getById(user.id)))
 
 	/** refresh 쿠키로 access/refresh를 회전 재발급한다. 실패 시 쿠키를 비우고 401. */
+	@Operation(summary = "토큰 갱신", description = "refresh 쿠키로 access/refresh 토큰을 회전 재발급한다. 실패 시 쿠키를 비우고 401을 반환한다.")
 	@PostMapping("/refresh")
 	fun refresh(
 		@CookieValue(name = TokenCookieFactory.REFRESH_TOKEN, required = false) refreshToken: String?,
@@ -60,6 +65,7 @@ class AuthController(
 	}
 
 	/** 로그아웃: 서버의 refresh token을 폐기하고 인증 쿠키를 삭제한다. */
+	@Operation(summary = "로그아웃", description = "서버에 저장된 refresh token을 폐기하고 인증 쿠키를 삭제한다.")
 	@PostMapping("/logout")
 	fun logout(
 		@CookieValue(name = TokenCookieFactory.REFRESH_TOKEN, required = false) refreshToken: String?,
