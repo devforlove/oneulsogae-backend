@@ -5,6 +5,7 @@ import com.org.meeple.api.match.response.MatchStatusResponse
 import com.org.meeple.auth.AuthUser
 import com.org.meeple.auth.LoginUser
 import com.org.meeple.core.common.response.ApiResponse
+import com.org.meeple.core.common.time.TimeGenerator
 import com.org.meeple.core.match.query.service.port.`in`.GetMatchesUseCase
 import com.org.meeple.core.match.command.application.port.`in`.SendInterestUseCase
 import org.springframework.web.bind.annotation.GetMapping
@@ -27,6 +28,7 @@ import org.springframework.web.bind.annotation.RestController
 class MatchController(
 	private val getMatchesUseCase: GetMatchesUseCase,
 	private val sendInterestUseCase: SendInterestUseCase,
+	private val timeGenerator: TimeGenerator,
 ) {
 
 	/**
@@ -40,7 +42,7 @@ class MatchController(
 		@LoginUser user: AuthUser,
 		@RequestParam(name = "isAfterOnboarding", defaultValue = "false") isAfterOnboarding: Boolean,
 	): ApiResponse<List<MatchResponse>> =
-		ApiResponse.success(MatchResponse.listOf(getMatchesUseCase.getMatches(user.id, isAfterOnboarding)))
+		ApiResponse.success(MatchResponse.listOf(getMatchesUseCase.getMatches(user.id, isAfterOnboarding), timeGenerator.today()))
 
 	/**
 	 * 소개받은 매칭에 관심을 보낸다. (신청/수락 통합)

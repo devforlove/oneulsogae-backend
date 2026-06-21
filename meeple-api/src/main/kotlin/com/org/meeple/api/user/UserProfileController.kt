@@ -6,6 +6,7 @@ import com.org.meeple.api.user.response.UserProfileResponse
 import com.org.meeple.auth.AuthUser
 import com.org.meeple.auth.LoginUser
 import com.org.meeple.core.common.response.ApiResponse
+import com.org.meeple.core.common.time.TimeGenerator
 import com.org.meeple.core.user.query.service.port.`in`.GetUserDetailUseCase
 import com.org.meeple.core.user.command.application.port.`in`.UpdateProfileUseCase
 import io.swagger.v3.oas.annotations.Operation
@@ -23,6 +24,7 @@ import org.springframework.web.bind.annotation.RestController
 class UserProfileController(
 	private val getUserDetailUseCase: GetUserDetailUseCase,
 	private val updateProfileUseCase: UpdateProfileUseCase,
+	private val timeGenerator: TimeGenerator,
 ) {
 
 	/** 온보딩에 필요한 enum 타입별 선택 옵션 목록을 모두 내려준다. */
@@ -36,7 +38,7 @@ class UserProfileController(
 	fun getMyProfile(
 		@LoginUser user: AuthUser,
 	): ApiResponse<UserProfileResponse> =
-		ApiResponse.success(UserProfileResponse.of(getUserDetailUseCase.getByUserId(user.id)))
+		ApiResponse.success(UserProfileResponse.of(getUserDetailUseCase.getByUserId(user.id), timeGenerator.today()))
 
 	/**
 	 * 현재 로그인 사용자의 프로필을 수정한다. (편집 가능 필드 전체 교체)
@@ -48,5 +50,5 @@ class UserProfileController(
 		@LoginUser user: AuthUser,
 		@Valid @RequestBody request: UpdateProfileRequest,
 	): ApiResponse<UserProfileResponse> =
-		ApiResponse.success(UserProfileResponse.of(updateProfileUseCase.updateProfile(user.id, request.toCommand())))
+		ApiResponse.success(UserProfileResponse.of(updateProfileUseCase.updateProfile(user.id, request.toCommand()), timeGenerator.today()))
 }

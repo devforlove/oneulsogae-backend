@@ -14,6 +14,7 @@ import jakarta.validation.constraints.NotBlank
 import jakarta.validation.constraints.NotEmpty
 import jakarta.validation.constraints.NotNull
 import jakarta.validation.constraints.Size
+import java.time.LocalDate
 
 /**
  * 회사 이메일 인증 요청 본문. 프로필 상세를 함께 받아 저장하고(전체 교체) 입력한 회사 이메일로 인증 메일을 발송한다.
@@ -25,10 +26,8 @@ data class UpdateUserDetailRequest(
 	@field:Size(min = 2, max = 20, message = "닉네임은 2자 이상 20자 이하여야 합니다.")
 	val nickname: String? = null,
 
-	@field:NotNull(message = "나이는 필수입니다.")
-	@field:Min(value = 19, message = "나이는 19 이상이어야 합니다.")
-	@field:Max(value = 100, message = "나이는 100 이하여야 합니다.")
-	val age: Int? = null,
+	@field:NotNull(message = "생년월일은 필수입니다.")
+	val birthday: LocalDate? = null,
 
 	@field:NotNull(message = "키는 필수입니다.")
 	@field:Min(value = 140, message = "키는 140cm 이상이어야 합니다.")
@@ -87,7 +86,7 @@ data class UpdateUserDetailRequest(
 	fun toCommand(): UpdateUserDetailCommand =
 		UpdateUserDetailCommand(
 			nickname = nickname!!,
-			age = age!!,
+			birthday = birthday!!,
 			height = height!!,
 			gender = gender!!,
 			phoneNumber = phoneNumber!!,
