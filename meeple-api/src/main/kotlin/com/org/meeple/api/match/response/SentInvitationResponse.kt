@@ -26,6 +26,7 @@ data class SentInvitationResponse(
 		val companyName: String?,
 		val gender: Gender,
 		val profileImageCode: String,
+		val age: Int,
 		val status: TeamMemberStatus,
 	)
 
@@ -48,6 +49,7 @@ data class SentInvitationResponse(
 							companyName = member.companyName,
 							gender = member.gender,
 							profileImageCode = member.profileImageCode,
+							age = member.age,
 							status = member.status,
 						)
 					},

@@ -25,10 +25,10 @@ import org.hamcrest.Matchers.nullValue
  */
 class GetSentInvitationE2ETest : AbstractIntegrationSupport({
 
-	// 표시용 프로필을 match_user(닉네임·프로필이미지) + user_details(직업·회사명)에 저장한다. (성별은 MALE 고정)
-	fun persistProfile(userId: Long, nickname: String, profileImageCode: String, job: String?, companyName: String?) {
+	// 표시용 프로필을 match_user(닉네임·프로필이미지·나이) + user_details(직업·회사명)에 저장한다. (성별은 MALE 고정)
+	fun persistProfile(userId: Long, nickname: String, profileImageCode: String, job: String?, companyName: String?, age: Int = 28) {
 		IntegrationUtil.persist(
-			MatchUserEntityFixture.create(userId = userId, gender = Gender.MALE, nickname = nickname, profileImageCode = profileImageCode),
+			MatchUserEntityFixture.create(userId = userId, gender = Gender.MALE, nickname = nickname, profileImageCode = profileImageCode, age = age),
 		)
 		IntegrationUtil.persist(
 			UserDetailEntityFixture.create(
@@ -63,7 +63,7 @@ class GetSentInvitationE2ETest : AbstractIntegrationSupport({
 				val ownerId = 3001L
 				val invitedUserId = 3002L
 				persistProfile(ownerId, "초대왕", "10", "PM", "토스")
-				persistProfile(invitedUserId, "피초대", "20", "개발자", "카카오")
+				persistProfile(invitedUserId, "피초대", "20", "개발자", "카카오", age = 30)
 				val teamId: Long = invite(ownerId, invitedUserId)
 
 				get("/teams/v1/invitation") {
@@ -83,6 +83,7 @@ class GetSentInvitationE2ETest : AbstractIntegrationSupport({
 					body("data.members[0].companyName", "카카오")
 					body("data.members[0].gender", Gender.MALE.name)
 					body("data.members[0].profileImageCode", "20")
+					body("data.members[0].age", 30)
 					body("data.members[0].status", TeamMemberStatus.INVITED.name)
 				}
 			}

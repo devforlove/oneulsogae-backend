@@ -27,5 +27,6 @@ data class SentInvitationMember(
 	val companyName: String?,
 	val gender: Gender,
 	val profileImageCode: String,
+	val age: Int,
 	val status: TeamMemberStatus,
 )
