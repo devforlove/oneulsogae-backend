@@ -6,6 +6,7 @@ import com.org.meeple.common.user.Gender
 import com.org.meeple.common.user.MaritalStatus
 import com.org.meeple.common.user.Religion
 import com.org.meeple.common.user.SmokingStatus
+import java.time.LocalDate
 
 /**
  * 프로필에서 사용자가 직접 편집 가능한 필드 묶음.
@@ -15,7 +16,7 @@ import com.org.meeple.common.user.SmokingStatus
  */
 data class UpdateUserDetailCommand(
 	val nickname: String,
-	val age: Int,
+	val birthday: LocalDate,
 	val height: Int,
 	val gender: Gender,
 	val phoneNumber: String,

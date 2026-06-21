@@ -2,6 +2,7 @@ package com.org.meeple.core.common.event
 
 import com.org.meeple.common.user.Gender
 import com.org.meeple.common.user.MaritalStatus
+import java.time.LocalDate
 import java.time.LocalDateTime
 
 /**
@@ -11,7 +12,7 @@ import java.time.LocalDateTime
  */
 data class MatchProfileSnapshot(
 	val gender: Gender,
-	val age: Int,
+	val birthday: LocalDate,
 	val regionCode: Int,
 	val maritalStatus: MaritalStatus,
 	val nickname: String,

@@ -3,6 +3,7 @@ package com.org.meeple.core.match.command.domain
 import com.org.meeple.common.user.Gender
 import com.org.meeple.common.user.MaritalStatus
 import com.org.meeple.core.common.event.MatchProfileSnapshot
+import java.time.LocalDate
 import java.time.LocalDateTime
 
 /**
@@ -13,7 +14,7 @@ import java.time.LocalDateTime
 data class MatchUser(
 	val userId: Long,
 	val gender: Gender,
-	val age: Int,
+	val birthday: LocalDate,
 	val regionCode: Int,
 	val maritalStatus: MaritalStatus,
 	val nickname: String,
@@ -32,7 +33,7 @@ data class MatchUser(
 			MatchUser(
 				userId = userId,
 				gender = snapshot.gender,
-				age = snapshot.age,
+				birthday = snapshot.birthday,
 				regionCode = snapshot.regionCode,
 				maritalStatus = snapshot.maritalStatus,
 				nickname = snapshot.nickname,

@@ -7,6 +7,7 @@ import com.org.meeple.common.user.Gender
 import com.org.meeple.common.user.MaritalStatus
 import com.org.meeple.common.user.Religion
 import com.org.meeple.common.user.SmokingStatus
+import java.time.LocalDate
 import java.time.LocalDateTime
 
 /**
@@ -27,7 +28,7 @@ data class MatchWithPartner(
 	val partnerUserId: Long,
 	val nickname: String?,
 	val profileImageCode: String?,
-	val age: Int?,
+	val birthday: LocalDate?,
 	val height: Int?,
 	val gender: Gender?,
 	val job: String?,

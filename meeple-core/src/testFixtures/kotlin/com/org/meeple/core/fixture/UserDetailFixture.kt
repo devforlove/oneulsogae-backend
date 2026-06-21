@@ -7,6 +7,7 @@ import com.org.meeple.common.user.MaritalStatus
 import com.org.meeple.common.user.Religion
 import com.org.meeple.common.user.SmokingStatus
 import com.org.meeple.core.user.command.domain.UserDetail
+import java.time.LocalDate
 
 /**
  * [UserDetail] 도메인 모델 테스트 픽스처.
@@ -20,7 +21,7 @@ object UserDetailFixture {
 		userId: Long = 1L,
 		nickname: String? = "테스트유저",
 		profileImageCode: String? = "1",
-		age: Int? = 30,
+		birthday: LocalDate? = LocalDate.of(1995, 1, 1),
 		height: Int? = 175,
 		gender: Gender? = Gender.MALE,
 		phoneNumber: String? = "010-1234-5678",
@@ -43,7 +44,7 @@ object UserDetailFixture {
 			userId = userId,
 			nickname = nickname,
 			profileImageCode = profileImageCode,
-			age = age,
+			birthday = birthday,
 			height = height,
 			gender = gender,
 			phoneNumber = phoneNumber,

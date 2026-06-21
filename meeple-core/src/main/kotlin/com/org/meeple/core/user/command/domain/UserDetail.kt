@@ -10,8 +10,10 @@ import com.org.meeple.common.user.SmokingStatus
 import com.org.meeple.common.user.UserStatus
 import com.org.meeple.core.common.error.BusinessException
 import com.org.meeple.core.common.event.MatchProfileSnapshot
+import com.org.meeple.core.common.time.ageAt
 import com.org.meeple.core.user.UserErrorCode
 import java.security.SecureRandom
+import java.time.LocalDate
 import java.time.LocalDateTime
 
 /**
@@ -25,7 +27,7 @@ data class UserDetail(
 	val userId: Long,
 	val nickname: String? = null,
 	val profileImageCode: String? = null,
-	val age: Int? = null,
+	val birthday: LocalDate? = null,
 	val height: Int? = null,
 	val gender: Gender? = null,
 	val phoneNumber: String? = null,
@@ -57,7 +59,7 @@ data class UserDetail(
 	 */
 	fun initProfile(
 		nickname: String?,
-		age: Int?,
+		birthday: LocalDate?,
 		height: Int?,
 		gender: Gender?,
 		phoneNumber: String?,
@@ -72,10 +74,11 @@ data class UserDetail(
 		religion: Religion?,
 		drinkingStatus: DrinkingStatus?,
 		bodyType: BodyType?,
+		today: LocalDate,
 	): UserDetail {
 		val updated: UserDetail = copy(
 			nickname = nickname,
-			age = age,
+			birthday = birthday,
 			height = height,
 			gender = gender,
 			phoneNumber = phoneNumber,
@@ -92,6 +95,7 @@ data class UserDetail(
 			drinkingStatus = drinkingStatus,
 			bodyType = bodyType,
 		).assignProfileImageCodeIfAbsent()
+		updated.validateBirthday(today)
 		updated.validateMatchProfile()
 		return updated
 	}
@@ -137,6 +141,21 @@ data class UserDetail(
 	}
 
 	/**
+	 * 생년월일이 채워졌고 만 나이가 가입 허용 범위(만 19~100세)인지 검증한다. (온보딩 프로필 입력 시 호출)
+	 * 미래 날짜는 만 나이가 19 미만이 되어 함께 걸러진다.
+	 */
+	private fun validateBirthday(today: LocalDate) {
+		val birthday: LocalDate = birthday ?: throw BusinessException(UserErrorCode.BIRTHDAY_REQUIRED)
+		val age: Int = birthday.ageAt(today)
+		if (age < MIN_AGE || age > MAX_AGE) {
+			throw BusinessException(UserErrorCode.INVALID_BIRTHDAY)
+		}
+	}
+
+	/** 표시용 만 나이. 생년월일이 없으면 null. (응답 렌더링 시 기준일을 넘겨 계산한다) */
+	fun age(today: LocalDate): Int? = birthday?.ageAt(today)
+
+	/**
 	 * 매칭 풀 적재에 필요한 성별·활동권역이 채워졌는지 검증한다. (정식 가입 경로의 프로필 입력·편집 시 호출)
 	 * 활동지역이 지원 지역(시/도)과 매칭되지 않으면 regionCode가 null이 되므로 여기서 함께 걸러진다.
 	 * 이 검증을 통과한 프로필만 ACTIVE로 이어지므로, ACTIVE 사용자는 성별·권역이 항상 채워져 있음을 보장한다.
@@ -167,7 +186,7 @@ data class UserDetail(
 		if (!status.isRegistered()) return null
 		return MatchProfileSnapshot(
 			gender = gender ?: return null,
-			age = age ?: return null,
+			birthday = birthday ?: return null,
 			regionCode = regionCode ?: return null,
 			maritalStatus = maritalStatus ?: return null,
 			nickname = nickname ?: return null,
@@ -180,6 +199,10 @@ data class UserDetail(
 
 		/** 배정 가능한 프로필 이미지 코드 개수. (0 ~ 이 값 - 1) */
 		private const val PROFILE_IMAGE_CODE_COUNT: Int = 30
+
+		/** 가입 허용 만 나이 하한/상한. */
+		private const val MIN_AGE: Int = 19
+		private const val MAX_AGE: Int = 100
 
 		private val secureRandom: SecureRandom = SecureRandom()
 
