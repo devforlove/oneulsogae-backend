@@ -32,6 +32,10 @@ data class MatchResponse(
 				hasPartnerInterest = matchWithPartner.hasPartnerInterest,
 				partner = PartnerResponse.of(matchWithPartner),
 			)
+
+		/** 매칭 목록을 응답 목록으로 변환한다. */
+		fun listOf(matches: List<MatchWithPartner>): List<MatchResponse> =
+			matches.map { of(it) }
 	}
 }
 

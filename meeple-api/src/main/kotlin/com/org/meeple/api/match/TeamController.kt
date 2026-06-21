@@ -13,7 +13,6 @@ import com.org.meeple.core.match.command.application.port.`in`.AcceptTeamInvitat
 import com.org.meeple.core.match.command.application.port.`in`.DisbandTeamUseCase
 import com.org.meeple.core.match.command.application.port.`in`.InviteTeamUseCase
 import com.org.meeple.core.match.command.application.port.`in`.WithdrawTeamInvitationUseCase
-import com.org.meeple.core.match.query.dto.ReceivedInvitation
 import com.org.meeple.core.match.query.service.port.`in`.GetReceivedInvitationsUseCase
 import com.org.meeple.core.match.query.service.port.`in`.GetSentInvitationUseCase
 import com.org.meeple.core.match.query.service.port.`in`.SearchInvitableUsersUseCase
@@ -104,14 +103,12 @@ class TeamController(
 	/**
 	 * 내가 받은(INVITED) 대기 중 초대 리스트를 최신순으로 조회한다. 각 항목은 팀 메타와 초대자(owner) 프로필을 담는다.
 	 */
-	@Operation(summary = "받은 초대 리스트 조회", description = "요청자가 INVITED 상태인 INVITING 팀들을 최신순으로 반환한다. 각 항목에 팀 메타와 초대자(owner) 프로필을 담는다.")
+	@Operation(summary = "받은 초대 리스트 조회", description = "요청자가 INVITED 상태인 INVITING 팀들을 최신순으로 반환한다. 각 항목에 팀 메타, 내가 초대된 시각(invitedAt), 그 팀의 ACTIVE 구성원 목록(inviters, 키·지역·자기소개·특성·관심사 포함)을 담는다.")
 	@GetMapping("/received-invitations")
 	fun getReceivedInvitations(
 		@LoginUser user: AuthUser,
 	): ApiResponse<List<ReceivedInvitationResponse>> =
-		ApiResponse.success(
-			getReceivedInvitationsUseCase.get(user.id).map { invitation: ReceivedInvitation -> ReceivedInvitationResponse.of(invitation) },
-		)
+		ApiResponse.success(ReceivedInvitationResponse.listOf(getReceivedInvitationsUseCase.get(user.id)))
 
 	/**
 	 * 닉네임이 정확히 일치하는 초대 가능 유저를 검색한다. (같은 성별·매칭 가능·활성 팀 없음·자기 제외)
@@ -123,7 +120,5 @@ class TeamController(
 		@LoginUser user: AuthUser,
 		@ModelAttribute @Valid request: SearchInvitableUsersRequest,
 	): ApiResponse<List<InvitableUserResponse>> =
-		ApiResponse.success(
-			searchInvitableUsersUseCase.search(user.id, request.nickname!!).map { InvitableUserResponse.of(it) },
-		)
+		ApiResponse.success(InvitableUserResponse.listOf(searchInvitableUsersUseCase.search(user.id, request.nickname!!)))
 }

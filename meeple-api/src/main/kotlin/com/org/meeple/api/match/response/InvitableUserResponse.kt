@@ -26,5 +26,9 @@ data class InvitableUserResponse(
 				profileImageCode = user.profileImageCode,
 				age = user.age,
 			)
+
+		/** 초대 가능 유저 목록을 응답 목록으로 변환한다. */
+		fun listOf(users: List<InvitableUser>): List<InvitableUserResponse> =
+			users.map { of(it) }
 	}
 }

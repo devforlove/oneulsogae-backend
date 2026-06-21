@@ -13,6 +13,7 @@ import com.org.meeple.infra.match.command.entity.QTeamEntity
 import com.org.meeple.infra.match.command.entity.QTeamMemberEntity
 import com.org.meeple.infra.user.command.entity.QUserDetailEntity
 import org.hamcrest.Matchers.hasSize
+import org.hamcrest.Matchers.notNullValue
 
 /**
  * `GET /teams/v1/received-invitations` E2E 테스트. (내가 받은 초대 리스트)
@@ -21,8 +22,18 @@ import org.hamcrest.Matchers.hasSize
  */
 class GetReceivedInvitationsE2ETest : AbstractIntegrationSupport({
 
-	// 표시용 프로필을 match_user(닉네임·프로필이미지·나이) + user_details(직업·회사명)에 저장한다. (성별 MALE 고정)
-	fun persistProfile(userId: Long, nickname: String, profileImageCode: String, job: String?, companyName: String?, age: Int = 28) {
+	// 표시용 프로필을 match_user(닉네임·프로필이미지·나이) + user_details(직업·회사명·키·지역·자기소개)에 저장한다. (성별 MALE 고정)
+	fun persistProfile(
+		userId: Long,
+		nickname: String,
+		profileImageCode: String,
+		job: String?,
+		companyName: String?,
+		age: Int = 28,
+		height: Int? = null,
+		activityArea: String? = null,
+		introduction: String? = null,
+	) {
 		IntegrationUtil.persist(
 			MatchUserEntityFixture.create(userId = userId, gender = Gender.MALE, nickname = nickname, profileImageCode = profileImageCode, age = age),
 		)
@@ -34,6 +45,9 @@ class GetReceivedInvitationsE2ETest : AbstractIntegrationSupport({
 				profileImageCode = profileImageCode,
 				job = job,
 				companyName = companyName,
+				height = height,
+				activityArea = activityArea,
+				introduction = introduction,
 			),
 		)
 	}
@@ -54,7 +68,7 @@ class GetReceivedInvitationsE2ETest : AbstractIntegrationSupport({
 				val ownerB = 4003L
 				persistProfile(me, "나", "1", null, null)
 				persistProfile(ownerA, "초대자A", "11", "PM", "토스", age = 31)
-				persistProfile(ownerB, "초대자B", "22", "디자이너", "카카오", age = 33)
+				persistProfile(ownerB, "초대자B", "22", "디자이너", "카카오", age = 33, height = 180, activityArea = "강남", introduction = "잘 부탁드려요")
 
 				val teamA: Long = invite(ownerA, me)
 				val teamB: Long = invite(ownerB, me)
@@ -68,20 +82,29 @@ class GetReceivedInvitationsE2ETest : AbstractIntegrationSupport({
 					// 최신순(team id desc) → [0]=teamB(초대자B), [1]=teamA(초대자A)
 					body("data[0].teamId", teamB.toInt())
 					body("data[0].name", "우리팀")
-					body("data[0].inviter.userId", ownerB.toInt())
-					body("data[0].inviter.nickname", "초대자B")
-					body("data[0].inviter.job", "디자이너")
-					body("data[0].inviter.companyName", "카카오")
-					body("data[0].inviter.gender", Gender.MALE.name)
-					body("data[0].inviter.profileImageCode", "22")
-					body("data[0].inviter.age", 33)
+					body("data[0].invitedAt", notNullValue())
+					// INVITING 팀의 ACTIVE 구성원은 초대자 1명 → inviters[0]
+					body("data[0].inviters", hasSize<Any>(1))
+					body("data[0].inviters[0].userId", ownerB.toInt())
+					body("data[0].inviters[0].nickname", "초대자B")
+					body("data[0].inviters[0].job", "디자이너")
+					body("data[0].inviters[0].companyName", "카카오")
+					body("data[0].inviters[0].gender", Gender.MALE.name)
+					body("data[0].inviters[0].profileImageCode", "22")
+					body("data[0].inviters[0].age", 33)
+					// 상세 시트용 프로필 — 키·지역·자기소개는 user_details에서, 특성·관심사는 미입력이라 빈 배열
+					body("data[0].inviters[0].height", 180)
+					body("data[0].inviters[0].activityArea", "강남")
+					body("data[0].inviters[0].introduction", "잘 부탁드려요")
+					body("data[0].inviters[0].traits", hasSize<Any>(0))
+					body("data[0].inviters[0].interests", hasSize<Any>(0))
 					body("data[1].teamId", teamA.toInt())
-					body("data[1].inviter.userId", ownerA.toInt())
-					body("data[1].inviter.nickname", "초대자A")
-					body("data[1].inviter.job", "PM")
-					body("data[1].inviter.companyName", "토스")
-					body("data[1].inviter.profileImageCode", "11")
-					body("data[1].inviter.age", 31)
+					body("data[1].inviters[0].userId", ownerA.toInt())
+					body("data[1].inviters[0].nickname", "초대자A")
+					body("data[1].inviters[0].job", "PM")
+					body("data[1].inviters[0].companyName", "토스")
+					body("data[1].inviters[0].profileImageCode", "11")
+					body("data[1].inviters[0].age", 31)
 				}
 			}
 		}
@@ -106,7 +129,7 @@ class GetReceivedInvitationsE2ETest : AbstractIntegrationSupport({
 					status(200)
 					body("data", hasSize<Any>(1))
 					body("data[0].teamId", teamX.toInt())
-					body("data[0].inviter.userId", ownerX.toInt())
+					body("data[0].inviters[0].userId", ownerX.toInt())
 				}
 			}
 		}

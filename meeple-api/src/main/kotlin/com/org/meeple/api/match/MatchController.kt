@@ -40,7 +40,7 @@ class MatchController(
 		@LoginUser user: AuthUser,
 		@RequestParam(name = "isAfterOnboarding", defaultValue = "false") isAfterOnboarding: Boolean,
 	): ApiResponse<List<MatchResponse>> =
-		ApiResponse.success(getMatchesUseCase.getMatches(user.id, isAfterOnboarding).map { MatchResponse.of(it) })
+		ApiResponse.success(MatchResponse.listOf(getMatchesUseCase.getMatches(user.id, isAfterOnboarding)))
 
 	/**
 	 * 소개받은 매칭에 관심을 보낸다. (신청/수락 통합)
