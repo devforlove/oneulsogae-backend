@@ -48,7 +48,8 @@ class SecurityConfig(
 			.authorizeHttpRequests { request ->
 				request
 					.requestMatchers("/", "/health").permitAll()
-					.requestMatchers("/oauth2/**", "/login/**").permitAll()
+					.requestMatchers("/swagger-ui/**", "/swagger-ui.html", "/v3/api-docs/**").permitAll()
+						.requestMatchers("/oauth2/**", "/login/**").permitAll()
 					// 토큰 재발급/로그아웃은 access token이 만료된 상태에서도 호출되므로 허용한다.
 					.requestMatchers("/auth/v1/refresh", "/auth/v1/logout").permitAll()
 					// WebSocket 핸드셰이크(SockJS 하위 경로 포함)는 토큰을 못 싣으므로 열어둔다.

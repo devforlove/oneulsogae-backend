@@ -17,6 +17,9 @@ dependencies {
 	implementation("org.springframework.boot:spring-boot-starter-security")
 	implementation("org.springframework.boot:spring-boot-starter-oauth2-client")
 
+	// API 문서: springdoc-openapi (Swagger UI + OpenAPI 3). Spring Boot 4 지원 라인(3.0.x), Boot BOM 미관리라 버전 명시.
+	implementation("org.springdoc:springdoc-openapi-starter-webmvc-ui:3.0.3")
+
 	testImplementation("org.springframework.boot:spring-boot-starter-webmvc-test")
 	testImplementation("org.springframework.boot:spring-boot-starter-security-test")
 
