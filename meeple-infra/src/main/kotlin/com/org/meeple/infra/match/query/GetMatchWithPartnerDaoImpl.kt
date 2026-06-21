@@ -51,7 +51,7 @@ class GetMatchWithPartnerDaoImpl(
 					partnerDetail.userId,
 					partnerDetail.nickname,
 					partnerDetail.profileImageCode,
-					partnerDetail.age,
+					partnerDetail.birthday,
 					partnerDetail.height,
 					partnerDetail.gender,
 					partnerDetail.job,

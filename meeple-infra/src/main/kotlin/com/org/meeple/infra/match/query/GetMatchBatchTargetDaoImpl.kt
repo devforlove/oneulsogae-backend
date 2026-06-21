@@ -33,7 +33,6 @@ class GetMatchBatchTargetDaoImpl(
 					matchUser.userId,
 					matchUser.lastLoginAt,
 					matchUser.gender,
-					matchUser.age,
 					matchUser.maritalStatus,
 					matchUser.regionCode,
 				),

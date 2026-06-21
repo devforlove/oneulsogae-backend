@@ -9,6 +9,7 @@ import com.org.meeple.common.user.SmokingStatus
 import com.org.meeple.infra.common.BaseEntity
 import com.org.meeple.infra.common.StringListJsonConverter
 import jakarta.persistence.Column
+import java.time.LocalDate
 import jakarta.persistence.Convert
 import jakarta.persistence.Entity
 import jakarta.persistence.EnumType
@@ -42,9 +43,9 @@ class UserDetailEntity(
 	@Column(name = "profile_image_code", length = 50)
 	var profileImageCode: String? = null,
 
-	/** 나이. */
-	@Column(name = "age")
-	var age: Int? = null,
+	/** 생년월일. */
+	@Column(name = "birthday")
+	var birthday: LocalDate? = null,
 
 	/** 키(cm). */
 	@Column(name = "height")

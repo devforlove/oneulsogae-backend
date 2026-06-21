@@ -43,7 +43,7 @@ class SearchInvitableUsersDaoImpl(
 					detail.companyName,
 					candidate.gender,
 					candidate.profileImageCode,
-					candidate.age,
+					candidate.birthday,
 				),
 			)
 			.from(candidate)
