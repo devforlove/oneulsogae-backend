@@ -10,41 +10,60 @@ import com.org.meeple.common.match.TeamStatus
 import com.org.meeple.common.user.Gender
 import com.org.meeple.infra.fixture.IntegrationUtil
 import com.org.meeple.infra.fixture.MatchUserEntityFixture
+import com.org.meeple.infra.fixture.UserDetailEntityFixture
 import com.org.meeple.infra.match.command.entity.QMatchUserEntity
 import com.org.meeple.infra.match.command.entity.QTeamEntity
 import com.org.meeple.infra.match.command.entity.QTeamMemberEntity
-import org.hamcrest.Matchers.containsInAnyOrder
-import org.hamcrest.Matchers.hasSize
+import com.org.meeple.infra.user.command.entity.QUserDetailEntity
 import org.hamcrest.Matchers.nullValue
 
 /**
  * `GET /teams/v1/invitation` E2E 테스트. (내가 보낸 초대 현황 조회)
- * 요청자가 ACTIVE 구성원(=초대자)인 가장 최근 INVITING 팀을 반환한다.
+ * 요청자가 ACTIVE 구성원(=초대자)인 가장 최근 INVITING 팀을 구성원 프로필과 함께 반환한다.
  * 초대받은 사람·비구성원·철회된 경우는 data=null(200)로 노출되지 않는다.
  */
 class GetSentInvitationE2ETest : AbstractIntegrationSupport({
 
-	fun persistMatchUser(userId: Long, gender: Gender) {
-		IntegrationUtil.persist(MatchUserEntityFixture.create(userId = userId, gender = gender))
+	// 표시용 프로필을 match_user(닉네임·프로필이미지) + user_details(직업·회사명)에 저장한다. (성별은 MALE 고정)
+	fun persistProfile(userId: Long, nickname: String, profileImageCode: String, job: String?, companyName: String?) {
+		IntegrationUtil.persist(
+			MatchUserEntityFixture.create(userId = userId, gender = Gender.MALE, nickname = nickname, profileImageCode = profileImageCode),
+		)
+		IntegrationUtil.persist(
+			UserDetailEntityFixture.create(
+				userId = userId,
+				nickname = nickname,
+				gender = Gender.MALE,
+				profileImageCode = profileImageCode,
+				job = job,
+				companyName = companyName,
+			),
+		)
 	}
 
-	// 팀을 결성(초대)하고 teamId를 돌려준다.
-	fun inviteTeam(ownerId: Long, invitedUserId: Long): Long {
-		persistMatchUser(ownerId, Gender.MALE)
-		persistMatchUser(invitedUserId, Gender.MALE)
-		return post("/teams/v1/invitation") {
+	// 프로필이 저장된 두 사용자로 팀을 결성(초대)하고 teamId를 돌려준다.
+	fun invite(ownerId: Long, invitedUserId: Long): Long =
+		post("/teams/v1/invitation") {
 			bearer(accessTokenFor(ownerId))
 			jsonBody("""{"invitedUserId": $invitedUserId, "name": "우리팀", "introduction": "함께 즐겁게 활동할 팀이에요"}""")
 		}.extract().path<Int>("data.teamId").toLong()
+
+	// 기본 프로필을 저장한 뒤 초대한다. (프로필 값 검증이 필요 없는 케이스용)
+	fun setUpInvite(ownerId: Long, invitedUserId: Long): Long {
+		persistProfile(ownerId, "초대자$ownerId", "1", null, null)
+		persistProfile(invitedUserId, "초대대상$invitedUserId", "1", null, null)
+		return invite(ownerId, invitedUserId)
 	}
 
 	describe("GET /teams/v1/invitation") {
 
 		context("초대자가 자신이 보낸 초대를 조회하면") {
-			it("팀 메타와 구성원 현황(자신 ACTIVE, 대상 INVITED)을 반환한다 (200)") {
+			it("팀 메타와 구성원 프로필·수락 상태(자신 ACTIVE, 대상 INVITED)를 반환한다 (200)") {
 				val ownerId = 3001L
 				val invitedUserId = 3002L
-				val teamId: Long = inviteTeam(ownerId, invitedUserId)
+				persistProfile(ownerId, "초대왕", "10", "PM", "토스")
+				persistProfile(invitedUserId, "피초대", "20", "개발자", "카카오")
+				val teamId: Long = invite(ownerId, invitedUserId)
 
 				get("/teams/v1/invitation") {
 					bearer(accessTokenFor(ownerId))
@@ -55,9 +74,39 @@ class GetSentInvitationE2ETest : AbstractIntegrationSupport({
 					body("data.name", "우리팀")
 					body("data.introduction", "함께 즐겁게 활동할 팀이에요")
 					body("data.status", TeamStatus.INVITING.name)
-					body("data.members", hasSize<Any>(2))
-					body("data.members.userId", containsInAnyOrder(ownerId.toInt(), invitedUserId.toInt()))
-					body("data.members.status", containsInAnyOrder(TeamMemberStatus.ACTIVE.name, TeamMemberStatus.INVITED.name))
+					// 구성원은 userId 오름차순 → [0]=초대자(3001, ACTIVE), [1]=초대대상(3002, INVITED)
+					body("data.members[0].userId", ownerId.toInt())
+					body("data.members[0].nickname", "초대왕")
+					body("data.members[0].job", "PM")
+					body("data.members[0].companyName", "토스")
+					body("data.members[0].gender", Gender.MALE.name)
+					body("data.members[0].profileImageCode", "10")
+					body("data.members[0].status", TeamMemberStatus.ACTIVE.name)
+					body("data.members[1].userId", invitedUserId.toInt())
+					body("data.members[1].nickname", "피초대")
+					body("data.members[1].job", "개발자")
+					body("data.members[1].companyName", "카카오")
+					body("data.members[1].gender", Gender.MALE.name)
+					body("data.members[1].profileImageCode", "20")
+					body("data.members[1].status", TeamMemberStatus.INVITED.name)
+				}
+			}
+		}
+
+		context("직업·회사명이 미입력(null)인 구성원이 있어도") {
+			it("해당 필드를 null로 담아 반환한다 (200)") {
+				val ownerId = 3008L
+				val invitedUserId = 3009L
+				persistProfile(ownerId, "널잡", "1", null, null)
+				persistProfile(invitedUserId, "널회사", "1", null, null)
+				invite(ownerId, invitedUserId)
+
+				get("/teams/v1/invitation") {
+					bearer(accessTokenFor(ownerId))
+				} expect {
+					status(200)
+					body("data.members[0].job", nullValue())
+					body("data.members[0].companyName", nullValue())
 				}
 			}
 		}
@@ -66,7 +115,7 @@ class GetSentInvitationE2ETest : AbstractIntegrationSupport({
 			it("data가 null이다 (200)") {
 				val ownerId = 3003L
 				val invitedUserId = 3004L
-				inviteTeam(ownerId, invitedUserId)
+				setUpInvite(ownerId, invitedUserId)
 
 				get("/teams/v1/invitation") {
 					bearer(accessTokenFor(invitedUserId))
@@ -81,7 +130,7 @@ class GetSentInvitationE2ETest : AbstractIntegrationSupport({
 		context("진행 중인 초대가 없는 유저가 조회하면") {
 			it("data가 null이다 (200)") {
 				val userId = 3005L
-				persistMatchUser(userId, Gender.MALE)
+				persistProfile(userId, "외톨이", "1", null, null)
 
 				get("/teams/v1/invitation") {
 					bearer(accessTokenFor(userId))
@@ -97,7 +146,7 @@ class GetSentInvitationE2ETest : AbstractIntegrationSupport({
 			it("data가 null이다 (200)") {
 				val ownerId = 3006L
 				val invitedUserId = 3007L
-				val teamId: Long = inviteTeam(ownerId, invitedUserId)
+				val teamId: Long = setUpInvite(ownerId, invitedUserId)
 
 				delete("/teams/v1/$teamId/invitation") {
 					bearer(accessTokenFor(ownerId))
@@ -128,5 +177,6 @@ class GetSentInvitationE2ETest : AbstractIntegrationSupport({
 		IntegrationUtil.deleteAll(QTeamMemberEntity.teamMemberEntity)
 		IntegrationUtil.deleteAll(QTeamEntity.teamEntity)
 		IntegrationUtil.deleteAll(QMatchUserEntity.matchUserEntity)
+		IntegrationUtil.deleteAll(QUserDetailEntity.userDetailEntity)
 	}
 })
