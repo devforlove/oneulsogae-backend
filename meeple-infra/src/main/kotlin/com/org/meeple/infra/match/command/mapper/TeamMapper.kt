@@ -13,6 +13,7 @@ fun TeamEntity.toDomain(members: TeamMembers): Team =
 	Team(
 		id = id ?: 0,
 		name = name,
+		gender = gender,
 		introduction = introduction,
 		members = members,
 		status = status,
@@ -27,8 +28,7 @@ fun TeamEntity.toDomain(members: TeamMembers): Team =
 fun Team.toEntity(): TeamEntity =
 	TeamEntity(
 		name = name,
-		// 팀은 동성 구성이므로 구성원 성별이 곧 팀 성별이다. (teams.gender 비정규화 — 도메인은 members가 성별을 들고 있어 별도 필드를 두지 않는다)
-		gender = members.values.first().gender,
+		gender = gender,
 		introduction = introduction,
 		status = status,
 	).also {

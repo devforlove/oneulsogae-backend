@@ -34,8 +34,8 @@ class GetMeetingTabE2ETest : AbstractIntegrationSupport({
 	fun persistTeam(status: TeamStatus, gender: Gender): Long =
 		IntegrationUtil.persist(TeamEntity(name = "팀", gender = gender, introduction = "함께 즐겁게 활동해요", status = status)).id!!
 
-	fun persistMember(teamId: Long, userId: Long, gender: Gender, status: TeamMemberStatus) {
-		IntegrationUtil.persist(TeamMemberEntity(teamId = teamId, userId = userId, gender = gender, status = status))
+	fun persistMember(teamId: Long, userId: Long, status: TeamMemberStatus) {
+		IntegrationUtil.persist(TeamMemberEntity(teamId = teamId, userId = userId, status = status))
 	}
 
 	describe("GET /teams/v1/meeting-tab") {
@@ -45,8 +45,8 @@ class GetMeetingTabE2ETest : AbstractIntegrationSupport({
 				val soloUserId = 5001L
 				persistMatchUser(soloUserId, Gender.MALE, 1)
 				val teamId: Long = persistTeam(TeamStatus.ACTIVE, Gender.FEMALE)
-				persistMember(teamId, 5101L, Gender.FEMALE, TeamMemberStatus.ACTIVE)
-				persistMember(teamId, 5102L, Gender.FEMALE, TeamMemberStatus.ACTIVE)
+				persistMember(teamId, 5101L, TeamMemberStatus.ACTIVE)
+				persistMember(teamId, 5102L, TeamMemberStatus.ACTIVE)
 				persistMatchUser(5101L, Gender.FEMALE, 1)
 				persistMatchUser(5102L, Gender.FEMALE, 1)
 				IntegrationUtil.persist(
@@ -73,8 +73,8 @@ class GetMeetingTabE2ETest : AbstractIntegrationSupport({
 				repeat(2) { i: Int ->
 					val ownerId: Long = 5200L + i
 					val teamId: Long = persistTeam(TeamStatus.INVITING, Gender.MALE)
-					persistMember(teamId, ownerId, Gender.MALE, TeamMemberStatus.ACTIVE)
-					persistMember(teamId, me, Gender.MALE, TeamMemberStatus.INVITED)
+					persistMember(teamId, ownerId, TeamMemberStatus.ACTIVE)
+					persistMember(teamId, me, TeamMemberStatus.INVITED)
 				}
 
 				get("/teams/v1/meeting-tab") {
@@ -95,8 +95,8 @@ class GetMeetingTabE2ETest : AbstractIntegrationSupport({
 				persistMatchUser(me, Gender.MALE, 1, profileImageCode = "3")
 				persistMatchUser(friend, Gender.MALE, 1, profileImageCode = "7")
 				val teamId: Long = persistTeam(TeamStatus.ACTIVE, Gender.MALE)
-				persistMember(teamId, me, Gender.MALE, TeamMemberStatus.ACTIVE)
-				persistMember(teamId, friend, Gender.MALE, TeamMemberStatus.ACTIVE)
+				persistMember(teamId, me, TeamMemberStatus.ACTIVE)
+				persistMember(teamId, friend, TeamMemberStatus.ACTIVE)
 
 				get("/teams/v1/meeting-tab") {
 					bearer(accessTokenFor(me))

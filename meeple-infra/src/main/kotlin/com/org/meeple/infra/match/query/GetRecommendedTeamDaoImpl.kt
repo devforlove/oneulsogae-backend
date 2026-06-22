@@ -50,7 +50,7 @@ class GetRecommendedTeamDaoImpl(
 					RecommendedTeamMember::class.java,
 					member.userId,
 					matchUser.nickname,
-					member.gender,
+					matchUser.gender,
 					matchUser.profileImageCode,
 					matchUser.birthday,
 				),

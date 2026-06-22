@@ -1,7 +1,6 @@
 package com.org.meeple.core.match.command.domain
 
 import com.org.meeple.common.match.TeamMemberStatus
-import com.org.meeple.common.user.Gender
 import java.time.LocalDateTime
 
 /**
@@ -56,11 +55,11 @@ data class TeamMembers(
 
 	companion object {
 
-		/** (userId, gender, status) 묶음들로 구성원 목록을 만든다. (teamId는 저장 시 채워진다) */
-		fun of(participants: List<Triple<Long, Gender, TeamMemberStatus>>): TeamMembers =
+		/** (userId, status) 묶음들로 구성원 목록을 만든다. (teamId는 저장 시 채워진다. 성별은 [Team.gender]가 보관) */
+		fun of(participants: List<Pair<Long, TeamMemberStatus>>): TeamMembers =
 			TeamMembers(
-				participants.map { (userId: Long, gender: Gender, status: TeamMemberStatus) ->
-					TeamMember(teamId = 0, userId = userId, gender = gender, status = status)
+				participants.map { (userId: Long, status: TeamMemberStatus) ->
+					TeamMember(teamId = 0, userId = userId, status = status)
 				},
 			)
 	}

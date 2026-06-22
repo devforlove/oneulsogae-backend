@@ -1,7 +1,6 @@
 package com.org.meeple.infra.match.command.entity
 
 import com.org.meeple.common.match.TeamMemberStatus
-import com.org.meeple.common.user.Gender
 import com.org.meeple.infra.common.BaseEntity
 import jakarta.persistence.Column
 import jakarta.persistence.Entity
@@ -14,7 +13,7 @@ import org.hibernate.annotations.SQLRestriction
 
 /**
  * 2:2 팀 매칭에서 한 팀([TeamEntity])에 속한 구성원 한 명을 (team_id, user_id) 한 쌍의 행으로 정규화한 엔티티.
- * 한 팀에 두 명이 속하므로 teams : team_members = 1 : N(=2)이다. (성별 균형 구성을 위해 [gender]를 함께 보관)
+ * 한 팀에 두 명이 속하므로 teams : team_members = 1 : N(=2)이다. (성별은 팀 단위로 [TeamEntity.gender]가 보관한다)
  * (team_id, user_id) 유니크 제약으로 같은 사용자가 한 팀에 중복 소속되는 것을 막고, (user_id) 인덱스로 사용자별 참가 팀 조회를 커버한다.
  */
 @Entity
@@ -35,11 +34,6 @@ class TeamMemberEntity(
 
 	@Column(name = "user_id", nullable = false)
 	val userId: Long,
-
-	/** 구성원 성별. 성별 균형 구성·성별 기반 조회에 쓴다. */
-	@Enumerated(EnumType.STRING)
-	@Column(name = "gender", nullable = false, columnDefinition = "varchar(50)")
-	val gender: Gender,
 
 	/** 구성원 상태. 초대중·활성·비활성을 구분한다. */
 	@Enumerated(EnumType.STRING)

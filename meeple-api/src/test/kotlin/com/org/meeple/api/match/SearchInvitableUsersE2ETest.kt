@@ -46,9 +46,9 @@ class SearchInvitableUsersE2ETest : AbstractIntegrationSupport({
 	}
 
 	// 활성 팀 구성원 행을 저장한다. (검색은 거르지 않으므로 노출됨을 검증하기 위함 — teamId는 임의값)
-	fun persistActiveTeamMember(userId: Long, gender: Gender) {
+	fun persistActiveTeamMember(userId: Long) {
 		IntegrationUtil.persist(
-			TeamMemberEntity(teamId = 1L, userId = userId, gender = gender, status = TeamMemberStatus.ACTIVE),
+			TeamMemberEntity(teamId = 1L, userId = userId, status = TeamMemberStatus.ACTIVE),
 		)
 	}
 
@@ -76,7 +76,7 @@ class SearchInvitableUsersE2ETest : AbstractIntegrationSupport({
 				// 포함 대상 C: 이미 활성 팀 소속이어도 검색에는 노출된다 (초대 시점에 invite 명령이 차단)
 				persistUserDetail(7005L, Gender.MALE, nickname, job = "기획", companyName = "라인")
 				persistMatchUser(7005L, Gender.MALE, nickname)
-				persistActiveTeamMember(7005L, Gender.MALE)
+				persistActiveTeamMember(7005L)
 
 				// 제외 D: match_user 없음(매칭 불가) — user_details만 존재
 				persistUserDetail(7006L, Gender.MALE, nickname, job = "마케터", companyName = "쿠팡")

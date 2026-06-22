@@ -16,6 +16,8 @@ import java.time.LocalDateTime
 data class Team(
 	val id: Long = 0,
 	val name: String,
+	/** 팀 성별. 팀은 동성으로 구성되므로 팀 단위로 하나의 성별을 가진다. (구성원은 성별을 따로 보관하지 않는다) */
+	val gender: Gender,
 	val introduction: String? = null,
 	val members: TeamMembers,
 	val status: TeamStatus = TeamStatus.INVITING,
@@ -124,11 +126,13 @@ data class Team(
 			validateInvite(ownerId, ownerGender, invitedUserId, invitedGender, name, introduction)
 			return Team(
 				name = name.trim(),
+				// 팀은 동성 구성이라 팀 성별 = 초대자 성별. (initiator/invited 동일 성별은 validateInvite에서 보장)
+				gender = ownerGender,
 				introduction = introduction.trim(),
 				members = TeamMembers.of(
 					listOf(
-						Triple(ownerId, ownerGender, TeamMemberStatus.ACTIVE),
-						Triple(invitedUserId, invitedGender, TeamMemberStatus.INVITED),
+						ownerId to TeamMemberStatus.ACTIVE,
+						invitedUserId to TeamMemberStatus.INVITED,
 					),
 				),
 				status = TeamStatus.INVITING,

@@ -107,10 +107,11 @@ class TeamTest : DescribeSpec({
 		fun invitingTeam(): Team =
 			Team(
 				name = "우리팀",
+				gender = Gender.MALE,
 				members = TeamMembers(
 					listOf(
-						TeamMember(teamId = 0, userId = ownerId, gender = Gender.MALE, status = TeamMemberStatus.ACTIVE),
-						TeamMember(teamId = 0, userId = invitedUserId, gender = Gender.MALE, status = TeamMemberStatus.INVITED),
+						TeamMember(teamId = 0, userId = ownerId, status = TeamMemberStatus.ACTIVE),
+						TeamMember(teamId = 0, userId = invitedUserId, status = TeamMemberStatus.INVITED),
 					),
 				),
 				status = TeamStatus.INVITING,
@@ -150,10 +151,11 @@ class TeamTest : DescribeSpec({
 		fun invitingTeam(): Team =
 			Team(
 				name = "우리팀",
+				gender = Gender.MALE,
 				members = TeamMembers(
 					listOf(
-						TeamMember(teamId = 0, userId = ownerId, gender = Gender.MALE, status = TeamMemberStatus.ACTIVE),
-						TeamMember(teamId = 0, userId = invitedUserId, gender = Gender.MALE, status = TeamMemberStatus.INVITED),
+						TeamMember(teamId = 0, userId = ownerId, status = TeamMemberStatus.ACTIVE),
+						TeamMember(teamId = 0, userId = invitedUserId, status = TeamMemberStatus.INVITED),
 					),
 				),
 				status = TeamStatus.INVITING,
@@ -186,10 +188,11 @@ class TeamTest : DescribeSpec({
 		fun formedTeam(): Team =
 			Team(
 				name = "우리팀",
+				gender = Gender.MALE,
 				members = TeamMembers(
 					listOf(
-						TeamMember(teamId = 0, userId = ownerId, gender = Gender.MALE, status = TeamMemberStatus.ACTIVE),
-						TeamMember(teamId = 0, userId = invitedUserId, gender = Gender.MALE, status = TeamMemberStatus.ACTIVE),
+						TeamMember(teamId = 0, userId = ownerId, status = TeamMemberStatus.ACTIVE),
+						TeamMember(teamId = 0, userId = invitedUserId, status = TeamMemberStatus.ACTIVE),
 					),
 				),
 				status = TeamStatus.ACTIVE,

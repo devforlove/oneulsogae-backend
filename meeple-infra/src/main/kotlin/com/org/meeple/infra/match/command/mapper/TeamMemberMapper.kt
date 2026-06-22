@@ -10,7 +10,6 @@ fun TeamMemberEntity.toDomain(): TeamMember =
 		id = id ?: 0,
 		teamId = teamId,
 		userId = userId,
-		gender = gender,
 		status = status,
 		deletedAt = deletedAt,
 	)
@@ -24,7 +23,6 @@ fun TeamMember.toEntity(): TeamMemberEntity =
 	TeamMemberEntity(
 		teamId = teamId,
 		userId = userId,
-		gender = gender,
 		status = status,
 	).also {
 		if (id != 0L) it.id = id

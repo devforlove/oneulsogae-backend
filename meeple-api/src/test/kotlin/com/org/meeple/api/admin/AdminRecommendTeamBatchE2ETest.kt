@@ -32,7 +32,7 @@ class AdminRecommendTeamBatchE2ETest : AbstractIntegrationSupport({
 		val teamId: Long = team.id!!
 		listOf(member1, member2).forEach { userId: Long ->
 			IntegrationUtil.persist(
-				TeamMemberEntity(teamId = teamId, userId = userId, gender = Gender.FEMALE, status = TeamMemberStatus.ACTIVE),
+				TeamMemberEntity(teamId = teamId, userId = userId, status = TeamMemberStatus.ACTIVE),
 			)
 			IntegrationUtil.persist(MatchUserEntityFixture.create(userId = userId, gender = Gender.FEMALE, regionCode = regionCode))
 		}

@@ -15,6 +15,7 @@ object TeamFixture {
 	fun create(
 		id: Long = 0,
 		name: String = "우리팀",
+		gender: Gender = Gender.MALE,
 		introduction: String? = "잘 부탁드려요",
 		members: TeamMembers = membersOf(),
 		status: TeamStatus = TeamStatus.INVITING,
@@ -22,21 +23,21 @@ object TeamFixture {
 		Team(
 			id = id,
 			name = name,
+			gender = gender,
 			introduction = introduction,
 			members = members,
 			status = status,
 		)
 
-	/** 두 구성원(기본 동일 성별) 묶음. */
+	/** 두 구성원 묶음. (성별은 팀 단위로 [Team.gender]가 보관) */
 	fun membersOf(
 		ownerUserId: Long = 1L,
 		invitedUserId: Long = 2L,
-		gender: Gender = Gender.MALE,
 	): TeamMembers =
 		TeamMembers(
 			listOf(
-				TeamMember(teamId = 0, userId = ownerUserId, gender = gender),
-				TeamMember(teamId = 0, userId = invitedUserId, gender = gender),
+				TeamMember(teamId = 0, userId = ownerUserId),
+				TeamMember(teamId = 0, userId = invitedUserId),
 			),
 		)
 }

@@ -57,7 +57,7 @@ class GetSentInvitationDaoImpl(
 					matchUser.nickname,
 					userDetail.job,
 					userDetail.companyName,
-					teamMember.gender,
+					matchUser.gender,
 					matchUser.profileImageCode,
 					matchUser.birthday,
 					teamMember.status,

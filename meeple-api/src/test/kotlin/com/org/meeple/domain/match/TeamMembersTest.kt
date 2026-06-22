@@ -1,7 +1,6 @@
 package com.org.meeple.domain.match
 
 import com.org.meeple.common.match.TeamMemberStatus
-import com.org.meeple.common.user.Gender
 import com.org.meeple.core.match.command.domain.TeamMember
 import com.org.meeple.core.match.command.domain.TeamMembers
 import io.kotest.core.spec.style.DescribeSpec
@@ -20,8 +19,8 @@ class TeamMembersTest : DescribeSpec({
     fun invitingMembers(): TeamMembers =
         TeamMembers(
             listOf(
-                TeamMember(teamId = 0, userId = ownerId, gender = Gender.MALE, status = TeamMemberStatus.ACTIVE),
-                TeamMember(teamId = 0, userId = invitedId, gender = Gender.MALE, status = TeamMemberStatus.INVITED),
+                TeamMember(teamId = 0, userId = ownerId, status = TeamMemberStatus.ACTIVE),
+                TeamMember(teamId = 0, userId = invitedId, status = TeamMemberStatus.INVITED),
             ),
         )
 
