@@ -21,7 +21,7 @@ import io.kotest.matchers.shouldBe
 
 /**
  * `POST /teams/v1/{teamId}/acceptance` E2E 테스트. (초대 수락)
- * 초대받은 사용자가 수락하면 본인이 ACTIVE가 되고 전원 ACTIVE이므로 팀이 FORMED로 전이한다.
+ * 초대받은 사용자가 수락하면 본인이 ACTIVE가 되고 전원 ACTIVE이므로 팀이 ACTIVE로 전이한다.
  */
 class AcceptTeamInvitationE2ETest : AbstractIntegrationSupport({
 
@@ -49,7 +49,7 @@ class AcceptTeamInvitationE2ETest : AbstractIntegrationSupport({
 	describe("POST /teams/v1/{teamId}/acceptance") {
 
 		context("초대받은 사용자가 수락하면") {
-			it("본인이 ACTIVE가 되고 팀이 FORMED가 된다 (200)") {
+			it("본인이 ACTIVE가 되고 팀이 ACTIVE가 된다 (200)") {
 				val ownerId = 2001L
 				val invitedUserId = 2002L
 				val teamId: Long = inviteTeam(ownerId, invitedUserId)
@@ -59,7 +59,7 @@ class AcceptTeamInvitationE2ETest : AbstractIntegrationSupport({
 				} expect {
 					status(200)
 					body("success", true)
-					body("data.status", TeamStatus.FORMED.name)
+					body("data.status", TeamStatus.ACTIVE.name)
 				}
 
 				val members: List<TeamMemberEntity> = teamMembersOf(teamId)
@@ -114,7 +114,7 @@ class AcceptTeamInvitationE2ETest : AbstractIntegrationSupport({
 					bearer(accessTokenFor(invitedUserId))
 				} expect {
 					status(200)
-					body("data.status", TeamStatus.FORMED.name)
+					body("data.status", TeamStatus.ACTIVE.name)
 				}
 
 				teamMembersOf(acceptedTeamId).all { it.status == TeamMemberStatus.ACTIVE } shouldBe true

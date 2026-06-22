@@ -19,7 +19,7 @@ import java.time.LocalDate
 /**
  * `GET /teams/v1/received-invitations` E2E 테스트. (내가 받은 초대 리스트)
  * 요청자가 INVITED 구성원인 INVITING 팀들을 초대자 프로필과 함께 최신순으로 반환한다.
- * 내가 owner(ACTIVE)인 팀·수락(FORMED)된 팀·미소속 팀은 제외된다.
+ * 내가 owner(ACTIVE)인 팀·수락(ACTIVE)된 팀·미소속 팀은 제외된다.
  */
 class GetReceivedInvitationsE2ETest : AbstractIntegrationSupport({
 
@@ -152,7 +152,7 @@ class GetReceivedInvitationsE2ETest : AbstractIntegrationSupport({
 			}
 		}
 
-		context("초대를 수락(FORMED)한 뒤 조회하면") {
+		context("초대를 수락(ACTIVE)한 뒤 조회하면") {
 			it("더 이상 INVITED가 아니므로 빈 배열이다 (200)") {
 				val owner = 4201L
 				val invited = 4202L

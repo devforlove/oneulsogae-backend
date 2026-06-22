@@ -15,7 +15,7 @@ import io.kotest.matchers.shouldBe
 
 /**
  * `DELETE /teams/v1/{teamId}` E2E 테스트. (결성된 팀 해체·떠나기)
- * FORMED 팀의 구성원이 해체하면 팀이 소프트 삭제되어 활성 조회에서 사라진다.
+ * ACTIVE 팀의 구성원이 해체하면 팀이 소프트 삭제되어 활성 조회에서 사라진다.
  */
 class DisbandTeamE2ETest : AbstractIntegrationSupport({
 
@@ -23,7 +23,7 @@ class DisbandTeamE2ETest : AbstractIntegrationSupport({
 		IntegrationUtil.persist(MatchUserEntityFixture.create(userId = userId, gender = gender))
 	}
 
-	// 결성(FORMED)까지 진행한 팀의 teamId를 돌려준다. (초대 → 수락)
+	// 결성(ACTIVE)까지 진행한 팀의 teamId를 돌려준다. (초대 → 수락)
 	fun formedTeam(ownerId: Long, invitedUserId: Long): Long {
 		persistMatchUser(ownerId, Gender.MALE)
 		persistMatchUser(invitedUserId, Gender.MALE)
@@ -37,7 +37,7 @@ class DisbandTeamE2ETest : AbstractIntegrationSupport({
 
 	describe("DELETE /teams/v1/{teamId}") {
 
-		context("FORMED 팀의 구성원이 해체하면") {
+		context("ACTIVE 팀의 구성원이 해체하면") {
 			it("팀이 비활성화되어 활성 조회에서 사라진다 (200)") {
 				val ownerId = 4001L
 				val invitedUserId = 4002L

@@ -116,16 +116,16 @@ class TeamTest : DescribeSpec({
 				status = TeamStatus.INVITING,
 			)
 
-		it("초대받은 구성원이 수락하면 ACTIVE가 되고 전원 ACTIVE이므로 FORMED로 전이한다") {
+		it("초대받은 구성원이 수락하면 ACTIVE가 되고 전원 ACTIVE이므로 ACTIVE로 전이한다") {
 			val formed: Team = invitingTeam().acceptInvitation(invitedUserId)
 
-			formed.status shouldBe TeamStatus.FORMED
+			formed.status shouldBe TeamStatus.ACTIVE
 			formed.members.find(invitedUserId)!!.status shouldBe TeamMemberStatus.ACTIVE
 		}
 
 		it("INVITING이 아니면 INVALID_TEAM_STATUS를 던진다") {
 			val ex: BusinessException = shouldThrow {
-				invitingTeam().copy(status = TeamStatus.FORMED).acceptInvitation(invitedUserId)
+				invitingTeam().copy(status = TeamStatus.ACTIVE).acceptInvitation(invitedUserId)
 			}
 
 			ex.errorCode shouldBe TeamErrorCode.INVALID_TEAM_STATUS
@@ -169,7 +169,7 @@ class TeamTest : DescribeSpec({
 
 		it("INVITING이 아니면 INVALID_TEAM_STATUS를 던진다") {
 			val ex: BusinessException = shouldThrow {
-				invitingTeam().copy(status = TeamStatus.FORMED).withdrawInvitation(ownerId, now)
+				invitingTeam().copy(status = TeamStatus.ACTIVE).withdrawInvitation(ownerId, now)
 			}
 			ex.errorCode shouldBe TeamErrorCode.INVALID_TEAM_STATUS
 		}
@@ -192,17 +192,17 @@ class TeamTest : DescribeSpec({
 						TeamMember(teamId = 0, userId = invitedUserId, gender = Gender.MALE, status = TeamMemberStatus.ACTIVE),
 					),
 				),
-				status = TeamStatus.FORMED,
+				status = TeamStatus.ACTIVE,
 			)
 
-		it("FORMED 팀의 구성원이 해체하면 DEACTIVATED + soft delete가 된다") {
+		it("ACTIVE 팀의 구성원이 해체하면 DEACTIVATED + soft delete가 된다") {
 			val deactivated: Team = formedTeam().disband(invitedUserId, now)
 
 			deactivated.status shouldBe TeamStatus.DEACTIVATED
 			deactivated.deletedAt shouldBe now
 		}
 
-		it("FORMED가 아니면 INVALID_TEAM_STATUS를 던진다") {
+		it("ACTIVE가 아니면 INVALID_TEAM_STATUS를 던진다") {
 			val ex: BusinessException = shouldThrow {
 				formedTeam().copy(status = TeamStatus.INVITING).disband(ownerId, now)
 			}

@@ -7,7 +7,7 @@ enum class TeamStatus(val description: String) {
 	INVITING("초대중"),
 
 	/** 팀결성. 구성원이 모두 모여 팀이 완성된 상태. */
-	FORMED("팀결성"),
+	ACTIVE("팀결성"),
 
 	/** 비활성화. 팀이 해체되어 매칭에서 빠진 상태. */
 	DEACTIVATED("비활성화"),

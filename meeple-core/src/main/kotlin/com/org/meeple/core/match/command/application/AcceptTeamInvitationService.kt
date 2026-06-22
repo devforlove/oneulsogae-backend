@@ -17,7 +17,7 @@ import org.springframework.transaction.annotation.Transactional
 
 /**
  * [AcceptTeamInvitationUseCase] 구현. 초대받은 사용자가 팀 초대를 수락한다.
- * 팀을 조회해 [Team.acceptInvitation]으로 상태를 전이(전원 수락 시 FORMED)한 뒤 저장한다.
+ * 팀을 조회해 [Team.acceptInvitation]으로 상태를 전이(전원 수락 시 ACTIVE)한 뒤 저장한다.
  * 수락과 동시에 그 사용자가 받은 다른 초대들은 모두 비활성화한다. (한 초대 수락 = 나머지 초대 자동 거절)
  * 수락(invited)↔초대취소(owner) 동시 요청 경합을 막기 위해 teamId 분산 락으로 직렬화한다. (waitTime=0)
  */

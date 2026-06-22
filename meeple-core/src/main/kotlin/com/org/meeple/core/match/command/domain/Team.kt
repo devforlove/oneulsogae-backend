@@ -24,7 +24,7 @@ data class Team(
 
 	/**
 	 * 초대받은([TeamMemberStatus.INVITED]) 구성원([userId])이 초대를 수락한다.
-	 * 그 구성원을 ACTIVE로 전환하고, 전원 ACTIVE가 되면 팀을 [TeamStatus.FORMED]로 전이한 새 모델을 반환한다.
+	 * 그 구성원을 ACTIVE로 전환하고, 전원 ACTIVE가 되면 팀을 [TeamStatus.ACTIVE]로 전이한 새 모델을 반환한다.
 	 * 상태·구성원 자격은 [validateAcceptable]로 검증한다.
 	 */
 	fun acceptInvitation(userId: Long): Team {
@@ -32,7 +32,7 @@ data class Team(
 		val accepted: TeamMembers = members.accept(userId)
 		return copy(
 			members = accepted,
-			status = if (accepted.allActive()) TeamStatus.FORMED else status,
+			status = if (accepted.allActive()) TeamStatus.ACTIVE else status,
 		)
 	}
 
@@ -52,7 +52,7 @@ data class Team(
 	}
 
 	/**
-	 * 결성([TeamStatus.FORMED])된 팀을 해체한다. (구성원이 떠나면 2인 팀이 유지될 수 없어 팀 전체를 비활성화)
+	 * 결성([TeamStatus.ACTIVE])된 팀을 해체한다. (구성원이 떠나면 2인 팀이 유지될 수 없어 팀 전체를 비활성화)
 	 * 팀을 [TeamStatus.DEACTIVATED]로 전이하고 팀·구성원을 [now]로 소프트 삭제한 새 모델을 반환한다.
 	 */
 	fun disband(userId: Long, now: LocalDateTime): Team {
@@ -70,9 +70,9 @@ data class Team(
 		}
 	}
 
-	// FORMED 상태가 아니면 INVALID_TEAM_STATUS, 구성원이 아니면 NOT_TEAM_MEMBER.
+	// ACTIVE 상태가 아니면 INVALID_TEAM_STATUS, 구성원이 아니면 NOT_TEAM_MEMBER.
 	private fun validateDisbandable(userId: Long) {
-		if (status != TeamStatus.FORMED) {
+		if (status != TeamStatus.ACTIVE) {
 			throw BusinessException(TeamErrorCode.INVALID_TEAM_STATUS)
 		}
 		if (!members.isMember(userId)) {

@@ -20,7 +20,7 @@ import org.springframework.transaction.annotation.Transactional
  * 구성원의 성별은 팀 구성(성별 균형)에 필요하므로, match 도메인 소유 읽기 모델([GetMatchUserPort], match_user)에서 읽어 채운다.
  * (자기 도메인 내부 영속성 접근은 자기 out-port를 쓴다. match_user 행이 없으면 매칭 불가이므로 PROFILE_INCOMPLETE를 던진다)
  * 이름·소개·자기 초대·동일 성별 검증은 [Team.invite] 도메인 팩토리가 담당한다.
- * 한 사용자는 활성 팀(INVITING/FORMED)에 하나만 속할 수 있다. 오케스트레이션 검증은 이 서비스가 담당한다.
+ * 한 사용자는 활성 팀(INVITING/ACTIVE)에 하나만 속할 수 있다. 오케스트레이션 검증은 이 서비스가 담당한다.
  */
 @Service
 class InviteTeamService(
@@ -32,7 +32,7 @@ class InviteTeamService(
 
 	@Transactional
 	override fun invite(ownerId: Long, command: InviteTeamCommand): Team {
-		// 한 사용자는 활성 팀(INVITING/FORMED)에 하나만 속할 수 있다. owner·초대대상 모두 검증.
+		// 한 사용자는 활성 팀(INVITING/ACTIVE)에 하나만 속할 수 있다. owner·초대대상 모두 검증.
 		validateNotInActiveTeam(ownerId)
 		validateNotInActiveTeam(command.invitedUserId)
 
