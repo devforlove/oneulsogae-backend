@@ -33,7 +33,7 @@ class WithdrawTeamInvitationE2ETest : AbstractIntegrationSupport({
 		persistMatchUser(invitedUserId, Gender.MALE)
 		return post("/teams/v1/invitation") {
 			bearer(accessTokenFor(ownerId))
-			jsonBody("""{"invitedUserId": $invitedUserId, "name": "우리팀", "introduction": "함께 즐겁게 활동할 팀이에요"}""")
+			jsonBody("""{"invitedUserId": $invitedUserId, "region": "서울특별시 강남구", "name": "우리팀", "introduction": "함께 즐겁게 활동할 팀이에요"}""")
 		}.extract().path<Int>("data.teamId").toLong()
 	}
 

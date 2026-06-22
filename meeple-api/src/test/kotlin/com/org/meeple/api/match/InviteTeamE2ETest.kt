@@ -51,7 +51,7 @@ class InviteTeamE2ETest : AbstractIntegrationSupport({
 				post("/teams/v1/invitation") {
 					bearer(accessTokenFor(ownerId))
 					jsonBody(
-						"""{"invitedUserId": $invitedUserId, "name": "우리팀", "introduction": "$validIntroduction"}""",
+						"""{"invitedUserId": $invitedUserId, "region": "서울특별시 강남구", "name": "우리팀", "introduction": "$validIntroduction"}""",
 					)
 				} expect {
 					status(200)
@@ -67,6 +67,9 @@ class InviteTeamE2ETest : AbstractIntegrationSupport({
 				teams.size shouldBe 1
 				teams[0].name shouldBe "우리팀"
 				teams[0].status shouldBe TeamStatus.INVITING
+				// 활동지역과 그로부터 산출한 권역 코드가 저장된다. (서울 → 1)
+				teams[0].region shouldBe "서울특별시 강남구"
+				teams[0].regionCode shouldBe 1
 				// 구성원 두 행(초대자 + 초대 대상)이 저장된다.
 				val members: List<TeamMemberEntity> = teamMembersOf(teams[0].id!!)
 				members.map { it.userId } shouldContainExactlyInAnyOrder listOf(ownerId, invitedUserId)
@@ -86,7 +89,7 @@ class InviteTeamE2ETest : AbstractIntegrationSupport({
 
 				val teamId: Long = post("/teams/v1/invitation") {
 					bearer(accessTokenFor(ownerId))
-					jsonBody("""{"invitedUserId": $invitedUserId, "name": "우리팀", "introduction": "$validIntroduction"}""")
+					jsonBody("""{"invitedUserId": $invitedUserId, "region": "서울특별시 강남구", "name": "우리팀", "introduction": "$validIntroduction"}""")
 				}.extract().path<Int>("data.teamId").toLong()
 
 				// 초대받은 사용자에게만 "팀 초대 받음" 알람.
@@ -110,7 +113,7 @@ class InviteTeamE2ETest : AbstractIntegrationSupport({
 
 				post("/teams/v1/invitation") {
 					bearer(accessTokenFor(ownerId))
-					jsonBody("""{"invitedUserId": $ownerId, "name": "우리팀", "introduction": "$validIntroduction"}""")
+					jsonBody("""{"invitedUserId": $ownerId, "region": "서울특별시 강남구", "name": "우리팀", "introduction": "$validIntroduction"}""")
 				} expect {
 					status(400)
 					body("success", false)
@@ -130,7 +133,7 @@ class InviteTeamE2ETest : AbstractIntegrationSupport({
 
 				post("/teams/v1/invitation") {
 					bearer(accessTokenFor(ownerId))
-					jsonBody("""{"invitedUserId": $invitedUserId, "name": "우리팀", "introduction": "$validIntroduction"}""")
+					jsonBody("""{"invitedUserId": $invitedUserId, "region": "서울특별시 강남구", "name": "우리팀", "introduction": "$validIntroduction"}""")
 				} expect {
 					status(400)
 					body("success", false)
@@ -149,7 +152,7 @@ class InviteTeamE2ETest : AbstractIntegrationSupport({
 
 				post("/teams/v1/invitation") {
 					bearer(accessTokenFor(ownerId))
-					jsonBody("""{"invitedUserId": $invitedUserId, "name": "우리팀", "introduction": "$validIntroduction"}""")
+					jsonBody("""{"invitedUserId": $invitedUserId, "region": "서울특별시 강남구", "name": "우리팀", "introduction": "$validIntroduction"}""")
 				} expect {
 					status(400)
 					body("success", false)
@@ -169,7 +172,7 @@ class InviteTeamE2ETest : AbstractIntegrationSupport({
 
 				post("/teams/v1/invitation") {
 					bearer(accessTokenFor(ownerId))
-					jsonBody("""{"invitedUserId": $invitedUserId, "name": "  ", "introduction": "$validIntroduction"}""")
+					jsonBody("""{"invitedUserId": $invitedUserId, "region": "서울특별시 강남구", "name": "  ", "introduction": "$validIntroduction"}""")
 				} expect {
 					status(400)
 					body("success", false)
@@ -188,7 +191,7 @@ class InviteTeamE2ETest : AbstractIntegrationSupport({
 
 				post("/teams/v1/invitation") {
 					bearer(accessTokenFor(ownerId))
-					jsonBody("""{"invitedUserId": $invitedUserId, "name": "우리팀", "introduction": "짧은소개"}""")
+					jsonBody("""{"invitedUserId": $invitedUserId, "region": "서울특별시 강남구", "name": "우리팀", "introduction": "짧은소개"}""")
 				} expect {
 					status(400)
 					body("success", false)
@@ -201,7 +204,7 @@ class InviteTeamE2ETest : AbstractIntegrationSupport({
 		context("인증 토큰이 없으면") {
 			it("401을 반환한다") {
 				post("/teams/v1/invitation") {
-					jsonBody("""{"invitedUserId": 2, "name": "우리팀", "introduction": "$validIntroduction"}""")
+					jsonBody("""{"invitedUserId": 2, "region": "서울특별시 강남구", "name": "우리팀", "introduction": "$validIntroduction"}""")
 				} expect {
 					status(401)
 				}
@@ -220,13 +223,13 @@ class InviteTeamE2ETest : AbstractIntegrationSupport({
 				// 첫 팀 결성(owner는 활성 구성원이 됨)
 				post("/teams/v1/invitation") {
 					bearer(accessTokenFor(ownerId))
-					jsonBody("""{"invitedUserId": $invited1, "name": "팀1", "introduction": "$validIntroduction"}""")
+					jsonBody("""{"invitedUserId": $invited1, "region": "서울특별시 강남구", "name": "팀1", "introduction": "$validIntroduction"}""")
 				} expect { status(200) }
 
 				// 같은 owner가 또 초대 → 한 팀만 위반
 				post("/teams/v1/invitation") {
 					bearer(accessTokenFor(ownerId))
-					jsonBody("""{"invitedUserId": $invited2, "name": "팀2", "introduction": "$validIntroduction"}""")
+					jsonBody("""{"invitedUserId": $invited2, "region": "서울특별시 강남구", "name": "팀2", "introduction": "$validIntroduction"}""")
 				} expect {
 					status(409)
 					body("error.code", "TEAM-009")
@@ -246,14 +249,14 @@ class InviteTeamE2ETest : AbstractIntegrationSupport({
 				// invitedUserId가 owner1 팀에 초대된 뒤 수락해 활성(ACTIVE) 구성원이 됨
 				val teamId: Long = post("/teams/v1/invitation") {
 					bearer(accessTokenFor(owner1))
-					jsonBody("""{"invitedUserId": $invitedUserId, "name": "팀1", "introduction": "$validIntroduction"}""")
+					jsonBody("""{"invitedUserId": $invitedUserId, "region": "서울특별시 강남구", "name": "팀1", "introduction": "$validIntroduction"}""")
 				}.extract().path<Int>("data.teamId").toLong()
 				post("/teams/v1/$teamId/acceptance") { bearer(accessTokenFor(invitedUserId)) } expect { status(200) }
 
 				// owner2가 같은 사람을 초대 → 활성 팀에 둘 이상 소속 위반
 				post("/teams/v1/invitation") {
 					bearer(accessTokenFor(owner2))
-					jsonBody("""{"invitedUserId": $invitedUserId, "name": "팀2", "introduction": "$validIntroduction"}""")
+					jsonBody("""{"invitedUserId": $invitedUserId, "region": "서울특별시 강남구", "name": "팀2", "introduction": "$validIntroduction"}""")
 				} expect {
 					status(409)
 					body("error.code", "TEAM-009")
@@ -273,13 +276,13 @@ class InviteTeamE2ETest : AbstractIntegrationSupport({
 				// invitedUserId가 owner1 팀에 초대중(INVITED) 상태로만 담김 (수락 안 함)
 				post("/teams/v1/invitation") {
 					bearer(accessTokenFor(owner1))
-					jsonBody("""{"invitedUserId": $invitedUserId, "name": "팀1", "introduction": "$validIntroduction"}""")
+					jsonBody("""{"invitedUserId": $invitedUserId, "region": "서울특별시 강남구", "name": "팀1", "introduction": "$validIntroduction"}""")
 				} expect { status(200) }
 
 				// owner2가 같은 사람을 또 초대 → 초대중은 여러 팀에서 가능하므로 허용
 				post("/teams/v1/invitation") {
 					bearer(accessTokenFor(owner2))
-					jsonBody("""{"invitedUserId": $invitedUserId, "name": "팀2", "introduction": "$validIntroduction"}""")
+					jsonBody("""{"invitedUserId": $invitedUserId, "region": "서울특별시 강남구", "name": "팀2", "introduction": "$validIntroduction"}""")
 				} expect {
 					status(200)
 					body("success", true)

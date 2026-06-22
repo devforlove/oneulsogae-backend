@@ -3,6 +3,7 @@ package com.org.meeple.core.match.command.domain
 import com.org.meeple.common.match.TeamMemberStatus
 import com.org.meeple.common.match.TeamStatus
 import com.org.meeple.common.user.Gender
+import com.org.meeple.common.user.Region
 import com.org.meeple.core.common.error.BusinessException
 import com.org.meeple.core.match.TeamErrorCode
 import java.time.LocalDateTime
@@ -18,6 +19,10 @@ data class Team(
 	val name: String,
 	/** 팀 성별. 팀은 동성으로 구성되므로 팀 단위로 하나의 성별을 가진다. (구성원은 성별을 따로 보관하지 않는다) */
 	val gender: Gender,
+	/** 팀 활동지역(시/도 문자열). 초대 시 요청으로 받는다. */
+	val region: String? = null,
+	/** 활동지역 권역 코드(1~5). [region]에서 [Region.resolveAreaCode]로 산출한다. 인식 불가 지역이면 null. */
+	val regionCode: Int? = null,
 	val introduction: String? = null,
 	val members: TeamMembers,
 	val status: TeamStatus = TeamStatus.INVITING,
@@ -111,8 +116,8 @@ data class Team(
 
 		/**
 		 * [ownerId]가 [invitedUserId]를 초대해 팀을 결성한다. (status INVITING)
-		 * 초대자([ownerId])는 활성([TeamMemberStatus.ACTIVE]) 구성원으로, 초대 대상([invitedUserId])은 초대중([TeamMemberStatus.INVITED]) 구성원으로 담고,
-		 * 각자의 성별([ownerGender]/[invitedGender])을 함께 보관한다.
+		 * 초대자([ownerId])는 활성([TeamMemberStatus.ACTIVE]) 구성원으로, 초대 대상([invitedUserId])은 초대중([TeamMemberStatus.INVITED]) 구성원으로 담는다.
+		 * 팀 성별은 초대자 성별([ownerGender])로, 활동지역 권역 코드는 [region]에서 [Region.resolveAreaCode]로 산출해 보관한다. (온보딩과 동일 변환)
 		 * 이름·소개·자기 초대 여부는 [validateInvite]로 검증한다.
 		 */
 		fun invite(
@@ -122,12 +127,17 @@ data class Team(
 			invitedGender: Gender,
 			name: String,
 			introduction: String,
+			region: String,
 		): Team {
 			validateInvite(ownerId, ownerGender, invitedUserId, invitedGender, name, introduction)
+			val trimmedRegion: String = region.trim()
 			return Team(
 				name = name.trim(),
 				// 팀은 동성 구성이라 팀 성별 = 초대자 성별. (initiator/invited 동일 성별은 validateInvite에서 보장)
 				gender = ownerGender,
+				region = trimmedRegion,
+				// 활동지역에서 권역 코드(1~5) 산출. 인식 불가 지역이면 null. (온보딩 UserDetail과 동일 규칙)
+				regionCode = Region.resolveAreaCode(trimmedRegion),
 				introduction = introduction.trim(),
 				members = TeamMembers.of(
 					listOf(

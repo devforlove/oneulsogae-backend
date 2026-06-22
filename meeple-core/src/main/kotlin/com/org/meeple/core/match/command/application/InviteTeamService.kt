@@ -46,6 +46,7 @@ class InviteTeamService(
 			invitedGender = invitedGender,
 			name = command.name,
 			introduction = command.introduction,
+			region = command.region,
 		)
 		val savedTeam: Team = saveTeamPort.save(team)
 		// 초대받은 사용자에게 보낼 후속 알람은 커밋 이후 핸들러가 처리한다.

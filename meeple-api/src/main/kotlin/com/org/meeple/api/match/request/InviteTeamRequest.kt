@@ -20,6 +20,9 @@ data class InviteTeamRequest(
 	@field:NotBlank(message = "팀 소개는 필수입니다.")
 	@field:Size(min = 10, max = 99, message = "팀 소개는 10자 이상 100자 미만이어야 합니다.")
 	val introduction: String? = null,
+
+	@field:NotBlank(message = "활동지역은 필수입니다.")
+	val region: String? = null,
 ) {
 
 	// @Valid 검증을 통과한 뒤 호출되므로, 필수 필드는 non-null이 보장된다. (command가 non-null 타입이라 여기서 풀어 넘긴다)
@@ -28,5 +31,6 @@ data class InviteTeamRequest(
 			invitedUserId = invitedUserId!!,
 			name = name!!,
 			introduction = introduction!!,
+			region = region!!,
 		)
 }

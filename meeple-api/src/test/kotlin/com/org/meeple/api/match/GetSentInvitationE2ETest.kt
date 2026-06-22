@@ -47,7 +47,7 @@ class GetSentInvitationE2ETest : AbstractIntegrationSupport({
 	fun invite(ownerId: Long, invitedUserId: Long): Long =
 		post("/teams/v1/invitation") {
 			bearer(accessTokenFor(ownerId))
-			jsonBody("""{"invitedUserId": $invitedUserId, "name": "우리팀", "introduction": "함께 즐겁게 활동할 팀이에요"}""")
+			jsonBody("""{"invitedUserId": $invitedUserId, "region": "서울특별시 강남구", "name": "우리팀", "introduction": "함께 즐겁게 활동할 팀이에요"}""")
 		}.extract().path<Int>("data.teamId").toLong()
 
 	// 기본 프로필을 저장한 뒤 초대한다. (프로필 값 검증이 필요 없는 케이스용)

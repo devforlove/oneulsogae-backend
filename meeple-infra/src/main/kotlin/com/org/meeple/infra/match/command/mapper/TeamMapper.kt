@@ -14,6 +14,8 @@ fun TeamEntity.toDomain(members: TeamMembers): Team =
 		id = id ?: 0,
 		name = name,
 		gender = gender,
+		region = region,
+		regionCode = regionCode,
 		introduction = introduction,
 		members = members,
 		status = status,
@@ -29,6 +31,8 @@ fun Team.toEntity(): TeamEntity =
 	TeamEntity(
 		name = name,
 		gender = gender,
+		region = region,
+		regionCode = regionCode,
 		introduction = introduction,
 		status = status,
 	).also {
