@@ -21,7 +21,7 @@ class RegionController(
 
 	/** 전체 활동지역 목록을 id와 함께 반환한다. */
 	@Operation(summary = "활동지역 목록 조회", description = "전체 활동지역(시/도 + 시/군/구)을 id와 함께 반환한다. 클라이언트는 이 id(regionId)로 지역을 선택해 요청한다.")
-	@GetMapping
+	@GetMapping("/list")
 	fun getRegions(): ApiResponse<List<RegionResponse>> =
 		ApiResponse.success(RegionResponse.listOf(getRegionsUseCase.getAll()))
 }
