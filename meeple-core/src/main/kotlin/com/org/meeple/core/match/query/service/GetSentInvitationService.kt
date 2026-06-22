@@ -18,5 +18,5 @@ class GetSentInvitationService(
 ) : GetSentInvitationUseCase {
 
 	override fun get(userId: Long): SentInvitation? =
-		getSentInvitationDao.findLatestInviting(userId)
+		getSentInvitationDao.findLatestSentInvitation(userId)
 }

@@ -27,7 +27,7 @@ class GetSentInvitationDaoImpl(
 	private val queryFactory: JPAQueryFactory,
 ) : GetSentInvitationDao {
 
-	override fun findLatestInviting(userId: Long): SentInvitation? {
+	override fun findLatestSentInvitation(userId: Long): SentInvitation? {
 		val team: QTeamEntity = QTeamEntity.teamEntity
 		val teamMember: QTeamMemberEntity = QTeamMemberEntity.teamMemberEntity
 

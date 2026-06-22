@@ -9,5 +9,5 @@ import com.org.meeple.core.match.query.dto.SentInvitation
 interface GetSentInvitationDao {
 
 	/** [userId]가 ACTIVE 구성원인 가장 최근 INVITING·ACTIVE 팀을 구성원 전원과 함께 조회한다. 없으면 null. */
-	fun findLatestInviting(userId: Long): SentInvitation?
+	fun findLatestSentInvitation(userId: Long): SentInvitation?
 }
