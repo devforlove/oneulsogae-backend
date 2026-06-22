@@ -39,7 +39,7 @@ class ChatRoomMemberEntity(
 
 	/** 이 참가자의 활성 상태. (기본 활성) */
 	@Enumerated(EnumType.STRING)
-	@Column(name = "status", nullable = false, length = 20)
+	@Column(name = "status", nullable = false, columnDefinition = "varchar(50)")
 	var status: ChatRoomMemberStatus = ChatRoomMemberStatus.ACTIVE,
 
 	/** 이 참가자가 아직 확인하지 않은 메세지 개수. (상대가 보낸 메세지가 쌓이면 증가, 본인이 읽으면 0) */

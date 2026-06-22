@@ -42,7 +42,7 @@ class SoloMatchMemberEntity(
 
 	/** 참가자 성별. 성별 균형 구성·성별 기반 조회에 쓴다. */
 	@Enumerated(EnumType.STRING)
-	@Column(name = "gender", nullable = false, length = 10)
+	@Column(name = "gender", nullable = false, columnDefinition = "varchar(50)")
 	val gender: Gender,
 
 	/** 이 참가자의 수락 여부. 아직 응답 전이면 null. (전원 수락 시 매칭 성사) */
@@ -51,6 +51,6 @@ class SoloMatchMemberEntity(
 
 	/** 이 참가자의 활성 상태. (기본 활성) 채팅방 나가기로 매칭이 제거되면 DEACTIVE로 전이한다. */
 	@Enumerated(EnumType.STRING)
-	@Column(name = "status", nullable = false, length = 20)
+	@Column(name = "status", nullable = false, columnDefinition = "varchar(50)")
 	var status: MatchMemberStatus = MatchMemberStatus.ACTIVE,
 ) : BaseEntity()

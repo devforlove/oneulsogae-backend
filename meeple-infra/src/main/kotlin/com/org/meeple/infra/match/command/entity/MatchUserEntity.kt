@@ -40,14 +40,14 @@ class MatchUserEntity(
 	val userId: Long,
 
 	@Enumerated(EnumType.STRING)
-	@Column(name = "gender", nullable = false)
+	@Column(name = "gender", nullable = false, columnDefinition = "varchar(50)")
 	var gender: Gender,
 
 	@Column(name = "region_code", nullable = false)
 	var regionCode: Int,
 
 	@Enumerated(EnumType.STRING)
-	@Column(name = "marital_status", nullable = false)
+	@Column(name = "marital_status", nullable = false, columnDefinition = "varchar(50)")
 	var maritalStatus: MaritalStatus,
 
 	@Column(name = "birthday", nullable = false)

@@ -39,7 +39,7 @@ class ChatMessageEntity(
 
 	/** 메세지 유형. (일반 USER / 시스템 SYSTEM) */
 	@Enumerated(EnumType.STRING)
-	@Column(name = "type", nullable = false, length = 20)
+	@Column(name = "type", nullable = false, columnDefinition = "varchar(50)")
 	val type: ChatMessageType = ChatMessageType.USER,
 
 	/** 메세지를 보낸(또는 생성된) 시각. */

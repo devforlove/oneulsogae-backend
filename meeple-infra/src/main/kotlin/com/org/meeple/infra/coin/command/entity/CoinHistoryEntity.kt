@@ -40,12 +40,12 @@ class CoinHistoryEntity(
 
 	/** 코인 획득(적립) 유형. (무료 획득/구매) 차감 내역에는 해당 없어 null이다. */
 	@Enumerated(EnumType.STRING)
-	@Column(name = "coin_get_type", length = 20)
+	@Column(name = "coin_get_type", columnDefinition = "varchar(50)")
 	var coinGetType: CoinGetType? = null,
 
 	/** 코인 사용(차감) 작업 유형. (소개팅/미팅 신청·수락) 적립 내역에는 해당 없어 null이다. */
 	@Enumerated(EnumType.STRING)
-	@Column(name = "coin_usage_type", length = 20)
+	@Column(name = "coin_usage_type", columnDefinition = "varchar(50)")
 	var coinUsageType: CoinUsageType? = null,
 
 	/** 코인 거래가 발생한 시각. (획득/구매 완료 또는 사용 차감) */

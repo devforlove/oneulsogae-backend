@@ -41,12 +41,12 @@ class TeamMatchEntity(
 	val expiresAt: LocalDateTime,
 
 	@Enumerated(EnumType.STRING)
-	@Column(name = "status", nullable = false, length = 20)
+	@Column(name = "status", nullable = false, columnDefinition = "varchar(50)")
 	var status: MatchStatus = MatchStatus.PROPOSED,
 
 	/** 팀 매칭이 생성된 경로(일일 배치/필수 신청). [com.org.meeple.common.match.TeamMatchType] */
 	@Enumerated(EnumType.STRING)
-	@Column(name = "match_type", nullable = false, length = 20)
+	@Column(name = "match_type", nullable = false, columnDefinition = "varchar(50)")
 	val matchType: TeamMatchType,
 
 	/** 팀 매칭 신청에 드는 코인 비용. */

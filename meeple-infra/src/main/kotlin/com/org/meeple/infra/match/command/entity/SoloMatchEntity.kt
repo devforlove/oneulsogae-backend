@@ -40,12 +40,12 @@ class SoloMatchEntity(
 	val expiresAt: LocalDateTime,
 
 	@Enumerated(EnumType.STRING)
-	@Column(name = "status", nullable = false, length = 20)
+	@Column(name = "status", nullable = false, columnDefinition = "varchar(50)")
 	var status: MatchStatus = MatchStatus.PROPOSED,
 
 	/** 소개가 생성된 경로(일일 배치/온보딩/필수 신청). [com.org.meeple.common.match.SoloMatchType] */
 	@Enumerated(EnumType.STRING)
-	@Column(name = "match_type", nullable = false, length = 20)
+	@Column(name = "match_type", nullable = false, columnDefinition = "varchar(50)")
 	val matchType: SoloMatchType,
 
 	/** 소개팅 신청에 드는 코인 비용. [com.org.meeple.common.coin.CoinUsageType.DATING_INIT]에서 가져온다. */

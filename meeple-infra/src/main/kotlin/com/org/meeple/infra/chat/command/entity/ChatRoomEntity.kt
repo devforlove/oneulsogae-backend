@@ -31,7 +31,7 @@ class ChatRoomEntity(
 	val matchId: Long,
 
 	@Enumerated(EnumType.STRING)
-	@Column(name = "status", nullable = false, length = 20)
+	@Column(name = "status", nullable = false, columnDefinition = "varchar(50)")
 	var status: ChatRoomStatus = ChatRoomStatus.ACTIVE,
 
 	/** 채팅방 만료 시각. 이 시각 이후로는 만료된 채팅방으로 본다. */

@@ -39,11 +39,11 @@ class UserEntity(
 	var email: String? = null,
 
 	@Enumerated(EnumType.STRING)
-	@Column(name = "role", nullable = false)
+	@Column(name = "role", nullable = false, columnDefinition = "varchar(50)")
 	var role: Role = Role.USER,
 
 	@Enumerated(EnumType.STRING)
-	@Column(name = "status", nullable = false, length = 20)
+	@Column(name = "status", nullable = false, columnDefinition = "varchar(50)")
 	var status: UserStatus = UserStatus.ONBOARDING,
 
 	/** 마지막 로그인 시점. */

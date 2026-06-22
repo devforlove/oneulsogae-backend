@@ -38,11 +38,11 @@ class TeamMemberEntity(
 
 	/** 구성원 성별. 성별 균형 구성·성별 기반 조회에 쓴다. */
 	@Enumerated(EnumType.STRING)
-	@Column(name = "gender", nullable = false, length = 10)
+	@Column(name = "gender", nullable = false, columnDefinition = "varchar(50)")
 	val gender: Gender,
 
 	/** 구성원 상태. 초대중·활성·비활성을 구분한다. */
 	@Enumerated(EnumType.STRING)
-	@Column(name = "status", nullable = false, length = 20)
+	@Column(name = "status", nullable = false, columnDefinition = "varchar(50)")
 	val status: TeamMemberStatus,
 ) : BaseEntity()

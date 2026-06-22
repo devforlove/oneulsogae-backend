@@ -64,7 +64,7 @@ class PopupEntity(
 
 	/** 팝업 유형. (일반/출석 보상 등) */
 	@Enumerated(EnumType.STRING)
-	@Column(name = "popup_type", nullable = false, length = 30)
+	@Column(name = "popup_type", nullable = false, columnDefinition = "varchar(50)")
 	var popUpType: PopupType = PopupType.NORMAL,
 
 	/** 개인 팝업 대상 사용자 id. null이면 전역 팝업(모든 사용자 노출). */

@@ -30,6 +30,6 @@ class TeamEntity(
 
 	/** 이 팀의 결성 단계. 초대중으로 시작해 팀결성으로 전이하고, 해체되면 비활성화로 전이한다. (매치별 수락은 [MatchedTeamEntity]가 보관) */
 	@Enumerated(EnumType.STRING)
-	@Column(name = "status", nullable = false, length = 20)
+	@Column(name = "status", nullable = false, columnDefinition = "varchar(50)")
 	var status: TeamStatus = TeamStatus.INVITING,
 ) : BaseEntity()

@@ -52,7 +52,7 @@ class UserDetailEntity(
 	var height: Int? = null,
 
 	@Enumerated(EnumType.STRING)
-	@Column(name = "gender")
+	@Column(name = "gender", columnDefinition = "varchar(50)")
 	var gender: Gender? = null,
 
 	/** 휴대폰 번호. */
@@ -94,22 +94,22 @@ class UserDetailEntity(
 	var companyName: String? = null,
 
 	@Enumerated(EnumType.STRING)
-	@Column(name = "marital_status")
+	@Column(name = "marital_status", columnDefinition = "varchar(50)")
 	var maritalStatus: MaritalStatus? = null,
 
 	@Enumerated(EnumType.STRING)
-	@Column(name = "smoking_status")
+	@Column(name = "smoking_status", columnDefinition = "varchar(50)")
 	var smokingStatus: SmokingStatus? = null,
 
 	@Enumerated(EnumType.STRING)
-	@Column(name = "religion")
+	@Column(name = "religion", columnDefinition = "varchar(50)")
 	var religion: Religion? = null,
 
 	@Enumerated(EnumType.STRING)
-	@Column(name = "drinking_status")
+	@Column(name = "drinking_status", columnDefinition = "varchar(50)")
 	var drinkingStatus: DrinkingStatus? = null,
 
 	@Enumerated(EnumType.STRING)
-	@Column(name = "body_type")
+	@Column(name = "body_type", columnDefinition = "varchar(50)")
 	var bodyType: BodyType? = null,
 ) : BaseEntity()
