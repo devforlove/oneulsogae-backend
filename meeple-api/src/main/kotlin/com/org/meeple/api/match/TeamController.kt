@@ -4,6 +4,7 @@ import com.org.meeple.api.match.request.InviteTeamRequest
 import com.org.meeple.api.match.request.SearchInvitableUsersRequest
 import com.org.meeple.api.match.response.InvitableUserResponse
 import com.org.meeple.api.match.response.ReceivedInvitationResponse
+import com.org.meeple.api.match.response.RecommendedTeamResponse
 import com.org.meeple.api.match.response.SentInvitationResponse
 import com.org.meeple.api.match.response.TeamResponse
 import com.org.meeple.auth.AuthUser
@@ -15,6 +16,7 @@ import com.org.meeple.core.match.command.application.port.`in`.DisbandTeamUseCas
 import com.org.meeple.core.match.command.application.port.`in`.InviteTeamUseCase
 import com.org.meeple.core.match.command.application.port.`in`.WithdrawTeamInvitationUseCase
 import com.org.meeple.core.match.query.service.port.`in`.GetReceivedInvitationsUseCase
+import com.org.meeple.core.match.query.service.port.`in`.GetRecommendedTeamUseCase
 import com.org.meeple.core.match.query.service.port.`in`.GetSentInvitationUseCase
 import com.org.meeple.core.match.query.service.port.`in`.SearchInvitableUsersUseCase
 import jakarta.validation.Valid
@@ -47,6 +49,7 @@ class TeamController(
 	private val searchInvitableUsersUseCase: SearchInvitableUsersUseCase,
 	private val getSentInvitationUseCase: GetSentInvitationUseCase,
 	private val getReceivedInvitationsUseCase: GetReceivedInvitationsUseCase,
+	private val getRecommendedTeamUseCase: GetRecommendedTeamUseCase,
 	private val timeGenerator: TimeGenerator,
 ) {
 
@@ -123,4 +126,15 @@ class TeamController(
 		@ModelAttribute @Valid request: SearchInvitableUsersRequest,
 	): ApiResponse<List<InvitableUserResponse>> =
 		ApiResponse.success(InvitableUserResponse.listOf(searchInvitableUsersUseCase.search(user.id, request.nickname!!), timeGenerator.today()))
+
+	/**
+	 * 팀이 없는 솔로 유저의 미팅탭에 노출할 추천 팀을 조회한다. (반대 성별·같은 권역의 결성(ACTIVE) 팀 1개)
+	 * 일일 배치가 적재한 추천이 없거나 팀이 해체됐으면 data=null(200). (표시 전용 — 신청 불가)
+	 */
+	@Operation(summary = "추천 팀 조회", description = "팀이 없는 솔로 유저에게 추천된 결성(ACTIVE) 팀을 팀원 프로필과 함께 반환한다. 추천이 없으면 data=null(200).")
+	@GetMapping("/recommended-team")
+	fun getRecommendedTeam(
+		@LoginUser user: AuthUser,
+	): ApiResponse<RecommendedTeamResponse?> =
+		ApiResponse.success(RecommendedTeamResponse.of(getRecommendedTeamUseCase.get(user.id), timeGenerator.today()))
 }
