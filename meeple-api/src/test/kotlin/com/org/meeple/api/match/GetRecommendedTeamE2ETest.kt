@@ -59,6 +59,10 @@ class GetRecommendedTeamE2ETest : AbstractIntegrationSupport({
 					body("data.teamId", teamId.toInt())
 					body("data.name", "여성팀")
 					body("data.members", hasSize<Any>(2))
+					body("data.members[0].userId", 3101)
+					body("data.members[0].gender", "FEMALE")
+					body("data.members[0].nickname", "테스트유저")
+					body("data.members[0].profileImageCode", "1")
 				}
 			}
 		}
