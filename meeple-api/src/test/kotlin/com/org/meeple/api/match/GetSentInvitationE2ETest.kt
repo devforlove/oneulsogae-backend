@@ -60,7 +60,7 @@ class GetSentInvitationE2ETest : AbstractIntegrationSupport({
 	describe("GET /teams/v1/invitation") {
 
 		context("초대자가 자신이 보낸 초대를 조회하면") {
-			it("초대자 본인(ACTIVE)과 초대 대상(INVITED)을 userId 오름차순으로 함께 반환한다 (200)") {
+			it("INVITING 팀이면 초대 대상(INVITED)만 반환하고 초대자 본인(ACTIVE)은 제외한다 (200)") {
 				val ownerId = 3001L
 				val invitedUserId = 3002L
 				persistProfile(ownerId, "초대왕", "10", "PM", "토스")
@@ -76,19 +76,16 @@ class GetSentInvitationE2ETest : AbstractIntegrationSupport({
 					body("data.name", "우리팀")
 					body("data.introduction", "함께 즐겁게 활동할 팀이에요")
 					body("data.status", TeamStatus.INVITING.name)
-					// 요청자 본인 포함 전원 노출. userId 오름차순이라 초대자(3001)가 먼저, 초대 대상(3002)이 뒤.
-					body("data.members", hasSize<Any>(2))
-					body("data.members[0].userId", ownerId.toInt())
-					body("data.members[0].nickname", "초대왕")
-					body("data.members[0].status", TeamMemberStatus.ACTIVE.name)
-					body("data.members[1].userId", invitedUserId.toInt())
-					body("data.members[1].nickname", "피초대")
-					body("data.members[1].job", "개발자")
-					body("data.members[1].companyName", "카카오")
-					body("data.members[1].gender", Gender.MALE.name)
-					body("data.members[1].profileImageCode", "20")
-					body("data.members[1].age", 30)
-					body("data.members[1].status", TeamMemberStatus.INVITED.name)
+					// INVITING 팀이라 초대자 본인(3001, ACTIVE)은 제외되고 초대 대상(3002, INVITED)만 노출된다
+					body("data.members", hasSize<Any>(1))
+					body("data.members[0].userId", invitedUserId.toInt())
+					body("data.members[0].nickname", "피초대")
+					body("data.members[0].job", "개발자")
+					body("data.members[0].companyName", "카카오")
+					body("data.members[0].gender", Gender.MALE.name)
+					body("data.members[0].profileImageCode", "20")
+					body("data.members[0].age", 30)
+					body("data.members[0].status", TeamMemberStatus.INVITED.name)
 				}
 			}
 		}

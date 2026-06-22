@@ -9,8 +9,8 @@ import com.org.meeple.core.match.query.dto.SentInvitationMember
 import java.time.LocalDate
 
 /**
- * 내가 보낸 초대 현황 응답. 팀 식별자·이름·소개·상태와 팀 구성원 전원의 프로필을 담는다.
- * (요청자 본인도 포함한다. INVITING이면 초대자(ACTIVE)+초대 대상(INVITED), ACTIVE면 전원 ACTIVE)
+ * 내가 보낸 초대 현황 응답. 팀 식별자·이름·소개·상태와 구성원 프로필을 담는다.
+ * (INVITING이면 초대 대상(INVITED)만, ACTIVE면 전원(요청자 본인 포함, 모두 ACTIVE) 노출)
  */
 data class SentInvitationResponse(
 	val teamId: Long,
@@ -20,7 +20,7 @@ data class SentInvitationResponse(
 	val members: List<Member>,
 ) {
 
-	/** 팀 구성원 항목(요청자 본인 포함. status로 ACTIVE/INVITED 구분). 닉네임·직업·회사명·성별·프로필이미지를 담는다. */
+	/** 구성원 항목(INVITING이면 초대 대상(INVITED), ACTIVE면 팀원 전원). 닉네임·직업·회사명·성별·프로필이미지를 담는다. */
 	data class Member(
 		val userId: Long,
 		val nickname: String,
@@ -42,6 +42,10 @@ data class SentInvitationResponse(
 					introduction = invitation.introduction,
 					status = invitation.status,
 					members = invitation.members
+						// INVITING 팀이면 수락 대기 중인 초대 대상(INVITED)만 노출한다. (ACTIVE 팀은 전원 노출)
+						.filter { member: SentInvitationMember ->
+							invitation.status != TeamStatus.INVITING || member.status == TeamMemberStatus.INVITED
+						}
 						.map { member: SentInvitationMember ->
 						Member(
 							userId = member.userId,
