@@ -70,6 +70,9 @@ meeple:
     expire:
       # 만료된(미응답) 소개 정리. 매 10분 0초 1회 (Asia/Seoul). 운영에서 MEEPLE_MATCH_EXPIRE_CRON 환경변수로 덮어쓸 수 있다.
       cron: ${MEEPLE_MATCH_EXPIRE_CRON:0 */10 * * * *}
+    recommend-team-batch:
+      # 팀 없는 솔로 유저에게 결성 팀 추천. 매일 04:00 (Asia/Seoul). 운영에서 MEEPLE_RECOMMEND_TEAM_BATCH_CRON 환경변수로 덮어쓸 수 있다.
+      cron: ${MEEPLE_RECOMMEND_TEAM_BATCH_CRON:0 0 4 * * *}
 
 logging:
   level:
