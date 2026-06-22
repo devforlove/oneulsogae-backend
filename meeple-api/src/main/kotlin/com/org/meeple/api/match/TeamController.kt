@@ -105,7 +105,7 @@ class TeamController(
 	/**
 	 * 내가 받은(INVITED) 대기 중 초대 리스트를 최신순으로 조회한다. 각 항목은 팀 메타와 초대자(owner) 프로필을 담는다.
 	 */
-	@Operation(summary = "받은 초대 리스트 조회", description = "요청자가 INVITED 상태인 INVITING 팀들을 최신순으로 반환한다. 각 항목에 팀 메타, 내가 초대된 시각(invitedAt), 그 팀의 ACTIVE 구성원 목록(inviters, 키·지역·자기소개·특성·관심사 포함)을 담는다.")
+	@Operation(summary = "받은 초대 리스트 조회", description = "요청자가 INVITED 상태인 INVITING 팀들을 최신순으로 반환한다. 각 항목에 팀 메타, 내가 초대된 시각(invitedAt), 그 팀의 ACTIVE 구성원 목록(participants, 성별·키·지역·자기소개·특성·관심사 포함)을 담는다.")
 	@GetMapping("/received-invitations")
 	fun getReceivedInvitations(
 		@LoginUser user: AuthUser,

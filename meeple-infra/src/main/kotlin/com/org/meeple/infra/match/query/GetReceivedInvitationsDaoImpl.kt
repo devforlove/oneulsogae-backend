@@ -4,7 +4,7 @@ import com.org.meeple.common.match.TeamMemberStatus
 import com.org.meeple.common.match.TeamStatus
 import com.org.meeple.core.match.query.dao.GetReceivedInvitationsDao
 import com.org.meeple.core.match.query.dto.ReceivedInvitation
-import com.org.meeple.core.match.query.dto.ReceivedInvitationInviter
+import com.org.meeple.core.match.query.dto.ReceivedInvitationParticipant
 import com.org.meeple.infra.match.command.entity.QMatchUserEntity
 import com.org.meeple.infra.match.command.entity.QTeamEntity
 import com.org.meeple.infra.match.command.entity.QTeamMemberEntity
@@ -51,7 +51,7 @@ class GetReceivedInvitationsDaoImpl(
 		if (headers.isEmpty()) return emptyList()
 
 		val teamIds: List<Long> = headers.map { header: Tuple -> header.get(team.id)!! }
-		val invitersByTeamId: Map<Long, List<ReceivedInvitationInviter>> = findActiveInvitersByTeamIds(teamIds)
+		val participantsByTeamId: Map<Long, List<ReceivedInvitationParticipant>> = findActiveParticipantsByTeamIds(teamIds)
 
 		return headers.map { header: Tuple ->
 			val teamId: Long = header.get(team.id)!!
@@ -60,45 +60,45 @@ class GetReceivedInvitationsDaoImpl(
 				name = header.get(team.name)!!,
 				introduction = header.get(team.introduction),
 				invitedAt = header.get(me.createdAt)!!,
-				inviters = invitersByTeamId[teamId] ?: emptyList(),
+				participants = participantsByTeamId[teamId] ?: emptyList(),
 			)
 		}
 	}
 
 	// ② 주어진 팀들의 ACTIVE 구성원 프로필을 한 번에 조회해 teamId → 구성원(생성 순) 맵으로 반환한다.
-	private fun findActiveInvitersByTeamIds(teamIds: List<Long>): Map<Long, List<ReceivedInvitationInviter>> {
-		val inviter: QTeamMemberEntity = QTeamMemberEntity("inviter")
-		val inviterMatch: QMatchUserEntity = QMatchUserEntity.matchUserEntity
-		val inviterDetail: QUserDetailEntity = QUserDetailEntity.userDetailEntity
+	private fun findActiveParticipantsByTeamIds(teamIds: List<Long>): Map<Long, List<ReceivedInvitationParticipant>> {
+		val participant: QTeamMemberEntity = QTeamMemberEntity("participant")
+		val participantMatch: QMatchUserEntity = QMatchUserEntity.matchUserEntity
+		val participantDetail: QUserDetailEntity = QUserDetailEntity.userDetailEntity
 
-		val inviterProjection: ConstructorExpression<ReceivedInvitationInviter> = Projections.constructor(
-			ReceivedInvitationInviter::class.java,
-			inviter.userId,
-			inviterMatch.nickname,
-			inviterDetail.job,
-			inviterDetail.companyName,
-			inviter.gender,
-			inviterMatch.profileImageCode,
-			inviterMatch.birthday,
-			inviterDetail.height,
-			inviterDetail.activityArea,
-			inviterDetail.introduction,
-			Expressions.path(List::class.java, inviterDetail, "traits"),
-			Expressions.path(List::class.java, inviterDetail, "interests"),
+		val participantProjection: ConstructorExpression<ReceivedInvitationParticipant> = Projections.constructor(
+			ReceivedInvitationParticipant::class.java,
+			participant.userId,
+			participantMatch.nickname,
+			participantDetail.job,
+			participantDetail.companyName,
+			participant.gender,
+			participantMatch.profileImageCode,
+			participantMatch.birthday,
+			participantDetail.height,
+			participantDetail.activityArea,
+			participantDetail.introduction,
+			Expressions.path(List::class.java, participantDetail, "traits"),
+			Expressions.path(List::class.java, participantDetail, "interests"),
 		)
 
 		return queryFactory
-			.select(inviter.teamId, inviterProjection)
-			.from(inviter)
-			.join(inviterMatch).on(inviterMatch.userId.eq(inviter.userId))
-			.join(inviterDetail).on(inviterDetail.userId.eq(inviter.userId))
+			.select(participant.teamId, participantProjection)
+			.from(participant)
+			.join(participantMatch).on(participantMatch.userId.eq(participant.userId))
+			.join(participantDetail).on(participantDetail.userId.eq(participant.userId))
 			.where(
-				inviter.teamId.`in`(teamIds),
-				inviter.status.eq(TeamMemberStatus.ACTIVE),
+				participant.teamId.`in`(teamIds),
+				participant.status.eq(TeamMemberStatus.ACTIVE),
 			)
-			// 생성 순(가장 먼저 만든 ACTIVE=생성자가 앞) 정렬 → 화면에서 members[0]을 대표 초대자로 쓸 수 있다.
-			.orderBy(inviter.id.asc())
+			// 생성 순(가장 먼저 만든 ACTIVE=생성자가 앞) 정렬 → 화면에서 participants[0]을 대표 구성원으로 쓸 수 있다.
+			.orderBy(participant.id.asc())
 			.fetch()
-			.groupBy({ row: Tuple -> row.get(inviter.teamId)!! }, { row: Tuple -> row.get(inviterProjection)!! })
+			.groupBy({ row: Tuple -> row.get(participant.teamId)!! }, { row: Tuple -> row.get(participantProjection)!! })
 	}
 }

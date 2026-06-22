@@ -84,28 +84,28 @@ class GetReceivedInvitationsE2ETest : AbstractIntegrationSupport({
 					body("data[0].teamId", teamB.toInt())
 					body("data[0].name", "우리팀")
 					body("data[0].invitedAt", notNullValue())
-					// INVITING 팀의 ACTIVE 구성원은 초대자 1명 → inviters[0]
-					body("data[0].inviters", hasSize<Any>(1))
-					body("data[0].inviters[0].userId", ownerB.toInt())
-					body("data[0].inviters[0].nickname", "초대자B")
-					body("data[0].inviters[0].job", "디자이너")
-					body("data[0].inviters[0].companyName", "카카오")
-					body("data[0].inviters[0].gender", Gender.MALE.name)
-					body("data[0].inviters[0].profileImageCode", "22")
-					body("data[0].inviters[0].age", 33)
+					// INVITING 팀의 ACTIVE 구성원은 초대자 1명 → participants[0]
+					body("data[0].participants", hasSize<Any>(1))
+					body("data[0].participants[0].userId", ownerB.toInt())
+					body("data[0].participants[0].nickname", "초대자B")
+					body("data[0].participants[0].job", "디자이너")
+					body("data[0].participants[0].companyName", "카카오")
+					body("data[0].participants[0].gender", Gender.MALE.name)
+					body("data[0].participants[0].profileImageCode", "22")
+					body("data[0].participants[0].age", 33)
 					// 상세 시트용 프로필 — 키·지역·자기소개는 user_details에서, 특성·관심사는 미입력이라 빈 배열
-					body("data[0].inviters[0].height", 180)
-					body("data[0].inviters[0].activityArea", "강남")
-					body("data[0].inviters[0].introduction", "잘 부탁드려요")
-					body("data[0].inviters[0].traits", hasSize<Any>(0))
-					body("data[0].inviters[0].interests", hasSize<Any>(0))
+					body("data[0].participants[0].height", 180)
+					body("data[0].participants[0].activityArea", "강남")
+					body("data[0].participants[0].introduction", "잘 부탁드려요")
+					body("data[0].participants[0].traits", hasSize<Any>(0))
+					body("data[0].participants[0].interests", hasSize<Any>(0))
 					body("data[1].teamId", teamA.toInt())
-					body("data[1].inviters[0].userId", ownerA.toInt())
-					body("data[1].inviters[0].nickname", "초대자A")
-					body("data[1].inviters[0].job", "PM")
-					body("data[1].inviters[0].companyName", "토스")
-					body("data[1].inviters[0].profileImageCode", "11")
-					body("data[1].inviters[0].age", 31)
+					body("data[1].participants[0].userId", ownerA.toInt())
+					body("data[1].participants[0].nickname", "초대자A")
+					body("data[1].participants[0].job", "PM")
+					body("data[1].participants[0].companyName", "토스")
+					body("data[1].participants[0].profileImageCode", "11")
+					body("data[1].participants[0].age", 31)
 				}
 			}
 		}
@@ -130,7 +130,7 @@ class GetReceivedInvitationsE2ETest : AbstractIntegrationSupport({
 					status(200)
 					body("data", hasSize<Any>(1))
 					body("data[0].teamId", teamX.toInt())
-					body("data[0].inviters[0].userId", ownerX.toInt())
+					body("data[0].participants[0].userId", ownerX.toInt())
 				}
 			}
 		}
