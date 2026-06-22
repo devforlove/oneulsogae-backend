@@ -14,4 +14,7 @@ enum class AlarmType(val description: String) {
 
 	/** [다대다 매칭] 매칭이 성사됨. */
 	MANY_TO_MANY_MATCHED("매칭 성사"),
+
+	/** [팀 매칭] 팀에 초대받음. */
+	TEAM_INVITATION_RECEIVED("팀 초대 받음"),
 }

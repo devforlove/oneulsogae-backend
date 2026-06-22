@@ -6,10 +6,12 @@ import com.org.meeple.core.match.MatchErrorCode
 import com.org.meeple.core.match.TeamErrorCode
 import com.org.meeple.core.match.command.application.port.`in`.InviteTeamUseCase
 import com.org.meeple.core.match.command.application.port.`in`.command.InviteTeamCommand
+import com.org.meeple.core.common.event.DomainEventPublisher
 import com.org.meeple.core.match.command.application.port.out.GetMatchUserPort
 import com.org.meeple.core.match.command.application.port.out.GetTeamPort
 import com.org.meeple.core.match.command.application.port.out.SaveTeamPort
 import com.org.meeple.core.match.command.domain.Team
+import com.org.meeple.core.match.command.domain.event.TeamInvitationSent
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 
@@ -25,6 +27,7 @@ class InviteTeamService(
 	private val getMatchUserPort: GetMatchUserPort,
 	private val getTeamPort: GetTeamPort,
 	private val saveTeamPort: SaveTeamPort,
+	private val domainEventPublisher: DomainEventPublisher,
 ) : InviteTeamUseCase {
 
 	@Transactional
@@ -44,7 +47,10 @@ class InviteTeamService(
 			name = command.name,
 			introduction = command.introduction,
 		)
-		return saveTeamPort.save(team)
+		val savedTeam: Team = saveTeamPort.save(team)
+		// 초대받은 사용자에게 보낼 후속 알람은 커밋 이후 핸들러가 처리한다.
+		domainEventPublisher.publish(TeamInvitationSent.from(savedTeam, inviterUserId = ownerId, invitedUserId = command.invitedUserId))
+		return savedTeam
 	}
 
 	// 이미 활성 팀 구성원이면 ALREADY_IN_TEAM.

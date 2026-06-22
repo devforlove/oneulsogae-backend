@@ -1,17 +1,22 @@
 package com.org.meeple.api.match
 
+import com.org.meeple.common.alarm.AlarmType
 import com.org.meeple.common.integration.AbstractIntegrationSupport
 import com.org.meeple.common.integration.expect
 import com.org.meeple.common.integration.post
 import com.org.meeple.common.match.TeamStatus
 import com.org.meeple.common.user.Gender
+import com.org.meeple.infra.alarm.command.entity.AlarmEntity
+import com.org.meeple.infra.alarm.command.entity.QAlarmEntity
 import com.org.meeple.infra.fixture.IntegrationUtil
 import com.org.meeple.infra.fixture.MatchUserEntityFixture
+import com.org.meeple.infra.fixture.UserDetailEntityFixture
 import com.org.meeple.infra.match.command.entity.QMatchUserEntity
 import com.org.meeple.infra.match.command.entity.QTeamEntity
 import com.org.meeple.infra.match.command.entity.QTeamMemberEntity
 import com.org.meeple.infra.match.command.entity.TeamEntity
 import com.org.meeple.infra.match.command.entity.TeamMemberEntity
+import com.org.meeple.infra.user.command.entity.QUserDetailEntity
 import io.kotest.matchers.collections.shouldContainExactlyInAnyOrder
 import io.kotest.matchers.shouldBe
 
@@ -65,6 +70,36 @@ class InviteTeamE2ETest : AbstractIntegrationSupport({
 				// 구성원 두 행(초대자 + 초대 대상)이 저장된다.
 				val members: List<TeamMemberEntity> = teamMembersOf(teams[0].id!!)
 				members.map { it.userId } shouldContainExactlyInAnyOrder listOf(ownerId, invitedUserId)
+			}
+		}
+
+		context("초대자가 같은 성별의 다른 사용자를 초대하면 (알람)") {
+			it("초대받은 사용자에게 '팀 초대 받음' 알람이 저장된다") {
+				val ownerId = 1001L
+				val invitedUserId = 1002L
+				persistMatchUser(ownerId, Gender.MALE)
+				persistMatchUser(invitedUserId, Gender.MALE)
+				// 초대자 프로필 — 알람 문구에 닉네임이 들어간다.
+				IntegrationUtil.persist(
+					UserDetailEntityFixture.create(userId = ownerId, gender = Gender.MALE, nickname = "철수"),
+				)
+
+				val teamId: Long = post("/teams/v1/invitation") {
+					bearer(accessTokenFor(ownerId))
+					jsonBody("""{"invitedUserId": $invitedUserId, "name": "우리팀", "introduction": "$validIntroduction"}""")
+				}.extract().path<Int>("data.teamId").toLong()
+
+				// 초대받은 사용자에게만 "팀 초대 받음" 알람.
+				val alarms: List<AlarmEntity> = alarmsOf(invitedUserId)
+				alarms.size shouldBe 1
+				val alarm: AlarmEntity = alarms[0]
+				alarm.type shouldBe AlarmType.TEAM_INVITATION_RECEIVED
+				alarm.fromUserId shouldBe ownerId
+				alarm.fromTeamId shouldBe teamId
+				alarm.description shouldBe "철수님이 회원님을 팀에 초대했어요."
+				alarm.link shouldBe "/friend/invites"
+				// 초대자 본인에게는 알람이 가지 않는다.
+				alarmsOf(ownerId).size shouldBe 0
 			}
 		}
 
@@ -254,11 +289,22 @@ class InviteTeamE2ETest : AbstractIntegrationSupport({
 	}
 
 	afterTest {
+		IntegrationUtil.deleteAll(QAlarmEntity.alarmEntity)
+		IntegrationUtil.deleteAll(QUserDetailEntity.userDetailEntity)
 		IntegrationUtil.deleteAll(QTeamMemberEntity.teamMemberEntity)
 		IntegrationUtil.deleteAll(QTeamEntity.teamEntity)
 		IntegrationUtil.deleteAll(QMatchUserEntity.matchUserEntity)
 	}
 })
+
+// 한 사용자에게 저장된 알람 전체.
+private fun alarmsOf(userId: Long): List<AlarmEntity> {
+	val alarm: QAlarmEntity = QAlarmEntity.alarmEntity
+	return IntegrationUtil.getQuery()
+		.selectFrom(alarm)
+		.where(alarm.userId.eq(userId))
+		.fetch()
+}
 
 // 저장된 팀 전체. (조회는 리포지토리 대신 IntegrationUtil.getQuery()(QueryDSL)로 수행한다)
 private fun allTeams(): List<TeamEntity> {

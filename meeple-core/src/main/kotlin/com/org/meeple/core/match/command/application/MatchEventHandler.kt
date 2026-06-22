@@ -6,6 +6,7 @@ import com.org.meeple.core.alarm.command.application.port.`in`.command.SaveAlarm
 import com.org.meeple.core.user.query.service.port.`in`.GetUserDetailUseCase
 import com.org.meeple.core.match.command.domain.event.InterestSent
 import com.org.meeple.core.match.command.domain.event.MatchAccepted
+import com.org.meeple.core.match.command.domain.event.TeamInvitationSent
 import org.springframework.stereotype.Component
 import org.springframework.transaction.annotation.Propagation
 import org.springframework.transaction.annotation.Transactional
@@ -53,6 +54,28 @@ class MatchEventHandler(
 		// 수락자의 상대(원래 관심을 보낸 쪽)에게는 수락자를, 수락자 본인에게는 그 상대를 가리키는 알람을 보낸다.
 		saveAlarmUseCase.save(matchedAlarm(recipientUserId = event.partnerOfAcceptor, matchedUserId = event.acceptedByUserId))
 		saveAlarmUseCase.save(matchedAlarm(recipientUserId = event.acceptedByUserId, matchedUserId = event.partnerOfAcceptor))
+	}
+
+	/** 팀 초대 → 초대받은 사람에게 "팀 초대 받음" 알람. (문구엔 초대자 닉네임) */
+	@TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
+	@Transactional(propagation = Propagation.REQUIRES_NEW)
+	fun onTeamInvitationSent(event: TeamInvitationSent) {
+		val inviterNickname: String? = getUserDetailUseCase.findByUserId(event.inviterUserId)?.nickname
+
+		saveAlarmUseCase.save(
+			SaveAlarmCommand(
+				userId = event.invitedUserId,
+				type = AlarmType.TEAM_INVITATION_RECEIVED,
+				title = "새로운 팀 초대",
+				description = inviterNickname
+					?.let { "${it}님이 회원님을 팀에 초대했어요." }
+					?: "회원님을 팀에 초대한 상대가 있어요.",
+				// 알람을 누르면 받은 초대 목록으로 이동한다. (프론트 라우팅에 맞춘 경로)
+				link = "/friend/invites",
+				fromUserId = event.inviterUserId,
+				fromTeamId = event.teamId,
+			),
+		)
 	}
 
 	// 매칭된 상대([matchedUserId])를 가리키는 "매칭 성사" 알람을 [recipientUserId]에게 보낼 커맨드를 만든다. (문구엔 상대 닉네임)
