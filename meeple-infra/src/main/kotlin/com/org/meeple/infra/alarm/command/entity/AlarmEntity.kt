@@ -27,9 +27,9 @@ class AlarmEntity(
 	@Column(name = "user_id", nullable = false)
 	val userId: Long,
 
-	/** 알람 유형. */
+	/** 알람 유형. 네이티브 ENUM 대신 VARCHAR로 저장해, 유형이 늘어도 DB DDL 변경이 필요 없게 한다. */
 	@Enumerated(EnumType.STRING)
-	@Column(name = "type", nullable = false, length = 30)
+	@Column(name = "type", nullable = false, columnDefinition = "varchar(50)")
 	val type: AlarmType,
 
 	/** 노출 제목. */
