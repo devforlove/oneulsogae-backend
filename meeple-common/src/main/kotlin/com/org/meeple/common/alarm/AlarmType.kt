@@ -23,4 +23,7 @@ enum class AlarmType(val description: String) {
 
 	/** [팀 매칭] 받은 초대가 취소됨(초대자가 취소 → 초대받은 사람에게). */
 	TEAM_INVITATION_CANCELED("팀 초대 취소됨"),
+
+	/** [팀 매칭] 보낸 초대가 수락됨(초대받은 사람이 수락 → 초대자에게). */
+	TEAM_INVITATION_ACCEPTED("팀 초대 수락됨"),
 }

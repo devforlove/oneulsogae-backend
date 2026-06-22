@@ -3,6 +3,7 @@ package com.org.meeple.core.match.command.application
 import com.org.meeple.common.alarm.AlarmType
 import com.org.meeple.core.alarm.command.application.port.`in`.SaveAlarmUseCase
 import com.org.meeple.core.alarm.command.application.port.`in`.command.SaveAlarmCommand
+import com.org.meeple.core.match.command.domain.event.TeamInvitationAccepted
 import com.org.meeple.core.match.command.domain.event.TeamInvitationCanceled
 import com.org.meeple.core.match.command.domain.event.TeamInvitationDeclined
 import com.org.meeple.core.match.command.domain.event.TeamInvitationSent
@@ -87,6 +88,28 @@ class TeamEventHandler(
 				// 알람을 누르면 받은 초대 목록으로 이동한다. (프론트 라우팅에 맞춘 경로)
 				link = "/friend/invites",
 				fromUserId = event.inviterUserId,
+				fromTeamId = event.teamId,
+			),
+		)
+	}
+
+	/** 초대 수락 → 초대했던 사람에게 "초대 수락됨" 알람. (문구엔 수락한 사람 닉네임) */
+	@TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
+	@Transactional(propagation = Propagation.REQUIRES_NEW)
+	fun onTeamInvitationAccepted(event: TeamInvitationAccepted) {
+		val invitedNickname: String? = getUserDetailUseCase.findByUserId(event.invitedUserId)?.nickname
+
+		saveAlarmUseCase.save(
+			SaveAlarmCommand(
+				userId = event.inviterUserId,
+				type = AlarmType.TEAM_INVITATION_ACCEPTED,
+				title = "팀 초대 수락",
+				description = invitedNickname
+					?.let { "${it}님이 팀 초대를 수락했어요." }
+					?: "보낸 팀 초대가 수락되었어요.",
+				// 알람을 누르면 팀 구성 화면으로 이동한다. (프론트 라우팅에 맞춘 경로)
+				link = "/friend/team",
+				fromUserId = event.invitedUserId,
 				fromTeamId = event.teamId,
 			),
 		)

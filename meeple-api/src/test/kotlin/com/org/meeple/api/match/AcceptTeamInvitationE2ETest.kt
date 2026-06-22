@@ -1,17 +1,22 @@
 package com.org.meeple.api.match
 
+import com.org.meeple.common.alarm.AlarmType
 import com.org.meeple.common.integration.AbstractIntegrationSupport
 import com.org.meeple.common.integration.expect
 import com.org.meeple.common.integration.post
 import com.org.meeple.common.match.TeamMemberStatus
 import com.org.meeple.common.match.TeamStatus
 import com.org.meeple.common.user.Gender
+import com.org.meeple.infra.alarm.command.entity.AlarmEntity
+import com.org.meeple.infra.alarm.command.entity.QAlarmEntity
 import com.org.meeple.infra.fixture.IntegrationUtil
 import com.org.meeple.infra.fixture.MatchUserEntityFixture
+import com.org.meeple.infra.fixture.UserDetailEntityFixture
 import com.org.meeple.infra.match.command.entity.QMatchUserEntity
 import com.org.meeple.infra.match.command.entity.QTeamEntity
 import com.org.meeple.infra.match.command.entity.QTeamMemberEntity
 import com.org.meeple.infra.match.command.entity.TeamMemberEntity
+import com.org.meeple.infra.user.command.entity.QUserDetailEntity
 import io.kotest.matchers.shouldBe
 
 /**
@@ -59,6 +64,38 @@ class AcceptTeamInvitationE2ETest : AbstractIntegrationSupport({
 
 				val members: List<TeamMemberEntity> = teamMembersOf(teamId)
 				members.all { it.status == TeamMemberStatus.ACTIVE } shouldBe true
+			}
+		}
+
+		context("초대받은 사용자가 수락하면 (알람)") {
+			it("초대했던 사람에게만 '초대 수락됨' 알람이 저장된다 (200)") {
+				val ownerId = 2009L
+				val invitedUserId = 2010L
+				val teamId: Long = inviteTeam(ownerId, invitedUserId)
+				// 초대 단계에서 생긴 '초대 받음' 알람은 이 테스트의 관심사가 아니므로 초기화한다.
+				IntegrationUtil.deleteAll(QAlarmEntity.alarmEntity)
+				// 수락 알람 문구엔 수락한 사람(초대받은 사람) 닉네임이 들어간다.
+				IntegrationUtil.persist(
+					UserDetailEntityFixture.create(userId = invitedUserId, gender = Gender.MALE, nickname = "영희"),
+				)
+
+				post("/teams/v1/$teamId/acceptance") {
+					bearer(accessTokenFor(invitedUserId))
+				} expect {
+					status(200)
+					body("success", true)
+				}
+
+				// 초대자에게만 수락 알람.
+				val alarms: List<AlarmEntity> = alarmsOf(ownerId)
+				alarms.size shouldBe 1
+				val alarm: AlarmEntity = alarms[0]
+				alarm.type shouldBe AlarmType.TEAM_INVITATION_ACCEPTED
+				alarm.fromUserId shouldBe invitedUserId
+				alarm.fromTeamId shouldBe teamId
+				alarm.description shouldBe "영희님이 팀 초대를 수락했어요."
+				alarm.link shouldBe "/friend/team"
+				alarmsOf(invitedUserId).size shouldBe 0
 			}
 		}
 
@@ -117,6 +154,8 @@ class AcceptTeamInvitationE2ETest : AbstractIntegrationSupport({
 	}
 
 	afterTest {
+		IntegrationUtil.deleteAll(QAlarmEntity.alarmEntity)
+		IntegrationUtil.deleteAll(QUserDetailEntity.userDetailEntity)
 		IntegrationUtil.deleteAll(QTeamMemberEntity.teamMemberEntity)
 		IntegrationUtil.deleteAll(QTeamEntity.teamEntity)
 		IntegrationUtil.deleteAll(QMatchUserEntity.matchUserEntity)
@@ -126,4 +165,10 @@ class AcceptTeamInvitationE2ETest : AbstractIntegrationSupport({
 private fun teamMembersOf(teamId: Long): List<TeamMemberEntity> {
 	val member: QTeamMemberEntity = QTeamMemberEntity.teamMemberEntity
 	return IntegrationUtil.getQuery().selectFrom(member).where(member.teamId.eq(teamId)).fetch()
+}
+
+// 한 사용자에게 저장된 알람 전체.
+private fun alarmsOf(userId: Long): List<AlarmEntity> {
+	val alarm: QAlarmEntity = QAlarmEntity.alarmEntity
+	return IntegrationUtil.getQuery().selectFrom(alarm).where(alarm.userId.eq(userId)).fetch()
 }
