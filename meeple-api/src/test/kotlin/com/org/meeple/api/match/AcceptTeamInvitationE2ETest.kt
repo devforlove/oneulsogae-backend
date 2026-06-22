@@ -123,6 +123,34 @@ class AcceptTeamInvitationE2ETest : AbstractIntegrationSupport({
 			}
 		}
 
+		context("수락하는 사용자가 owner로 만든 다른 INVITING 팀이 있을 때 수락하면") {
+			it("내가 owner로 만든 INVITING 팀도 함께 비활성화된다 (200)") {
+				val userX = 2011L
+				val userY = 2012L
+				val userZ = 2013L
+				persistMatchUser(userX, Gender.MALE)
+				persistMatchUser(userY, Gender.MALE)
+				persistMatchUser(userZ, Gender.MALE)
+
+				// userZ가 userX를 초대(T2, userX=INVITED). userX가 ACTIVE 소속이 되기 전에 초대해 둔다.
+				val acceptedTeamId: Long = invite(userZ, userX)
+				// userX가 userY를 초대해 자기 팀 생성(T1, userX=ACTIVE owner).
+				val myInvitingTeamId: Long = invite(userX, userY)
+
+				// userX가 T2 초대를 수락.
+				post("/teams/v1/$acceptedTeamId/acceptance") {
+					bearer(accessTokenFor(userX))
+				} expect {
+					status(200)
+					body("data.status", TeamStatus.ACTIVE.name)
+				}
+
+				teamMembersOf(acceptedTeamId).all { it.status == TeamMemberStatus.ACTIVE } shouldBe true
+				// userX가 owner로 만든 INVITING 팀(T1)도 비활성화되어 활성 조회에서 사라진다.
+				teamMembersOf(myInvitingTeamId).isEmpty() shouldBe true
+			}
+		}
+
 		context("초대받지 않은(이미 ACTIVE인) owner가 수락하면") {
 			it("400(TEAM-007)을 반환한다") {
 				val ownerId = 2003L

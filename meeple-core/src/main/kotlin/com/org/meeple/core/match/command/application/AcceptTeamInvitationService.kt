@@ -45,12 +45,13 @@ class AcceptTeamInvitationService(
 	}
 
 	/**
-	 * [userId]가 받은 초대 중 방금 수락한 [acceptedTeamId] 외의 INVITING 팀들을 모두 비활성화한다.
-	 * 각 팀은 [Team.withdrawInvitation](거절)과 동일하게 DEACTIVATED + 소프트 삭제된다.
+	 * [userId]가 구성원인 진행 중(INVITING) 팀 중 방금 수락한 [acceptedTeamId] 외의 팀들을 모두 비활성화한다.
+	 * 받은 초대(INVITED)뿐 아니라 **내가 owner로 만든 INVITING 팀**도 함께 정리한다. ("한 팀만" 보장 — 수락 = 나머지 진행 중 초대 자동 정리)
+	 * 각 팀은 [Team.withdrawInvitation](거절·취소)과 동일하게 DEACTIVATED + 소프트 삭제된다.
 	 */
 	private fun deactivateOtherInvitations(userId: Long, acceptedTeamId: Long) {
 		val now: LocalDateTime = timeGenerator.now()
-		getTeamPort.findInvitedTeams(userId)
+		getTeamPort.findInvitingTeamsByMember(userId)
 			.filter { other: Team -> other.id != acceptedTeamId }
 			.forEach { other: Team -> saveTeamPort.save(other.withdrawInvitation(userId, now)) }
 	}

@@ -1,6 +1,7 @@
 package com.org.meeple.infra.match.command.adapter
 
 import com.org.meeple.common.match.TeamMemberStatus
+import com.org.meeple.common.match.TeamStatus
 import com.org.meeple.core.match.command.application.port.out.GetTeamPort
 import com.org.meeple.core.match.command.application.port.out.SaveTeamPort
 import com.org.meeple.core.match.command.domain.Team
@@ -51,8 +52,12 @@ class TeamAdapter(
 	override fun existsActiveTeamMember(userId: Long): Boolean =
 		teamMemberJpaRepository.existsByUserIdAndStatus(userId, TeamMemberStatus.ACTIVE)
 
-	/** userId가 INVITED인 team_member 행들을 찾아 각 팀 애그리거트로 조립한다. (받은 초대 목록 — INVITED는 보통 소수) */
-	override fun findInvitedTeams(userId: Long): List<Team> =
-		teamMemberJpaRepository.findByUserIdAndStatus(userId, TeamMemberStatus.INVITED)
+	/**
+	 * userId의 (삭제되지 않은) team_member 행들을 상태 무관으로 찾아 각 팀 애그리거트로 조립한 뒤 INVITING 팀만 남긴다.
+	 * 받은 초대(INVITED)뿐 아니라 내가 만든 초대(owner=ACTIVE) 팀도 포함되며, 이미 결성(ACTIVE)된 팀은 제외된다.
+	 */
+	override fun findInvitingTeamsByMember(userId: Long): List<Team> =
+		teamMemberJpaRepository.findByUserId(userId)
 			.mapNotNull { member: TeamMemberEntity -> findById(member.teamId) }
+			.filter { team: Team -> team.status == TeamStatus.INVITING }
 }

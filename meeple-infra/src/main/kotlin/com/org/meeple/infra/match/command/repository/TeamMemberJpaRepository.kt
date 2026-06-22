@@ -19,4 +19,7 @@ interface TeamMemberJpaRepository : JpaRepository<TeamMemberEntity, Long> {
 
 	/** [userId]가 [status]인 팀 구성원 행 전체. (받은 초대 목록 조회용) */
 	fun findByUserIdAndStatus(userId: Long, status: TeamMemberStatus): List<TeamMemberEntity>
+
+	/** [userId]의 (삭제되지 않은) 팀 구성원 행 전체. 상태 무관 — INVITED(받은 초대)·ACTIVE(내가 만든 팀) 모두 포함. */
+	fun findByUserId(userId: Long): List<TeamMemberEntity>
 }
