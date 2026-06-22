@@ -10,4 +10,7 @@ interface GetReceivedInvitationsDao {
 
 	/** [userId]가 INVITED 구성원인 INVITING 팀들을 그 팀의 ACTIVE 구성원 목록과 함께 최신순으로 반환한다. */
 	fun findInvited(userId: Long): List<ReceivedInvitation>
+
+	/** [userId]가 INVITED 구성원인 INVITING 팀 개수를 센다. (미팅탭의 받은 초대 배지용 — 목록·프로필 조인 없이 COUNT만) */
+	fun countInvited(userId: Long): Long
 }

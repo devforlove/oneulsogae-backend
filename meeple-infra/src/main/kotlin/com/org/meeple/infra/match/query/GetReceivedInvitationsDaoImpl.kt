@@ -65,6 +65,23 @@ class GetReceivedInvitationsDaoImpl(
 		}
 	}
 
+	override fun countInvited(userId: Long): Long {
+		val me: QTeamMemberEntity = QTeamMemberEntity("me")
+		val team: QTeamEntity = QTeamEntity.teamEntity
+
+		// 내가 INVITED인 INVITING 팀 개수만 센다. (목록·구성원 프로필 조인 없이 COUNT — team_members idx_user_id seek + status 필터)
+		return queryFactory
+			.select(me.count())
+			.from(me)
+			.join(team).on(team.id.eq(me.teamId))
+			.where(
+				me.userId.eq(userId),
+				me.status.eq(TeamMemberStatus.INVITED),
+				team.status.eq(TeamStatus.INVITING),
+			)
+			.fetchOne() ?: 0L
+	}
+
 	// ② 주어진 팀들의 ACTIVE 구성원 프로필을 한 번에 조회해 teamId → 구성원(생성 순) 맵으로 반환한다.
 	private fun findActiveParticipantsByTeamIds(teamIds: List<Long>): Map<Long, List<ReceivedInvitationParticipant>> {
 		val participant: QTeamMemberEntity = QTeamMemberEntity("participant")
