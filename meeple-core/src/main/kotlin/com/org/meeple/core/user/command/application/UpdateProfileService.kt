@@ -2,6 +2,7 @@ package com.org.meeple.core.user.command.application
 
 import com.org.meeple.core.common.error.BusinessException
 import com.org.meeple.core.common.event.DomainEventPublisher
+import com.org.meeple.core.region.query.service.port.`in`.GetRegionUseCase
 import com.org.meeple.core.user.UserErrorCode
 import com.org.meeple.core.user.command.application.port.`in`.UpdateProfileUseCase
 import com.org.meeple.core.user.command.application.port.`in`.command.UpdateProfileCommand
@@ -21,6 +22,7 @@ import org.springframework.transaction.annotation.Transactional
 class UpdateProfileService(
 	private val getUserDetailPort: GetUserDetailPort,
 	private val saveUserDetailPort: SaveUserDetailPort,
+	private val getRegionUseCase: GetRegionUseCase,
 	private val domainEventPublisher: DomainEventPublisher,
 ) : UpdateProfileUseCase {
 
@@ -29,11 +31,14 @@ class UpdateProfileService(
 		val existing: UserDetail = getUserDetailPort.findByUserId(userId)
 			?: throw BusinessException(UserErrorCode.USER_DETAIL_NOT_FOUND, "사용자 프로필을 찾을 수 없습니다: $userId")
 
+		// 활동지역은 regionId로 받아 region 도메인에서 활동지역 문자열로 해석한다. (없는 id면 REGION_NOT_FOUND)
+		val activityArea: String = getRegionUseCase.getById(command.regionId).toActivityArea()
+
 		val updated: UserDetail = existing.editProfile(
 			nickname = command.nickname,
 			profileImageCode = command.profileImageCode,
 			job = command.job,
-			activityArea = command.activityArea,
+			activityArea = activityArea,
 			introduction = command.introduction,
 			traits = command.traits,
 			interests = command.interests,

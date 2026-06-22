@@ -45,9 +45,8 @@ data class UpdateUserDetailRequest(
 	@field:Size(max = 20, message = "직업은 20자 이하여야 합니다.")
 	val job: String? = null,
 
-	@field:NotBlank(message = "활동 지역은 필수입니다.")
-	@field:Size(max = 500, message = "활동 지역은 500자 이하여야 합니다.")
-	val activityArea: String? = null,
+	@field:NotNull(message = "활동 지역은 필수입니다.")
+	val regionId: Long? = null,
 
 	@field:NotBlank(message = "자기소개는 필수입니다.")
 	@field:Size(max = 1000, message = "자기소개는 1000자 이하여야 합니다.")
@@ -91,7 +90,7 @@ data class UpdateUserDetailRequest(
 			gender = gender!!,
 			phoneNumber = phoneNumber!!,
 			job = job!!,
-			activityArea = activityArea!!,
+			regionId = regionId!!,
 			introduction = introduction!!,
 			traits = traits,
 			interests = interests,

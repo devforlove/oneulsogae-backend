@@ -24,4 +24,13 @@ class GetRegionsDaoImpl(
 			.orderBy(region.sido.asc(), region.sigungu.asc())
 			.fetch()
 	}
+
+	override fun findById(id: Long): RegionView? {
+		val region: QRegionEntity = QRegionEntity.regionEntity
+		return queryFactory
+			.select(Projections.constructor(RegionView::class.java, region.id, region.sido, region.sigungu))
+			.from(region)
+			.where(region.id.eq(id))
+			.fetchOne()
+	}
 }

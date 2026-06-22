@@ -6,6 +6,7 @@ import com.org.meeple.common.integration.post
 import com.org.meeple.common.user.Gender
 import com.org.meeple.common.user.UserStatus
 import com.org.meeple.infra.fixture.IntegrationUtil
+import com.org.meeple.infra.fixture.RegionEntityFixture
 import com.org.meeple.infra.fixture.UserDetailEntityFixture
 import com.org.meeple.infra.fixture.UserEntityFixture
 import com.org.meeple.infra.user.command.entity.UserDetailEntity
@@ -28,10 +29,13 @@ class RequestCompanyEmailVerificationE2ETest : AbstractIntegrationSupport({
 					UserEntityFixture.create(status = UserStatus.ONBOARDING),
 				).id!!
 				IntegrationUtil.persist(UserDetailEntityFixture.create(userId = userId))
+				val regionId: Long = IntegrationUtil.persist(
+					RegionEntityFixture.create(sido = "서울특별시", sigungu = "강남구"),
+				).id!!
 
 				post("/users/v1/onboarding/company-email/verifications") {
 					bearer(accessTokenFor(userId))
-					jsonBody(fullProfileBody(companyEmail = "user@meeple.com", activityArea = "서울특별시 강남구"))
+					jsonBody(fullProfileBody(companyEmail = "user@meeple.com", regionId = regionId))
 				} expect {
 					status(200)
 					body("success", true)
@@ -54,10 +58,13 @@ class RequestCompanyEmailVerificationE2ETest : AbstractIntegrationSupport({
 				val userId: Long = IntegrationUtil.persist(
 					UserEntityFixture.create(status = UserStatus.ONBOARDING),
 				).id!!
+				val regionId: Long = IntegrationUtil.persist(
+					RegionEntityFixture.create(sido = "서울특별시", sigungu = "강남구"),
+				).id!!
 
 				post("/users/v1/onboarding/company-email/verifications") {
 					bearer(accessTokenFor(userId))
-					jsonBody(fullProfileBody(companyEmail = "user@meeple.com", activityArea = "서울특별시 강남구"))
+					jsonBody(fullProfileBody(companyEmail = "user@meeple.com", regionId = regionId))
 				} expect {
 					status(200)
 					body("success", true)
@@ -79,7 +86,7 @@ class RequestCompanyEmailVerificationE2ETest : AbstractIntegrationSupport({
 			it("도메인에 닿기 전 검증 실패로 400을 반환한다") {
 				post("/users/v1/onboarding/company-email/verifications") {
 					bearer(accessTokenFor(1L))
-					jsonBody(fullProfileBody(companyEmail = "user@meeple.com", activityArea = "서울특별시 강남구", gender = null))
+					jsonBody(fullProfileBody(companyEmail = "user@meeple.com", regionId = 1L, gender = null))
 				} expect {
 					status(400)
 					body("success", false)
@@ -97,7 +104,7 @@ class RequestCompanyEmailVerificationE2ETest : AbstractIntegrationSupport({
 /** 모든 필수 필드를 채운 온보딩 프로필 입력 JSON. (gender=null로 필수 검증 실패 케이스를 만들 수 있다) */
 private fun fullProfileBody(
 	companyEmail: String,
-	activityArea: String,
+	regionId: Long,
 	gender: Gender? = Gender.MALE,
 ): String {
 	val genderJson: String = gender?.let { "\"${it.name}\"" } ?: "null"
@@ -109,7 +116,7 @@ private fun fullProfileBody(
 		  "gender": $genderJson,
 		  "phoneNumber": "010-1234-5678",
 		  "job": "개발자",
-		  "activityArea": "$activityArea",
+		  "regionId": $regionId,
 		  "introduction": "안녕하세요 잘 부탁드립니다.",
 		  "traits": ["성실함"],
 		  "interests": ["영화"],

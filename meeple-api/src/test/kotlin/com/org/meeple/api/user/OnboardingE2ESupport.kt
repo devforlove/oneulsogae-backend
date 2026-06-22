@@ -4,6 +4,7 @@ import com.org.meeple.common.user.UserStatus
 import com.org.meeple.infra.coin.command.entity.QCoinBalanceEntity
 import com.org.meeple.infra.fixture.IntegrationUtil
 import com.org.meeple.infra.match.command.entity.QMatchUserEntity
+import com.org.meeple.infra.region.entity.QRegionEntity
 import com.org.meeple.infra.user.command.entity.QUserDetailEntity
 import com.org.meeple.infra.user.command.entity.UserDetailEntity
 import com.org.meeple.infra.user.command.entity.QCompanyEmailVerificationEntity
@@ -26,6 +27,8 @@ internal fun cleanupOnboarding() {
 	IntegrationUtil.deleteAll(QMatchUserEntity.matchUserEntity)
 	IntegrationUtil.deleteAll(QUserDetailEntity.userDetailEntity)
 	IntegrationUtil.deleteAll(QUserEntity.userEntity)
+	// 온보딩 입력의 활동지역은 regionId로 받으므로 지역 참조 데이터도 함께 정리한다.
+	IntegrationUtil.deleteAll(QRegionEntity.regionEntity)
 }
 
 /** 해당 사용자의 코인 잔액 행 개수. (온보딩 시 잔액 행이 준비되는지 확인용) */

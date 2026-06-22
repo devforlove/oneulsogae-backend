@@ -12,7 +12,7 @@ import java.time.LocalDate
  * 프로필에서 사용자가 직접 편집 가능한 필드 묶음.
  * 식별/소유(id, userId), 서버 배정값(profileImageCode), 회사명(companyName)은 제외한다.
  * 온보딩 프로필 입력은 모든 필드가 필수이며, 진입점(요청 DTO의 Bean Validation)에서 null·빈 값을 거른 뒤 채워진다.
- * 따라서 이 명령의 필드는 모두 non-null이다. (단, 활동지역의 권역 인식은 도메인에서 별도로 검증한다)
+ * 따라서 이 명령의 필드는 모두 non-null이다. (활동지역은 regionId로 받고, 서비스가 region 도메인에서 활동지역 문자열로 해석한다)
  */
 data class UpdateUserDetailCommand(
 	val nickname: String,
@@ -21,7 +21,7 @@ data class UpdateUserDetailCommand(
 	val gender: Gender,
 	val phoneNumber: String,
 	val job: String,
-	val activityArea: String,
+	val regionId: Long,
 	val introduction: String,
 	val traits: List<String>,
 	val interests: List<String>,

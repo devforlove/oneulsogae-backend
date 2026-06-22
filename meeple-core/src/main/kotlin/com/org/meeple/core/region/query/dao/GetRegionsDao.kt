@@ -9,4 +9,7 @@ import com.org.meeple.core.region.query.dto.RegionView
 interface GetRegionsDao {
 
 	fun findAll(): List<RegionView>
+
+	/** id로 단건 조회한다. 없으면 null. (활동지역 선택 → 좌표/지역명 lookup) */
+	fun findById(id: Long): RegionView?
 }

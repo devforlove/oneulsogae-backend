@@ -2,6 +2,7 @@ package com.org.meeple.core.user.command.application
 
 import com.org.meeple.core.common.event.DomainEventPublisher
 import com.org.meeple.core.common.time.TimeGenerator
+import com.org.meeple.core.region.query.service.port.`in`.GetRegionUseCase
 import com.org.meeple.core.user.command.application.port.`in`.UpdateUserDetailUseCase
 import com.org.meeple.core.user.command.application.port.`in`.command.UpdateUserDetailCommand
 import com.org.meeple.core.user.command.application.port.out.GetUserDetailPort
@@ -21,6 +22,7 @@ import org.springframework.transaction.annotation.Transactional
 class UpdateUserDetailService(
 	private val getUserDetailPort: GetUserDetailPort,
 	private val saveUserDetailPort: SaveUserDetailPort,
+	private val getRegionUseCase: GetRegionUseCase,
 	private val domainEventPublisher: DomainEventPublisher,
 	private val timeGenerator: TimeGenerator,
 ) : UpdateUserDetailUseCase {
@@ -31,6 +33,9 @@ class UpdateUserDetailService(
 		val existing: UserDetail = getUserDetailPort.findByUserId(userId)
 			?: UserDetail.create(userId)
 
+		// 활동지역은 regionId로 받아 region 도메인에서 활동지역 문자열로 해석한다. (없는 id면 REGION_NOT_FOUND)
+		val activityArea: String = getRegionUseCase.getById(command.regionId).toActivityArea()
+
 		val updated: UserDetail = existing.initProfile(
 			nickname = command.nickname,
 			birthday = command.birthday,
@@ -38,7 +43,7 @@ class UpdateUserDetailService(
 			gender = command.gender,
 			phoneNumber = command.phoneNumber,
 			job = command.job,
-			activityArea = command.activityArea,
+			activityArea = activityArea,
 			introduction = command.introduction,
 			traits = command.traits,
 			interests = command.interests,
