@@ -7,6 +7,7 @@ import com.org.meeple.auth.AuthUser
 import com.org.meeple.auth.LoginUser
 import com.org.meeple.core.common.response.ApiResponse
 import com.org.meeple.core.common.time.TimeGenerator
+import com.org.meeple.core.region.query.service.port.`in`.GetRegionsUseCase
 import com.org.meeple.core.user.query.service.port.`in`.GetUserDetailUseCase
 import com.org.meeple.core.user.command.application.port.`in`.UpdateProfileUseCase
 import io.swagger.v3.oas.annotations.Operation
@@ -24,13 +25,15 @@ import org.springframework.web.bind.annotation.RestController
 class UserProfileController(
 	private val getUserDetailUseCase: GetUserDetailUseCase,
 	private val updateProfileUseCase: UpdateProfileUseCase,
+	private val getRegionsUseCase: GetRegionsUseCase,
 	private val timeGenerator: TimeGenerator,
 ) {
 
-	/** 온보딩에 필요한 enum 타입별 선택 옵션 목록을 모두 내려준다. */
-	@Operation(summary = "프로필 선택 옵션 조회", description = "온보딩에 필요한 enum 타입별 선택 옵션 목록을 모두 내려준다.")
+	/** 온보딩에 필요한 enum 타입별 선택 옵션 목록과 활동지역 전체 목록을 내려준다. */
+	@Operation(summary = "프로필 선택 옵션 조회", description = "온보딩에 필요한 enum 타입별 선택 옵션 목록과 활동지역(시/도+시/군/구) 전체 목록을 내려준다.")
 	@GetMapping("/options")
-	fun getOptions(): ApiResponse<ProfileOptionsResponse> = ApiResponse.success(ProfileOptionsResponse.of())
+	fun getOptions(): ApiResponse<ProfileOptionsResponse> =
+		ApiResponse.success(ProfileOptionsResponse.of(getRegionsUseCase.getAll()))
 
 	/** 현재 로그인 사용자의 프로필 정보를 조회한다. */
 	@Operation(summary = "내 프로필 조회", description = "현재 로그인 사용자의 프로필 정보를 조회한다.")
