@@ -17,8 +17,8 @@ import org.springframework.stereotype.Component
 /**
  * [GetSentInvitationDao]의 QueryDSL 구현체. (조회 전용)
  * ① 요청자가 ACTIVE 구성원(=초대자)인 INVITING·ACTIVE 팀 헤더를 team.id desc로 1건 조회(team_members idx_user_id seek → status 필터 + teams PK 조인),
- * ② 그 팀의 구성원 중 요청자 본인을 제외한 상대를 표시용 프로필과 함께 조회해 [SentInvitation]으로 조립한다.
- *    (INVITING이면 초대 대상(INVITED), ACTIVE면 합류한 구성원(ACTIVE)이 노출된다)
+ * ② 그 팀의 구성원 전원을 표시용 프로필과 함께 조회해 [SentInvitation]으로 조립한다.
+ *    (요청자 본인(ACTIVE)도 포함한다. INVITING이면 초대자(ACTIVE)+초대 대상(INVITED), ACTIVE면 전원 ACTIVE)
  *    (닉네임·프로필이미지는 match_user, 직업·회사명은 user_details 조인. 성별은 team_members에 보관된 값을 쓴다)
  * [org.hibernate.annotations.SQLRestriction]이 소프트 삭제(철회·해체)된 행을 자동 제외한다. (신규 인덱스 불필요)
  */
@@ -66,11 +66,7 @@ class GetSentInvitationDaoImpl(
 			.from(teamMember)
 			.join(matchUser).on(matchUser.userId.eq(teamMember.userId))
 			.join(detail).on(detail.userId.eq(teamMember.userId))
-			.where(
-				teamMember.teamId.eq(teamId),
-				// 요청자 본인은 제외하고 상대(INVITING이면 초대 대상, ACTIVE면 합류한 구성원)만 노출한다.
-				teamMember.userId.ne(userId),
-			)
+			.where(teamMember.teamId.eq(teamId))
 			.orderBy(teamMember.userId.asc())
 			.fetch()
 
