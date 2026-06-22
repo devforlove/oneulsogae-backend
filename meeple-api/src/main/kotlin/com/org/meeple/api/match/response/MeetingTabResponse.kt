@@ -1,5 +1,6 @@
 package com.org.meeple.api.match.response
 
+import com.org.meeple.common.user.Gender
 import com.org.meeple.core.match.query.dto.MeetingTab
 import com.org.meeple.core.match.query.dto.MyActiveTeam
 import java.time.LocalDate
@@ -16,9 +17,10 @@ data class MeetingTabResponse(
 	val myActiveTeam: MyActiveTeamResponse?,
 ) {
 
-	/** 내 결성(ACTIVE) 팀의 표시 데이터. 내/친구 프로필 이미지 코드. */
+	/** 내 결성(ACTIVE) 팀의 표시 데이터. 팀 성별과 내/친구 프로필 이미지 코드. */
 	data class MyActiveTeamResponse(
 		val teamId: Long,
+		val gender: Gender,
 		val myProfileImageCode: String,
 		val partnerProfileImageCode: String,
 	)
@@ -31,6 +33,7 @@ data class MeetingTabResponse(
 				myActiveTeam = meetingTab.myActiveTeam?.let { team: MyActiveTeam ->
 					MyActiveTeamResponse(
 						teamId = team.teamId,
+						gender = team.gender,
 						myProfileImageCode = team.myProfileImageCode,
 						partnerProfileImageCode = team.partnerProfileImageCode,
 					)

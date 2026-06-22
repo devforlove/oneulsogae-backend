@@ -1,5 +1,7 @@
 package com.org.meeple.core.match.query.dto
 
+import com.org.meeple.common.user.Gender
+
 /**
  * 미팅탭 화면 집계(read model). 세 가지를 독립적으로 조회해 한 화면에 모은다.
  * - [recommendedTeam]: 팀 없는 솔로 유저에게 추천된 결성(ACTIVE) 팀. 추천이 없으면 null.
@@ -19,6 +21,7 @@ data class MeetingTab(
  */
 data class MyActiveTeam(
 	val teamId: Long,
+	val gender: Gender,
 	val myProfileImageCode: String,
 	val partnerProfileImageCode: String,
 )

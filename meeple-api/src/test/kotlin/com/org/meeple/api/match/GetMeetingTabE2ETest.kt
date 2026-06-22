@@ -103,6 +103,7 @@ class GetMeetingTabE2ETest : AbstractIntegrationSupport({
 				} expect {
 					status(200)
 					body("data.myActiveTeam.teamId", teamId.toInt())
+					body("data.myActiveTeam.gender", "MALE")
 					body("data.myActiveTeam.myProfileImageCode", "3")
 					body("data.myActiveTeam.partnerProfileImageCode", "7")
 					body("data.recommendedTeam", nullValue())
