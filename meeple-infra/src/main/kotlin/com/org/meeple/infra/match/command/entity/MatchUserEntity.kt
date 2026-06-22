@@ -43,6 +43,9 @@ class MatchUserEntity(
 	@Column(name = "gender", nullable = false, columnDefinition = "varchar(50)")
 	var gender: Gender,
 
+	@Column(name = "region_id", nullable = false)
+	var regionId: Long,
+
 	@Column(name = "region_code", nullable = false)
 	var regionCode: Int,
 

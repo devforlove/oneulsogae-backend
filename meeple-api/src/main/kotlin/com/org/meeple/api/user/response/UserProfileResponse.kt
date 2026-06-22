@@ -20,6 +20,9 @@ data class UserProfileResponse(
 	val gender: Gender?,
 	val phoneNumber: String?,
 	val job: String?,
+	/** 활동지역 id(regions FK). 편집 화면에서 현재 지역 선택값으로 쓴다. */
+	val regionId: Long?,
+	/** 활동지역 표시 문자열(시/도 시/군/구). 조회(GET) 시 regions join으로 채워지고, 수정(PUT) 응답에선 null. */
 	val activityArea: String?,
 	val introduction: String?,
 	val traits: List<String>,
@@ -43,6 +46,7 @@ data class UserProfileResponse(
 				gender = detail.gender,
 				phoneNumber = detail.phoneNumber,
 				job = detail.job,
+				regionId = detail.regionId,
 				activityArea = detail.activityArea,
 				introduction = detail.introduction,
 				traits = detail.traits,
@@ -56,7 +60,7 @@ data class UserProfileResponse(
 				bodyType = detail.bodyType,
 			)
 
-		/** 명령(command) 결과 도메인 매핑. (프로필 수정 후 갱신된 [UserDetail] 렌더링) */
+		/** 명령(command) 결과 도메인 매핑. (프로필 수정 후 갱신된 [UserDetail] 렌더링 — 표시용 활동지역은 join이 없어 null, regionId만 싣는다) */
 		fun of(detail: UserDetail, today: LocalDate): UserProfileResponse =
 			UserProfileResponse(
 				nickname = detail.nickname,
@@ -66,7 +70,8 @@ data class UserProfileResponse(
 				gender = detail.gender,
 				phoneNumber = detail.phoneNumber,
 				job = detail.job,
-				activityArea = detail.activityArea,
+				regionId = detail.regionId,
+				activityArea = null,
 				introduction = detail.introduction,
 				traits = detail.traits,
 				interests = detail.interests,

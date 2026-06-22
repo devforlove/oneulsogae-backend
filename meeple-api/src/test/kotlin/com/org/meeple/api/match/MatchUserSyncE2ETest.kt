@@ -49,6 +49,7 @@ class MatchUserSyncE2ETest : AbstractIntegrationSupport({
 						profileImageCode = "1",
 						gender = Gender.MALE,
 						birthday = LocalDate.of(1995, 1, 1),
+						regionId = 7L,
 						regionCode = 1,
 						maritalStatus = MaritalStatus.SINGLE,
 					),

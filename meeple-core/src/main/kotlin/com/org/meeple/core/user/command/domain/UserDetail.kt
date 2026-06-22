@@ -4,7 +4,6 @@ import com.org.meeple.common.user.BodyType
 import com.org.meeple.common.user.DrinkingStatus
 import com.org.meeple.common.user.Gender
 import com.org.meeple.common.user.MaritalStatus
-import com.org.meeple.common.user.Region
 import com.org.meeple.common.user.Religion
 import com.org.meeple.common.user.SmokingStatus
 import com.org.meeple.common.user.UserStatus
@@ -32,7 +31,9 @@ data class UserDetail(
 	val gender: Gender? = null,
 	val phoneNumber: String? = null,
 	val job: String? = null,
-	val activityArea: String? = null,
+	/** 활동지역 id(regions FK). 서비스가 regionId로 받아 채운다. (표시용 지역명은 응답 시 regions join으로 내려준다) */
+	val regionId: Long? = null,
+	/** 활동지역 권역 코드(1~5). 서비스가 region에서 산출해 채운다. (매칭 풀 키) */
 	val regionCode: Int? = null,
 	val introduction: String? = null,
 	val traits: List<String> = emptyList(),
@@ -52,7 +53,7 @@ data class UserDetail(
 
 	/**
 	 * 온보딩 입력값으로 편집 가능 필드와 회사 이메일을 교체한다.
-	 * - regionCode는 [activityArea]로부터 서버가 산출한다.
+	 * - regionId/regionCode는 서비스가 region 도메인에서 해석해 넘긴다. (regionId=활동지역 FK, regionCode=권역 1~5)
 	 * - profileImageCode는 아직 없으면 서버가 랜덤 배정하고, 이미 있으면 기존 값을 유지한다.
 	 * - id/userId/companyName은 보존한다. (companyName은 회사 이메일 인증 완료 시점에만 채워진다)
 	 * - 정식 가입(ACTIVE)으로 이어지는 입력이므로, 매칭 풀에 필요한 성별·활동권역을 [validateMatchProfile]로 강제한다.
@@ -64,7 +65,8 @@ data class UserDetail(
 		gender: Gender?,
 		phoneNumber: String?,
 		job: String?,
-		activityArea: String?,
+		regionId: Long?,
+		regionCode: Int?,
 		introduction: String?,
 		traits: List<String>,
 		interests: List<String>,
@@ -83,8 +85,8 @@ data class UserDetail(
 			gender = gender,
 			phoneNumber = phoneNumber,
 			job = job,
-			activityArea = activityArea,
-			regionCode = Region.resolveAreaCode(activityArea),
+			regionId = regionId,
+			regionCode = regionCode,
 			introduction = introduction,
 			traits = traits,
 			interests = interests,
@@ -102,7 +104,7 @@ data class UserDetail(
 
 	/**
 	 * 가입 이후 사용자가 자유롭게 바꿀 수 있는 프로필 필드만 교체한다.
-	 * - regionCode는 [activityArea]로부터 서버가 산출한다.
+	 * - regionId/regionCode는 서비스가 region 도메인에서 해석해 넘긴다.
 	 * - profileImageCode는 사용자가 선택한 값으로 교체한다.
 	 * - 나이/성별/키/휴대폰번호/회사이메일/회사명과 id/userId는 보존한다.
 	 * - 편집으로 활동권역이 비워지지 않도록 [validateMatchProfile]로 성별·활동권역을 강제한다. (성별은 보존되므로 사실상 권역을 지킨다)
@@ -111,7 +113,8 @@ data class UserDetail(
 		nickname: String?,
 		profileImageCode: String?,
 		job: String?,
-		activityArea: String?,
+		regionId: Long?,
+		regionCode: Int?,
 		introduction: String?,
 		traits: List<String>,
 		interests: List<String>,
@@ -125,8 +128,8 @@ data class UserDetail(
 			nickname = nickname,
 			profileImageCode = profileImageCode,
 			job = job,
-			activityArea = activityArea,
-			regionCode = Region.resolveAreaCode(activityArea),
+			regionId = regionId,
+			regionCode = regionCode,
 			introduction = introduction,
 			traits = traits,
 			interests = interests,
@@ -165,7 +168,7 @@ data class UserDetail(
 		if (gender == null) {
 			throw BusinessException(UserErrorCode.GENDER_REQUIRED)
 		}
-		if (regionCode == null) {
+		if (regionId == null || regionCode == null) {
 			throw BusinessException(UserErrorCode.REGION_NOT_RESOLVED)
 		}
 	}
@@ -187,6 +190,7 @@ data class UserDetail(
 		return MatchProfileSnapshot(
 			gender = gender ?: return null,
 			birthday = birthday ?: return null,
+			regionId = regionId ?: return null,
 			regionCode = regionCode ?: return null,
 			maritalStatus = maritalStatus ?: return null,
 			nickname = nickname ?: return null,

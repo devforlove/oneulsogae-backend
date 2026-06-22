@@ -8,6 +8,7 @@ import com.org.meeple.core.match.query.dto.ReceivedInvitationParticipant
 import com.org.meeple.infra.match.command.entity.QMatchUserEntity
 import com.org.meeple.infra.match.command.entity.QTeamEntity
 import com.org.meeple.infra.match.command.entity.QTeamMemberEntity
+import com.org.meeple.infra.region.entity.QRegionEntity
 import com.org.meeple.infra.user.command.entity.QUserDetailEntity
 import com.querydsl.core.Tuple
 import com.querydsl.core.types.ConstructorExpression
@@ -87,6 +88,7 @@ class GetReceivedInvitationsDaoImpl(
 		val participantTeamMember: QTeamMemberEntity = QTeamMemberEntity("participantTeamMember")
 		val matchUser: QMatchUserEntity = QMatchUserEntity.matchUserEntity
 		val userDetail: QUserDetailEntity = QUserDetailEntity.userDetailEntity
+		val region: QRegionEntity = QRegionEntity.regionEntity
 
 		val participantProjection: ConstructorExpression<ReceivedInvitationParticipant> = Projections.constructor(
 			ReceivedInvitationParticipant::class.java,
@@ -98,7 +100,8 @@ class GetReceivedInvitationsDaoImpl(
 			matchUser.profileImageCode,
 			matchUser.birthday,
 			userDetail.height,
-			userDetail.activityArea,
+			// 표시용 활동지역은 regions를 join해 "시/도 시/군/구"로 만든다. (지역 미설정이면 null)
+			region.sido.concat(" ").concat(region.sigungu),
 			userDetail.introduction,
 			Expressions.path(List::class.java, userDetail, "traits"),
 			Expressions.path(List::class.java, userDetail, "interests"),
@@ -109,6 +112,7 @@ class GetReceivedInvitationsDaoImpl(
 			.from(participantTeamMember)
 			.join(matchUser).on(matchUser.userId.eq(participantTeamMember.userId))
 			.join(userDetail).on(userDetail.userId.eq(participantTeamMember.userId))
+			.leftJoin(region).on(region.id.eq(userDetail.regionId))
 			.where(
 				participantTeamMember.teamId.`in`(teamIds),
 				participantTeamMember.status.eq(TeamMemberStatus.ACTIVE),

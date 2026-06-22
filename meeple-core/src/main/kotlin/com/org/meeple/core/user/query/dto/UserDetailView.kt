@@ -21,6 +21,9 @@ data class UserDetailView(
 	val gender: Gender?,
 	val phoneNumber: String?,
 	val job: String?,
+	/** 활동지역 id(regions FK). 편집 화면에서 현재 지역 선택값으로 쓴다. */
+	val regionId: Long?,
+	/** 활동지역 표시 문자열(시/도 시/군/구). regions join으로 채운다. */
 	val activityArea: String?,
 	val regionCode: Int?,
 	val introduction: String?,

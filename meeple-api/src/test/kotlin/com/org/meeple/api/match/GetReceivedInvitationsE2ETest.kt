@@ -7,7 +7,9 @@ import com.org.meeple.common.integration.post
 import com.org.meeple.common.user.Gender
 import com.org.meeple.infra.fixture.IntegrationUtil
 import com.org.meeple.infra.fixture.MatchUserEntityFixture
+import com.org.meeple.infra.fixture.RegionEntityFixture
 import com.org.meeple.infra.fixture.UserDetailEntityFixture
+import com.org.meeple.infra.region.entity.QRegionEntity
 import com.org.meeple.infra.match.command.entity.QMatchUserEntity
 import com.org.meeple.infra.match.command.entity.QTeamEntity
 import com.org.meeple.infra.match.command.entity.QTeamMemberEntity
@@ -32,7 +34,7 @@ class GetReceivedInvitationsE2ETest : AbstractIntegrationSupport({
 		companyName: String?,
 		birthday: LocalDate = LocalDate.of(1998, 1, 1),
 		height: Int? = null,
-		activityArea: String? = null,
+		regionId: Long? = null,
 		introduction: String? = null,
 	) {
 		IntegrationUtil.persist(
@@ -47,7 +49,7 @@ class GetReceivedInvitationsE2ETest : AbstractIntegrationSupport({
 				job = job,
 				companyName = companyName,
 				height = height,
-				activityArea = activityArea,
+				regionId = regionId,
 				introduction = introduction,
 			),
 		)
@@ -67,9 +69,12 @@ class GetReceivedInvitationsE2ETest : AbstractIntegrationSupport({
 				val me = 4002L
 				val ownerA = 4001L
 				val ownerB = 4003L
+				val gangnamId: Long = IntegrationUtil.persist(
+					RegionEntityFixture.create(sido = "서울특별시", sigungu = "강남구"),
+				).id!!
 				persistProfile(me, "나", "1", null, null)
 				persistProfile(ownerA, "초대자A", "11", "PM", "토스", birthday = LocalDate.now().minusYears(31))
-				persistProfile(ownerB, "초대자B", "22", "디자이너", "카카오", birthday = LocalDate.now().minusYears(33), height = 180, activityArea = "강남", introduction = "잘 부탁드려요")
+				persistProfile(ownerB, "초대자B", "22", "디자이너", "카카오", birthday = LocalDate.now().minusYears(33), height = 180, regionId = gangnamId, introduction = "잘 부탁드려요")
 
 				val teamA: Long = invite(ownerA, me)
 				val teamB: Long = invite(ownerB, me)
@@ -95,7 +100,7 @@ class GetReceivedInvitationsE2ETest : AbstractIntegrationSupport({
 					body("data[0].participants[0].age", 33)
 					// 상세 시트용 프로필 — 키·지역·자기소개는 user_details에서, 특성·관심사는 미입력이라 빈 배열
 					body("data[0].participants[0].height", 180)
-					body("data[0].participants[0].activityArea", "강남")
+					body("data[0].participants[0].activityArea", "서울특별시 강남구")
 					body("data[0].participants[0].introduction", "잘 부탁드려요")
 					body("data[0].participants[0].traits", hasSize<Any>(0))
 					body("data[0].participants[0].interests", hasSize<Any>(0))
@@ -203,5 +208,6 @@ class GetReceivedInvitationsE2ETest : AbstractIntegrationSupport({
 		IntegrationUtil.deleteAll(QTeamEntity.teamEntity)
 		IntegrationUtil.deleteAll(QMatchUserEntity.matchUserEntity)
 		IntegrationUtil.deleteAll(QUserDetailEntity.userDetailEntity)
+		IntegrationUtil.deleteAll(QRegionEntity.regionEntity)
 	}
 })

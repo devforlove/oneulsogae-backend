@@ -1,7 +1,9 @@
 package com.org.meeple.core.user.command.application
 
+import com.org.meeple.common.user.Region
 import com.org.meeple.core.common.event.DomainEventPublisher
 import com.org.meeple.core.common.time.TimeGenerator
+import com.org.meeple.core.region.query.dto.RegionView
 import com.org.meeple.core.region.query.service.port.`in`.GetRegionUseCase
 import com.org.meeple.core.user.command.application.port.`in`.UpdateUserDetailUseCase
 import com.org.meeple.core.user.command.application.port.`in`.command.UpdateUserDetailCommand
@@ -33,8 +35,9 @@ class UpdateUserDetailService(
 		val existing: UserDetail = getUserDetailPort.findByUserId(userId)
 			?: UserDetail.create(userId)
 
-		// 활동지역은 regionId로 받아 region 도메인에서 활동지역 문자열로 해석한다. (없는 id면 REGION_NOT_FOUND)
-		val activityArea: String = getRegionUseCase.getById(command.regionId).toActivityArea()
+		// 활동지역은 regionId로 받는다. (없는 id면 REGION_NOT_FOUND) regionCode(권역 1~5)는 시/도에서 산출한다.
+		val region: RegionView = getRegionUseCase.getById(command.regionId)
+		val regionCode: Int? = Region.resolveAreaCode(region.sido)
 
 		val updated: UserDetail = existing.initProfile(
 			nickname = command.nickname,
@@ -43,7 +46,8 @@ class UpdateUserDetailService(
 			gender = command.gender,
 			phoneNumber = command.phoneNumber,
 			job = command.job,
-			activityArea = activityArea,
+			regionId = command.regionId,
+			regionCode = regionCode,
 			introduction = command.introduction,
 			traits = command.traits,
 			interests = command.interests,

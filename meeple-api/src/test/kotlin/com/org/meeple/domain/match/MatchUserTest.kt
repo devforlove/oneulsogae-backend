@@ -18,6 +18,7 @@ class MatchUserTest : DescribeSpec({
 	val snapshot = MatchProfileSnapshot(
 		gender = Gender.MALE,
 		birthday = LocalDate.of(1995, 1, 1),
+		regionId = 7L,
 		regionCode = 1,
 		maritalStatus = MaritalStatus.SINGLE,
 		nickname = "민수",
@@ -33,6 +34,7 @@ class MatchUserTest : DescribeSpec({
 				userId = 42L,
 				gender = Gender.MALE,
 				birthday = LocalDate.of(1995, 1, 1),
+				regionId = 7L,
 				regionCode = 1,
 				maritalStatus = MaritalStatus.SINGLE,
 				nickname = "민수",

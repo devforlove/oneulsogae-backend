@@ -16,6 +16,7 @@ object MatchUserEntityFixture {
 	fun create(
 		userId: Long = 1L,
 		gender: Gender = Gender.FEMALE,
+		regionId: Long = 1L,
 		regionCode: Int = 1,
 		maritalStatus: MaritalStatus = MaritalStatus.SINGLE,
 		birthday: LocalDate = LocalDate.of(1996, 1, 1),
@@ -26,6 +27,7 @@ object MatchUserEntityFixture {
 		MatchUserEntity(
 			userId = userId,
 			gender = gender,
+			regionId = regionId,
 			regionCode = regionCode,
 			maritalStatus = maritalStatus,
 			birthday = birthday,

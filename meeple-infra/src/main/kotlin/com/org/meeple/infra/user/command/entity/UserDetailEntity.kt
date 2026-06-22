@@ -63,11 +63,11 @@ class UserDetailEntity(
 	@Column(name = "job", length = 100)
 	var job: String? = null,
 
-	/** 활동 지역. */
-	@Column(name = "activity_area", length = 100)
-	var activityArea: String? = null,
+	/** 활동지역 id(regions FK). 표시용 지역명은 응답 시 regions join으로 내려준다. */
+	@Column(name = "region_id")
+	var regionId: Long? = null,
 
-	/** 활동 지역으로부터 산출한 권역 코드(1~5). */
+	/** 활동 지역으로부터 산출한 권역 코드(1~5). (매칭 풀 키) */
 	@Column(name = "region_code")
 	var regionCode: Int? = null,
 

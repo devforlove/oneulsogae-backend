@@ -9,6 +9,7 @@ fun MatchUserEntity.toDomain(): MatchUser =
 		userId = userId,
 		gender = gender,
 		birthday = birthday,
+		regionId = regionId,
 		regionCode = regionCode,
 		maritalStatus = maritalStatus,
 		nickname = nickname,
@@ -23,6 +24,7 @@ fun MatchUser.toEntity(): MatchUserEntity =
 	MatchUserEntity(
 		userId = userId,
 		gender = gender,
+		regionId = regionId,
 		regionCode = regionCode,
 		maritalStatus = maritalStatus,
 		birthday = birthday,
@@ -37,6 +39,7 @@ fun MatchUser.toEntity(): MatchUserEntity =
  */
 fun MatchUserEntity.applyFrom(matchUser: MatchUser) {
 	gender = matchUser.gender
+	regionId = matchUser.regionId
 	regionCode = matchUser.regionCode
 	maritalStatus = matchUser.maritalStatus
 	birthday = matchUser.birthday

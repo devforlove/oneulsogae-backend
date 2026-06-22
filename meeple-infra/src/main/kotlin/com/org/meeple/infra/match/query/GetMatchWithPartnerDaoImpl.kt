@@ -6,6 +6,7 @@ import com.org.meeple.core.match.query.dao.GetMatchWithPartnerDao
 import com.org.meeple.core.match.query.dto.MatchWithPartner
 import com.org.meeple.infra.match.command.entity.QSoloMatchEntity
 import com.org.meeple.infra.match.command.entity.QSoloMatchMemberEntity
+import com.org.meeple.infra.region.entity.QRegionEntity
 import com.org.meeple.infra.user.command.entity.QUserDetailEntity
 import com.querydsl.core.types.Projections
 import com.querydsl.core.types.dsl.Expressions
@@ -36,6 +37,7 @@ class GetMatchWithPartnerDaoImpl(
 		val mySoloMatchMember: QSoloMatchMemberEntity = QSoloMatchMemberEntity("mySoloMatchMember")
 		val partnerSoloMatchMember: QSoloMatchMemberEntity = QSoloMatchMemberEntity("partnerSoloMatchMember")
 		val userDetail: QUserDetailEntity = QUserDetailEntity.userDetailEntity
+		val region: QRegionEntity = QRegionEntity.regionEntity
 
 		return queryFactory
 			.select(
@@ -55,7 +57,8 @@ class GetMatchWithPartnerDaoImpl(
 					userDetail.height,
 					userDetail.gender,
 					userDetail.job,
-					userDetail.activityArea,
+					// 표시용 활동지역은 regions를 join해 "시/도 시/군/구"로 만든다. (지역 미설정이면 null)
+					region.sido.concat(" ").concat(region.sigungu),
 					userDetail.introduction,
 					userDetail.companyName,
 					Expressions.path(List::class.java, userDetail, "traits"),
@@ -75,6 +78,7 @@ class GetMatchWithPartnerDaoImpl(
 				// 상대 status는 거르지 않는다. 상대가 나갔어도(DEACTIVE) 내 목록엔 남겨 상대 프로필과 함께 보여준다.
 			)
 			.join(userDetail).on(userDetail.userId.eq(partnerSoloMatchMember.userId))
+			.leftJoin(region).on(region.id.eq(userDetail.regionId))
 			.where(
 				mySoloMatchMember.userId.eq(userId),
 				// 내가 나간(DEACTIVE) 매칭은 내 목록에서 제외한다. (나는 활성 참가자만)

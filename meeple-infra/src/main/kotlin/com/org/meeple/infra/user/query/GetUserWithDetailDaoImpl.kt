@@ -4,6 +4,7 @@ import com.org.meeple.core.user.query.dao.GetUserWithDetailDao
 import com.org.meeple.core.user.query.dto.UserDetailView
 import com.org.meeple.core.user.query.dto.UserView
 import com.org.meeple.core.user.query.dto.UserWithDetailView
+import com.org.meeple.infra.region.entity.QRegionEntity
 import com.org.meeple.infra.user.command.entity.QUserDetailEntity
 import com.org.meeple.infra.user.command.entity.QUserEntity
 import com.querydsl.core.types.Projections
@@ -24,6 +25,7 @@ class GetUserWithDetailDaoImpl(
 	override fun findWithDetailByUserId(userId: Long): UserWithDetailView? {
 		val user: QUserEntity = QUserEntity.userEntity
 		val detail: QUserDetailEntity = QUserDetailEntity.userDetailEntity
+		val region: QRegionEntity = QRegionEntity.regionEntity
 
 		return queryFactory
 			.select(
@@ -46,7 +48,9 @@ class GetUserWithDetailDaoImpl(
 						detail.gender,
 						detail.phoneNumber,
 						detail.job,
-						detail.activityArea,
+						detail.regionId,
+						// 표시용 활동지역은 regions를 join해 "시/도 시/군/구"로 만든다. (지역 미설정이면 null)
+						region.sido.concat(" ").concat(region.sigungu),
 						detail.regionCode,
 						detail.introduction,
 						Expressions.path(List::class.java, detail, "traits"),
@@ -63,6 +67,7 @@ class GetUserWithDetailDaoImpl(
 			)
 			.from(user)
 			.join(detail).on(detail.userId.eq(user.id))
+			.leftJoin(region).on(region.id.eq(detail.regionId))
 			.where(user.id.eq(userId))
 			.fetchOne()
 	}

@@ -8,8 +8,4 @@ data class RegionView(
 	val id: Long,
 	val sido: String,
 	val sigungu: String,
-) {
-
-	/** 활동지역 문자열. (시/도 + 시/군/구 — 예: "서울특별시 강남구") */
-	fun toActivityArea(): String = "$sido $sigungu"
-}
+)
