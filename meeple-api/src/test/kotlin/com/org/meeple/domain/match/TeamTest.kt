@@ -74,37 +74,8 @@ class TeamTest : DescribeSpec({
 			ex.errorCode shouldBe TeamErrorCode.MUST_INVITE_SAME_GENDER
 		}
 
-		it("이름이 공백뿐이면 INVALID_TEAM_NAME을 던진다") {
-			val ex: BusinessException = shouldThrow {
-				Team.invite(ownerId, Gender.MALE, invitedUserId, Gender.MALE, "   ", validIntroduction, 1L)
-			}
-
-			ex.errorCode shouldBe TeamErrorCode.INVALID_TEAM_NAME
-		}
-
-		it("이름이 최대 길이를 넘으면 INVALID_TEAM_NAME을 던진다") {
-			val ex: BusinessException = shouldThrow {
-				Team.invite(ownerId, Gender.MALE, invitedUserId, Gender.MALE, "가".repeat(Team.MAX_NAME_LENGTH + 1), validIntroduction, 1L)
-			}
-
-			ex.errorCode shouldBe TeamErrorCode.INVALID_TEAM_NAME
-		}
-
-		it("소개가 최소 길이 미만이면 INVALID_TEAM_INTRODUCTION을 던진다") {
-			val ex: BusinessException = shouldThrow {
-				Team.invite(ownerId, Gender.MALE, invitedUserId, Gender.MALE, "우리팀", "가".repeat(Team.MIN_INTRODUCTION_LENGTH - 1), 1L)
-			}
-
-			ex.errorCode shouldBe TeamErrorCode.INVALID_TEAM_INTRODUCTION
-		}
-
-		it("소개가 최대 길이를 넘으면 INVALID_TEAM_INTRODUCTION을 던진다") {
-			val ex: BusinessException = shouldThrow {
-				Team.invite(ownerId, Gender.MALE, invitedUserId, Gender.MALE, "우리팀", "가".repeat(Team.MAX_INTRODUCTION_LENGTH + 1), 1L)
-			}
-
-			ex.errorCode shouldBe TeamErrorCode.INVALID_TEAM_INTRODUCTION
-		}
+		// 이름·소개 형식(공백·길이) 검증은 도메인이 아니라 요청(InviteTeamRequest의 Bean Validation)이 담당한다.
+		// (해당 케이스는 InviteTeamE2ETest의 요청 검증 테스트로 커버)
 	}
 
 	describe("acceptInvitation - 초대 수락") {

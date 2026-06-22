@@ -15,8 +15,6 @@ enum class TeamErrorCode(
 ) : ErrorCode {
 
 	CANNOT_INVITE_SELF("TEAM-001", "자기 자신을 팀에 초대할 수 없습니다.", HttpStatus.BAD_REQUEST),
-	INVALID_TEAM_NAME("TEAM-002", "팀 이름이 올바르지 않습니다.", HttpStatus.BAD_REQUEST),
-	INVALID_TEAM_INTRODUCTION("TEAM-003", "팀 소개가 너무 깁니다.", HttpStatus.BAD_REQUEST),
 	MUST_INVITE_SAME_GENDER("TEAM-004", "같은 성별만 팀에 초대할 수 있습니다.", HttpStatus.BAD_REQUEST),
 	TEAM_NOT_FOUND("TEAM-005", "팀을 찾을 수 없습니다.", HttpStatus.NOT_FOUND),
 	NOT_TEAM_MEMBER("TEAM-006", "해당 팀의 구성원이 아닙니다.", HttpStatus.FORBIDDEN),
