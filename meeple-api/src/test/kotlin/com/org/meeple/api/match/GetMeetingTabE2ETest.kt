@@ -31,8 +31,8 @@ class GetMeetingTabE2ETest : AbstractIntegrationSupport({
 		)
 	}
 
-	fun persistTeam(status: TeamStatus): Long =
-		IntegrationUtil.persist(TeamEntity(name = "팀", introduction = "함께 즐겁게 활동해요", status = status)).id!!
+	fun persistTeam(status: TeamStatus, gender: Gender): Long =
+		IntegrationUtil.persist(TeamEntity(name = "팀", gender = gender, introduction = "함께 즐겁게 활동해요", status = status)).id!!
 
 	fun persistMember(teamId: Long, userId: Long, gender: Gender, status: TeamMemberStatus) {
 		IntegrationUtil.persist(TeamMemberEntity(teamId = teamId, userId = userId, gender = gender, status = status))
@@ -44,7 +44,7 @@ class GetMeetingTabE2ETest : AbstractIntegrationSupport({
 			it("recommendedTeam에 팀·팀원을, count=0·myActiveTeam=null로 반환한다 (200)") {
 				val soloUserId = 5001L
 				persistMatchUser(soloUserId, Gender.MALE, 1)
-				val teamId: Long = persistTeam(TeamStatus.ACTIVE)
+				val teamId: Long = persistTeam(TeamStatus.ACTIVE, Gender.FEMALE)
 				persistMember(teamId, 5101L, Gender.FEMALE, TeamMemberStatus.ACTIVE)
 				persistMember(teamId, 5102L, Gender.FEMALE, TeamMemberStatus.ACTIVE)
 				persistMatchUser(5101L, Gender.FEMALE, 1)
@@ -72,7 +72,7 @@ class GetMeetingTabE2ETest : AbstractIntegrationSupport({
 				persistMatchUser(me, Gender.MALE, 1)
 				repeat(2) { i: Int ->
 					val ownerId: Long = 5200L + i
-					val teamId: Long = persistTeam(TeamStatus.INVITING)
+					val teamId: Long = persistTeam(TeamStatus.INVITING, Gender.MALE)
 					persistMember(teamId, ownerId, Gender.MALE, TeamMemberStatus.ACTIVE)
 					persistMember(teamId, me, Gender.MALE, TeamMemberStatus.INVITED)
 				}
@@ -94,7 +94,7 @@ class GetMeetingTabE2ETest : AbstractIntegrationSupport({
 				val friend = 5301L
 				persistMatchUser(me, Gender.MALE, 1, profileImageCode = "3")
 				persistMatchUser(friend, Gender.MALE, 1, profileImageCode = "7")
-				val teamId: Long = persistTeam(TeamStatus.ACTIVE)
+				val teamId: Long = persistTeam(TeamStatus.ACTIVE, Gender.MALE)
 				persistMember(teamId, me, Gender.MALE, TeamMemberStatus.ACTIVE)
 				persistMember(teamId, friend, Gender.MALE, TeamMemberStatus.ACTIVE)
 

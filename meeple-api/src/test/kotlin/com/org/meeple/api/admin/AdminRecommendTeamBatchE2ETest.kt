@@ -27,7 +27,7 @@ class AdminRecommendTeamBatchE2ETest : AbstractIntegrationSupport({
 	// ACTIVE 팀(여성 2명, 같은 권역)을 영속하고 teamId를 돌려준다. (팀원 match_user도 적재)
 	fun persistActiveFemaleTeam(member1: Long, member2: Long, regionCode: Int): Long {
 		val team: TeamEntity = IntegrationUtil.persist(
-			TeamEntity(name = "여성팀", introduction = "즐겁게 만나요", status = TeamStatus.ACTIVE),
+			TeamEntity(name = "여성팀", gender = Gender.FEMALE, introduction = "즐겁게 만나요", status = TeamStatus.ACTIVE),
 		)
 		val teamId: Long = team.id!!
 		listOf(member1, member2).forEach { userId: Long ->

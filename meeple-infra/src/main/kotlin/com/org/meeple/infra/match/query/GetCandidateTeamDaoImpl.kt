@@ -14,7 +14,7 @@ import java.util.concurrent.ThreadLocalRandom
 
 /**
  * scheduler [GetCandidateTeamDao]의 QueryDSL 구현. (조회 전용)
- * teams 베이스에 두 EXISTS(① 팀 성별=teamGender, ② 팀원 중 한 명이라도 match_user.region_code=regionCode)로 후보를 좁힌다.
+ * teams 베이스에 팀 성별(teams.gender=teamGender) 동등 조건 + EXISTS(팀원 중 한 명이라도 match_user.region_code=regionCode)로 후보를 좁힌다.
  * (EXISTS라 팀당 1행 → fan-out 없음) 후보 수를 센 뒤 [0,count) 랜덤 오프셋으로 1개의 team_id를 뽑는다.
  * (대규모에서 offset 스캔 비용이 커지면 커서/시드 기반으로 재검토한다 — 표시 전용 추천이라 현 단계에선 단순화)
  */
@@ -44,17 +44,13 @@ class GetCandidateTeamDaoImpl(
 			.fetchOne()
 	}
 
-	// 결성(ACTIVE) + 팀 성별=teamGender(팀은 동성 구성) + 팀원 중 한 명이라도 같은 권역.
+	// 결성(ACTIVE) + 팀 성별=teamGender(teams.gender 직접 비교) + 팀원 중 한 명이라도 같은 권역.
 	private fun candidatePredicates(team: QTeamEntity, teamGender: Gender, regionCode: Int): Array<BooleanExpression> {
-		val genderTeamMember: QTeamMemberEntity = QTeamMemberEntity("genderTeamMember")
 		val regionTeamMember: QTeamMemberEntity = QTeamMemberEntity("regionTeamMember")
 		val matchUser: QMatchUserEntity = QMatchUserEntity.matchUserEntity
 		return arrayOf(
 			team.status.eq(TeamStatus.ACTIVE),
-			JPAExpressions.selectOne()
-				.from(genderTeamMember)
-				.where(genderTeamMember.teamId.eq(team.id), genderTeamMember.gender.eq(teamGender))
-				.exists(),
+			team.gender.eq(teamGender),
 			JPAExpressions.selectOne()
 				.from(regionTeamMember)
 				.join(matchUser).on(matchUser.userId.eq(regionTeamMember.userId))

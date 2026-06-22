@@ -1,6 +1,7 @@
 package com.org.meeple.infra.match.command.entity
 
 import com.org.meeple.common.match.TeamStatus
+import com.org.meeple.common.user.Gender
 import com.org.meeple.infra.common.BaseEntity
 import jakarta.persistence.Column
 import jakarta.persistence.Entity
@@ -23,6 +24,11 @@ class TeamEntity(
 	/** 팀 이름. */
 	@Column(name = "name", nullable = false, length = 50)
 	var name: String,
+
+	/** 팀 성별. 팀은 동성으로 구성되므로 팀 단위로 하나의 성별을 가진다. (구성원([TeamMemberEntity]) 성별과 동일) */
+	@Enumerated(EnumType.STRING)
+	@Column(name = "gender", nullable = false, columnDefinition = "varchar(50)")
+	var gender: Gender,
 
 	/** 팀 소개. */
 	@Column(name = "introduction", length = 1000)
