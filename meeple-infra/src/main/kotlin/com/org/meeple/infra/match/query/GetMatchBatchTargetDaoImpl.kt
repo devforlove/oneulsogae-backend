@@ -14,7 +14,7 @@ import java.time.LocalDateTime
 /**
  * scheduler [GetMatchBatchTargetDao]의 QueryDSL 구현. 매칭 배치 대상 사용자를 (lastLoginAt, userId) 복합 키셋으로 조회한다.
  * 매칭 읽기 모델(match_user) 단독으로 조회한다. (행의 존재가 곧 정식 가입+프로필 완성이라 status·user_details 조인이 없다)
- * 매칭 판단에 필요한 프로필(gender/age/maritalStatus/regionCode)을 match_user에서 바로 [MatchBatchTarget]로 투영한다.
+ * 매칭 판단에 필요한 프로필(gender/maritalStatus/regionCode)을 match_user에서 바로 [MatchBatchTarget]로 투영한다.
  * `idx_last_login_at_user_id(last_login_at, user_id)` 범위 스캔이라 최근 로그인 구간만 보고 filesort도 없다.
  * 커서 유무로 키셋 조건을 나눠 range seek가 깨지지 않게 한다.
  */
@@ -33,7 +33,6 @@ class GetMatchBatchTargetDaoImpl(
 					matchUser.userId,
 					matchUser.lastLoginAt,
 					matchUser.gender,
-					matchUser.age,
 					matchUser.maritalStatus,
 					matchUser.regionCode,
 				),

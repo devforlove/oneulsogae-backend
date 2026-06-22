@@ -3,6 +3,7 @@ package com.org.meeple.infra.fixture
 import com.org.meeple.common.user.Gender
 import com.org.meeple.common.user.MaritalStatus
 import com.org.meeple.infra.match.command.entity.MatchUserEntity
+import java.time.LocalDate
 import java.time.LocalDateTime
 
 /**
@@ -17,7 +18,7 @@ object MatchUserEntityFixture {
 		gender: Gender = Gender.FEMALE,
 		regionCode: Int = 1,
 		maritalStatus: MaritalStatus = MaritalStatus.SINGLE,
-		age: Int = 28,
+		birthday: LocalDate = LocalDate.of(1996, 1, 1),
 		nickname: String = "테스트유저",
 		profileImageCode: String = "1",
 		lastLoginAt: LocalDateTime = LocalDateTime.now(),
@@ -27,7 +28,7 @@ object MatchUserEntityFixture {
 			gender = gender,
 			regionCode = regionCode,
 			maritalStatus = maritalStatus,
-			age = age,
+			birthday = birthday,
 			nickname = nickname,
 			profileImageCode = profileImageCode,
 			lastLoginAt = lastLoginAt,

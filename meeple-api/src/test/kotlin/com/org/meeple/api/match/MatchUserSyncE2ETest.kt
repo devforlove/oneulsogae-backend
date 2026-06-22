@@ -18,6 +18,7 @@ import com.org.meeple.infra.user.command.entity.QUserDetailEntity
 import com.org.meeple.infra.user.command.entity.QUserEntity
 import com.org.meeple.infra.user.command.entity.UserDetailEntity
 import io.kotest.matchers.shouldBe
+import java.time.LocalDate
 import java.time.LocalDateTime
 
 /**
@@ -40,14 +41,14 @@ class MatchUserSyncE2ETest : AbstractIntegrationSupport({
 						lastLoginAt = LocalDateTime.now(),
 					),
 				).id!!
-				// 매칭 필수 필드(성별·권역·결혼여부·나이·닉네임·프로필이미지코드)가 모두 채워진 완성 프로필
+				// 매칭 필수 필드(성별·권역·결혼여부·생년월일·닉네임·프로필이미지코드)가 모두 채워진 완성 프로필
 				IntegrationUtil.persist(
 					UserDetailEntity(
 						userId = userId,
 						nickname = "민수",
 						profileImageCode = "1",
 						gender = Gender.MALE,
-						age = 31,
+						birthday = LocalDate.of(1995, 1, 1),
 						regionCode = 1,
 						maritalStatus = MaritalStatus.SINGLE,
 					),
@@ -84,7 +85,7 @@ class MatchUserSyncE2ETest : AbstractIntegrationSupport({
 					UserEntityFixture.create(providerId = "me-requester", status = UserStatus.ACTIVE),
 				).id!!
 				IntegrationUtil.persist(
-					UserDetailEntity(userId = meUserId, nickname = "철수", gender = Gender.MALE, age = 30, regionCode = 1),
+					UserDetailEntity(userId = meUserId, nickname = "철수", gender = Gender.MALE, birthday = LocalDate.of(1996, 1, 1), regionCode = 1),
 				)
 				IntegrationUtil.persist(
 					MatchUserEntityFixture.create(userId = meUserId, gender = Gender.MALE, regionCode = 1),
@@ -101,7 +102,7 @@ class MatchUserSyncE2ETest : AbstractIntegrationSupport({
 					),
 				)
 				IntegrationUtil.persist(
-					UserDetailEntity(userId = candidateUserId, nickname = "영희", gender = Gender.FEMALE, age = 27),
+					UserDetailEntity(userId = candidateUserId, nickname = "영희", gender = Gender.FEMALE, birthday = LocalDate.of(1999, 1, 1)),
 				)
 
 				get("/matches/v1?isAfterOnboarding=true") {

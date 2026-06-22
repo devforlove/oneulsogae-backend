@@ -79,7 +79,7 @@ class GetReceivedInvitationsDaoImpl(
 			inviterDetail.companyName,
 			inviter.gender,
 			inviterMatch.profileImageCode,
-			inviterMatch.age,
+			inviterMatch.birthday,
 			inviterDetail.height,
 			inviterDetail.activityArea,
 			inviterDetail.introduction,

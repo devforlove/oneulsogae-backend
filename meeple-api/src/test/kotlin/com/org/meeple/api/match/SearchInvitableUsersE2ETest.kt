@@ -5,6 +5,7 @@ import com.org.meeple.common.integration.expect
 import com.org.meeple.common.integration.get
 import com.org.meeple.common.match.TeamMemberStatus
 import com.org.meeple.common.user.Gender
+import com.org.meeple.core.common.time.ageAt
 import com.org.meeple.infra.fixture.IntegrationUtil
 import com.org.meeple.infra.fixture.MatchUserEntityFixture
 import com.org.meeple.infra.fixture.UserDetailEntityFixture
@@ -14,17 +15,21 @@ import com.org.meeple.infra.match.command.entity.TeamMemberEntity
 import com.org.meeple.infra.user.command.entity.QUserDetailEntity
 import org.hamcrest.Matchers.containsInAnyOrder
 import org.hamcrest.Matchers.hasSize
+import java.time.LocalDate
 
 /**
  * `GET /teams/v1/invitable-users` E2E 테스트. (초대 가능 유저 닉네임 검색)
  * 후보는 매칭 가능(match_user 존재)·요청자와 같은 성별이고, 자기 자신·반대 성별·매칭 불가 유저는 제외된다.
  * 활성 팀 소속 유저는 검색에 노출된다 — 초대 시점에 invite 명령이 ALREADY_IN_TEAM으로 차단한다.
  */
+private val BIRTHDAY: LocalDate = LocalDate.of(1996, 1, 1)
+private val EXPECTED_AGE: Int = BIRTHDAY.ageAt(LocalDate.now())
+
 class SearchInvitableUsersE2ETest : AbstractIntegrationSupport({
 
 	// 매칭 읽기 모델(match_user, 성별 보유) 행을 저장한다.
 	fun persistMatchUser(userId: Long, gender: Gender, nickname: String) {
-		IntegrationUtil.persist(MatchUserEntityFixture.create(userId = userId, gender = gender, nickname = nickname))
+		IntegrationUtil.persist(MatchUserEntityFixture.create(userId = userId, gender = gender, nickname = nickname, birthday = BIRTHDAY))
 	}
 
 	// 프로필 상세(user_details, 닉네임·직업·회사명) 행을 저장한다.
@@ -89,10 +94,10 @@ class SearchInvitableUsersE2ETest : AbstractIntegrationSupport({
 					body("data.userId", containsInAnyOrder(7002, 7003, 7005))
 					body("data.job", containsInAnyOrder("개발자", null, "기획"))
 					body("data.companyName", containsInAnyOrder("토스", null, "라인"))
-					// 신규 필드: 포함 대상 3명 모두 픽스처 기본값(MALE·"1"·28)
+					// 신규 필드: 포함 대상 3명 모두 픽스처 기본값(MALE·"1"·EXPECTED_AGE)
 					body("data.gender", containsInAnyOrder("MALE", "MALE", "MALE"))
 					body("data.profileImageCode", containsInAnyOrder("1", "1", "1"))
-					body("data.age", containsInAnyOrder(28, 28, 28))
+					body("data.age", containsInAnyOrder(EXPECTED_AGE, EXPECTED_AGE, EXPECTED_AGE))
 				}
 			}
 		}

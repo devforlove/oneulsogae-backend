@@ -1,6 +1,7 @@
 package com.org.meeple.core.user.command.application
 
 import com.org.meeple.core.common.event.DomainEventPublisher
+import com.org.meeple.core.common.time.TimeGenerator
 import com.org.meeple.core.user.command.application.port.`in`.UpdateUserDetailUseCase
 import com.org.meeple.core.user.command.application.port.`in`.command.UpdateUserDetailCommand
 import com.org.meeple.core.user.command.application.port.out.GetUserDetailPort
@@ -21,6 +22,7 @@ class UpdateUserDetailService(
 	private val getUserDetailPort: GetUserDetailPort,
 	private val saveUserDetailPort: SaveUserDetailPort,
 	private val domainEventPublisher: DomainEventPublisher,
+	private val timeGenerator: TimeGenerator,
 ) : UpdateUserDetailUseCase {
 
 	@Transactional
@@ -31,7 +33,7 @@ class UpdateUserDetailService(
 
 		val updated: UserDetail = existing.initProfile(
 			nickname = command.nickname,
-			age = command.age,
+			birthday = command.birthday,
 			height = command.height,
 			gender = command.gender,
 			phoneNumber = command.phoneNumber,
@@ -46,6 +48,7 @@ class UpdateUserDetailService(
 			religion = command.religion,
 			drinkingStatus = command.drinkingStatus,
 			bodyType = command.bodyType,
+			today = timeGenerator.today(),
 		)
 
 		val saved: UserDetail = saveUserDetailPort.save(updated)

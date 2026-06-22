@@ -14,6 +14,7 @@ import com.org.meeple.infra.match.command.entity.QTeamMemberEntity
 import com.org.meeple.infra.user.command.entity.QUserDetailEntity
 import org.hamcrest.Matchers.hasSize
 import org.hamcrest.Matchers.notNullValue
+import java.time.LocalDate
 
 /**
  * `GET /teams/v1/received-invitations` E2E 테스트. (내가 받은 초대 리스트)
@@ -29,13 +30,13 @@ class GetReceivedInvitationsE2ETest : AbstractIntegrationSupport({
 		profileImageCode: String,
 		job: String?,
 		companyName: String?,
-		age: Int = 28,
+		birthday: LocalDate = LocalDate.of(1998, 1, 1),
 		height: Int? = null,
 		activityArea: String? = null,
 		introduction: String? = null,
 	) {
 		IntegrationUtil.persist(
-			MatchUserEntityFixture.create(userId = userId, gender = Gender.MALE, nickname = nickname, profileImageCode = profileImageCode, age = age),
+			MatchUserEntityFixture.create(userId = userId, gender = Gender.MALE, nickname = nickname, profileImageCode = profileImageCode, birthday = birthday),
 		)
 		IntegrationUtil.persist(
 			UserDetailEntityFixture.create(
@@ -67,8 +68,8 @@ class GetReceivedInvitationsE2ETest : AbstractIntegrationSupport({
 				val ownerA = 4001L
 				val ownerB = 4003L
 				persistProfile(me, "나", "1", null, null)
-				persistProfile(ownerA, "초대자A", "11", "PM", "토스", age = 31)
-				persistProfile(ownerB, "초대자B", "22", "디자이너", "카카오", age = 33, height = 180, activityArea = "강남", introduction = "잘 부탁드려요")
+				persistProfile(ownerA, "초대자A", "11", "PM", "토스", birthday = LocalDate.now().minusYears(31))
+				persistProfile(ownerB, "초대자B", "22", "디자이너", "카카오", birthday = LocalDate.now().minusYears(33), height = 180, activityArea = "강남", introduction = "잘 부탁드려요")
 
 				val teamA: Long = invite(ownerA, me)
 				val teamB: Long = invite(ownerB, me)

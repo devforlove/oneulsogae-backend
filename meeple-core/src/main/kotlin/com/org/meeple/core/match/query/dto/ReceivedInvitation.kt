@@ -1,6 +1,7 @@
 package com.org.meeple.core.match.query.dto
 
 import com.org.meeple.common.user.Gender
+import java.time.LocalDate
 import java.time.LocalDateTime
 
 /**
@@ -29,7 +30,7 @@ data class ReceivedInvitationInviter(
 	val companyName: String?,
 	val gender: Gender,
 	val profileImageCode: String,
-	val age: Int,
+	val birthday: LocalDate,
 	val height: Int?,
 	val activityArea: String?,
 	val introduction: String?,

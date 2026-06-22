@@ -15,6 +15,7 @@ import jakarta.persistence.EnumType
 import jakarta.persistence.Enumerated
 import jakarta.persistence.Index
 import jakarta.persistence.Table
+import java.time.LocalDate
 import org.hibernate.annotations.SQLRestriction
 
 /**
@@ -42,9 +43,9 @@ class UserDetailEntity(
 	@Column(name = "profile_image_code", length = 50)
 	var profileImageCode: String? = null,
 
-	/** 나이. */
-	@Column(name = "age")
-	var age: Int? = null,
+	/** 생년월일. */
+	@Column(name = "birthday")
+	var birthday: LocalDate? = null,
 
 	/** 키(cm). */
 	@Column(name = "height")

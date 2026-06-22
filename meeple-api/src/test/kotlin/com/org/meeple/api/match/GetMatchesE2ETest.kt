@@ -18,6 +18,7 @@ import com.org.meeple.infra.user.command.entity.QUserDetailEntity
 import com.org.meeple.infra.user.command.entity.QUserEntity
 import com.org.meeple.infra.user.command.entity.UserDetailEntity
 import org.hamcrest.Matchers.contains
+import java.time.LocalDate
 
 /**
  * `GET /matches/v1` E2E 테스트.
@@ -37,7 +38,7 @@ class GetMatchesE2ETest : AbstractIntegrationSupport({
 					UserEntityFixture.create(status = UserStatus.ACTIVE),
 				).id!!
 				IntegrationUtil.persist(
-					UserDetailEntity(userId = meUserId, nickname = "철수", gender = Gender.MALE, age = 30),
+					UserDetailEntity(userId = meUserId, nickname = "철수", gender = Gender.MALE, birthday = LocalDate.of(1996, 1, 1)),
 				)
 
 				// 상대는 dao 조인 대상(solo_match_members + user_details)만 있으면 된다.
@@ -47,7 +48,7 @@ class GetMatchesE2ETest : AbstractIntegrationSupport({
 						userId = partnerUserId,
 						nickname = "영희",
 						gender = Gender.FEMALE,
-						age = 27,
+						birthday = LocalDate.of(1999, 1, 1),
 						traits = listOf("요가", "등산"),
 						interests = listOf("재즈", "미술"),
 					),

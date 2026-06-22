@@ -10,6 +10,7 @@ import jakarta.persistence.Enumerated
 import jakarta.persistence.Index
 import jakarta.persistence.Table
 import jakarta.persistence.UniqueConstraint
+import java.time.LocalDate
 import java.time.LocalDateTime
 
 /**
@@ -49,8 +50,8 @@ class MatchUserEntity(
 	@Column(name = "marital_status", nullable = false)
 	var maritalStatus: MaritalStatus,
 
-	@Column(name = "age", nullable = false)
-	var age: Int,
+	@Column(name = "birthday", nullable = false)
+	var birthday: LocalDate,
 
 	@Column(name = "nickname", nullable = false)
 	var nickname: String,

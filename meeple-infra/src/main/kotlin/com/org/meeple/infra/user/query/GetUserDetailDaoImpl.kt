@@ -29,7 +29,7 @@ class GetUserDetailDaoImpl(
 					detail.userId,
 					detail.nickname,
 					detail.profileImageCode,
-					detail.age,
+					detail.birthday,
 					detail.height,
 					detail.gender,
 					detail.phoneNumber,

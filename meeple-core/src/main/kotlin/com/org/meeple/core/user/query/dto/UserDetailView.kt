@@ -6,6 +6,7 @@ import com.org.meeple.common.user.Gender
 import com.org.meeple.common.user.MaritalStatus
 import com.org.meeple.common.user.Religion
 import com.org.meeple.common.user.SmokingStatus
+import java.time.LocalDate
 
 /**
  * 사용자 프로필 상세 조회 결과(read model). query는 command 도메인([com.org.meeple.core.user.command.domain.UserDetail]) 대신 이 view를 쓴다.
@@ -15,7 +16,7 @@ data class UserDetailView(
 	val userId: Long,
 	val nickname: String?,
 	val profileImageCode: String?,
-	val age: Int?,
+	val birthday: LocalDate?,
 	val height: Int?,
 	val gender: Gender?,
 	val phoneNumber: String?,

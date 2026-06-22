@@ -3,6 +3,7 @@ package com.org.meeple.core.match.query.dto
 import com.org.meeple.common.match.TeamMemberStatus
 import com.org.meeple.common.match.TeamStatus
 import com.org.meeple.common.user.Gender
+import java.time.LocalDate
 
 /**
  * 내가 보낸 초대 현황(read model). 초대자(owner)가 자신이 보낸 초대 팀의 메타와 구성원 현황을 본다.
@@ -27,6 +28,6 @@ data class SentInvitationMember(
 	val companyName: String?,
 	val gender: Gender,
 	val profileImageCode: String,
-	val age: Int,
+	val birthday: LocalDate,
 	val status: TeamMemberStatus,
 )

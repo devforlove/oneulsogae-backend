@@ -104,7 +104,7 @@ private fun fullProfileBody(
 	return """
 		{
 		  "nickname": "테스트유저",
-		  "age": 30,
+		  "birthday": "1995-01-01",
 		  "height": 175,
 		  "gender": $genderJson,
 		  "phoneNumber": "010-1234-5678",

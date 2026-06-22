@@ -1,8 +1,10 @@
 package com.org.meeple.api.match.response
 
 import com.org.meeple.common.user.Gender
+import com.org.meeple.core.common.time.ageAt
 import com.org.meeple.core.match.query.dto.ReceivedInvitation
 import com.org.meeple.core.match.query.dto.ReceivedInvitationInviter
+import java.time.LocalDate
 import java.time.LocalDateTime
 
 /**
@@ -37,7 +39,7 @@ data class ReceivedInvitationResponse(
 	)
 
 	companion object {
-		fun of(invitation: ReceivedInvitation): ReceivedInvitationResponse =
+		fun of(invitation: ReceivedInvitation, today: LocalDate): ReceivedInvitationResponse =
 			ReceivedInvitationResponse(
 				teamId = invitation.teamId,
 				name = invitation.name,
@@ -51,7 +53,7 @@ data class ReceivedInvitationResponse(
 						companyName = inviter.companyName,
 						gender = inviter.gender,
 						profileImageCode = inviter.profileImageCode,
-						age = inviter.age,
+						age = inviter.birthday.ageAt(today),
 						height = inviter.height,
 						activityArea = inviter.activityArea,
 						introduction = inviter.introduction,
@@ -62,7 +64,7 @@ data class ReceivedInvitationResponse(
 			)
 
 		/** 받은 초대 목록을 응답 목록으로 변환한다. */
-		fun listOf(invitations: List<ReceivedInvitation>): List<ReceivedInvitationResponse> =
-			invitations.map { of(it) }
+		fun listOf(invitations: List<ReceivedInvitation>, today: LocalDate): List<ReceivedInvitationResponse> =
+			invitations.map { of(it, today) }
 	}
 }
