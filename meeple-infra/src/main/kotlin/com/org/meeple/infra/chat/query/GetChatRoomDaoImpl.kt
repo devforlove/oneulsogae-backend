@@ -69,7 +69,7 @@ class GetChatRoomDaoImpl(
 	 */
 	private fun findActiveRooms(userId: Long): List<ChatRoomSummary> {
 		val chatRoom: QChatRoomEntity = QChatRoomEntity.chatRoomEntity
-		val myMember: QChatRoomMemberEntity = QChatRoomMemberEntity.chatRoomMemberEntity
+		val chatRoomMember: QChatRoomMemberEntity = QChatRoomMemberEntity.chatRoomMemberEntity
 
 		return queryFactory
 			.select(
@@ -79,16 +79,16 @@ class GetChatRoomDaoImpl(
 					Expressions.constant(emptyList<ChatParticipant>()),
 					chatRoom.status,
 					chatRoom.expiredAt,
-					myMember.unreadCount,
+					chatRoomMember.unreadCount,
 					chatRoom.lastMessage,
 					chatRoom.lastMessageAt,
 				),
 			)
-			.from(myMember)
-			.join(chatRoom).on(chatRoom.id.eq(myMember.chatRoomId))
+			.from(chatRoomMember)
+			.join(chatRoom).on(chatRoom.id.eq(chatRoomMember.chatRoomId))
 			.where(
-				myMember.userId.eq(userId),
-				myMember.status.eq(ChatRoomMemberStatus.ACTIVE),
+				chatRoomMember.userId.eq(userId),
+				chatRoomMember.status.eq(ChatRoomMemberStatus.ACTIVE),
 				chatRoom.status.eq(ChatRoomStatus.ACTIVE),
 			)
 			.orderBy(chatRoom.lastMessageAt.desc(), chatRoom.id.desc())
@@ -102,26 +102,26 @@ class GetChatRoomDaoImpl(
 	 * 프로필(user_details)은 @SQLRestriction으로 soft delete된 행이 자동 제외되고, gender는 enum 그대로 투영된다. 조회자(나)는 where에서 제외한다.
 	 */
 	private fun findPartnerParticipants(roomIds: List<Long>, userId: Long): Map<Long, List<ChatParticipant>> {
-		val member: QChatRoomMemberEntity = QChatRoomMemberEntity.chatRoomMemberEntity
-		val detail: QUserDetailEntity = QUserDetailEntity.userDetailEntity
+		val chatRoomMember: QChatRoomMemberEntity = QChatRoomMemberEntity.chatRoomMemberEntity
+		val userDetail: QUserDetailEntity = QUserDetailEntity.userDetailEntity
 
 		return queryFactory
-			.from(member)
-			.join(detail).on(detail.userId.eq(member.userId))
+			.from(chatRoomMember)
+			.join(userDetail).on(userDetail.userId.eq(chatRoomMember.userId))
 			.where(
-				member.chatRoomId.`in`(roomIds),
-				member.userId.ne(userId),
+				chatRoomMember.chatRoomId.`in`(roomIds),
+				chatRoomMember.userId.ne(userId),
 			)
-			.orderBy(member.chatRoomId.asc(), member.userId.asc())
+			.orderBy(chatRoomMember.chatRoomId.asc(), chatRoomMember.userId.asc())
 			.transform(
-				GroupBy.groupBy(member.chatRoomId).`as`(
+				GroupBy.groupBy(chatRoomMember.chatRoomId).`as`(
 					GroupBy.list(
 						Projections.constructor(
 							ChatParticipant::class.java,
-							member.userId,
-							detail.nickname,
-							detail.profileImageCode,
-							detail.gender,
+							chatRoomMember.userId,
+							userDetail.nickname,
+							userDetail.profileImageCode,
+							userDetail.gender,
 						),
 					),
 				),

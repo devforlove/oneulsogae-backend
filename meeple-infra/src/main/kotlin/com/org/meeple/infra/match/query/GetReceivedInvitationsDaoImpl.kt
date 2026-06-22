@@ -32,17 +32,17 @@ class GetReceivedInvitationsDaoImpl(
 ) : GetReceivedInvitationsDao {
 
 	override fun findInvited(userId: Long): List<ReceivedInvitation> {
-		val me: QTeamMemberEntity = QTeamMemberEntity("me")
+		val teamMember: QTeamMemberEntity = QTeamMemberEntity("teamMember")
 		val team: QTeamEntity = QTeamEntity.teamEntity
 
 		// ① 내가 INVITED인 INVITING 팀 헤더. (팀당 1행, fan-out 없음)
 		val headers: List<Tuple> = queryFactory
-			.select(team.id, team.name, team.introduction, me.createdAt)
-			.from(me)
-			.join(team).on(team.id.eq(me.teamId))
+			.select(team.id, team.name, team.introduction, teamMember.createdAt)
+			.from(teamMember)
+			.join(team).on(team.id.eq(teamMember.teamId))
 			.where(
-				me.userId.eq(userId),
-				me.status.eq(TeamMemberStatus.INVITED),
+				teamMember.userId.eq(userId),
+				teamMember.status.eq(TeamMemberStatus.INVITED),
 				team.status.eq(TeamStatus.INVITING),
 			)
 			.orderBy(team.id.desc())
@@ -59,24 +59,24 @@ class GetReceivedInvitationsDaoImpl(
 				teamId = teamId,
 				name = header.get(team.name)!!,
 				introduction = header.get(team.introduction),
-				invitedAt = header.get(me.createdAt)!!,
+				invitedAt = header.get(teamMember.createdAt)!!,
 				participants = participantsByTeamId[teamId] ?: emptyList(),
 			)
 		}
 	}
 
 	override fun countInvited(userId: Long): Long {
-		val me: QTeamMemberEntity = QTeamMemberEntity("me")
+		val teamMember: QTeamMemberEntity = QTeamMemberEntity("teamMember")
 		val team: QTeamEntity = QTeamEntity.teamEntity
 
 		// 내가 INVITED인 INVITING 팀 개수만 센다. (목록·구성원 프로필 조인 없이 COUNT — team_members idx_user_id seek + status 필터)
 		return queryFactory
-			.select(me.count())
-			.from(me)
-			.join(team).on(team.id.eq(me.teamId))
+			.select(teamMember.count())
+			.from(teamMember)
+			.join(team).on(team.id.eq(teamMember.teamId))
 			.where(
-				me.userId.eq(userId),
-				me.status.eq(TeamMemberStatus.INVITED),
+				teamMember.userId.eq(userId),
+				teamMember.status.eq(TeamMemberStatus.INVITED),
 				team.status.eq(TeamStatus.INVITING),
 			)
 			.fetchOne() ?: 0L
@@ -84,38 +84,38 @@ class GetReceivedInvitationsDaoImpl(
 
 	// ② 주어진 팀들의 ACTIVE 구성원 프로필을 한 번에 조회해 teamId → 구성원(생성 순) 맵으로 반환한다.
 	private fun findActiveParticipantsByTeamIds(teamIds: List<Long>): Map<Long, List<ReceivedInvitationParticipant>> {
-		val participant: QTeamMemberEntity = QTeamMemberEntity("participant")
-		val participantMatch: QMatchUserEntity = QMatchUserEntity.matchUserEntity
-		val participantDetail: QUserDetailEntity = QUserDetailEntity.userDetailEntity
+		val participantTeamMember: QTeamMemberEntity = QTeamMemberEntity("participantTeamMember")
+		val matchUser: QMatchUserEntity = QMatchUserEntity.matchUserEntity
+		val userDetail: QUserDetailEntity = QUserDetailEntity.userDetailEntity
 
 		val participantProjection: ConstructorExpression<ReceivedInvitationParticipant> = Projections.constructor(
 			ReceivedInvitationParticipant::class.java,
-			participant.userId,
-			participantMatch.nickname,
-			participantDetail.job,
-			participantDetail.companyName,
-			participant.gender,
-			participantMatch.profileImageCode,
-			participantMatch.birthday,
-			participantDetail.height,
-			participantDetail.activityArea,
-			participantDetail.introduction,
-			Expressions.path(List::class.java, participantDetail, "traits"),
-			Expressions.path(List::class.java, participantDetail, "interests"),
+			participantTeamMember.userId,
+			matchUser.nickname,
+			userDetail.job,
+			userDetail.companyName,
+			participantTeamMember.gender,
+			matchUser.profileImageCode,
+			matchUser.birthday,
+			userDetail.height,
+			userDetail.activityArea,
+			userDetail.introduction,
+			Expressions.path(List::class.java, userDetail, "traits"),
+			Expressions.path(List::class.java, userDetail, "interests"),
 		)
 
 		return queryFactory
-			.select(participant.teamId, participantProjection)
-			.from(participant)
-			.join(participantMatch).on(participantMatch.userId.eq(participant.userId))
-			.join(participantDetail).on(participantDetail.userId.eq(participant.userId))
+			.select(participantTeamMember.teamId, participantProjection)
+			.from(participantTeamMember)
+			.join(matchUser).on(matchUser.userId.eq(participantTeamMember.userId))
+			.join(userDetail).on(userDetail.userId.eq(participantTeamMember.userId))
 			.where(
-				participant.teamId.`in`(teamIds),
-				participant.status.eq(TeamMemberStatus.ACTIVE),
+				participantTeamMember.teamId.`in`(teamIds),
+				participantTeamMember.status.eq(TeamMemberStatus.ACTIVE),
 			)
 			// 생성 순(가장 먼저 만든 ACTIVE=생성자가 앞) 정렬 → 화면에서 participants[0]을 대표 구성원으로 쓸 수 있다.
-			.orderBy(participant.id.asc())
+			.orderBy(participantTeamMember.id.asc())
 			.fetch()
-			.groupBy({ row: Tuple -> row.get(participant.teamId)!! }, { row: Tuple -> row.get(participantProjection)!! })
+			.groupBy({ row: Tuple -> row.get(participantTeamMember.teamId)!! }, { row: Tuple -> row.get(participantProjection)!! })
 	}
 }

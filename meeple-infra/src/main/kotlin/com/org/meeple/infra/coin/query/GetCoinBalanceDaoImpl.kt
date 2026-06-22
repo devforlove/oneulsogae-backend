@@ -17,11 +17,11 @@ class GetCoinBalanceDaoImpl(
 ) : GetCoinBalanceDao {
 
 	override fun findByUserId(userId: Long): CoinBalanceResult? {
-		val balance: QCoinBalanceEntity = QCoinBalanceEntity.coinBalanceEntity
+		val coinBalance: QCoinBalanceEntity = QCoinBalanceEntity.coinBalanceEntity
 		return queryFactory
-			.select(Projections.constructor(CoinBalanceResult::class.java, balance.balance))
-			.from(balance)
-			.where(balance.userId.eq(userId))
+			.select(Projections.constructor(CoinBalanceResult::class.java, coinBalance.balance))
+			.from(coinBalance)
+			.where(coinBalance.userId.eq(userId))
 			.fetchOne()
 	}
 }

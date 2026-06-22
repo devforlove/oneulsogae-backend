@@ -48,15 +48,15 @@ class GetSentInvitationDaoImpl(
 		val teamId: Long = header.get(team.id)!!
 
 		val matchUser: QMatchUserEntity = QMatchUserEntity.matchUserEntity
-		val detail: QUserDetailEntity = QUserDetailEntity.userDetailEntity
+		val userDetail: QUserDetailEntity = QUserDetailEntity.userDetailEntity
 		val members: List<SentInvitationMember> = queryFactory
 			.select(
 				Projections.constructor(
 					SentInvitationMember::class.java,
 					teamMember.userId,
 					matchUser.nickname,
-					detail.job,
-					detail.companyName,
+					userDetail.job,
+					userDetail.companyName,
 					teamMember.gender,
 					matchUser.profileImageCode,
 					matchUser.birthday,
@@ -65,7 +65,7 @@ class GetSentInvitationDaoImpl(
 			)
 			.from(teamMember)
 			.join(matchUser).on(matchUser.userId.eq(teamMember.userId))
-			.join(detail).on(detail.userId.eq(teamMember.userId))
+			.join(userDetail).on(userDetail.userId.eq(teamMember.userId))
 			.where(teamMember.teamId.eq(teamId))
 			.orderBy(teamMember.userId.asc())
 			.fetch()

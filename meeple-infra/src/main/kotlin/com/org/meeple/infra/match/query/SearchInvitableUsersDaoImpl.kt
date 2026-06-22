@@ -30,30 +30,30 @@ class SearchInvitableUsersDaoImpl(
 	}
 
 	override fun search(requesterGender: Gender, userId: Long, nickname: String): List<InvitableUser> {
-		val candidate: QMatchUserEntity = QMatchUserEntity.matchUserEntity
-		val detail: QUserDetailEntity = QUserDetailEntity.userDetailEntity
+		val matchUser: QMatchUserEntity = QMatchUserEntity.matchUserEntity
+		val userDetail: QUserDetailEntity = QUserDetailEntity.userDetailEntity
 
 		return queryFactory
 			.select(
 				Projections.constructor(
 					InvitableUser::class.java,
-					candidate.userId,
-					candidate.nickname,
-					detail.job,
-					detail.companyName,
-					candidate.gender,
-					candidate.profileImageCode,
-					candidate.birthday,
+					matchUser.userId,
+					matchUser.nickname,
+					userDetail.job,
+					userDetail.companyName,
+					matchUser.gender,
+					matchUser.profileImageCode,
+					matchUser.birthday,
 				),
 			)
-			.from(candidate)
-			.join(detail).on(detail.userId.eq(candidate.userId))
+			.from(matchUser)
+			.join(userDetail).on(userDetail.userId.eq(matchUser.userId))
 			.where(
-				candidate.nickname.eq(nickname),
-				candidate.gender.eq(requesterGender),
-				candidate.userId.ne(userId),
+				matchUser.nickname.eq(nickname),
+				matchUser.gender.eq(requesterGender),
+				matchUser.userId.ne(userId),
 			)
-			.orderBy(candidate.userId.asc())
+			.orderBy(matchUser.userId.asc())
 			.fetch()
 	}
 }

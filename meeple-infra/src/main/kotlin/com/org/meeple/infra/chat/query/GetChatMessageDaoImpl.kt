@@ -23,24 +23,24 @@ class GetChatMessageDaoImpl(
 	 * [beforeMessageId]가 있으면 그 id보다 과거(더 작은 id) 구간만 잇는다. (커서 조건은 null이면 무시돼 첫 페이지가 된다)
 	 */
 	override fun findByChatRoom(chatRoomId: Long, beforeMessageId: Long?, limit: Int): ChatMessageViews {
-		val message: QChatMessageEntity = QChatMessageEntity.chatMessageEntity
+		val chatMessage: QChatMessageEntity = QChatMessageEntity.chatMessageEntity
 		val views: List<ChatMessageView> = queryFactory
 			.select(
 				Projections.constructor(
 					ChatMessageView::class.java,
-					message.id,
-					message.senderId,
-					message.content,
-					message.type,
-					message.sentAt,
+					chatMessage.id,
+					chatMessage.senderId,
+					chatMessage.content,
+					chatMessage.type,
+					chatMessage.sentAt,
 				),
 			)
-			.from(message)
+			.from(chatMessage)
 			.where(
-				message.chatRoomId.eq(chatRoomId),
-				beforeMessageId?.let { message.id.lt(it) },
+				chatMessage.chatRoomId.eq(chatRoomId),
+				beforeMessageId?.let { chatMessage.id.lt(it) },
 			)
-			.orderBy(message.id.desc())
+			.orderBy(chatMessage.id.desc())
 			.limit(limit.toLong())
 			.fetch()
 		return ChatMessageViews(views)

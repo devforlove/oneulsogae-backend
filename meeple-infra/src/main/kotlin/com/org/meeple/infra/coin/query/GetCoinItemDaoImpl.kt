@@ -18,19 +18,19 @@ class GetCoinItemDaoImpl(
 ) : GetCoinItemDao {
 
 	override fun findAll(): CoinItems {
-		val item: QCoinItemEntity = QCoinItemEntity.coinItemEntity
+		val coinItem: QCoinItemEntity = QCoinItemEntity.coinItemEntity
 		return CoinItems(
 			queryFactory
 				.select(
 					Projections.constructor(
 						CoinItem::class.java,
-						item.id,
-						item.coinAmount,
-						item.price,
-						item.salePrice,
+						coinItem.id,
+						coinItem.coinAmount,
+						coinItem.price,
+						coinItem.salePrice,
 					),
 				)
-				.from(item)
+				.from(coinItem)
 				.fetch(),
 		)
 	}

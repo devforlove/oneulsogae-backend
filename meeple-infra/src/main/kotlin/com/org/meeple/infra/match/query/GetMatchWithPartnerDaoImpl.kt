@@ -32,54 +32,54 @@ class GetMatchWithPartnerDaoImpl(
 	 * 1:1이라 상대 참가자는 정확히 한 명이다. ([gender]는 컬럼 선택에 쓰지 않아 무시한다)
 	 */
 	override fun findAllWithPartnerByUserId(userId: Long, gender: Gender, now: LocalDateTime): List<MatchWithPartner> {
-		val match: QSoloMatchEntity = QSoloMatchEntity.soloMatchEntity
-		val myMember: QSoloMatchMemberEntity = QSoloMatchMemberEntity.soloMatchMemberEntity
-		val partnerMember: QSoloMatchMemberEntity = QSoloMatchMemberEntity("partnerMember")
-		val partnerDetail: QUserDetailEntity = QUserDetailEntity.userDetailEntity
+		val soloMatch: QSoloMatchEntity = QSoloMatchEntity.soloMatchEntity
+		val mySoloMatchMember: QSoloMatchMemberEntity = QSoloMatchMemberEntity("mySoloMatchMember")
+		val partnerSoloMatchMember: QSoloMatchMemberEntity = QSoloMatchMemberEntity("partnerSoloMatchMember")
+		val userDetail: QUserDetailEntity = QUserDetailEntity.userDetailEntity
 
 		return queryFactory
 			.select(
 				Projections.constructor(
 					MatchWithPartner::class.java,
-					match.id,
-					match.status,
-					match.expiresAt,
-					match.dateInitAmount,
-					match.dateAcceptAmount,
-					myMember.accepted.coalesce(false),
-					partnerMember.accepted.coalesce(false),
-					partnerDetail.userId,
-					partnerDetail.nickname,
-					partnerDetail.profileImageCode,
-					partnerDetail.birthday,
-					partnerDetail.height,
-					partnerDetail.gender,
-					partnerDetail.job,
-					partnerDetail.activityArea,
-					partnerDetail.introduction,
-					partnerDetail.companyName,
-					Expressions.path(List::class.java, partnerDetail, "traits"),
-					Expressions.path(List::class.java, partnerDetail, "interests"),
-					partnerDetail.maritalStatus,
-					partnerDetail.smokingStatus,
-					partnerDetail.religion,
-					partnerDetail.drinkingStatus,
-					partnerDetail.bodyType,
+					soloMatch.id,
+					soloMatch.status,
+					soloMatch.expiresAt,
+					soloMatch.dateInitAmount,
+					soloMatch.dateAcceptAmount,
+					mySoloMatchMember.accepted.coalesce(false),
+					partnerSoloMatchMember.accepted.coalesce(false),
+					userDetail.userId,
+					userDetail.nickname,
+					userDetail.profileImageCode,
+					userDetail.birthday,
+					userDetail.height,
+					userDetail.gender,
+					userDetail.job,
+					userDetail.activityArea,
+					userDetail.introduction,
+					userDetail.companyName,
+					Expressions.path(List::class.java, userDetail, "traits"),
+					Expressions.path(List::class.java, userDetail, "interests"),
+					userDetail.maritalStatus,
+					userDetail.smokingStatus,
+					userDetail.religion,
+					userDetail.drinkingStatus,
+					userDetail.bodyType,
 				),
 			)
-			.from(myMember)
-			.join(match).on(match.id.eq(myMember.matchId))
-			.join(partnerMember).on(
-				partnerMember.matchId.eq(match.id),
-				partnerMember.userId.ne(myMember.userId),
+			.from(mySoloMatchMember)
+			.join(soloMatch).on(soloMatch.id.eq(mySoloMatchMember.matchId))
+			.join(partnerSoloMatchMember).on(
+				partnerSoloMatchMember.matchId.eq(soloMatch.id),
+				partnerSoloMatchMember.userId.ne(mySoloMatchMember.userId),
 				// 상대 status는 거르지 않는다. 상대가 나갔어도(DEACTIVE) 내 목록엔 남겨 상대 프로필과 함께 보여준다.
 			)
-			.join(partnerDetail).on(partnerDetail.userId.eq(partnerMember.userId))
+			.join(userDetail).on(userDetail.userId.eq(partnerSoloMatchMember.userId))
 			.where(
-				myMember.userId.eq(userId),
+				mySoloMatchMember.userId.eq(userId),
 				// 내가 나간(DEACTIVE) 매칭은 내 목록에서 제외한다. (나는 활성 참가자만)
-				myMember.status.eq(MatchMemberStatus.ACTIVE),
-				match.expiresAt.goe(now),
+				mySoloMatchMember.status.eq(MatchMemberStatus.ACTIVE),
+				soloMatch.expiresAt.goe(now),
 			)
 			.fetch()
 	}

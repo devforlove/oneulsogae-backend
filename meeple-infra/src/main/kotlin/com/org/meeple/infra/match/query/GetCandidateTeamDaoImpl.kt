@@ -46,19 +46,19 @@ class GetCandidateTeamDaoImpl(
 
 	// 결성(ACTIVE) + 팀 성별=teamGender(팀은 동성 구성) + 팀원 중 한 명이라도 같은 권역.
 	private fun candidatePredicates(team: QTeamEntity, teamGender: Gender, regionCode: Int): Array<BooleanExpression> {
-		val genderMember: QTeamMemberEntity = QTeamMemberEntity("genderMember")
-		val regionMember: QTeamMemberEntity = QTeamMemberEntity("regionMember")
-		val regionMatchUser: QMatchUserEntity = QMatchUserEntity.matchUserEntity
+		val genderTeamMember: QTeamMemberEntity = QTeamMemberEntity("genderTeamMember")
+		val regionTeamMember: QTeamMemberEntity = QTeamMemberEntity("regionTeamMember")
+		val matchUser: QMatchUserEntity = QMatchUserEntity.matchUserEntity
 		return arrayOf(
 			team.status.eq(TeamStatus.ACTIVE),
 			JPAExpressions.selectOne()
-				.from(genderMember)
-				.where(genderMember.teamId.eq(team.id), genderMember.gender.eq(teamGender))
+				.from(genderTeamMember)
+				.where(genderTeamMember.teamId.eq(team.id), genderTeamMember.gender.eq(teamGender))
 				.exists(),
 			JPAExpressions.selectOne()
-				.from(regionMember)
-				.join(regionMatchUser).on(regionMatchUser.userId.eq(regionMember.userId))
-				.where(regionMember.teamId.eq(team.id), regionMatchUser.regionCode.eq(regionCode))
+				.from(regionTeamMember)
+				.join(matchUser).on(matchUser.userId.eq(regionTeamMember.userId))
+				.where(regionTeamMember.teamId.eq(team.id), matchUser.regionCode.eq(regionCode))
 				.exists(),
 		)
 	}

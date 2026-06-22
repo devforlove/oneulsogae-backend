@@ -26,26 +26,26 @@ class GetChatParticipantDaoImpl(
 	 * 프로필 누락으로 참가 검증이 깨지지 않도록 left join으로 둔다. (참가자 행이 있으면 프로필 유무와 무관하게 결과에 남는다)
 	 */
 	override fun findByChatRoomId(chatRoomId: Long): ChatParticipants {
-		val member: QChatRoomMemberEntity = QChatRoomMemberEntity.chatRoomMemberEntity
-		val detail: QUserDetailEntity = QUserDetailEntity.userDetailEntity
+		val chatRoomMember: QChatRoomMemberEntity = QChatRoomMemberEntity.chatRoomMemberEntity
+		val userDetail: QUserDetailEntity = QUserDetailEntity.userDetailEntity
 
 		return ChatParticipants(
 			queryFactory
 				.select(
 					Projections.constructor(
 						ChatParticipant::class.java,
-						member.userId,
-						detail.nickname,
-						detail.profileImageCode,
-						detail.gender,
+						chatRoomMember.userId,
+						userDetail.nickname,
+						userDetail.profileImageCode,
+						userDetail.gender,
 					),
 				)
-				.from(member)
-				.leftJoin(detail).on(detail.userId.eq(member.userId))
+				.from(chatRoomMember)
+				.leftJoin(userDetail).on(userDetail.userId.eq(chatRoomMember.userId))
 				.where(
-					member.chatRoomId.eq(chatRoomId),
+					chatRoomMember.chatRoomId.eq(chatRoomId),
 				)
-				.orderBy(member.userId.asc())
+				.orderBy(chatRoomMember.userId.asc())
 				.fetch(),
 		)
 	}

@@ -23,33 +23,33 @@ class GetMyActiveTeamDaoImpl(
 ) : GetMyActiveTeamDao {
 
 	override fun findLatestActiveTeam(userId: Long): MyActiveTeam? {
-		val me: QTeamMemberEntity = QTeamMemberEntity("me")
+		val myTeamMember: QTeamMemberEntity = QTeamMemberEntity("myTeamMember")
 		val team: QTeamEntity = QTeamEntity.teamEntity
-		val partner: QTeamMemberEntity = QTeamMemberEntity("partner")
-		val myMatch: QMatchUserEntity = QMatchUserEntity("myMatch")
-		val partnerMatch: QMatchUserEntity = QMatchUserEntity("partnerMatch")
+		val partnerTeamMember: QTeamMemberEntity = QTeamMemberEntity("partnerTeamMember")
+		val myMatchUser: QMatchUserEntity = QMatchUserEntity("myMatchUser")
+		val partnerMatchUser: QMatchUserEntity = QMatchUserEntity("partnerMatchUser")
 
 		return queryFactory
 			.select(
 				Projections.constructor(
 					MyActiveTeam::class.java,
 					team.id,
-					myMatch.profileImageCode,
-					partnerMatch.profileImageCode,
+					myMatchUser.profileImageCode,
+					partnerMatchUser.profileImageCode,
 				),
 			)
-			.from(me)
-			.join(team).on(team.id.eq(me.teamId))
-			.join(partner).on(
-				partner.teamId.eq(team.id),
-				partner.userId.ne(me.userId),
-				partner.status.eq(TeamMemberStatus.ACTIVE),
+			.from(myTeamMember)
+			.join(team).on(team.id.eq(myTeamMember.teamId))
+			.join(partnerTeamMember).on(
+				partnerTeamMember.teamId.eq(team.id),
+				partnerTeamMember.userId.ne(myTeamMember.userId),
+				partnerTeamMember.status.eq(TeamMemberStatus.ACTIVE),
 			)
-			.join(myMatch).on(myMatch.userId.eq(me.userId))
-			.join(partnerMatch).on(partnerMatch.userId.eq(partner.userId))
+			.join(myMatchUser).on(myMatchUser.userId.eq(myTeamMember.userId))
+			.join(partnerMatchUser).on(partnerMatchUser.userId.eq(partnerTeamMember.userId))
 			.where(
-				me.userId.eq(userId),
-				me.status.eq(TeamMemberStatus.ACTIVE),
+				myTeamMember.userId.eq(userId),
+				myTeamMember.status.eq(TeamMemberStatus.ACTIVE),
 				team.status.eq(TeamStatus.ACTIVE),
 			)
 			.orderBy(team.id.desc())

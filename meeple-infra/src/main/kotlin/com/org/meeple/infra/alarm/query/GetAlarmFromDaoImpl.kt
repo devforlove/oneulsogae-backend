@@ -21,19 +21,19 @@ class GetAlarmFromDaoImpl(
 	override fun findByUserIds(userIds: Set<Long>): AlarmFroms {
 		if (userIds.isEmpty()) return AlarmFroms.empty()
 
-		val detail: QUserDetailEntity = QUserDetailEntity.userDetailEntity
+		val userDetail: QUserDetailEntity = QUserDetailEntity.userDetailEntity
 		return AlarmFroms(
 			queryFactory
 				.select(
 					Projections.constructor(
 						AlarmFrom::class.java,
-						detail.userId,
-						detail.profileImageCode,
-						detail.gender,
+						userDetail.userId,
+						userDetail.profileImageCode,
+						userDetail.gender,
 					),
 				)
-				.from(detail)
-				.where(detail.userId.`in`(userIds))
+				.from(userDetail)
+				.where(userDetail.userId.`in`(userIds))
 				.fetch(),
 		)
 	}

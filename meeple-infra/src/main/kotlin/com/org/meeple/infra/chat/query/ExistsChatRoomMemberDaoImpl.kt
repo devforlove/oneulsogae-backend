@@ -22,14 +22,14 @@ class ExistsChatRoomMemberDaoImpl(
 	 * 나간(DEACTIVE) 참가자는 status로 제외한다. (비참가자로 취급해 접근 검증에서 거른다)
 	 */
 	override fun existsByChatRoomIdAndUserId(chatRoomId: Long, userId: Long): Boolean {
-		val member: QChatRoomMemberEntity = QChatRoomMemberEntity.chatRoomMemberEntity
+		val chatRoomMember: QChatRoomMemberEntity = QChatRoomMemberEntity.chatRoomMemberEntity
 		return queryFactory
 			.selectOne()
-			.from(member)
+			.from(chatRoomMember)
 			.where(
-				member.chatRoomId.eq(chatRoomId),
-				member.userId.eq(userId),
-				member.status.eq(ChatRoomMemberStatus.ACTIVE),
+				chatRoomMember.chatRoomId.eq(chatRoomId),
+				chatRoomMember.userId.eq(userId),
+				chatRoomMember.status.eq(ChatRoomMemberStatus.ACTIVE),
 			)
 			.fetchFirst() != null
 	}
