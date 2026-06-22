@@ -90,6 +90,37 @@ class GetSentInvitationE2ETest : AbstractIntegrationSupport({
 			}
 		}
 
+		context("초대가 수락되어 팀이 ACTIVE가 된 뒤 초대자가 조회하면") {
+			it("ACTIVE 상태와 함께 합류한 구성원(ACTIVE)을 반환한다 (200)") {
+				val ownerId = 3010L
+				val invitedUserId = 3011L
+				persistProfile(ownerId, "초대왕", "10", "PM", "토스")
+				persistProfile(invitedUserId, "합류자", "20", "개발자", "카카오", birthday = LocalDate.now().minusYears(28))
+				val teamId: Long = invite(ownerId, invitedUserId)
+
+				// 초대받은 사용자가 수락 → 전원 ACTIVE라 팀이 ACTIVE로 전이한다.
+				post("/teams/v1/$teamId/acceptance") {
+					bearer(accessTokenFor(invitedUserId))
+				} expect {
+					status(200)
+				}
+
+				get("/teams/v1/invitation") {
+					bearer(accessTokenFor(ownerId))
+				} expect {
+					status(200)
+					body("data.teamId", teamId.toInt())
+					body("data.status", TeamStatus.ACTIVE.name)
+					// 요청자 본인(초대자)은 제외되고, 합류한 상대(ACTIVE)만 노출된다.
+					body("data.members", hasSize<Any>(1))
+					body("data.members[0].userId", invitedUserId.toInt())
+					body("data.members[0].nickname", "합류자")
+					body("data.members[0].age", 28)
+					body("data.members[0].status", TeamMemberStatus.ACTIVE.name)
+				}
+			}
+		}
+
 		context("직업·회사명이 미입력(null)인 구성원이 있어도") {
 			it("해당 필드를 null로 담아 반환한다 (200)") {
 				val ownerId = 3008L
