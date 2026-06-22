@@ -37,8 +37,9 @@ class AcceptTeamInvitationService(
 		val accepted: Team = saveTeamPort.save(team.acceptInvitation(userId))
 		deactivateOtherInvitations(userId, teamId)
 		// 초대받은 사람이 수락 → 초대했던 사람에게 알람이 가도록 이벤트 발행. (커밋 이후 핸들러가 처리)
+		// 초대자는 수락 직전(INVITING — 유일한 ACTIVE) 팀에서 읽는다. 수락 후엔 전원 ACTIVE라 초대자/수락자를 구분할 수 없다.
 		domainEventPublisher.publish(
-			TeamInvitationAccepted(accepted.id, inviterUserId = accepted.inviterId(), invitedUserId = userId),
+			TeamInvitationAccepted(accepted.id, inviterUserId = team.inviterId(), invitedUserId = userId),
 		)
 		return accepted
 	}
