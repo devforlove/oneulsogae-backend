@@ -16,4 +16,7 @@ interface TeamMemberJpaRepository : JpaRepository<TeamMemberEntity, Long> {
 
 	/** [userId]가 [status]인 팀 구성원으로 존재하는지 여부. (활성 팀 소속 판정용) */
 	fun existsByUserIdAndStatus(userId: Long, status: TeamMemberStatus): Boolean
+
+	/** [userId]가 [status]인 팀 구성원 행 전체. (받은 초대 목록 조회용) */
+	fun findByUserIdAndStatus(userId: Long, status: TeamMemberStatus): List<TeamMemberEntity>
 }

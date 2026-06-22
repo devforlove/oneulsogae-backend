@@ -13,4 +13,7 @@ interface GetTeamPort {
 
 	/** [userId]가 활성(삭제되지 않은) 팀 구성원으로 속해 있는지 여부. ("한 팀만" 제약 판정) */
 	fun existsActiveTeamMember(userId: Long): Boolean
+
+	/** [userId]가 초대중(INVITED)으로 속한 팀들(= 받은 초대). 없으면 빈 목록. */
+	fun findInvitedTeams(userId: Long): List<Team>
 }

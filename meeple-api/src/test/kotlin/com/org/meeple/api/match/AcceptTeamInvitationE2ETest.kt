@@ -34,6 +34,13 @@ class AcceptTeamInvitationE2ETest : AbstractIntegrationSupport({
 		}.extract().path<Int>("data.teamId").toLong()
 	}
 
+	// 이미 영속된 ownerId/invitedUserId로 초대만 보낸다. (사용자 재영속 없이 같은 invitedUserId에게 여러 초대 전송용)
+	fun invite(ownerId: Long, invitedUserId: Long): Long =
+		post("/teams/v1/invitation") {
+			bearer(accessTokenFor(ownerId))
+			jsonBody("""{"invitedUserId": $invitedUserId, "name": "우리팀", "introduction": "함께 즐겁게 활동할 팀이에요"}""")
+		}.extract().path<Int>("data.teamId").toLong()
+
 	describe("POST /teams/v1/{teamId}/acceptance") {
 
 		context("초대받은 사용자가 수락하면") {
@@ -52,6 +59,30 @@ class AcceptTeamInvitationE2ETest : AbstractIntegrationSupport({
 
 				val members: List<TeamMemberEntity> = teamMembersOf(teamId)
 				members.all { it.status == TeamMemberStatus.ACTIVE } shouldBe true
+			}
+		}
+
+		context("같은 사용자가 받은 초대가 여러 개일 때 하나를 수락하면") {
+			it("수락한 팀 외에 받은 다른 초대들은 모두 비활성화된다 (200)") {
+				val invitedUserId = 2006L
+				val owner1 = 2007L
+				val owner2 = 2008L
+				persistMatchUser(invitedUserId, Gender.MALE)
+				persistMatchUser(owner1, Gender.MALE)
+				persistMatchUser(owner2, Gender.MALE)
+				val acceptedTeamId: Long = invite(owner1, invitedUserId)
+				val otherTeamId: Long = invite(owner2, invitedUserId)
+
+				post("/teams/v1/$acceptedTeamId/acceptance") {
+					bearer(accessTokenFor(invitedUserId))
+				} expect {
+					status(200)
+					body("data.status", TeamStatus.FORMED.name)
+				}
+
+				teamMembersOf(acceptedTeamId).all { it.status == TeamMemberStatus.ACTIVE } shouldBe true
+				// 다른 초대는 팀이 소프트 삭제되어 활성 조회에서 사라진다. (@SQLRestriction)
+				teamMembersOf(otherTeamId).isEmpty() shouldBe true
 			}
 		}
 

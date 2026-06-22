@@ -50,4 +50,9 @@ class TeamAdapter(
 	/** 구성원 상태가 ACTIVE인 team_member 행 존재 여부로 활성 팀 소속을 판정한다. (초대중(INVITED)은 여러 팀에서 가능하므로 제외) */
 	override fun existsActiveTeamMember(userId: Long): Boolean =
 		teamMemberJpaRepository.existsByUserIdAndStatus(userId, TeamMemberStatus.ACTIVE)
+
+	/** userId가 INVITED인 team_member 행들을 찾아 각 팀 애그리거트로 조립한다. (받은 초대 목록 — INVITED는 보통 소수) */
+	override fun findInvitedTeams(userId: Long): List<Team> =
+		teamMemberJpaRepository.findByUserIdAndStatus(userId, TeamMemberStatus.INVITED)
+			.mapNotNull { member: TeamMemberEntity -> findById(member.teamId) }
 }
