@@ -6,6 +6,8 @@ CREATE TABLE regions (
     sigungu    VARCHAR(50) NOT NULL,
     longitude  DOUBLE      NOT NULL,
     latitude   DOUBLE      NOT NULL,
+    -- 노출 정렬 순서. 목록 조회는 이 값 오름차순으로 정렬한다. (order는 SQL 예약어라 컬럼명 display_order)
+    display_order INT       NOT NULL,
     created_at DATETIME(6) NOT NULL,
     updated_at DATETIME(6) NOT NULL,
     deleted_at DATETIME(6) NULL,

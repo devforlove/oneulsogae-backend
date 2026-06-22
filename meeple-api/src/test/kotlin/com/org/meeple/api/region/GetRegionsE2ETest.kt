@@ -14,21 +14,24 @@ import org.hamcrest.Matchers.hasSize
  */
 class GetRegionsE2ETest : AbstractIntegrationSupport({
 
-	describe("GET /regions/v1") {
+	describe("GET /regions/v1/list") {
 
 		context("활동지역이 적재돼 있으면") {
-			it("id를 포함한 전체 지역 목록을 시/도·시/군/구 순으로 반환한다 (200)") {
-				IntegrationUtil.persist(RegionEntityFixture.create(sido = "서울특별시", sigungu = "강남구"))
-				IntegrationUtil.persist(RegionEntityFixture.create(sido = "부산광역시", sigungu = "해운대구"))
+			it("id를 포함한 전체 지역 목록을 order 오름차순으로 반환한다 (200)") {
+				// 적재 순서와 무관하게 order 오름차순(해운대=1 → 강남=2)으로 정렬돼야 한다.
+				IntegrationUtil.persist(RegionEntityFixture.create(sido = "서울특별시", sigungu = "강남구", order = 2))
+				IntegrationUtil.persist(RegionEntityFixture.create(sido = "부산광역시", sigungu = "해운대구", order = 1))
 
-				get("/regions/v1") {
+				get("/regions/v1/list") {
 					bearer(accessTokenFor(9001L))
 				} expect {
 					status(200)
 					body("success", true)
 					body("data", hasSize<Any>(2))
-					body("data.find { it.sigungu == '강남구' }.sido", "서울특별시")
-					body("data.find { it.sigungu == '강남구' }.id", greaterThan(0))
+					// order 오름차순 → [0]=해운대구(1), [1]=강남구(2)
+					body("data[0].sigungu", "해운대구")
+					body("data[1].sigungu", "강남구")
+					body("data[0].id", greaterThan(0))
 				}
 			}
 		}

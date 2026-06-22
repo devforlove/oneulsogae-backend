@@ -38,4 +38,8 @@ class RegionEntity(
 	/** 위도. (거리 계산용) */
 	@Column(name = "latitude", nullable = false)
 	var latitude: Double,
+
+	/** 노출 정렬 순서. 목록 조회는 이 값 오름차순으로 정렬한다. (컬럼명은 SQL 예약어 회피를 위해 display_order) */
+	@Column(name = "display_order", nullable = false)
+	var order: Int,
 ) : BaseEntity()

@@ -12,11 +12,13 @@ object RegionEntityFixture {
 		sigungu: String = "강남구",
 		longitude: Double = 127.0473,
 		latitude: Double = 37.5172,
+		order: Int = 0,
 	): RegionEntity =
 		RegionEntity(
 			sido = sido,
 			sigungu = sigungu,
 			longitude = longitude,
 			latitude = latitude,
+			order = order,
 		)
 }

@@ -21,7 +21,7 @@ class GetRegionsDaoImpl(
 		return queryFactory
 			.select(Projections.constructor(RegionView::class.java, region.id, region.sido, region.sigungu))
 			.from(region)
-			.orderBy(region.sido.asc(), region.sigungu.asc())
+			.orderBy(region.order.asc())
 			.fetch()
 	}
 
