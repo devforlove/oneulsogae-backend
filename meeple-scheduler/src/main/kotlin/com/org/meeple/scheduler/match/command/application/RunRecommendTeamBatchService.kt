@@ -32,10 +32,10 @@ class RunRecommendTeamBatchService(
 		val today: LocalDate = timeGenerator.today()
 
 		var cursor: Long? = null
-		var targets = 0
-		var recommended = 0
-		var skipped = 0
-		var failed = 0
+		var targets: Int = 0
+		var recommended: Int = 0
+		var skipped: Int = 0
+		var failed: Int = 0
 
 		while (true) {
 			val page: List<RecommendableSoloUser> = getRecommendableSoloUserDao.findTargets(cursor, PAGE_SIZE)
@@ -62,7 +62,7 @@ class RunRecommendTeamBatchService(
 			cursor = page.last().userId
 		}
 
-		val result = RecommendTeamBatchResult(targets = targets, recommended = recommended, skipped = skipped, failed = failed)
+		val result: RecommendTeamBatchResult = RecommendTeamBatchResult(targets = targets, recommended = recommended, skipped = skipped, failed = failed)
 		log.info("팀 추천 배치 완료: {}", result)
 		return result
 	}
