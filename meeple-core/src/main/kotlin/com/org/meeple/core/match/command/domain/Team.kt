@@ -20,9 +20,9 @@ data class Team(
 	/** 팀 성별. 팀은 동성으로 구성되므로 팀 단위로 하나의 성별을 가진다. (구성원은 성별을 따로 보관하지 않는다) */
 	val gender: Gender,
 	/** 팀 활동지역(시/도 문자열). 초대 시 요청으로 받는다. */
-	val region: String? = null,
-	/** 활동지역 권역 코드(1~5). [region]에서 [Region.resolveAreaCode]로 산출한다. 인식 불가 지역이면 null. */
-	val regionCode: Int? = null,
+	val region: String,
+	/** 활동지역 권역 코드(1~5). [region]에서 [Region.resolveAreaCode]로 산출한다. */
+	val regionCode: Int,
 	val introduction: String? = null,
 	val members: TeamMembers,
 	val status: TeamStatus = TeamStatus.INVITING,
@@ -131,13 +131,15 @@ data class Team(
 		): Team {
 			validateInvite(ownerId, ownerGender, invitedUserId, invitedGender, name, introduction)
 			val trimmedRegion: String = region.trim()
+			// 활동지역에서 권역 코드(1~5) 산출. 인식 불가 지역이면 거절한다. (온보딩 UserDetail과 동일 변환, regionCode는 non-null 보장)
+			val resolvedRegionCode: Int = Region.resolveAreaCode(trimmedRegion)
+				?: throw BusinessException(TeamErrorCode.INVALID_TEAM_REGION)
 			return Team(
 				name = name.trim(),
 				// 팀은 동성 구성이라 팀 성별 = 초대자 성별. (initiator/invited 동일 성별은 validateInvite에서 보장)
 				gender = ownerGender,
 				region = trimmedRegion,
-				// 활동지역에서 권역 코드(1~5) 산출. 인식 불가 지역이면 null. (온보딩 UserDetail과 동일 규칙)
-				regionCode = Region.resolveAreaCode(trimmedRegion),
+				regionCode = resolvedRegionCode,
 				introduction = introduction.trim(),
 				members = TeamMembers.of(
 					listOf(

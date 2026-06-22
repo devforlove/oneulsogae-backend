@@ -57,11 +57,12 @@ class TeamTest : DescribeSpec({
 			team.region shouldBe "서울특별시 강남구"
 		}
 
-		it("인식할 수 없는 활동지역이면 regionCode가 null이다") {
-			val team: Team = Team.invite(ownerId, Gender.MALE, invitedUserId, Gender.MALE, "우리팀", validIntroduction, "알 수 없는 지역")
+		it("인식할 수 없는 활동지역이면 INVALID_TEAM_REGION을 던진다") {
+			val ex: BusinessException = shouldThrow {
+				Team.invite(ownerId, Gender.MALE, invitedUserId, Gender.MALE, "우리팀", validIntroduction, "알 수 없는 지역")
+			}
 
-			team.region shouldBe "알 수 없는 지역"
-			team.regionCode shouldBe null
+			ex.errorCode shouldBe TeamErrorCode.INVALID_TEAM_REGION
 		}
 	}
 
@@ -120,6 +121,8 @@ class TeamTest : DescribeSpec({
 			Team(
 				name = "우리팀",
 				gender = Gender.MALE,
+				region = "서울특별시 강남구",
+				regionCode = 1,
 				members = TeamMembers(
 					listOf(
 						TeamMember(teamId = 0, userId = ownerId, status = TeamMemberStatus.ACTIVE),
@@ -164,6 +167,8 @@ class TeamTest : DescribeSpec({
 			Team(
 				name = "우리팀",
 				gender = Gender.MALE,
+				region = "서울특별시 강남구",
+				regionCode = 1,
 				members = TeamMembers(
 					listOf(
 						TeamMember(teamId = 0, userId = ownerId, status = TeamMemberStatus.ACTIVE),
@@ -201,6 +206,8 @@ class TeamTest : DescribeSpec({
 			Team(
 				name = "우리팀",
 				gender = Gender.MALE,
+				region = "서울특별시 강남구",
+				regionCode = 1,
 				members = TeamMembers(
 					listOf(
 						TeamMember(teamId = 0, userId = ownerId, status = TeamMemberStatus.ACTIVE),

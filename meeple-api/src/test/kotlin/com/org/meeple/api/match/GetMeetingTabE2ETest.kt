@@ -32,7 +32,9 @@ class GetMeetingTabE2ETest : AbstractIntegrationSupport({
 	}
 
 	fun persistTeam(status: TeamStatus, gender: Gender): Long =
-		IntegrationUtil.persist(TeamEntity(name = "팀", gender = gender, introduction = "함께 즐겁게 활동해요", status = status)).id!!
+		IntegrationUtil.persist(
+			TeamEntity(name = "팀", gender = gender, region = "서울특별시 강남구", regionCode = 1, introduction = "함께 즐겁게 활동해요", status = status),
+		).id!!
 
 	fun persistMember(teamId: Long, userId: Long, status: TeamMemberStatus) {
 		IntegrationUtil.persist(TeamMemberEntity(teamId = teamId, userId = userId, status = status))

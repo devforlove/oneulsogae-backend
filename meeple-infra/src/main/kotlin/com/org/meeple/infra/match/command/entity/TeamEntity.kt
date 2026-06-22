@@ -31,12 +31,12 @@ class TeamEntity(
 	var gender: Gender,
 
 	/** 팀 활동지역(시/도 문자열). 초대 시 요청으로 받는다. */
-	@Column(name = "region", length = 100)
-	var region: String? = null,
+	@Column(name = "region", nullable = false, length = 100)
+	var region: String,
 
-	/** 활동지역 권역 코드(1~5). [region]에서 [com.org.meeple.common.user.Region.resolveAreaCode]로 산출. 인식 불가 지역이면 null. */
-	@Column(name = "region_code")
-	var regionCode: Int? = null,
+	/** 활동지역 권역 코드(1~5). [region]에서 [com.org.meeple.common.user.Region.resolveAreaCode]로 산출. */
+	@Column(name = "region_code", nullable = false)
+	var regionCode: Int,
 
 	/** 팀 소개. */
 	@Column(name = "introduction", length = 1000)
