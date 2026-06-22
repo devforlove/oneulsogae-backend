@@ -120,6 +120,8 @@ class AcceptTeamInvitationE2ETest : AbstractIntegrationSupport({
 				teamMembersOf(acceptedTeamId).all { it.status == TeamMemberStatus.ACTIVE } shouldBe true
 				// 다른 초대는 팀이 소프트 삭제되어 활성 조회에서 사라진다. (@SQLRestriction)
 				teamMembersOf(otherTeamId).isEmpty() shouldBe true
+				// 자동 거절된 다른 초대의 초대자(owner2)에게 '초대 거절' 알람이 간다.
+				alarmsOf(owner2).any { it.type == AlarmType.TEAM_INVITATION_DECLINED } shouldBe true
 			}
 		}
 
@@ -148,6 +150,8 @@ class AcceptTeamInvitationE2ETest : AbstractIntegrationSupport({
 				teamMembersOf(acceptedTeamId).all { it.status == TeamMemberStatus.ACTIVE } shouldBe true
 				// userX가 owner로 만든 INVITING 팀(T1)도 비활성화되어 활성 조회에서 사라진다.
 				teamMembersOf(myInvitingTeamId).isEmpty() shouldBe true
+				// 자동 취소된 내 팀(T1)의 초대받은 사람(userY)에게 '초대 취소' 알람이 간다.
+				alarmsOf(userY).any { it.type == AlarmType.TEAM_INVITATION_CANCELED } shouldBe true
 			}
 		}
 
