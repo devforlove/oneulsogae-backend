@@ -30,13 +30,9 @@ class TeamEntity(
 	@Column(name = "gender", nullable = false, columnDefinition = "varchar(50)")
 	var gender: Gender,
 
-	/** 팀 활동지역(시/도 문자열). 초대 시 요청으로 받는다. */
-	@Column(name = "region", nullable = false, length = 100)
-	var region: String,
-
-	/** 활동지역 권역 코드(1~5). [region]에서 [com.org.meeple.common.user.Region.resolveAreaCode]로 산출. */
-	@Column(name = "region_code", nullable = false)
-	var regionCode: Int,
+	/** 팀 활동지역 id(regions FK). 초대 시 regionId로 받는다. 표시용 지역명은 응답 시 regions join으로 내려준다. */
+	@Column(name = "region_id", nullable = false)
+	var regionId: Long,
 
 	/** 팀 소개. */
 	@Column(name = "introduction", length = 1000)

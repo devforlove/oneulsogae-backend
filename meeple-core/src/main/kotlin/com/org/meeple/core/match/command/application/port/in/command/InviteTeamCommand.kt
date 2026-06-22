@@ -8,5 +8,5 @@ data class InviteTeamCommand(
 	val invitedUserId: Long,
 	val name: String,
 	val introduction: String,
-	val region: String,
+	val regionId: Long,
 )

@@ -23,5 +23,4 @@ enum class TeamErrorCode(
 	NOT_INVITED_MEMBER("TEAM-007", "초대를 받은 구성원만 수락할 수 있습니다.", HttpStatus.BAD_REQUEST),
 	INVALID_TEAM_STATUS("TEAM-008", "현재 팀 상태에서 할 수 없는 작업입니다.", HttpStatus.CONFLICT),
 	ALREADY_IN_TEAM("TEAM-009", "이미 다른 팀에 속해 있습니다.", HttpStatus.CONFLICT),
-	INVALID_TEAM_REGION("TEAM-010", "지원하지 않는 활동지역입니다.", HttpStatus.BAD_REQUEST),
 }

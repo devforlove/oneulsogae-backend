@@ -33,15 +33,14 @@ class TeamTest : DescribeSpec({
 				invitedGender = Gender.MALE,
 				name = "우리팀",
 				introduction = validIntroduction,
-				region = "서울특별시 강남구",
+				regionId = 1L,
 			)
 
 			team.status shouldBe TeamStatus.INVITING
 			team.name shouldBe "우리팀"
 			team.introduction shouldBe validIntroduction
-			// 활동지역과 그로부터 산출한 권역 코드를 보관한다. (서울 → 1)
-			team.region shouldBe "서울특별시 강남구"
-			team.regionCode shouldBe 1
+			// 활동지역 id(regions FK)를 보관한다.
+			team.regionId shouldBe 1L
 			team.members.userIds() shouldContainExactlyInAnyOrder listOf(ownerId, invitedUserId)
 
 			val statusByUserId: Map<Long, TeamMemberStatus> = team.members.values.associate { it.userId to it.status }
@@ -50,26 +49,18 @@ class TeamTest : DescribeSpec({
 		}
 
 		it("앞뒤 공백을 제거한 이름·소개로 결성한다") {
-			val team: Team = Team.invite(ownerId, Gender.MALE, invitedUserId, Gender.MALE, "  우리팀  ", "  $validIntroduction  ", "  서울특별시 강남구  ")
+			val team: Team = Team.invite(ownerId, Gender.MALE, invitedUserId, Gender.MALE, "  우리팀  ", "  $validIntroduction  ", 1L)
 
 			team.name shouldBe "우리팀"
 			team.introduction shouldBe validIntroduction
-			team.region shouldBe "서울특별시 강남구"
-		}
-
-		it("인식할 수 없는 활동지역이면 INVALID_TEAM_REGION을 던진다") {
-			val ex: BusinessException = shouldThrow {
-				Team.invite(ownerId, Gender.MALE, invitedUserId, Gender.MALE, "우리팀", validIntroduction, "알 수 없는 지역")
-			}
-
-			ex.errorCode shouldBe TeamErrorCode.INVALID_TEAM_REGION
+			team.regionId shouldBe 1L
 		}
 	}
 
 	describe("invite - 입력 검증") {
 		it("자기 자신을 초대하면 CANNOT_INVITE_SELF를 던진다") {
 			val ex: BusinessException = shouldThrow {
-				Team.invite(ownerId, Gender.MALE, ownerId, Gender.MALE, "우리팀", validIntroduction, "서울특별시 강남구")
+				Team.invite(ownerId, Gender.MALE, ownerId, Gender.MALE, "우리팀", validIntroduction, 1L)
 			}
 
 			ex.errorCode shouldBe TeamErrorCode.CANNOT_INVITE_SELF
@@ -77,7 +68,7 @@ class TeamTest : DescribeSpec({
 
 		it("초대 대상이 다른 성별이면 MUST_INVITE_SAME_GENDER를 던진다") {
 			val ex: BusinessException = shouldThrow {
-				Team.invite(ownerId, Gender.MALE, invitedUserId, Gender.FEMALE, "우리팀", validIntroduction, "서울특별시 강남구")
+				Team.invite(ownerId, Gender.MALE, invitedUserId, Gender.FEMALE, "우리팀", validIntroduction, 1L)
 			}
 
 			ex.errorCode shouldBe TeamErrorCode.MUST_INVITE_SAME_GENDER
@@ -85,7 +76,7 @@ class TeamTest : DescribeSpec({
 
 		it("이름이 공백뿐이면 INVALID_TEAM_NAME을 던진다") {
 			val ex: BusinessException = shouldThrow {
-				Team.invite(ownerId, Gender.MALE, invitedUserId, Gender.MALE, "   ", validIntroduction, "서울특별시 강남구")
+				Team.invite(ownerId, Gender.MALE, invitedUserId, Gender.MALE, "   ", validIntroduction, 1L)
 			}
 
 			ex.errorCode shouldBe TeamErrorCode.INVALID_TEAM_NAME
@@ -93,7 +84,7 @@ class TeamTest : DescribeSpec({
 
 		it("이름이 최대 길이를 넘으면 INVALID_TEAM_NAME을 던진다") {
 			val ex: BusinessException = shouldThrow {
-				Team.invite(ownerId, Gender.MALE, invitedUserId, Gender.MALE, "가".repeat(Team.MAX_NAME_LENGTH + 1), validIntroduction, "서울특별시 강남구")
+				Team.invite(ownerId, Gender.MALE, invitedUserId, Gender.MALE, "가".repeat(Team.MAX_NAME_LENGTH + 1), validIntroduction, 1L)
 			}
 
 			ex.errorCode shouldBe TeamErrorCode.INVALID_TEAM_NAME
@@ -101,7 +92,7 @@ class TeamTest : DescribeSpec({
 
 		it("소개가 최소 길이 미만이면 INVALID_TEAM_INTRODUCTION을 던진다") {
 			val ex: BusinessException = shouldThrow {
-				Team.invite(ownerId, Gender.MALE, invitedUserId, Gender.MALE, "우리팀", "가".repeat(Team.MIN_INTRODUCTION_LENGTH - 1), "서울특별시 강남구")
+				Team.invite(ownerId, Gender.MALE, invitedUserId, Gender.MALE, "우리팀", "가".repeat(Team.MIN_INTRODUCTION_LENGTH - 1), 1L)
 			}
 
 			ex.errorCode shouldBe TeamErrorCode.INVALID_TEAM_INTRODUCTION
@@ -109,7 +100,7 @@ class TeamTest : DescribeSpec({
 
 		it("소개가 최대 길이를 넘으면 INVALID_TEAM_INTRODUCTION을 던진다") {
 			val ex: BusinessException = shouldThrow {
-				Team.invite(ownerId, Gender.MALE, invitedUserId, Gender.MALE, "우리팀", "가".repeat(Team.MAX_INTRODUCTION_LENGTH + 1), "서울특별시 강남구")
+				Team.invite(ownerId, Gender.MALE, invitedUserId, Gender.MALE, "우리팀", "가".repeat(Team.MAX_INTRODUCTION_LENGTH + 1), 1L)
 			}
 
 			ex.errorCode shouldBe TeamErrorCode.INVALID_TEAM_INTRODUCTION
@@ -121,8 +112,7 @@ class TeamTest : DescribeSpec({
 			Team(
 				name = "우리팀",
 				gender = Gender.MALE,
-				region = "서울특별시 강남구",
-				regionCode = 1,
+				regionId = 1L,
 				members = TeamMembers(
 					listOf(
 						TeamMember(teamId = 0, userId = ownerId, status = TeamMemberStatus.ACTIVE),
@@ -167,8 +157,7 @@ class TeamTest : DescribeSpec({
 			Team(
 				name = "우리팀",
 				gender = Gender.MALE,
-				region = "서울특별시 강남구",
-				regionCode = 1,
+				regionId = 1L,
 				members = TeamMembers(
 					listOf(
 						TeamMember(teamId = 0, userId = ownerId, status = TeamMemberStatus.ACTIVE),
@@ -206,8 +195,7 @@ class TeamTest : DescribeSpec({
 			Team(
 				name = "우리팀",
 				gender = Gender.MALE,
-				region = "서울특별시 강남구",
-				regionCode = 1,
+				regionId = 1L,
 				members = TeamMembers(
 					listOf(
 						TeamMember(teamId = 0, userId = ownerId, status = TeamMemberStatus.ACTIVE),
