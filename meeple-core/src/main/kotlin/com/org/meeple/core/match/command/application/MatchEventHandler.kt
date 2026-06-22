@@ -6,7 +6,6 @@ import com.org.meeple.core.alarm.command.application.port.`in`.command.SaveAlarm
 import com.org.meeple.core.user.query.service.port.`in`.GetUserDetailUseCase
 import com.org.meeple.core.match.command.domain.event.InterestSent
 import com.org.meeple.core.match.command.domain.event.MatchAccepted
-import com.org.meeple.core.match.command.domain.event.TeamInvitationSent
 import org.springframework.stereotype.Component
 import org.springframework.transaction.annotation.Propagation
 import org.springframework.transaction.annotation.Transactional
@@ -14,7 +13,8 @@ import org.springframework.transaction.event.TransactionPhase
 import org.springframework.transaction.event.TransactionalEventListener
 
 /**
- * 매칭 도메인 이벤트의 후속 알람 처리를 한곳에서 다루는 핸들러.
+ * 매칭(관심/성사) 도메인 이벤트의 후속 알람 처리를 한곳에서 다루는 핸들러.
+ * (팀 초대 관련 이벤트는 [TeamEventHandler]가 담당한다)
  *
  * 알람은 부가 효과이므로 모두 커밋 이후(AFTER_COMMIT) 별도 트랜잭션([Propagation.REQUIRES_NEW])으로 best-effort 저장한다.
  * (알람 저장이 실패해도 관심/성사/과금/채팅방은 롤백되지 않는다)
@@ -54,28 +54,6 @@ class MatchEventHandler(
 		// 수락자의 상대(원래 관심을 보낸 쪽)에게는 수락자를, 수락자 본인에게는 그 상대를 가리키는 알람을 보낸다.
 		saveAlarmUseCase.save(matchedAlarm(recipientUserId = event.partnerOfAcceptor, matchedUserId = event.acceptedByUserId))
 		saveAlarmUseCase.save(matchedAlarm(recipientUserId = event.acceptedByUserId, matchedUserId = event.partnerOfAcceptor))
-	}
-
-	/** 팀 초대 → 초대받은 사람에게 "팀 초대 받음" 알람. (문구엔 초대자 닉네임) */
-	@TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
-	@Transactional(propagation = Propagation.REQUIRES_NEW)
-	fun onTeamInvitationSent(event: TeamInvitationSent) {
-		val inviterNickname: String? = getUserDetailUseCase.findByUserId(event.inviterUserId)?.nickname
-
-		saveAlarmUseCase.save(
-			SaveAlarmCommand(
-				userId = event.invitedUserId,
-				type = AlarmType.TEAM_INVITATION_RECEIVED,
-				title = "새로운 팀 초대",
-				description = inviterNickname
-					?.let { "${it}님이 회원님을 팀에 초대했어요." }
-					?: "회원님을 팀에 초대한 상대가 있어요.",
-				// 알람을 누르면 받은 초대 목록으로 이동한다. (프론트 라우팅에 맞춘 경로)
-				link = "/friend/invites",
-				fromUserId = event.inviterUserId,
-				fromTeamId = event.teamId,
-			),
-		)
 	}
 
 	// 매칭된 상대([matchedUserId])를 가리키는 "매칭 성사" 알람을 [recipientUserId]에게 보낼 커맨드를 만든다. (문구엔 상대 닉네임)

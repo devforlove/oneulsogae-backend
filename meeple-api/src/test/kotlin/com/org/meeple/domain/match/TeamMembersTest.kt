@@ -32,6 +32,13 @@ class TeamMembersTest : DescribeSpec({
         }
     }
 
+    describe("inviterId / invitedId") {
+        it("ACTIVE 구성원을 초대자, INVITED 구성원을 초대 대상으로 돌려준다") {
+            invitingMembers().inviterId() shouldBe ownerId
+            invitingMembers().invitedId() shouldBe invitedId
+        }
+    }
+
     describe("accept") {
         it("해당 구성원만 ACTIVE로 바꾸고 나머지는 그대로 둔다") {
             val accepted: TeamMembers = invitingMembers().accept(invitedId)

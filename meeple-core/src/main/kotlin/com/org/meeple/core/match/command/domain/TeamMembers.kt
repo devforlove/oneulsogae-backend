@@ -28,6 +28,14 @@ data class TeamMembers(
 	fun find(userId: Long): TeamMember? =
 		values.firstOrNull { member: TeamMember -> member.userId == userId }
 
+	/** 초대자(유일한 ACTIVE 구성원)의 userId. (초대 단계(INVITING) 팀 기준 — owner) */
+	fun inviterId(): Long =
+		values.first { member: TeamMember -> member.status == TeamMemberStatus.ACTIVE }.userId
+
+	/** 초대 대상(유일한 INVITED 구성원)의 userId. (초대 단계(INVITING) 팀 기준) */
+	fun invitedId(): Long =
+		values.first { member: TeamMember -> member.status == TeamMemberStatus.INVITED }.userId
+
 	/** [userId] 구성원만 ACTIVE로 전환한 새 컬렉션. (나머지는 그대로) */
 	fun accept(userId: Long): TeamMembers =
 		TeamMembers(
