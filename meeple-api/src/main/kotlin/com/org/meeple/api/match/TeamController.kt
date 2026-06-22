@@ -95,12 +95,12 @@ class TeamController(
 		ApiResponse.success(TeamResponse.of(disbandTeamUseCase.disband(user.id, teamId)))
 
 	/**
-	 * 내가 보낸 초대 현황을 조회한다. 요청자가 ACTIVE 구성원(=초대자)인 가장 최근 INVITING 팀을 반환한다.
-	 * 진행 중인 초대가 없으면 data=null(200). (초대받은 사람·비구성원은 조회되지 않아 초대자에게만 노출된다)
+	 * 우리팀을 조회한다. 요청자가 ACTIVE 구성원인 가장 최근 팀(진행 중 초대(INVITING) 또는 결성(ACTIVE))을 반환한다.
+	 * 속한 팀이 없으면 data=null(200). (요청자가 ACTIVE 구성원인 팀만 조회되므로 본인에게만 노출된다)
 	 */
-	@Operation(summary = "내가 보낸 초대 현황 조회", description = "요청자가 초대자(ACTIVE 구성원)인 가장 최근 INVITING 팀을 반환한다. 진행 중인 초대가 없으면 data=null(200)을 반환한다.")
+	@Operation(summary = "우리팀 조회", description = "요청자가 ACTIVE 구성원인 가장 최근 팀(진행 중 초대(INVITING) 또는 결성(ACTIVE))을 반환한다. 속한 팀이 없으면 data=null(200)을 반환한다.")
 	@GetMapping("/invitation")
-	fun getSentInvitation(
+	fun getMyTeam(
 		@LoginUser user: AuthUser,
 	): ApiResponse<SentInvitationResponse?> =
 		ApiResponse.success(SentInvitationResponse.of(getSentInvitationUseCase.get(user.id), timeGenerator.today()))
