@@ -1,7 +1,7 @@
 package com.org.meeple.scheduler.match.command.domain
 
 /** 배치 실행 요약. */
-data class MatchBatchResult(
+data class SoloMatchBatchResult(
 	/** 순회한 대상 수. */
 	val targets: Int,
 	/** 새로 소개한(매칭 생성) 수. */

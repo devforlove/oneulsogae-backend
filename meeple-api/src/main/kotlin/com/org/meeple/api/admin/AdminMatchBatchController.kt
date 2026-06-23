@@ -5,7 +5,7 @@ import com.org.meeple.core.common.error.BusinessException
 import com.org.meeple.core.common.response.ApiResponse
 import com.org.meeple.core.match.MatchErrorCode
 import com.org.meeple.scheduler.match.command.adapter.SoloMatchBatchJob
-import com.org.meeple.scheduler.match.command.domain.MatchBatchResult
+import com.org.meeple.scheduler.match.command.domain.SoloMatchBatchResult
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.tags.Tag
 import org.springframework.web.bind.annotation.PostMapping
@@ -30,7 +30,7 @@ class AdminMatchBatchController(
 	@Operation(summary = "매칭 배치 즉시 실행", description = "일일 매칭 배치를 즉시(동기) 실행하고 결과를 반환한다. 이미 실행 중이면 409를 반환한다.")
 	@PostMapping("/matches/batch")
 	fun runMatchBatch(): ApiResponse<MatchBatchResponse> {
-		val result: MatchBatchResult = soloMatchBatchJob.run()
+		val result: SoloMatchBatchResult = soloMatchBatchJob.run()
 			?: throw BusinessException(MatchErrorCode.MATCH_BATCH_ALREADY_RUNNING)
 		return ApiResponse.success(MatchBatchResponse.of(result))
 	}

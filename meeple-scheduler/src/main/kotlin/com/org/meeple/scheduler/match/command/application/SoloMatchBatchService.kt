@@ -5,7 +5,7 @@ import com.org.meeple.scheduler.match.command.application.port.`in`.RunSoloMatch
 import com.org.meeple.scheduler.match.command.application.port.out.RegionProximityPort
 import com.org.meeple.scheduler.match.command.application.port.out.SaveMatchRecordPort
 import com.org.meeple.scheduler.match.command.application.port.out.TimeGenerator
-import com.org.meeple.scheduler.match.command.domain.MatchBatchResult
+import com.org.meeple.scheduler.match.command.domain.SoloMatchBatchResult
 import com.org.meeple.scheduler.match.command.domain.MatchPool
 import com.org.meeple.scheduler.match.query.dao.GetMatchRecordDao
 import com.org.meeple.scheduler.match.query.dao.GetMatchableUserDao
@@ -35,7 +35,7 @@ class SoloMatchBatchService(
 
 	private val log: Logger = LoggerFactory.getLogger(javaClass)
 
-	override fun run(): MatchBatchResult {
+	override fun run(): SoloMatchBatchResult {
 		val now: LocalDateTime = timeGenerator.now()
 		val loginAfter: LocalDateTime = now.minusWeeks(RECENT_LOGIN_WEEKS)
 		val today: LocalDate = now.toLocalDate()
@@ -72,7 +72,7 @@ class SoloMatchBatchService(
 			}
 		}
 
-		val result: MatchBatchResult = MatchBatchResult(targets = matchables.size, recommended = recommended, skipped = skipped, failed = failed)
+		val result: SoloMatchBatchResult = SoloMatchBatchResult(targets = matchables.size, recommended = recommended, skipped = skipped, failed = failed)
 		log.info("일일 매칭 배치 완료: {}", result)
 		return result
 	}

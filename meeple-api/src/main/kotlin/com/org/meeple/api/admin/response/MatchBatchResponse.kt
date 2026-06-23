@@ -1,10 +1,10 @@
 package com.org.meeple.api.admin.response
 
-import com.org.meeple.scheduler.match.command.domain.MatchBatchResult
+import com.org.meeple.scheduler.match.command.domain.SoloMatchBatchResult
 
 /**
  * 매칭 배치 실행 결과 응답. (관리자 수동 트리거)
- * scheduler 도메인 타입([MatchBatchResult])을 직접 노출하지 않고 표현 계층 DTO로 옮긴다.
+ * scheduler 도메인 타입([SoloMatchBatchResult])을 직접 노출하지 않고 표현 계층 DTO로 옮긴다.
  */
 data class MatchBatchResponse(
 	/** 순회한 대상 사용자 수. */
@@ -17,7 +17,7 @@ data class MatchBatchResponse(
 	val failed: Int,
 ) {
 	companion object {
-		fun of(result: MatchBatchResult): MatchBatchResponse =
+		fun of(result: SoloMatchBatchResult): MatchBatchResponse =
 			MatchBatchResponse(
 				targets = result.targets,
 				recommended = result.recommended,

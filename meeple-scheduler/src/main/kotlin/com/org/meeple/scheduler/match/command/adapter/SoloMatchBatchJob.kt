@@ -1,7 +1,7 @@
 package com.org.meeple.scheduler.match.command.adapter
 
 import com.org.meeple.scheduler.match.command.application.port.`in`.RunSoloMatchBatchUseCase
-import com.org.meeple.scheduler.match.command.domain.MatchBatchResult
+import com.org.meeple.scheduler.match.command.domain.SoloMatchBatchResult
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Component
@@ -30,14 +30,14 @@ class SoloMatchBatchJob(
 	 * 일일 매칭 배치를 실행하고 결과를 반환한다. 이미 실행 중이면 건너뛰고 null을 반환한다.
 	 * (크론은 null을 무시해 조용히 넘어가고, 수동 트리거는 null을 "이미 실행 중"으로 처리한다)
 	 */
-	fun run(): MatchBatchResult? {
+	fun run(): SoloMatchBatchResult? {
 		if (!running.compareAndSet(false, true)) {
 			log.warn("일일 매칭 배치가 이미 실행 중이라 이번 트리거는 건너뜁니다.")
 			return null
 		}
 		return try {
 			log.info("일일 매칭 배치 시작")
-			val result: MatchBatchResult = runSoloMatchBatchUseCase.run()
+			val result: SoloMatchBatchResult = runSoloMatchBatchUseCase.run()
 			log.info("일일 매칭 배치 종료: {}", result)
 			result
 		} finally {

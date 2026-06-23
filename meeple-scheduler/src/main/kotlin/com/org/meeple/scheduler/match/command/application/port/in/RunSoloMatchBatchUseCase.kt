@@ -1,6 +1,6 @@
 package com.org.meeple.scheduler.match.command.application.port.`in`
 
-import com.org.meeple.scheduler.match.command.domain.MatchBatchResult
+import com.org.meeple.scheduler.match.command.domain.SoloMatchBatchResult
 
 /**
  * 일일 매칭 배치 인포트(유스케이스).
@@ -9,5 +9,5 @@ import com.org.meeple.scheduler.match.command.domain.MatchBatchResult
  */
 interface RunSoloMatchBatchUseCase {
 
-	fun run(): MatchBatchResult
+	fun run(): SoloMatchBatchResult
 }

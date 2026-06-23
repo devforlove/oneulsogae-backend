@@ -18,7 +18,7 @@ import com.org.meeple.infra.match.command.entity.SoloMatchEntity
 import com.org.meeple.infra.region.entity.QRegionEntity
 import com.org.meeple.infra.region.entity.RegionEntity
 import com.org.meeple.scheduler.match.command.application.port.`in`.RunSoloMatchBatchUseCase
-import com.org.meeple.scheduler.match.command.domain.MatchBatchResult
+import com.org.meeple.scheduler.match.command.domain.SoloMatchBatchResult
 import io.kotest.matchers.collections.shouldBeEmpty
 import io.kotest.matchers.nulls.shouldBeNull
 import io.kotest.matchers.nulls.shouldNotBeNull
@@ -42,7 +42,7 @@ class RunSoloMatchBatchIntegrationTest(
 				val maleId: Long = persistMatchableUser(userId = 1001L, gender = Gender.MALE, regionId = regionId)
 				val femaleId: Long = persistMatchableUser(userId = 1002L, gender = Gender.FEMALE, regionId = regionId)
 
-				val result: MatchBatchResult = runSoloMatchBatchUseCase.run()
+				val result: SoloMatchBatchResult = runSoloMatchBatchUseCase.run()
 
 				result.recommended shouldBe 1
 				result.failed shouldBe 0
@@ -58,7 +58,7 @@ class RunSoloMatchBatchIntegrationTest(
 				val maleId1: Long = persistMatchableUser(userId = 1001L, gender = Gender.MALE, regionId = regionId)
 				persistMatchableUser(userId = 1002L, gender = Gender.MALE, regionId = regionId)
 
-				val result: MatchBatchResult = runSoloMatchBatchUseCase.run()
+				val result: SoloMatchBatchResult = runSoloMatchBatchUseCase.run()
 
 				result.recommended shouldBe 0
 				matchesInvolving(maleId1).shouldBeEmpty()
@@ -72,7 +72,7 @@ class RunSoloMatchBatchIntegrationTest(
 				val femaleId: Long = persistMatchableUser(userId = 1002L, gender = Gender.FEMALE, regionId = regionId)
 				persistMatch(maleId, 9001L, status = MatchStatus.MATCHED, introducedDate = LocalDate.now().minusDays(3))
 
-				val result: MatchBatchResult = runSoloMatchBatchUseCase.run()
+				val result: SoloMatchBatchResult = runSoloMatchBatchUseCase.run()
 
 				result.recommended shouldBe 0
 				proposedMatchBetween(maleId, femaleId).shouldBeNull()
@@ -87,7 +87,7 @@ class RunSoloMatchBatchIntegrationTest(
 				// 1001이 9001과의 MATCHED 매치를 나가 DEACTIVE 상태(매치 헤더는 MATCHED로 남음). 과거 소개라 '오늘 매칭' 제외엔 안 걸린다.
 				persistMatchedMatchWithLeaver(leaverId = 1001L, stayerId = 9001L)
 
-				val result: MatchBatchResult = runSoloMatchBatchUseCase.run()
+				val result: SoloMatchBatchResult = runSoloMatchBatchUseCase.run()
 
 				result.recommended shouldBe 1
 				proposedMatchBetween(leaverId, femaleId).shouldNotBeNull()
@@ -102,7 +102,7 @@ class RunSoloMatchBatchIntegrationTest(
 				// maleId가 오늘 다른 사람과 소개됨(introduced_date = today)
 				persistMatch(maleId, 9001L, status = MatchStatus.PROPOSED, introducedDate = LocalDate.now())
 
-				val result: MatchBatchResult = runSoloMatchBatchUseCase.run()
+				val result: SoloMatchBatchResult = runSoloMatchBatchUseCase.run()
 
 				result.recommended shouldBe 0
 				proposedMatchBetween(maleId, femaleId).shouldBeNull()
@@ -116,7 +116,7 @@ class RunSoloMatchBatchIntegrationTest(
 				persistMatchableUser(userId = 1002L, gender = Gender.MALE, regionId = regionId)
 				val femaleId: Long = persistMatchableUser(userId = 1003L, gender = Gender.FEMALE, regionId = regionId)
 
-				val result: MatchBatchResult = runSoloMatchBatchUseCase.run()
+				val result: SoloMatchBatchResult = runSoloMatchBatchUseCase.run()
 
 				result.recommended shouldBe 1
 				matchesInvolving(femaleId).size shouldBe 1
@@ -133,7 +133,7 @@ class RunSoloMatchBatchIntegrationTest(
 				val nearFemaleId: Long = persistMatchableUser(userId = 1002L, gender = Gender.FEMALE, regionId = nearRegionId, lastLoginAt = now.minusMinutes(1))
 				val farFemaleId: Long = persistMatchableUser(userId = 1003L, gender = Gender.FEMALE, regionId = farRegionId, lastLoginAt = now.minusMinutes(2))
 
-				val result: MatchBatchResult = runSoloMatchBatchUseCase.run()
+				val result: SoloMatchBatchResult = runSoloMatchBatchUseCase.run()
 
 				result.recommended shouldBe 1
 				proposedMatchBetween(maleId, nearFemaleId).shouldNotBeNull()

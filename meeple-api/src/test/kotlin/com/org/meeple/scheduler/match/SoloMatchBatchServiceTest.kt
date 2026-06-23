@@ -5,7 +5,7 @@ import com.org.meeple.scheduler.match.command.application.SoloMatchBatchService
 import com.org.meeple.scheduler.match.command.application.port.out.RegionProximityPort
 import com.org.meeple.scheduler.match.command.application.port.out.SaveMatchRecordPort
 import com.org.meeple.scheduler.match.command.application.port.out.TimeGenerator
-import com.org.meeple.scheduler.match.command.domain.MatchBatchResult
+import com.org.meeple.scheduler.match.command.domain.SoloMatchBatchResult
 import com.org.meeple.scheduler.match.query.dao.GetMatchRecordDao
 import com.org.meeple.scheduler.match.query.dao.GetMatchableUserDao
 import com.org.meeple.scheduler.match.query.dto.MatchableUser
@@ -37,7 +37,7 @@ class SoloMatchBatchServiceTest : DescribeSpec({
 				BatchFakeTimeGenerator(now),
 			)
 
-			val result: MatchBatchResult = service.run()
+			val result: SoloMatchBatchResult = service.run()
 
 			result.recommended shouldBe 1
 			saved.pairs shouldContainExactly listOf(1L to 2L)   // 가까운 지역(1)의 여성과
@@ -74,7 +74,7 @@ class SoloMatchBatchServiceTest : DescribeSpec({
 				BatchFakeTimeGenerator(now),
 			)
 
-			val result: MatchBatchResult = service.run()
+			val result: SoloMatchBatchResult = service.run()
 
 			result.recommended shouldBe 0   // 남은 후보가 없어 male은 짝을 못 찾음
 		}
@@ -92,7 +92,7 @@ class SoloMatchBatchServiceTest : DescribeSpec({
 				BatchFakeTimeGenerator(now),
 			)
 
-			val result: MatchBatchResult = service.run()
+			val result: SoloMatchBatchResult = service.run()
 
 			result.recommended shouldBe 1   // female은 한 번만 짝지어짐
 		}

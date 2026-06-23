@@ -35,7 +35,7 @@ meeple-common ──> (없음)                                                  
   scheduler도 [CQRS 패키지 분리](hexagonal-cqrs.md)처럼 **`command`/`query` 패키지로 분리**한다
   (예: command `com.org.meeple.scheduler.match.command.application.RunSoloMatchBatchService`,
   command `...command.application.port.out.{SaveMatchPoolPort, MatchPoolPort, SaveMatchRecordPort, TimeGenerator}`,
-  command `...command.domain.{MatchBatchResult, MatchPoolGroup, MatchPoolByGender}`,
+  command `...command.domain.{SoloMatchBatchResult, MatchPoolGroup, MatchPoolByGender}`,
   query `...query.dao.{ActiveUserDao, MatchBatchTargetDao, MatchRecordDao}`,
   query `...query.dto.{ActiveUser, MatchBatchTarget, MatchBatchCursor, MatchedUserIds}`).
 - `meeple-scheduler`는 **`meeple-core`에 의존하지 않으므로**, 배치가 쓰는 매칭 이력 기록/조회·시각 등 공유 동작도
