@@ -19,6 +19,7 @@ data class ChatRoomMember(
 	val status: ChatRoomMemberStatus = ChatRoomMemberStatus.ACTIVE,
 	val unreadCount: Int = 0,
 	val lastReadAt: LocalDateTime? = null,
+	val lastReadMessageId: Long? = null,
 	val joinedAt: LocalDateTime,
 	val exitedAt: LocalDateTime? = null,
 	val deletedAt: LocalDateTime? = null,

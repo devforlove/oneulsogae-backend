@@ -122,6 +122,8 @@ class GetChatRoomDaoImpl(
 							userDetail.nickname,
 							userDetail.profileImageCode,
 							userDetail.gender,
+							chatRoomMember.lastReadMessageId,
+							chatRoomMember.status.eq(ChatRoomMemberStatus.ACTIVE),
 						),
 					),
 				),

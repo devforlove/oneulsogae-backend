@@ -2,11 +2,16 @@ package com.org.meeple.chatting.chat.adapter.web
 
 import com.org.meeple.auth.userIdOrNull
 import com.org.meeple.chatting.chat.adapter.web.request.ChatMessageSendRequest
+import com.org.meeple.chatting.chat.adapter.web.request.ChatReadReportRequest
 import com.org.meeple.chatting.chat.adapter.web.response.ChatErrorResponse
 import com.org.meeple.chatting.chat.adapter.web.response.ChatMessageDto
+import com.org.meeple.chatting.chat.adapter.web.response.MessageReadDto
 import com.org.meeple.chatting.chat.application.ChatErrorCode
+import com.org.meeple.chatting.chat.application.port.`in`.MarkMessagesAsReadUseCase
 import com.org.meeple.chatting.chat.application.port.`in`.SendChatMessageUseCase
+import com.org.meeple.chatting.chat.application.port.`in`.command.MarkMessagesAsReadCommand
 import com.org.meeple.chatting.chat.application.port.`in`.command.SendChatMessageCommand
+import com.org.meeple.chatting.chat.application.port.`in`.result.MarkMessagesAsReadResult
 import com.org.meeple.chatting.chat.application.port.`in`.result.SentChatMessageResult
 import com.org.meeple.chatting.common.error.ChatException
 import org.springframework.messaging.handler.annotation.DestinationVariable
@@ -30,6 +35,7 @@ import java.security.Principal
 class ChatMessageController(
 	private val messageTemplate: SimpMessagingTemplate,
 	private val sendChatMessageUseCase: SendChatMessageUseCase,
+	private val markMessagesAsReadUseCase: MarkMessagesAsReadUseCase,
 ) {
 
 	/** `/app/{roomId}`로 발행된 메세지를 처리한다. */
@@ -47,6 +53,28 @@ class ChatMessageController(
 		)
 
 		messageTemplate.convertAndSend("/topic/$roomId", ChatMessageDto.from(sentMessage))
+	}
+
+	/**
+	 * `/app/{roomId}/read`로 발행된 읽음 보고를 처리한다.
+	 * 보고자(인증 Principal)가 그 방 참가자인지 검증하고 읽음 포인터를 forward-only로 전진시킨다.
+	 * 실제로 전진했을 때만(`changed`) 방 구독자(`/topic/{roomId}`)에게 읽음 이벤트를 브로드캐스트한다. (멱등 — 변화 없으면 조용히 끝)
+	 */
+	@MessageMapping("/{roomId}/read")
+	fun markRead(
+		@DestinationVariable roomId: Long,
+		request: ChatReadReportRequest,
+		principal: Principal,
+	) {
+		val readerId: Long = principal.userIdOrNull() ?: throw ChatException(ChatErrorCode.AUTHENTICATION_REQUIRED)
+
+		val result: MarkMessagesAsReadResult = markMessagesAsReadUseCase.markAsRead(
+			MarkMessagesAsReadCommand(chatRoomId = roomId, readerId = readerId, lastReadMessageId = request.lastReadMessageId),
+		)
+
+		if (result.changed) {
+			messageTemplate.convertAndSend("/topic/$roomId", MessageReadDto.from(result))
+		}
 	}
 
 	/**
