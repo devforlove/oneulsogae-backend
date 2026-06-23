@@ -38,14 +38,12 @@ class GetMatchCandidateIntegrationTest(
             it("가까운 지역 후보를 반환한다") {
                 val nearRegionId: Long = persistRegion("서울특별시", "강남구", 37.50, 127.00)
                 val farRegionId: Long = persistRegion("부산광역시", "해운대구", 35.16, 129.16)
-                regionProximityRegistry.refresh()
-
-                val requesterId = 1L
                 val nearFemaleId: Long = persistMatchUser(userId = 10L, gender = Gender.FEMALE, regionId = nearRegionId)
                 persistMatchUser(userId = 20L, gender = Gender.FEMALE, regionId = farRegionId)
+                regionProximityRegistry.refresh()
 
                 val candidateId: Long? = getMatchCandidatePort.findOneCandidate(
-                    requesterId = requesterId, gender = Gender.FEMALE, regionId = nearRegionId, loginAfter = loginAfter,
+                    requesterId = 1L, gender = Gender.FEMALE, regionId = nearRegionId, loginAfter = loginAfter,
                 )
 
                 candidateId shouldBe nearFemaleId
@@ -53,31 +51,28 @@ class GetMatchCandidateIntegrationTest(
         }
 
         context("가장 가까운 후보가 이미 소개된 이력이 있으면") {
-            it("그 후보를 제외하고 다음 후보를 반환한다") {
+            it("그 후보를 제외하고 같은 지역의 다음 후보를 반환한다") {
                 val regionId: Long = persistRegion("서울특별시", "강남구", 37.50, 127.00)
-                regionProximityRegistry.refresh()
-
-                val requesterId = 1L
+                // introduced(10L)가 더 최근 로그인이지만 이력으로 제외되고, fresh(20L)가 선택돼야 한다
                 val introducedFemaleId: Long = persistMatchUser(userId = 10L, gender = Gender.FEMALE, regionId = regionId, lastLoginAt = LocalDateTime.now())
                 val freshFemaleId: Long = persistMatchUser(userId = 20L, gender = Gender.FEMALE, regionId = regionId, lastLoginAt = LocalDateTime.now().minusDays(1))
-                // requester(1L)와 introducedFemale(10L)은 이미 소개된 이력(PROPOSED)이 있다
-                persistProposedMatch(requesterId, introducedFemaleId)
+                persistProposedMatch(1L, introducedFemaleId)
+                regionProximityRegistry.refresh()
 
                 val candidateId: Long? = getMatchCandidatePort.findOneCandidate(
-                    requesterId = requesterId, gender = Gender.FEMALE, regionId = regionId, loginAfter = loginAfter,
+                    requesterId = 1L, gender = Gender.FEMALE, regionId = regionId, loginAfter = loginAfter,
                 )
 
                 candidateId shouldBe freshFemaleId
             }
         }
 
-        context("근접 지역 어디에도 신선 후보가 없으면") {
+        context("어디에도 신선 후보가 없으면") {
             it("null을 반환한다") {
                 val regionId: Long = persistRegion("서울특별시", "강남구", 37.50, 127.00)
-                regionProximityRegistry.refresh()
-
-                // 같은 성별만 있어 반대 성별 후보가 없다
+                // 같은 성별만 있어 반대 성별 후보가 없다 (region은 유저 있음으로 잡히지만 자격 후보는 0)
                 persistMatchUser(userId = 10L, gender = Gender.MALE, regionId = regionId)
+                regionProximityRegistry.refresh()
 
                 getMatchCandidatePort.findOneCandidate(
                     requesterId = 1L, gender = Gender.FEMALE, regionId = regionId, loginAfter = loginAfter,
@@ -85,24 +80,39 @@ class GetMatchCandidateIntegrationTest(
             }
         }
 
-        context("가까운 20개 지역엔 신선 후보가 없고 더 먼 지역에만 있으면") {
-            it("완전 랜덤 폴백으로 그 먼 지역 후보를 반환한다") {
-                // 요청자 지역(가장 가까움) + 채움 지역 19개(그다음) + 후보 지역 1개(가장 멂) = 21개.
-                // 1차는 가까운 20개(요청자+채움19)를 보는데 후보가 없어 비고, 자격 후보 무작위 폴백이 유일한 자격자(먼 지역 후보)를 고른다.
+        context("가까운 지역들은 비어 있고 더 먼 '유저 있는' 지역에만 후보가 있으면") {
+            it("빈 지역은 건너뛰고 그 먼 지역 후보를 반환한다") {
+                // 요청자 지역(빈) + 빈 채움 지역 19개 + 유저 있는 먼 지역 1개 = 21개.
+                // '유저 있는 region' 필터로 빈 20개를 건너뛰고, 유저 있는 먼 지역을 지역 단위로 조회해 찾는다.
                 val requesterRegionId: Long = persistRegion("테스트도", "req", latitude = 37.00, longitude = 127.00)
                 for (i: Int in 1..19) {
                     persistRegion("테스트도", "fill$i", latitude = 37.00 + i * 0.01, longitude = 127.00)
                 }
                 val farRegionId: Long = persistRegion("테스트도", "far", latitude = 38.00, longitude = 127.00)
-                regionProximityRegistry.refresh()
-
                 val farFemaleId: Long = persistMatchUser(userId = 30L, gender = Gender.FEMALE, regionId = farRegionId)
+                regionProximityRegistry.refresh()
 
                 val candidateId: Long? = getMatchCandidatePort.findOneCandidate(
                     requesterId = 1L, gender = Gender.FEMALE, regionId = requesterRegionId, loginAfter = loginAfter,
                 )
 
                 candidateId shouldBe farFemaleId
+            }
+        }
+
+        context("스냅샷 갱신 뒤 새로 생긴 지역의 후보는") {
+            it("랜덤 폴백으로 찾는다") {
+                // refresh 시점엔 유저가 없어 '유저 있는 region' 스냅샷이 비어 지역 순회가 건너뛰어지지만,
+                // 랜덤 폴백이 실제 데이터를 보고 후보를 찾는다. (스냅샷 지연에도 정확성 보존)
+                val regionId: Long = persistRegion("서울특별시", "강남구", 37.50, 127.00)
+                regionProximityRegistry.refresh()
+                val lateFemaleId: Long = persistMatchUser(userId = 40L, gender = Gender.FEMALE, regionId = regionId)
+
+                val candidateId: Long? = getMatchCandidatePort.findOneCandidate(
+                    requesterId = 1L, gender = Gender.FEMALE, regionId = regionId, loginAfter = loginAfter,
+                )
+
+                candidateId shouldBe lateFemaleId
             }
         }
     }

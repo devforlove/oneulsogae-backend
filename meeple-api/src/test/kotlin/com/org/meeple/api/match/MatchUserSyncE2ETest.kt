@@ -87,7 +87,6 @@ class MatchUserSyncE2ETest(
 		context("match_user에 반대 성별·같은 권역·최근 로그인 후보가 있으면") {
 			it("그 후보로 소개(매칭)를 생성해 목록에 내려준다") {
 				val regionId: Long = IntegrationUtil.persist(RegionEntityFixture.create()).id!!
-				regionProximityRegistry.refresh()
 
 				// 요청자(남성, 권역 1): 추천 대상이자 목록 조회 주체. user/user_details + 매칭 읽기 모델을 갖춘다.
 				val meUserId: Long = IntegrationUtil.persist(
@@ -114,6 +113,9 @@ class MatchUserSyncE2ETest(
 				IntegrationUtil.persist(
 					UserDetailEntity(userId = candidateUserId, nickname = "영희", gender = Gender.FEMALE, birthday = LocalDate.of(1999, 1, 1)),
 				)
+
+				// 매칭 유저를 모두 적재한 뒤 '유저 있는 region' 스냅샷을 갱신한다. (그래야 지역 단위 조회 경로가 후보 지역을 본다)
+				regionProximityRegistry.refresh()
 
 				get("/matches/v1?isAfterOnboarding=true") {
 					bearer(accessTokenFor(meUserId))
