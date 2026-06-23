@@ -31,7 +31,7 @@ class GetActiveUserDaoImpl(
 					ActiveUser::class.java,
 					user.id,
 					detail.gender,
-					detail.regionCode,
+					detail.regionId,
 				),
 			)
 			.from(user)
