@@ -3,6 +3,7 @@ package com.org.meeple.scheduler.match.command.application
 import com.org.meeple.common.user.Gender
 import com.org.meeple.scheduler.match.command.application.port.`in`.RunSoloMatchBatchUseCase
 import com.org.meeple.scheduler.match.command.application.port.out.RegionProximityPort
+import com.org.meeple.scheduler.match.command.application.port.out.RegionShuffler
 import com.org.meeple.scheduler.match.command.application.port.out.SaveMatchRecordPort
 import com.org.meeple.scheduler.match.command.application.port.out.TimeGenerator
 import com.org.meeple.scheduler.match.command.domain.SoloMatchBatchResult
@@ -31,6 +32,7 @@ class SoloMatchBatchService(
 	private val saveMatchRecordPort: SaveMatchRecordPort,
 	private val regionProximityPort: RegionProximityPort,
 	private val timeGenerator: TimeGenerator,
+	private val regionShuffler: RegionShuffler,
 ) : RunSoloMatchBatchUseCase {
 
 	private val log: Logger = LoggerFactory.getLogger(javaClass)
@@ -77,10 +79,11 @@ class SoloMatchBatchService(
 		return result
 	}
 
-	/** [target] 지역에서 가까운 순으로 반대 성별 풀을 뒤져, 재소개 이력이 없는 가장 가까운 후보를 찾는다. (없으면 null) */
+	/** [target] 지역에서 가까운 순 상위 N개 지역을 무작위 순서로 뒤져, 재소개 이력이 없는 첫 후보를 찾는다. (없으면 null) */
 	private fun findNearestFreshPartner(target: MatchableUser, pool: MatchPool): MatchableUser? {
 		val partnerGender: Gender = target.gender.opposite()
-		for (regionId: Long in regionProximityPort.nearbyRegionIds(target.regionId)) {
+		val regionOrder: List<Long> = regionShuffler.shuffleNearest(regionProximityPort.nearbyRegionIds(target.regionId))
+		for (regionId: Long in regionOrder) {
 			for (candidate: MatchableUser in pool.freshCandidates(partnerGender, regionId)) {
 				if (!getMatchRecordDao.existsByPair(target.userId, candidate.userId)) return candidate
 			}
