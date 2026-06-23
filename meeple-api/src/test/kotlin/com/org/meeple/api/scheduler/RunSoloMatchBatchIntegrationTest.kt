@@ -109,6 +109,23 @@ class RunSoloMatchBatchIntegrationTest(
 			}
 		}
 
+		context("재소개 이력이 있는(과거 소개된) 쌍은") {
+			it("그 상대 대신 이력 없는 다른 후보와 소개한다") {
+				val regionId: Long = persistRegion("서울특별시", "강남구", 37.50, 127.00)
+				val maleId: Long = persistMatchableUser(userId = 1001L, gender = Gender.MALE, regionId = regionId)
+				val introducedFemaleId: Long = persistMatchableUser(userId = 1002L, gender = Gender.FEMALE, regionId = regionId)
+				val freshFemaleId: Long = persistMatchableUser(userId = 1003L, gender = Gender.FEMALE, regionId = regionId)
+				// 1001-1002는 과거 소개 이력(ux_member_key)이 있다. 성사 전(PARTIALLY)·과거 일자라 유저 제외엔 안 걸리고, 쌍 재소개만 막힌다.
+				persistMatch(maleId, introducedFemaleId, status = MatchStatus.PARTIALLY_ACCEPTED, introducedDate = LocalDate.now().minusDays(3))
+
+				val result: SoloMatchBatchResult = runSoloMatchBatchUseCase.run()
+
+				result.recommended shouldBe 1
+				proposedMatchBetween(maleId, freshFemaleId).shouldNotBeNull()    // 이력 없는 후보와 소개
+				proposedMatchBetween(maleId, introducedFemaleId).shouldBeNull()  // 이력 있는 쌍은 다시 소개하지 않음
+			}
+		}
+
 		context("같은 실행 안에서") {
 			it("한 사람이 두 번 소개되지 않는다") {
 				val regionId: Long = persistRegion("서울특별시", "강남구", 37.50, 127.00)
