@@ -65,8 +65,8 @@ app:
 meeple:
   match:
     batch:
-      # 매분 0초 1회 (Asia/Seoul). 운영에서 MEEPLE_MATCH_BATCH_CRON 환경변수로 덮어쓸 수 있다.
-      cron: ${MEEPLE_MATCH_BATCH_CRON:0 * * * * *}
+      # 매일 12:00:00 1회 (Asia/Seoul). 운영에서 MEEPLE_MATCH_BATCH_CRON 환경변수로 덮어쓸 수 있다.
+      cron: ${MEEPLE_MATCH_BATCH_CRON:0 0 12 * * *}
     expire:
       # 만료된(미응답) 소개 정리. 매 10분 0초 1회 (Asia/Seoul). 운영에서 MEEPLE_MATCH_EXPIRE_CRON 환경변수로 덮어쓸 수 있다.
       cron: ${MEEPLE_MATCH_EXPIRE_CRON:0 */10 * * * *}
