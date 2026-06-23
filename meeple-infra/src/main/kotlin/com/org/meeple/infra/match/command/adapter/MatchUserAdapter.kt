@@ -31,6 +31,7 @@ import java.util.concurrent.ThreadLocalRandom
 class MatchUserAdapter(
 	private val matchUserJpaRepository: MatchUserJpaRepository,
 	private val regionProximityRegistry: RegionProximityRegistry,
+	private val populatedRegionRegistry: PopulatedRegionRegistry,
 	private val queryFactory: JPAQueryFactory,
 ) : GetMatchCandidatePort, SaveMatchUserPort, GetMatchUserPort, DeleteMatchUserPort {
 
@@ -39,11 +40,13 @@ class MatchUserAdapter(
 	 *
 	 * 가까운 순으로 "유저 있는" 지역을 최대 [NEAREST_REGION_FANOUT]개까지 **지역 단위로 하나씩** 조회해, 가장 가까운 지역의 후보를 먼저 잡는다.
 	 * (지역 단위 단일 조회라 매 쿼리가 인덱스 seek로 끝나고 — 서울 등 밀집 지역의 풀 전체를 한 번에 정렬하지 않는다.
-	 * 빈 지역은 [RegionProximityRegistry.nearbyPopulatedRegionIds]가 미리 걸러 헛조회를 막는다)
+	 * 빈 지역은 [PopulatedRegionRegistry]로 미리 걸러 헛조회를 막는다)
 	 * 가까운 지역들에 신선 후보가 없으면(또는 스냅샷이 미처 못 담은 지역 대비) **자격 후보 중 완전 랜덤으로 1명**을 매칭한다. 어떤 자격 후보도 없으면 null.
 	 */
 	override fun findOneCandidate(requesterId: Long, gender: Gender, regionId: Long, loginAfter: LocalDateTime): Long? {
-		val nearestPopulated: List<Long> = regionProximityRegistry.nearbyPopulatedRegionIds(regionId).take(NEAREST_REGION_FANOUT)
+		val nearestPopulated: List<Long> = regionProximityRegistry.nearbyRegionIds(regionId)
+			.filter { id: Long -> populatedRegionRegistry.contains(id) }
+			.take(NEAREST_REGION_FANOUT)
 		for (candidateRegionId: Long in nearestPopulated) {
 			findFreshCandidateInRegion(requesterId, gender, candidateRegionId, loginAfter)?.let { candidateId: Long -> return candidateId }
 		}

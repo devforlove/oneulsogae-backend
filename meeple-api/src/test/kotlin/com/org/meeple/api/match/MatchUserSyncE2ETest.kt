@@ -15,11 +15,11 @@ import com.org.meeple.infra.match.command.entity.MatchUserEntity
 import com.org.meeple.infra.match.command.entity.QSoloMatchEntity
 import com.org.meeple.infra.match.command.entity.QSoloMatchMemberEntity
 import com.org.meeple.infra.match.command.entity.QMatchUserEntity
-import com.org.meeple.infra.region.RegionProximityRegistry
 import com.org.meeple.infra.region.entity.QRegionEntity
 import com.org.meeple.infra.user.command.entity.QUserDetailEntity
 import com.org.meeple.infra.user.command.entity.QUserEntity
 import com.org.meeple.infra.user.command.entity.UserDetailEntity
+import com.org.meeple.scheduler.match.command.application.port.out.RegionProximityPort
 import io.kotest.matchers.shouldBe
 import java.time.LocalDate
 import java.time.LocalDateTime
@@ -32,7 +32,7 @@ import java.time.LocalDateTime
  *   match_user에서 반대 성별·같은 권역·최근 로그인 후보를 골라 소개를 생성하는지.
  */
 class MatchUserSyncE2ETest(
-	private val regionProximityRegistry: RegionProximityRegistry,
+	private val regionProximityPort: RegionProximityPort,
 ) : AbstractIntegrationSupport({
 
 	describe("match_user 동기화") {
@@ -114,8 +114,8 @@ class MatchUserSyncE2ETest(
 					UserDetailEntity(userId = candidateUserId, nickname = "영희", gender = Gender.FEMALE, birthday = LocalDate.of(1999, 1, 1)),
 				)
 
-				// 매칭 유저를 모두 적재한 뒤 '유저 있는 region' 스냅샷을 갱신한다. (그래야 지역 단위 조회 경로가 후보 지역을 본다)
-				regionProximityRegistry.refresh()
+				// 매칭 유저를 모두 적재한 뒤 지역 매칭 스냅샷(근접·유저분포)을 갱신한다. (그래야 지역 단위 조회 경로가 후보 지역을 본다)
+				regionProximityPort.refresh()
 
 				get("/matches/v1?isAfterOnboarding=true") {
 					bearer(accessTokenFor(meUserId))

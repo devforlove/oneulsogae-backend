@@ -14,20 +14,20 @@ import com.org.meeple.infra.match.command.entity.QMatchUserEntity
 import com.org.meeple.infra.match.command.entity.QSoloMatchEntity
 import com.org.meeple.infra.match.command.entity.QSoloMatchMemberEntity
 import com.org.meeple.infra.match.command.entity.SoloMatchEntity
-import com.org.meeple.infra.region.RegionProximityRegistry
 import com.org.meeple.infra.region.entity.QRegionEntity
 import com.org.meeple.infra.region.entity.RegionEntity
+import com.org.meeple.scheduler.match.command.application.port.out.RegionProximityPort
 import io.kotest.matchers.nulls.shouldBeNull
 import io.kotest.matchers.shouldBe
 import java.time.LocalDateTime
 
 /**
  * [GetMatchCandidatePort] 통합 테스트. 실 컨텍스트 + Testcontainers(MySQL)에서 후보 조회를 직접 호출한다.
- * regions 좌표는 컨텍스트 기동 후 적재하므로, 각 시나리오에서 [RegionProximityRegistry.refresh]로 근접 스냅샷을 갱신한 뒤 호출한다.
+ * regions·match_user는 컨텍스트 기동 후 적재하므로, 각 시나리오에서 [RegionProximityPort.refresh]로 근접·유저분포 스냅샷을 갱신한 뒤 호출한다.
  */
 class GetMatchCandidateIntegrationTest(
     private val getMatchCandidatePort: GetMatchCandidatePort,
-    private val regionProximityRegistry: RegionProximityRegistry,
+    private val regionProximityPort: RegionProximityPort,
 ) : AbstractIntegrationSupport({
 
     val loginAfter: LocalDateTime = LocalDateTime.now().minusWeeks(2)
@@ -40,7 +40,7 @@ class GetMatchCandidateIntegrationTest(
                 val farRegionId: Long = persistRegion("부산광역시", "해운대구", 35.16, 129.16)
                 val nearFemaleId: Long = persistMatchUser(userId = 10L, gender = Gender.FEMALE, regionId = nearRegionId)
                 persistMatchUser(userId = 20L, gender = Gender.FEMALE, regionId = farRegionId)
-                regionProximityRegistry.refresh()
+                regionProximityPort.refresh()
 
                 val candidateId: Long? = getMatchCandidatePort.findOneCandidate(
                     requesterId = 1L, gender = Gender.FEMALE, regionId = nearRegionId, loginAfter = loginAfter,
@@ -57,7 +57,7 @@ class GetMatchCandidateIntegrationTest(
                 val introducedFemaleId: Long = persistMatchUser(userId = 10L, gender = Gender.FEMALE, regionId = regionId, lastLoginAt = LocalDateTime.now())
                 val freshFemaleId: Long = persistMatchUser(userId = 20L, gender = Gender.FEMALE, regionId = regionId, lastLoginAt = LocalDateTime.now().minusDays(1))
                 persistProposedMatch(1L, introducedFemaleId)
-                regionProximityRegistry.refresh()
+                regionProximityPort.refresh()
 
                 val candidateId: Long? = getMatchCandidatePort.findOneCandidate(
                     requesterId = 1L, gender = Gender.FEMALE, regionId = regionId, loginAfter = loginAfter,
@@ -72,7 +72,7 @@ class GetMatchCandidateIntegrationTest(
                 val regionId: Long = persistRegion("서울특별시", "강남구", 37.50, 127.00)
                 // 같은 성별만 있어 반대 성별 후보가 없다 (region은 유저 있음으로 잡히지만 자격 후보는 0)
                 persistMatchUser(userId = 10L, gender = Gender.MALE, regionId = regionId)
-                regionProximityRegistry.refresh()
+                regionProximityPort.refresh()
 
                 getMatchCandidatePort.findOneCandidate(
                     requesterId = 1L, gender = Gender.FEMALE, regionId = regionId, loginAfter = loginAfter,
@@ -90,7 +90,7 @@ class GetMatchCandidateIntegrationTest(
                 }
                 val farRegionId: Long = persistRegion("테스트도", "far", latitude = 38.00, longitude = 127.00)
                 val farFemaleId: Long = persistMatchUser(userId = 30L, gender = Gender.FEMALE, regionId = farRegionId)
-                regionProximityRegistry.refresh()
+                regionProximityPort.refresh()
 
                 val candidateId: Long? = getMatchCandidatePort.findOneCandidate(
                     requesterId = 1L, gender = Gender.FEMALE, regionId = requesterRegionId, loginAfter = loginAfter,
@@ -105,7 +105,7 @@ class GetMatchCandidateIntegrationTest(
                 // refresh 시점엔 유저가 없어 '유저 있는 region' 스냅샷이 비어 지역 순회가 건너뛰어지지만,
                 // 랜덤 폴백이 실제 데이터를 보고 후보를 찾는다. (스냅샷 지연에도 정확성 보존)
                 val regionId: Long = persistRegion("서울특별시", "강남구", 37.50, 127.00)
-                regionProximityRegistry.refresh()
+                regionProximityPort.refresh()
                 val lateFemaleId: Long = persistMatchUser(userId = 40L, gender = Gender.FEMALE, regionId = regionId)
 
                 val candidateId: Long? = getMatchCandidatePort.findOneCandidate(

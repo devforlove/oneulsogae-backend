@@ -16,7 +16,7 @@ interface MatchUserJpaRepository : JpaRepository<MatchUserEntity, Long> {
 	/** 비즈니스 키(user_id)로 단건 조회한다. (upsert 분기·매칭 가능 판정에 쓴다) */
 	fun findByUserId(userId: Long): MatchUserEntity?
 
-	/** 매칭 유저가 한 명이라도 있는 region_id 목록. ([com.org.meeple.infra.region.RegionProximityRegistry]가 빈 region 건너뛰기용 스냅샷으로 캐시한다) */
+	/** 매칭 유저가 한 명이라도 있는 region_id 목록. ([com.org.meeple.infra.match.command.adapter.PopulatedRegionRegistry]가 빈 region 건너뛰기용 스냅샷으로 캐시한다) */
 	@Query("select distinct m.regionId from MatchUserEntity m")
 	fun findDistinctRegionIds(): List<Long>
 
