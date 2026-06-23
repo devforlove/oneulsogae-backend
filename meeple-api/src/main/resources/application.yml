@@ -95,3 +95,14 @@ springdoc:
     enabled: true
   swagger-ui:
     enabled: true
+
+---
+# 로컬 프로파일에서는 매칭 배치를 1분마다 돌려 동작을 빠르게 확인한다. (운영 기본값은 매일 정오 0 0 12 * * *)
+spring:
+  config:
+    activate:
+      on-profile: local
+meeple:
+  match:
+    batch:
+      cron: ${MEEPLE_MATCH_BATCH_CRON:0 * * * * *}
