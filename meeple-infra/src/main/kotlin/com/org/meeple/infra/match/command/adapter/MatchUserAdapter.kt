@@ -14,14 +14,15 @@ import com.org.meeple.infra.match.command.mapper.toDomain
 import com.org.meeple.infra.match.command.mapper.toEntity
 import com.org.meeple.infra.match.command.repository.MatchUserJpaRepository
 import com.org.meeple.infra.region.RegionProximityRegistry
+import com.querydsl.core.types.Predicate
 import com.querydsl.core.types.dsl.BooleanExpression
 import com.querydsl.core.types.dsl.CaseBuilder
-import com.querydsl.core.types.dsl.Expressions
 import com.querydsl.core.types.dsl.NumberExpression
 import com.querydsl.jpa.JPAExpressions
 import com.querydsl.jpa.impl.JPAQueryFactory
 import org.springframework.stereotype.Component
 import java.time.LocalDateTime
+import java.util.concurrent.ThreadLocalRandom
 
 /**
  * [MatchUserEntity]의 command 영속성 어댑터. (엔티티당 어댑터 하나 — 매칭 읽기 모델의 후보 조회/적재/삭제 out-port를 함께 구현)
@@ -80,20 +81,31 @@ class MatchUserAdapter(
 
 	/**
 	 * 지역과 무관하게 "반대 성별·최근 로그인·재소개 이력 없음" 자격 후보 중 무작위 1명을 조회한다. (가까운 지역에 후보가 없을 때의 폴백)
-	 * 드물게만 타는 경로라 정렬을 무작위(`rand()`)로 둔다.
+	 * 자격 후보 수를 센 뒤 `[0, count)` 무작위 오프셋으로 1명만 건너뛰어 꺼낸다. (`order by rand()`로 풀 전체를 filesort하지 않는다)
+	 * 정렬은 인덱스(gender, region_id, last_login_at) 순서와 맞춰, 오프셋 스캔이 filesort 없이 진행되게 한다.
 	 */
 	private fun findRandomFreshCandidate(requesterId: Long, gender: Gender, loginAfter: LocalDateTime): Long? {
 		val matchUser: QMatchUserEntity = QMatchUserEntity.matchUserEntity
+		val eligible: Array<Predicate> = arrayOf(
+			matchUser.gender.eq(gender),
+			matchUser.lastLoginAt.goe(loginAfter),
+			notIntroducedBefore(matchUser, requesterId),
+		)
 
+		val count: Long = queryFactory
+			.select(matchUser.count())
+			.from(matchUser)
+			.where(*eligible)
+			.fetchOne() ?: 0L
+		if (count == 0L) return null
+
+		val offset: Long = ThreadLocalRandom.current().nextLong(count)
 		return queryFactory
 			.select(matchUser.userId)
 			.from(matchUser)
-			.where(
-				matchUser.gender.eq(gender),
-				matchUser.lastLoginAt.goe(loginAfter),
-				notIntroducedBefore(matchUser, requesterId),
-			)
-			.orderBy(Expressions.numberTemplate(Double::class.java, "function('rand')").asc())
+			.where(*eligible)
+			.orderBy(matchUser.regionId.asc(), matchUser.lastLoginAt.asc())
+			.offset(offset)
 			.limit(1)
 			.fetchFirst()
 	}
