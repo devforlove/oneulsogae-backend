@@ -70,7 +70,7 @@ class DailyMatchBatchService(
 			}
 		}
 
-		val result = MatchBatchResult(targets = matchables.size, recommended = recommended, skipped = skipped, failed = failed)
+		val result: MatchBatchResult = MatchBatchResult(targets = matchables.size, recommended = recommended, skipped = skipped, failed = failed)
 		log.info("일일 매칭 배치 완료: {}", result)
 		return result
 	}
