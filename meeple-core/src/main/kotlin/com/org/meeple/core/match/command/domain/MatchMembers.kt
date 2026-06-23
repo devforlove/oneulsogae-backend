@@ -39,21 +39,25 @@ data class MatchMembers(
 	fun memberKey(): String =
 		memberKeyOf(userIds())
 
-	/** 모든 참가자가 수락했는지 여부. (참가자가 있고 전원 수락) */
-	fun allAccepted(): Boolean =
-		values.isNotEmpty() && values.all { it.isAccepted }
+	/** 모든 참가자가 신청했는지 여부. (참가자가 있고 전원 APPLY/ACTIVE) */
+	fun allApplied(): Boolean =
+		values.isNotEmpty() && values.all { it.hasApplied }
 
-	/** 한 명이라도 수락했는지 여부. */
-	fun anyAccepted(): Boolean =
-		values.any { it.isAccepted }
+	/** 한 명이라도 신청했는지 여부. */
+	fun anyApplied(): Boolean =
+		values.any { it.hasApplied }
 
-	/** 수락(코인 지불)한 참가자들. (환불 대상 산정에 쓴다) */
-	fun accepted(): List<MatchMember> =
-		values.filter { it.isAccepted }
+	/** 신청(코인 지불)한 참가자들. (환불 대상 산정에 쓴다) */
+	fun applied(): List<MatchMember> =
+		values.filter { it.hasApplied }
 
-	/** [userId] 참가자를 수락 처리한 새 컬렉션을 반환한다. */
-	fun accept(userId: Long): MatchMembers =
-		MatchMembers(values.map { if (it.userId == userId) it.accept() else it })
+	/** [userId] 참가자를 신청(APPLY) 처리한 새 컬렉션을 반환한다. */
+	fun apply(userId: Long): MatchMembers =
+		MatchMembers(values.map { if (it.userId == userId) it.apply() else it })
+
+	/** 모든 참가자를 활성(ACTIVE)으로 승격한 새 컬렉션을 반환한다. (매치 성사 시) */
+	fun activateAll(): MatchMembers =
+		MatchMembers(values.map { it.activate() })
 
 	/** [userId] 참가자만 비활성([MatchMember.deactivate]) 전이한 새 컬렉션을 반환한다. (없으면 그대로) */
 	fun deactivate(userId: Long): MatchMembers =

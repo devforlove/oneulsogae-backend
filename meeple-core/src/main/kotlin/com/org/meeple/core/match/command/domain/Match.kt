@@ -68,7 +68,7 @@ data class Match(
 	 * (소개팅 신청·수락 비용이 동일하다는 전제이며, 0코인 환불은 제외한다)
 	 */
 	fun failureRefunds(): List<MatchRefund> =
-		members.accepted()
+		members.applied()
 			.map { member: MatchMember -> MatchRefund(userId = member.userId, amount = datingInitAmount / 2) }
 			.filter { refund: MatchRefund -> refund.amount > 0 }
 
@@ -76,13 +76,13 @@ data class Match(
 	fun memberKey(): String =
 		members.memberKey()
 
-	/** 조회 사용자가 이 매칭에 관심(수락)을 보냈는지 여부. (아직 응답 전이면 false) */
+	/** 조회 사용자가 이 매칭에 관심(신청)을 보냈는지 여부. (미신청이면 false) */
 	fun hasUserInterest(userId: Long): Boolean =
-		members.find(userId)?.isAccepted == true
+		members.find(userId)?.hasApplied == true
 
-	/** 상대(조회 사용자의 반대편 참가자)가 이 매칭에 관심(수락)을 보냈는지 여부. (아직 응답 전이면 false) */
+	/** 상대(조회 사용자의 반대편 참가자)가 이 매칭에 관심(신청)을 보냈는지 여부. (미신청이면 false) */
 	fun hasPartnerInterest(userId: Long): Boolean =
-		members.partnersOf(userId).any { it.isAccepted }
+		members.partnersOf(userId).any { it.hasApplied }
 
 	/**
 	 * 해당 사용자가 이 매칭에 응답/관심 보내기를 할 수 있는 상태인지 검증한다.
@@ -98,24 +98,22 @@ data class Match(
 	}
 
 	/**
-	 * 참가자의 수락을 반영한 새 상태를 만든다. (참가자/미종료 검증은 호출 측 책임)
-	 * 전원 수락하면 MATCHED, 일부만 수락이면 PARTIALLY_ACCEPTED, 아무도 응답 전이면 PROPOSED 유지.
-	 * 성사(MATCHED)되면 새 소개를 더 하지 않으므로, 만료로 목록에서 사라지지 않게 만료 시각을 100년 뒤로 미룬다.
+	 * 참가자의 관심 신청을 반영한 새 상태를 만든다. (참가자/미종료 검증은 호출 측 책임)
+	 * 응답자를 APPLY로 바꾸고, 전원 신청이면 매치를 MATCHED로 만들며 전원을 ACTIVE로 승격한다. 일부만 신청이면 PARTIALLY_ACCEPTED, 아무도 미신청이면 PROPOSED.
+	 * 성사(MATCHED)되면 만료로 목록에서 사라지지 않게 만료 시각을 100년 뒤로 미룬다.
 	 */
 	fun respond(userId: Long): Match {
-		val responded: Match = copy(members = members.accept(userId))
-		val recomputed: Match = responded.withRecomputedStatus()
+		val applied: Match = copy(members = members.apply(userId))
+		val recomputed: Match = applied.withRecomputedStatus()
 		return if (recomputed.status == MatchStatus.MATCHED) recomputed.extendExpirationForMatched() else recomputed
 	}
 
 	private fun withRecomputedStatus(): Match =
-		copy(
-			status = when {
-				members.allAccepted() -> MatchStatus.MATCHED
-				members.anyAccepted() -> MatchStatus.PARTIALLY_ACCEPTED
-				else -> MatchStatus.PROPOSED
-			},
-		)
+		when {
+			members.allApplied() -> copy(status = MatchStatus.MATCHED, members = members.activateAll())
+			members.anyApplied() -> copy(status = MatchStatus.PARTIALLY_ACCEPTED)
+			else -> copy(status = MatchStatus.PROPOSED)
+		}
 
 	// 성사된 매칭의 만료 시각을 [MATCHED_EXPIRATION_EXTENSION_YEARS]년 뒤로 미룬다. (성사 후엔 새 소개를 안 해 사실상 만료 없음)
 	private fun extendExpirationForMatched(): Match =

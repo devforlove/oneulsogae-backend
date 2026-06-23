@@ -1,5 +1,6 @@
 package com.org.meeple.core.fixture
 
+import com.org.meeple.common.match.MatchMemberStatus
 import com.org.meeple.common.match.MatchStatus
 import com.org.meeple.common.match.SoloMatchType
 import com.org.meeple.common.user.Gender
@@ -32,17 +33,17 @@ object MatchFixture {
 			status = status,
 		)
 
-	/** 1:1 참가자(남/녀) 묶음. 각자의 수락 여부를 지정할 수 있다. */
+	/** 1:1 참가자(남/녀) 묶음. 각자의 상태를 지정할 수 있다. */
 	fun membersOf(
 		maleUserId: Long = 1L,
 		femaleUserId: Long = 2L,
-		maleAccepted: Boolean? = null,
-		femaleAccepted: Boolean? = null,
+		maleStatus: MatchMemberStatus = MatchMemberStatus.WAITING,
+		femaleStatus: MatchMemberStatus = MatchMemberStatus.WAITING,
 	): MatchMembers =
 		MatchMembers(
 			listOf(
-				MatchMember(matchId = 0, userId = maleUserId, gender = Gender.MALE, accepted = maleAccepted),
-				MatchMember(matchId = 0, userId = femaleUserId, gender = Gender.FEMALE, accepted = femaleAccepted),
+				MatchMember(matchId = 0, userId = maleUserId, gender = Gender.MALE, status = maleStatus),
+				MatchMember(matchId = 0, userId = femaleUserId, gender = Gender.FEMALE, status = femaleStatus),
 			),
 		)
 }
