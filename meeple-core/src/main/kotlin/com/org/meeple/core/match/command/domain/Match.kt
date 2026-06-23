@@ -16,7 +16,7 @@ import java.time.LocalDateTime
  * 참가자는 더 이상 (male, female) 두 자리로 고정하지 않고, 참가자([MatchMembers])로 정규화해 1:1·N:N(2:2·3:3)을 모두 표현한다.
  * 재소개 방지는 참가자 조합의 정규화 키([memberKey])에 유니크 제약을 걸어 막는다.
  * [introducedDate]로 "하루에 한 번만 소개" 제약을 판단하고, [expiresAt]까지 응답이 없으면 만료된 소개로 본다.
- * 각 참가자의 수락 여부는 [members]가 보관하며, 전원 수락하면 성사([MatchStatus.MATCHED])된다.
+ * 각 참가자의 상태(WAITING→APPLY→ACTIVE/DEACTIVE)는 [members]가 보관하며, 전원 신청(APPLY)하면 성사([MatchStatus.MATCHED])되어 전원 ACTIVE가 된다.
  * [datingInitAmount]/[datingAcceptAmount]는 소개팅 신청/수락 코인 비용([CoinUsageType])이고, [matchType]은 생성 경로(일일 배치/온보딩/필수 신청)다.
  * 영속성은 [com.org.meeple.infra.match.command.entity.SoloMatchEntity](헤더) + [com.org.meeple.infra.match.command.entity.SoloMatchMemberEntity](참가자)가 담당한다.
  */
@@ -64,7 +64,7 @@ data class Match(
 
 	/**
 	 * 매칭 실패(미성사 만료/채팅 종료)로 제거될 때, 참가자별 환불 금액 목록을 산정한다.
-	 * 실제로 코인을 지불한(수락한) 참가자에게만, 신청 비용([datingInitAmount])의 절반(내림)을 돌려준다.
+	 * 실제로 코인을 지불한(신청한) 참가자에게만, 신청 비용([datingInitAmount])의 절반(내림)을 돌려준다.
 	 * (소개팅 신청·수락 비용이 동일하다는 전제이며, 0코인 환불은 제외한다)
 	 */
 	fun failureRefunds(): List<MatchRefund> =
