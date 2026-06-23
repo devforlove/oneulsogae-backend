@@ -3,6 +3,7 @@ package com.org.meeple.scheduler.match
 import com.org.meeple.scheduler.match.command.application.port.out.RandomRegionShuffler
 import io.kotest.core.spec.style.DescribeSpec
 import io.kotest.matchers.shouldBe
+import io.kotest.matchers.shouldNotBe
 import kotlin.random.Random
 
 /**
@@ -23,6 +24,7 @@ class RandomRegionShufflerTest : DescribeSpec({
 			result.sorted() shouldBe input                 // 원소 보존(누락·중복 없음)
 			result.drop(10) shouldBe input.drop(10)        // 11~15는 가까운 순 그대로
 			result.take(10).sorted() shouldBe (1L..10L).toList() // 앞 10개는 자기들끼리의 순열
+			result.take(10) shouldNotBe input.take(10)           // 실제로 섞인다(항등 no-op이 아니다, 시드 고정)
 		}
 
 		it("입력이 10개 이하이면 전체가 셔플 대상이고 원소를 보존한다") {
