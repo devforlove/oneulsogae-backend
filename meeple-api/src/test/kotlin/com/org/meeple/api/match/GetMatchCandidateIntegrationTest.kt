@@ -84,6 +84,27 @@ class GetMatchCandidateIntegrationTest(
                 ).shouldBeNull()
             }
         }
+
+        context("가까운 20개 지역엔 신선 후보가 없고 더 먼 지역에만 있으면") {
+            it("폴백 조회로 그 먼 지역 후보를 반환한다") {
+                // 요청자 지역(가장 가까움) + 채움 지역 19개(그다음) + 후보 지역 1개(가장 멂) = 21개.
+                // 1차는 가까운 20개(요청자+채움19)를 보는데 후보가 없어 비고, rank 20인 후보 지역으로 폴백해야 찾는다.
+                val requesterRegionId: Long = persistRegion("테스트도", "req", latitude = 37.00, longitude = 127.00)
+                for (i: Int in 1..19) {
+                    persistRegion("테스트도", "fill$i", latitude = 37.00 + i * 0.01, longitude = 127.00)
+                }
+                val farRegionId: Long = persistRegion("테스트도", "far", latitude = 38.00, longitude = 127.00)
+                regionProximityRegistry.refresh()
+
+                val farFemaleId: Long = persistMatchUser(userId = 30L, gender = Gender.FEMALE, regionId = farRegionId)
+
+                val candidateId: Long? = getMatchCandidatePort.findOneCandidate(
+                    requesterId = 1L, gender = Gender.FEMALE, regionId = requesterRegionId, loginAfter = loginAfter,
+                )
+
+                candidateId shouldBe farFemaleId
+            }
+        }
     }
 
     afterTest {
