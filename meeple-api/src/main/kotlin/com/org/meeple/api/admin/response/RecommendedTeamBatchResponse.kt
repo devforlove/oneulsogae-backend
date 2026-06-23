@@ -1,11 +1,11 @@
 package com.org.meeple.api.admin.response
 
-import com.org.meeple.scheduler.match.command.domain.RecommendTeamBatchResult
+import com.org.meeple.scheduler.match.command.domain.RecommendedTeamBatchResult
 
 /**
  * 팀 추천 배치 실행 결과 응답. (관리자 수동 트리거)
  */
-data class RecommendTeamBatchResponse(
+data class RecommendedTeamBatchResponse(
 	/** 순회한 대상(팀 미소속 솔로 유저) 수. */
 	val targets: Int,
 	/** 추천을 적재한 수. */
@@ -16,8 +16,8 @@ data class RecommendTeamBatchResponse(
 	val failed: Int,
 ) {
 	companion object {
-		fun of(result: RecommendTeamBatchResult): RecommendTeamBatchResponse =
-			RecommendTeamBatchResponse(
+		fun of(result: RecommendedTeamBatchResult): RecommendedTeamBatchResponse =
+			RecommendedTeamBatchResponse(
 				targets = result.targets,
 				recommended = result.recommended,
 				skipped = result.skipped,

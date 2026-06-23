@@ -1,7 +1,7 @@
 package com.org.meeple.scheduler.match.command.domain
 
 /** 팀 추천 배치 실행 요약. */
-data class RecommendTeamBatchResult(
+data class RecommendedTeamBatchResult(
 	/** 순회한 대상(팀 미소속 솔로 유저) 수. */
 	val targets: Int,
 	/** 추천을 적재한 수. */

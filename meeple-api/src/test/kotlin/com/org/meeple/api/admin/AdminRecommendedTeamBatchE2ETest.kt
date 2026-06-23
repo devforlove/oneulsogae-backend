@@ -22,7 +22,7 @@ import org.hamcrest.Matchers.greaterThanOrEqualTo
  * `POST /admin/v1/teams/recommend-batch` E2E 테스트. (관리자 전용 팀 추천 일일 배치 수동 실행)
  * 팀 없는 솔로 유저에게 반대 성별·같은 권역의 ACTIVE 팀 1개를 추천 적재한다. ROLE_ADMIN만 접근 가능.
  */
-class AdminRecommendTeamBatchE2ETest : AbstractIntegrationSupport({
+class AdminRecommendedTeamBatchE2ETest : AbstractIntegrationSupport({
 
 	// ACTIVE 팀(여성 2명, 같은 권역)을 영속하고 teamId를 돌려준다. (팀원 match_user도 적재)
 	fun persistActiveFemaleTeam(member1: Long, member2: Long, regionCode: Int): Long {
