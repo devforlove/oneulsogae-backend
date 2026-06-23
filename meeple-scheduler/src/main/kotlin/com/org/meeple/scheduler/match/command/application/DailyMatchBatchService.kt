@@ -12,6 +12,7 @@ import com.org.meeple.scheduler.match.query.dao.GetMatchableUserDao
 import com.org.meeple.scheduler.match.query.dto.MatchableUser
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
+import org.springframework.stereotype.Service
 import java.time.LocalDate
 import java.time.LocalDateTime
 
@@ -23,6 +24,7 @@ import java.time.LocalDateTime
  * 재소개 이력([GetMatchRecordDao.existsByPair])이 없는 첫 후보와 PROPOSED 소개를 만든다. 매칭된 두 사람은 풀에서 뺀다.
  * 한 사용자의 실패가 다른 사용자에 전파되지 않도록 대상 단위로 격리하고, 예외만 failed로 집계한다.
  */
+@Service
 class DailyMatchBatchService(
 	private val getMatchableUserDao: GetMatchableUserDao,
 	private val getMatchRecordDao: GetMatchRecordDao,
