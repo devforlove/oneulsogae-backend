@@ -9,11 +9,14 @@ import com.org.meeple.common.user.MaritalStatus
 import com.org.meeple.common.user.UserStatus
 import com.org.meeple.infra.fixture.IntegrationUtil
 import com.org.meeple.infra.fixture.MatchUserEntityFixture
+import com.org.meeple.infra.fixture.RegionEntityFixture
 import com.org.meeple.infra.fixture.UserEntityFixture
 import com.org.meeple.infra.match.command.entity.MatchUserEntity
 import com.org.meeple.infra.match.command.entity.QSoloMatchEntity
 import com.org.meeple.infra.match.command.entity.QSoloMatchMemberEntity
 import com.org.meeple.infra.match.command.entity.QMatchUserEntity
+import com.org.meeple.infra.region.RegionProximityRegistry
+import com.org.meeple.infra.region.entity.QRegionEntity
 import com.org.meeple.infra.user.command.entity.QUserDetailEntity
 import com.org.meeple.infra.user.command.entity.QUserEntity
 import com.org.meeple.infra.user.command.entity.UserDetailEntity
@@ -28,7 +31,9 @@ import java.time.LocalDateTime
  * - **소비**: 온보딩 직후 추천(`GET /matches/v1?isAfterOnboarding=true`)이 user_details 조인이 아니라
  *   match_user에서 반대 성별·같은 권역·최근 로그인 후보를 골라 소개를 생성하는지.
  */
-class MatchUserSyncE2ETest : AbstractIntegrationSupport({
+class MatchUserSyncE2ETest(
+	private val regionProximityRegistry: RegionProximityRegistry,
+) : AbstractIntegrationSupport({
 
 	describe("match_user 동기화") {
 
@@ -81,6 +86,9 @@ class MatchUserSyncE2ETest : AbstractIntegrationSupport({
 
 		context("match_user에 반대 성별·같은 권역·최근 로그인 후보가 있으면") {
 			it("그 후보로 소개(매칭)를 생성해 목록에 내려준다") {
+				val regionId: Long = IntegrationUtil.persist(RegionEntityFixture.create()).id!!
+				regionProximityRegistry.refresh()
+
 				// 요청자(남성, 권역 1): 추천 대상이자 목록 조회 주체. user/user_details + 매칭 읽기 모델을 갖춘다.
 				val meUserId: Long = IntegrationUtil.persist(
 					UserEntityFixture.create(providerId = "me-requester", status = UserStatus.ACTIVE),
@@ -89,7 +97,7 @@ class MatchUserSyncE2ETest : AbstractIntegrationSupport({
 					UserDetailEntity(userId = meUserId, nickname = "철수", gender = Gender.MALE, birthday = LocalDate.of(1996, 1, 1), regionCode = 1),
 				)
 				IntegrationUtil.persist(
-					MatchUserEntityFixture.create(userId = meUserId, gender = Gender.MALE, regionCode = 1),
+					MatchUserEntityFixture.create(userId = meUserId, gender = Gender.MALE, regionCode = 1, regionId = regionId),
 				)
 
 				// 후보(여성, 권역 1, 최근 로그인): match_user에만 있으면 후보로 선정된다. (표시 조인용 user_details도 준비)
@@ -99,6 +107,7 @@ class MatchUserSyncE2ETest : AbstractIntegrationSupport({
 						userId = candidateUserId,
 						gender = Gender.FEMALE,
 						regionCode = 1,
+						regionId = regionId,
 						lastLoginAt = LocalDateTime.now(),
 					),
 				)
@@ -125,5 +134,6 @@ class MatchUserSyncE2ETest : AbstractIntegrationSupport({
 		IntegrationUtil.deleteAll(QMatchUserEntity.matchUserEntity)
 		IntegrationUtil.deleteAll(QUserDetailEntity.userDetailEntity)
 		IntegrationUtil.deleteAll(QUserEntity.userEntity)
+		IntegrationUtil.deleteAll(QRegionEntity.regionEntity)
 	}
 })
