@@ -1,6 +1,7 @@
 package com.org.meeple.scheduler.match.query.dao
 
 import com.org.meeple.scheduler.match.query.dto.MatchedUserIds
+import java.time.LocalDate
 
 /**
  * 배치가 매칭(소개) 이력을 조회하기 위한 dao. (조회 전용 — 기록은 [com.org.meeple.scheduler.match.command.application.port.out.SaveMatchRecordPort]가 담당)
@@ -17,4 +18,10 @@ interface GetMatchRecordDao {
 	 * 배치 시작 시 한 번 적재해, 풀 적재·대상 순회에서 이미 매칭된 사용자를 제외하는 데 쓴다.
 	 */
 	fun findMatchedUserIds(): MatchedUserIds
+
+	/**
+	 * 주어진 날짜([date])에 소개된(solo_matches.introduced_date = date) 매칭의 참가자 userId 집합.
+	 * "오늘 한 번이라도 매칭된 유저"를 신규 소개에서 제외하는 데 쓴다.
+	 */
+	fun findUserIdsIntroducedOn(date: LocalDate): Set<Long>
 }

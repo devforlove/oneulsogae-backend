@@ -8,6 +8,7 @@ import com.org.meeple.scheduler.match.query.dao.GetMatchRecordDao
 import com.org.meeple.scheduler.match.query.dto.MatchedUserIds
 import com.querydsl.jpa.impl.JPAQueryFactory
 import org.springframework.stereotype.Component
+import java.time.LocalDate
 
 /**
  * scheduler [GetMatchRecordDao]의 QueryDSL 구현. (조회 전용 — 기록은 command [com.org.meeple.infra.match.command.adapter.MatchAdapter]의 SaveMatchRecordPort가 담당)
@@ -40,5 +41,18 @@ class GetMatchRecordDaoImpl(
 			.where(soloMatch.status.eq(MatchStatus.MATCHED))
 			.fetch()
 		return MatchedUserIds(userIds.toSet())
+	}
+
+	// introduced_date로 그 날짜 소개 헤더를 seek(idx_introduced_date)하고, 참가자와 명시 조인해 userId를 모은다. (소프트 삭제 행은 @SQLRestriction으로 제외)
+	override fun findUserIdsIntroducedOn(date: LocalDate): Set<Long> {
+		val soloMatch: QSoloMatchEntity = QSoloMatchEntity.soloMatchEntity
+		val soloMatchMember: QSoloMatchMemberEntity = QSoloMatchMemberEntity.soloMatchMemberEntity
+		return queryFactory
+			.select(soloMatchMember.userId)
+			.from(soloMatch)
+			.join(soloMatchMember).on(soloMatchMember.matchId.eq(soloMatch.id))
+			.where(soloMatch.introducedDate.eq(date))
+			.fetch()
+			.toSet()
 	}
 }
