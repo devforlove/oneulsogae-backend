@@ -17,7 +17,7 @@ import org.hibernate.annotations.SQLRestriction
  * 참가자를 (match_id, user_id) 한 쌍의 행으로 정규화해, 참가자·수락의 단일 진실원천 역할을 한다. ([SoloMatchEntity]는 헤더만 보관)
  * 1:1이면 한 매칭에 두 행(남1·여1)이, N:N(2:2·3:3)이면 여러 행이 생긴다.
  * (match_id, user_id) 유니크 제약으로 한 매칭에 같은 사용자가 중복 참가하는 것을 막고, (user_id, status) 인덱스로 사용자별 참가 매칭 조회(+활성 필터)를 커버한다.
- * [accepted]가 참가자별 수락 여부이며, 한 매칭의 참가자가 모두 수락하면 매칭이 성사된다.
+ * 참가자 상태([status])는 WAITING→APPLY→ACTIVE/DEACTIVE로 전이하며, 전원 ACTIVE면 매칭이 성사된 것이다.
  * 도메인 로직은 [com.org.meeple.core.match.command.domain.MatchMember] 모델에 정의한다.
  */
 @Entity
@@ -45,12 +45,8 @@ class SoloMatchMemberEntity(
 	@Column(name = "gender", nullable = false, columnDefinition = "varchar(50)")
 	val gender: Gender,
 
-	/** 이 참가자의 수락 여부. 아직 응답 전이면 null. (전원 수락 시 매칭 성사) */
-	@Column(name = "accepted")
-	var accepted: Boolean? = null,
-
-	/** 이 참가자의 활성 상태. (기본 활성) 채팅방 나가기로 매칭이 제거되면 DEACTIVE로 전이한다. */
+	/** 참가자 상태. WAITING(대기) → APPLY(신청) → ACTIVE(성사·활성) / DEACTIVE(채팅 나감). */
 	@Enumerated(EnumType.STRING)
 	@Column(name = "status", nullable = false, columnDefinition = "varchar(50)")
-	var status: MatchMemberStatus = MatchMemberStatus.ACTIVE,
+	var status: MatchMemberStatus = MatchMemberStatus.WAITING,
 ) : BaseEntity()

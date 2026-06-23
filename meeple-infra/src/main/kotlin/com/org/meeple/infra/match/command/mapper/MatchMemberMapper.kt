@@ -11,7 +11,6 @@ fun SoloMatchMemberEntity.toDomain(): MatchMember =
 		matchId = matchId,
 		userId = userId,
 		gender = gender,
-		accepted = accepted,
 		status = status,
 		deletedAt = deletedAt,
 	)
@@ -26,7 +25,6 @@ fun MatchMember.toEntity(): SoloMatchMemberEntity =
 		matchId = matchId,
 		userId = userId,
 		gender = gender,
-		accepted = accepted,
 		status = status,
 	).also {
 		if (id != 0L) it.id = id

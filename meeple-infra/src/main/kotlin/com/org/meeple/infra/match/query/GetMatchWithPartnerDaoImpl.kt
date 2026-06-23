@@ -18,7 +18,7 @@ import java.time.LocalDateTime
  * [GetMatchWithPartnerDao]의 QueryDSL 구현체.
  * 매칭 헤더·내 참가자·상대 참가자·상대 프로필을 명시적 조인으로 한 번에 가져와(1+N 방지) 평탄 read model([MatchWithPartner])로 바로 투영한다. (조회 전용)
  * core 도메인/매퍼에 의존하지 않고 엔티티 필드에서 직접 구성한다.
- * - 관심 여부는 참가자 수락 플래그(accepted, nullable)를 `coalesce(false)`로 정리해 산출한다. (null=미응답=관심없음)
+ * - 관심 여부는 참가자 status가 APPLY/ACTIVE인지로 산출한다.
  * - traits/interests는 `@Convert`(JSON) 컬럼이라 QueryDSL 메타모델이 `ListPath`(컬렉션)로 만들어 그대로 select하면 컨버터가 적용되지 않으므로, [Expressions.path]로 기본 속성 경로로 참조한다.
  * 단건/존재 조회·저장 out-port는 [com.org.meeple.infra.match.command.adapter.MatchAdapter]가 메서드 쿼리로 따로 구현한다.
  */
@@ -48,8 +48,8 @@ class GetMatchWithPartnerDaoImpl(
 					soloMatch.expiresAt,
 					soloMatch.dateInitAmount,
 					soloMatch.dateAcceptAmount,
-					mySoloMatchMember.accepted.coalesce(false),
-					partnerSoloMatchMember.accepted.coalesce(false),
+					mySoloMatchMember.status.`in`(MatchMemberStatus.APPLY, MatchMemberStatus.ACTIVE),
+					partnerSoloMatchMember.status.`in`(MatchMemberStatus.APPLY, MatchMemberStatus.ACTIVE),
 					userDetail.userId,
 					userDetail.nickname,
 					userDetail.profileImageCode,
@@ -81,8 +81,8 @@ class GetMatchWithPartnerDaoImpl(
 			.leftJoin(region).on(region.id.eq(userDetail.regionId))
 			.where(
 				mySoloMatchMember.userId.eq(userId),
-				// 내가 나간(DEACTIVE) 매칭은 내 목록에서 제외한다. (나는 활성 참가자만)
-				mySoloMatchMember.status.eq(MatchMemberStatus.ACTIVE),
+				// 내가 나간(DEACTIVE) 매칭만 내 목록에서 제외한다. (대기·신청·활성 매칭은 노출)
+				mySoloMatchMember.status.ne(MatchMemberStatus.DEACTIVE),
 				soloMatch.expiresAt.goe(now),
 			)
 			.fetch()
