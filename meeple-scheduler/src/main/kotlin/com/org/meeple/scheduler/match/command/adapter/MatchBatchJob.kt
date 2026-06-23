@@ -1,4 +1,4 @@
-package com.org.meeple.scheduler.match.command.application
+package com.org.meeple.scheduler.match.command.adapter
 
 import com.org.meeple.scheduler.match.command.application.port.`in`.RunDailyMatchBatchUseCase
 import com.org.meeple.scheduler.match.command.domain.MatchBatchResult

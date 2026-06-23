@@ -1,6 +1,6 @@
 package com.org.meeple.scheduler.match
 
-import com.org.meeple.scheduler.match.command.application.RecommendTeamBatchJob
+import com.org.meeple.scheduler.match.command.adapter.RecommendTeamBatchJob
 import org.springframework.scheduling.annotation.Scheduled
 import org.springframework.stereotype.Component
 

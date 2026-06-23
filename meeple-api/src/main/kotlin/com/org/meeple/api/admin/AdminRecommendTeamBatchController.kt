@@ -4,7 +4,7 @@ import com.org.meeple.api.admin.response.RecommendTeamBatchResponse
 import com.org.meeple.core.common.error.BusinessException
 import com.org.meeple.core.common.response.ApiResponse
 import com.org.meeple.core.match.MatchErrorCode
-import com.org.meeple.scheduler.match.command.application.RecommendTeamBatchJob
+import com.org.meeple.scheduler.match.command.adapter.RecommendTeamBatchJob
 import com.org.meeple.scheduler.match.command.domain.RecommendTeamBatchResult
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.tags.Tag
