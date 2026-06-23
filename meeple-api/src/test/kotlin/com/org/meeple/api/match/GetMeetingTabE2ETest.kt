@@ -25,9 +25,9 @@ import java.time.LocalDate
  */
 class GetMeetingTabE2ETest : AbstractIntegrationSupport({
 
-	fun persistMatchUser(userId: Long, gender: Gender = Gender.MALE, regionCode: Int = 1, profileImageCode: String = "1") {
+	fun persistMatchUser(userId: Long, gender: Gender = Gender.MALE, profileImageCode: String = "1") {
 		IntegrationUtil.persist(
-			MatchUserEntityFixture.create(userId = userId, gender = gender, regionCode = regionCode, profileImageCode = profileImageCode),
+			MatchUserEntityFixture.create(userId = userId, gender = gender, profileImageCode = profileImageCode),
 		)
 	}
 
@@ -45,12 +45,12 @@ class GetMeetingTabE2ETest : AbstractIntegrationSupport({
 		context("추천 팀이 적재된 솔로 유저") {
 			it("recommendedTeam에 팀·팀원을, count=0·myActiveTeam=null로 반환한다 (200)") {
 				val soloUserId = 5001L
-				persistMatchUser(soloUserId, Gender.MALE, 1)
+				persistMatchUser(soloUserId, Gender.MALE)
 				val teamId: Long = persistTeam(TeamStatus.ACTIVE, Gender.FEMALE)
 				persistMember(teamId, 5101L, TeamMemberStatus.ACTIVE)
 				persistMember(teamId, 5102L, TeamMemberStatus.ACTIVE)
-				persistMatchUser(5101L, Gender.FEMALE, 1)
-				persistMatchUser(5102L, Gender.FEMALE, 1)
+				persistMatchUser(5101L, Gender.FEMALE)
+				persistMatchUser(5102L, Gender.FEMALE)
 				IntegrationUtil.persist(
 					RecommendedTeamEntityFixture.create(userId = soloUserId, teamId = teamId, recommendedDate = LocalDate.of(2026, 6, 22)),
 				)
@@ -71,7 +71,7 @@ class GetMeetingTabE2ETest : AbstractIntegrationSupport({
 		context("초대를 2건 받은 유저") {
 			it("receivedInvitationCount=2를 반환한다 (200)") {
 				val me = 5002L
-				persistMatchUser(me, Gender.MALE, 1)
+				persistMatchUser(me, Gender.MALE)
 				repeat(2) { i: Int ->
 					val ownerId: Long = 5200L + i
 					val teamId: Long = persistTeam(TeamStatus.INVITING, Gender.MALE)
@@ -94,8 +94,8 @@ class GetMeetingTabE2ETest : AbstractIntegrationSupport({
 			it("myActiveTeam에 teamId와 내/친구 profileImageCode를 반환한다 (200)") {
 				val me = 5003L
 				val friend = 5301L
-				persistMatchUser(me, Gender.MALE, 1, profileImageCode = "3")
-				persistMatchUser(friend, Gender.MALE, 1, profileImageCode = "7")
+				persistMatchUser(me, Gender.MALE, profileImageCode = "3")
+				persistMatchUser(friend, Gender.MALE, profileImageCode = "7")
 				val teamId: Long = persistTeam(TeamStatus.ACTIVE, Gender.MALE)
 				persistMember(teamId, me, TeamMemberStatus.ACTIVE)
 				persistMember(teamId, friend, TeamMemberStatus.ACTIVE)
@@ -117,7 +117,7 @@ class GetMeetingTabE2ETest : AbstractIntegrationSupport({
 		context("추천·초대·결성 팀이 모두 없는 유저") {
 			it("recommendedTeam=null, count=0, myActiveTeam=null을 반환한다 (200)") {
 				val me = 5004L
-				persistMatchUser(me, Gender.MALE, 1)
+				persistMatchUser(me, Gender.MALE)
 
 				get("/teams/v1/meeting-tab") {
 					bearer(accessTokenFor(me))

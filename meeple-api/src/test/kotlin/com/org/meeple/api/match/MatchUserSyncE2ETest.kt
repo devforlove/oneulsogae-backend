@@ -74,7 +74,6 @@ class MatchUserSyncE2ETest(
 					.fetchOne()
 
 				row!!.gender shouldBe Gender.MALE
-				row.regionCode shouldBe 1
 				row.maritalStatus shouldBe MaritalStatus.SINGLE
 				row.nickname shouldBe "민수"
 				row.profileImageCode shouldBe "1"
@@ -96,7 +95,7 @@ class MatchUserSyncE2ETest(
 					UserDetailEntity(userId = meUserId, nickname = "철수", gender = Gender.MALE, birthday = LocalDate.of(1996, 1, 1), regionCode = 1),
 				)
 				IntegrationUtil.persist(
-					MatchUserEntityFixture.create(userId = meUserId, gender = Gender.MALE, regionCode = 1, regionId = regionId),
+					MatchUserEntityFixture.create(userId = meUserId, gender = Gender.MALE, regionId = regionId),
 				)
 
 				// 후보(여성, 권역 1, 최근 로그인): match_user에만 있으면 후보로 선정된다. (표시 조인용 user_details도 준비)
@@ -105,7 +104,6 @@ class MatchUserSyncE2ETest(
 					MatchUserEntityFixture.create(
 						userId = candidateUserId,
 						gender = Gender.FEMALE,
-						regionCode = 1,
 						regionId = regionId,
 						lastLoginAt = LocalDateTime.now(),
 					),

@@ -35,7 +35,6 @@ class MatchUserTest : DescribeSpec({
 				gender = Gender.MALE,
 				birthday = LocalDate.of(1995, 1, 1),
 				regionId = 7L,
-				regionCode = 1,
 				maritalStatus = MaritalStatus.SINGLE,
 				nickname = "민수",
 				profileImageCode = "1",
