@@ -8,6 +8,7 @@ import com.org.meeple.core.match.query.dto.SentInvitationMember
 import com.org.meeple.infra.match.command.entity.QMatchUserEntity
 import com.org.meeple.infra.match.command.entity.QTeamEntity
 import com.org.meeple.infra.match.command.entity.QTeamMemberEntity
+import com.org.meeple.infra.region.entity.QRegionEntity
 import com.org.meeple.infra.user.command.entity.QUserDetailEntity
 import com.querydsl.core.Tuple
 import com.querydsl.core.types.Projections
@@ -30,11 +31,15 @@ class GetSentInvitationDaoImpl(
 	override fun findLatestSentInvitation(userId: Long): SentInvitation? {
 		val team: QTeamEntity = QTeamEntity.teamEntity
 		val teamMember: QTeamMemberEntity = QTeamMemberEntity.teamMemberEntity
+		val region: QRegionEntity = QRegionEntity.regionEntity
+		// 표시용 활동지역은 regions를 join해 "시/도 시/군/구"로 만든다. (지역 미설정/미존재면 null)
+		val activityArea: com.querydsl.core.types.dsl.StringExpression = region.sido.concat(" ").concat(region.sigungu)
 
 		val header: Tuple = queryFactory
-			.select(team.id, team.name, team.regionId, team.introduction, team.status)
+			.select(team.id, team.name, team.regionId, activityArea, team.introduction, team.status)
 			.from(teamMember)
 			.join(team).on(team.id.eq(teamMember.teamId))
+			.leftJoin(region).on(region.id.eq(team.regionId))
 			.where(
 				teamMember.userId.eq(userId),
 				teamMember.status.eq(TeamMemberStatus.ACTIVE),
@@ -74,6 +79,7 @@ class GetSentInvitationDaoImpl(
 			teamId = teamId,
 			name = header.get(team.name)!!,
 			regionId = header.get(team.regionId)!!,
+			activityArea = header.get(activityArea),
 			introduction = header.get(team.introduction),
 			status = header.get(team.status)!!,
 			members = members,

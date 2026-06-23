@@ -13,6 +13,8 @@ data class SentInvitation(
 	val teamId: Long,
 	val name: String,
 	val regionId: Long,
+	/** 활동지역 표시 문자열(시/도 시/군/구). regions join으로 채운다. (지역 미설정/미존재면 null) */
+	val activityArea: String?,
 	val introduction: String?,
 	val status: TeamStatus,
 	val members: List<SentInvitationMember>,

@@ -10,7 +10,9 @@ import com.org.meeple.common.match.TeamStatus
 import com.org.meeple.common.user.Gender
 import com.org.meeple.infra.fixture.IntegrationUtil
 import com.org.meeple.infra.fixture.MatchUserEntityFixture
+import com.org.meeple.infra.fixture.RegionEntityFixture
 import com.org.meeple.infra.fixture.UserDetailEntityFixture
+import com.org.meeple.infra.region.entity.QRegionEntity
 import com.org.meeple.infra.match.command.entity.QMatchUserEntity
 import com.org.meeple.infra.match.command.entity.QTeamEntity
 import com.org.meeple.infra.match.command.entity.QTeamMemberEntity
@@ -43,11 +45,11 @@ class GetSentInvitationE2ETest : AbstractIntegrationSupport({
 		)
 	}
 
-	// 프로필이 저장된 두 사용자로 팀을 결성(초대)하고 teamId를 돌려준다.
-	fun invite(ownerId: Long, invitedUserId: Long): Long =
+	// 프로필이 저장된 두 사용자로 팀을 결성(초대)하고 teamId를 돌려준다. (regionId 기본 1 — 활동지역 표시가 필요한 케이스만 실제 region 적재)
+	fun invite(ownerId: Long, invitedUserId: Long, regionId: Long = 1): Long =
 		post("/teams/v1/invitation") {
 			bearer(accessTokenFor(ownerId))
-			jsonBody("""{"invitedUserId": $invitedUserId, "regionId": 1, "name": "우리팀", "introduction": "함께 즐겁게 활동할 팀이에요"}""")
+			jsonBody("""{"invitedUserId": $invitedUserId, "regionId": $regionId, "name": "우리팀", "introduction": "함께 즐겁게 활동할 팀이에요"}""")
 		}.extract().path<Int>("data.teamId").toLong()
 
 	// 기본 프로필을 저장한 뒤 초대한다. (프로필 값 검증이 필요 없는 케이스용)
@@ -65,7 +67,10 @@ class GetSentInvitationE2ETest : AbstractIntegrationSupport({
 				val invitedUserId = 3002L
 				persistProfile(ownerId, "초대왕", "10", "PM", "토스")
 				persistProfile(invitedUserId, "피초대", "20", "개발자", "카카오", birthday = LocalDate.now().minusYears(30))
-				val teamId: Long = invite(ownerId, invitedUserId)
+				val regionId: Long = IntegrationUtil.persist(
+					RegionEntityFixture.create(sido = "서울특별시", sigungu = "강남구"),
+				).id!!
+				val teamId: Long = invite(ownerId, invitedUserId, regionId = regionId)
 
 				get("/teams/v1/invitation") {
 					bearer(accessTokenFor(ownerId))
@@ -74,7 +79,9 @@ class GetSentInvitationE2ETest : AbstractIntegrationSupport({
 					body("success", true)
 					body("data.teamId", teamId.toInt())
 					body("data.name", "우리팀")
-					body("data.regionId", 1)
+					body("data.regionId", regionId.toInt())
+					// 표시용 활동지역은 regions join으로 "시/도 시/군/구"가 내려온다.
+					body("data.activityArea", "서울특별시 강남구")
 					body("data.introduction", "함께 즐겁게 활동할 팀이에요")
 					body("data.status", TeamStatus.INVITING.name)
 					// INVITING 팀이라 초대자 본인(3001, ACTIVE)은 제외되고 초대 대상(3002, INVITED)만 노출된다
@@ -209,5 +216,6 @@ class GetSentInvitationE2ETest : AbstractIntegrationSupport({
 		IntegrationUtil.deleteAll(QTeamEntity.teamEntity)
 		IntegrationUtil.deleteAll(QMatchUserEntity.matchUserEntity)
 		IntegrationUtil.deleteAll(QUserDetailEntity.userDetailEntity)
+		IntegrationUtil.deleteAll(QRegionEntity.regionEntity)
 	}
 })

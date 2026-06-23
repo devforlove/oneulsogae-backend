@@ -16,6 +16,8 @@ data class SentInvitationResponse(
 	val teamId: Long,
 	val name: String,
 	val regionId: Long,
+	/** 활동지역 표시 문자열(시/도 시/군/구). regions join으로 채워진다. */
+	val activityArea: String?,
 	val introduction: String?,
 	val status: TeamStatus,
 	val members: List<Member>,
@@ -41,6 +43,7 @@ data class SentInvitationResponse(
 					teamId = invitation.teamId,
 					name = invitation.name,
 					regionId = invitation.regionId,
+					activityArea = invitation.activityArea,
 					introduction = invitation.introduction,
 					status = invitation.status,
 					members = invitation.members
