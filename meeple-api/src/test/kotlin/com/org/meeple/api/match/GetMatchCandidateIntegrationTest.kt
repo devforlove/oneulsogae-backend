@@ -67,6 +67,23 @@ class GetMatchCandidateIntegrationTest(
             }
         }
 
+        context("요청자와 후보가 각자 '다른 사람'과는 매칭됐지만 서로는 매칭된 적 없으면") {
+            it("그 후보를 반환한다 (서로의 매칭 이력만 제외해야 한다)") {
+                val regionId: Long = persistRegion("서울특별시", "강남구", 37.50, 127.00)
+                val candidateId: Long = persistMatchUser(userId = 20L, gender = Gender.FEMALE, regionId = regionId)
+                // 요청자(1L)는 99L과, 후보(20L)는 98L과 각각 매칭 이력이 있다. 1L↔20L 사이 매칭은 없다.
+                persistProposedMatch(1L, 99L)
+                persistProposedMatch(98L, 20L)
+                regionProximityPort.refresh()
+
+                val result: Long? = getMatchCandidatePort.findOneCandidate(
+                    requesterId = 1L, gender = Gender.FEMALE, regionId = regionId, loginAfter = loginAfter,
+                )
+
+                result shouldBe candidateId
+            }
+        }
+
         context("어디에도 신선 후보가 없으면") {
             it("null을 반환한다") {
                 val regionId: Long = persistRegion("서울특별시", "강남구", 37.50, 127.00)
