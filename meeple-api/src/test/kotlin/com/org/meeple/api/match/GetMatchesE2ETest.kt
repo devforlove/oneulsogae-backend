@@ -25,7 +25,7 @@ import java.time.LocalDate
  * `GET /matches/v1` E2E 테스트.
  *
  * 매칭 목록 조회가 QueryDSL 투영으로 [com.org.meeple.core.match.query.dto.MatchWithPartner]를 바로 만들 때:
- * - 관심 여부(hasUserInterest/hasPartnerInterest)가 참가자 accepted(nullable)에서 `coalesce(false)`로 올바로 산출되는지,
+ * - 관심 여부(hasUserInterest/hasPartnerInterest)가 참가자 status(APPLY/ACTIVE)에서 올바로 산출되는지,
  * - `@Convert`(JSON) 컬럼인 상대 프로필 traits/interests가 컨버터를 거쳐 `List<String>`으로 복원되는지 검증한다.
  */
 class GetMatchesE2ETest : AbstractIntegrationSupport({
@@ -33,7 +33,7 @@ class GetMatchesE2ETest : AbstractIntegrationSupport({
 	describe("GET /matches/v1") {
 
 		context("상대만 관심을 보낸(내 미응답) 매칭이 있으면") {
-			it("관심 플래그가 accepted에서 산출되고 상대 프로필의 JSON 컬럼이 리스트로 내려온다 (200)") {
+			it("관심 플래그가 status에서 산출되고 상대 프로필의 JSON 컬럼이 리스트로 내려온다 (200)") {
 				// 요청자는 User+UserDetail 조인이 필요하다. (성별로 매칭 대상 판단)
 				val meUserId: Long = IntegrationUtil.persist(
 					UserEntityFixture.create(status = UserStatus.ACTIVE),
