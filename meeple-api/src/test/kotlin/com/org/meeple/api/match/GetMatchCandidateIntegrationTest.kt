@@ -83,7 +83,7 @@ class GetMatchCandidateIntegrationTest(
         context("가까운 지역들은 비어 있고 더 먼 '유저 있는' 지역에만 후보가 있으면") {
             it("빈 지역은 건너뛰고 그 먼 지역 후보를 반환한다") {
                 // 요청자 지역(빈) + 빈 채움 지역 19개 + 유저 있는 먼 지역 1개 = 21개.
-                // '유저 있는 region' 필터로 빈 20개를 건너뛰고, 유저 있는 먼 지역을 지역 단위로 조회해 찾는다.
+                // '유저 있는 region' 필터로 빈 지역들을 건너뛰고, 유저 있는 먼 지역을 지역 단위로 조회해 찾는다.
                 val requesterRegionId: Long = persistRegion("테스트도", "req", latitude = 37.00, longitude = 127.00)
                 for (i: Int in 1..19) {
                     persistRegion("테스트도", "fill$i", latitude = 37.00 + i * 0.01, longitude = 127.00)
@@ -100,19 +100,17 @@ class GetMatchCandidateIntegrationTest(
             }
         }
 
-        context("스냅샷 갱신 뒤 새로 생긴 지역의 후보는") {
-            it("랜덤 폴백으로 찾는다") {
-                // refresh 시점엔 유저가 없어 '유저 있는 region' 스냅샷이 비어 지역 순회가 건너뛰어지지만,
-                // 랜덤 폴백이 실제 데이터를 보고 후보를 찾는다. (스냅샷 지연에도 정확성 보존)
+        context("스냅샷 갱신 전 새로 생긴 지역의 후보는") {
+            it("다음 갱신 전까지 후보로 잡히지 않아 null이다") {
+                // refresh 시점엔 유저가 없어 '유저 있는 region' 스냅샷이 비고, 지역 순회가 그 지역을 건너뛴다.
+                // (의도된 트레이드오프: 새 region 유저는 다음 refresh까지 추천 대상에서 빠진다. 정합성이 아니라 추천 지연일 뿐)
                 val regionId: Long = persistRegion("서울특별시", "강남구", 37.50, 127.00)
                 regionProximityPort.refresh()
-                val lateFemaleId: Long = persistMatchUser(userId = 40L, gender = Gender.FEMALE, regionId = regionId)
+                persistMatchUser(userId = 40L, gender = Gender.FEMALE, regionId = regionId)
 
-                val candidateId: Long? = getMatchCandidatePort.findOneCandidate(
+                getMatchCandidatePort.findOneCandidate(
                     requesterId = 1L, gender = Gender.FEMALE, regionId = regionId, loginAfter = loginAfter,
-                )
-
-                candidateId shouldBe lateFemaleId
+                ).shouldBeNull()
             }
         }
     }

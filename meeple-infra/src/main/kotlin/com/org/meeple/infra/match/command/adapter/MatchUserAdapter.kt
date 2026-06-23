@@ -14,17 +14,15 @@ import com.org.meeple.infra.match.command.mapper.toDomain
 import com.org.meeple.infra.match.command.mapper.toEntity
 import com.org.meeple.infra.match.command.repository.MatchUserJpaRepository
 import com.org.meeple.infra.region.RegionProximityRegistry
-import com.querydsl.core.types.Predicate
 import com.querydsl.core.types.dsl.BooleanExpression
 import com.querydsl.jpa.JPAExpressions
 import com.querydsl.jpa.impl.JPAQueryFactory
 import org.springframework.stereotype.Component
 import java.time.LocalDateTime
-import java.util.concurrent.ThreadLocalRandom
 
 /**
  * [MatchUserEntity]의 command 영속성 어댑터. (엔티티당 어댑터 하나 — 매칭 읽기 모델의 후보 조회/적재/삭제 out-port를 함께 구현)
- * 후보 선정([GetMatchCandidatePort])은 가까운 "유저 있는" 지역을 지역 단위로 순회해 찾고, 없으면 자격 후보 중 완전 랜덤으로 폴백한다.
+ * 후보 선정([GetMatchCandidatePort])은 가까운 "유저 있는" 지역을 지역 단위로 끝까지 순회해 가장 가까운 후보를 찾는다. (모두 비면 null)
  * 적재/삭제/조회([SaveMatchUserPort]/[DeleteMatchUserPort]/[GetMatchUserPort])는 user 도메인 이벤트 동기화에 쓰인다.
  */
 @Component
@@ -38,20 +36,18 @@ class MatchUserAdapter(
 	/**
 	 * 요청자([requesterId])에게 "반대 성별([gender])·최근 로그인([loginAfter] 이후)·재소개 이력 없음" 후보 1명을 반환한다.
 	 *
-	 * 가까운 순으로 "유저 있는" 지역을 최대 [NEAREST_REGION_FANOUT]개까지 **지역 단위로 하나씩** 조회해, 가장 가까운 지역의 후보를 먼저 잡는다.
+	 * 가까운 순으로 "유저 있는" 지역을 **지역 단위로 하나씩** 끝까지 순회해, 가장 가까운 지역의 후보를 먼저 잡고 첫 후보에서 멈춘다.
 	 * (지역 단위 단일 조회라 매 쿼리가 인덱스 seek로 끝나고 — 서울 등 밀집 지역의 풀 전체를 한 번에 정렬하지 않는다.
 	 * 빈 지역은 [PopulatedRegionRegistry]로 미리 걸러 헛조회를 막는다)
-	 * 가까운 지역들에 신선 후보가 없으면(또는 스냅샷이 미처 못 담은 지역 대비) **자격 후보 중 완전 랜덤으로 1명**을 매칭한다. 어떤 자격 후보도 없으면 null.
+	 * 유저 있는 지역 전체에 신선 후보가 없으면 null. (스냅샷 갱신 전 새로 유저가 생긴 지역은 다음 refresh까지 후보에서 빠질 수 있다 — 추천 생략으로 처리)
 	 */
 	override fun findOneCandidate(requesterId: Long, gender: Gender, regionId: Long, loginAfter: LocalDateTime): Long? {
-		val nearestPopulated: List<Long> = regionProximityRegistry.nearbyRegionIds(regionId)
+		val populatedNearby: List<Long> = regionProximityRegistry.nearbyRegionIds(regionId)
 			.filter { id: Long -> populatedRegionRegistry.contains(id) }
-			.take(NEAREST_REGION_FANOUT)
-		for (candidateRegionId: Long in nearestPopulated) {
+		for (candidateRegionId: Long in populatedNearby) {
 			findFreshCandidateInRegion(requesterId, gender, candidateRegionId, loginAfter)?.let { candidateId: Long -> return candidateId }
 		}
-		// 가까운 지역에 후보가 없으면 거리를 포기하고 자격(반대 성별·최근 로그인·이력 없음) 후보 중 무작위 1명.
-		return findRandomFreshCandidate(requesterId, gender, loginAfter)
+		return null
 	}
 
 	/**
@@ -76,37 +72,6 @@ class MatchUserAdapter(
 				notIntroducedBefore(matchUser, requesterId),
 			)
 			.orderBy(matchUser.lastLoginAt.desc())
-			.limit(1)
-			.fetchFirst()
-	}
-
-	/**
-	 * 지역과 무관하게 "반대 성별·최근 로그인·재소개 이력 없음" 자격 후보 중 무작위 1명을 조회한다. (가까운 지역에 후보가 없을 때의 폴백)
-	 * 자격 후보 수를 센 뒤 `[0, count)` 무작위 오프셋으로 1명만 건너뛰어 꺼낸다. (`order by rand()`로 풀 전체를 filesort하지 않는다)
-	 * 정렬은 인덱스(gender, region_id, last_login_at) 순서와 맞춰, 오프셋 스캔이 filesort 없이 진행되게 한다.
-	 */
-	private fun findRandomFreshCandidate(requesterId: Long, gender: Gender, loginAfter: LocalDateTime): Long? {
-		val matchUser: QMatchUserEntity = QMatchUserEntity.matchUserEntity
-		val eligible: Array<Predicate> = arrayOf(
-			matchUser.gender.eq(gender),
-			matchUser.lastLoginAt.goe(loginAfter),
-			notIntroducedBefore(matchUser, requesterId),
-		)
-
-		val count: Long = queryFactory
-			.select(matchUser.count())
-			.from(matchUser)
-			.where(*eligible)
-			.fetchOne() ?: 0L
-		if (count == 0L) return null
-
-		val offset: Long = ThreadLocalRandom.current().nextLong(count)
-		return queryFactory
-			.select(matchUser.userId)
-			.from(matchUser)
-			.where(*eligible)
-			.orderBy(matchUser.regionId.asc(), matchUser.lastLoginAt.asc())
-			.offset(offset)
 			.limit(1)
 			.fetchFirst()
 	}
@@ -144,13 +109,5 @@ class MatchUserAdapter(
 
 	override fun deleteByUserId(userId: Long) {
 		matchUserJpaRepository.deleteByUserId(userId)
-	}
-
-	companion object {
-		/**
-		 * 지역 단위로 순회할 "가장 가까운 유저 있는 지역"의 최대 개수(= 최악의 지역별 왕복 상한).
-		 * 거의 모든 요청자가 이 안에서 후보를 찾는다. 너무 크면 무후보 시 왕복이 늘고, 너무 작으면 랜덤 폴백 빈도가 늘어난다.
-		 */
-		private const val NEAREST_REGION_FANOUT = 20
 	}
 }
