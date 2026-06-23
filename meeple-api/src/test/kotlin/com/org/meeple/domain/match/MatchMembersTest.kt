@@ -1,5 +1,6 @@
 package com.org.meeple.domain.match
 
+import com.org.meeple.common.match.MatchMemberStatus
 import com.org.meeple.common.user.Gender
 import com.org.meeple.core.match.command.domain.MatchMembers
 import io.kotest.core.spec.style.DescribeSpec
@@ -28,19 +29,27 @@ class MatchMembersTest : DescribeSpec({
 		}
 	}
 
-	describe("accept / 수락 집계") {
-		it("한 명만 수락하면 anyAccepted=true, allAccepted=false") {
-			val responded: MatchMembers = members().accept(100L)
+	describe("apply / 신청 집계") {
+		it("한 명만 신청하면 anyApplied=true, allApplied=false") {
+			val responded: MatchMembers = members().apply(100L)
 
-			responded.find(100L)!!.isAccepted shouldBe true
-			responded.anyAccepted() shouldBe true
-			responded.allAccepted() shouldBe false
+			responded.find(100L)!!.hasApplied shouldBe true
+			responded.anyApplied() shouldBe true
+			responded.allApplied() shouldBe false
 		}
 
-		it("전원 수락하면 allAccepted=true") {
-			val responded: MatchMembers = members().accept(100L).accept(200L)
+		it("전원 신청하면 allApplied=true") {
+			val responded: MatchMembers = members().apply(100L).apply(200L)
 
-			responded.allAccepted() shouldBe true
+			responded.allApplied() shouldBe true
+		}
+	}
+
+	describe("activateAll") {
+		it("전원을 ACTIVE로 승격한다") {
+			val activated: MatchMembers = members().apply(100L).apply(200L).activateAll()
+
+			activated.values.all { it.status == MatchMemberStatus.ACTIVE } shouldBe true
 		}
 	}
 })

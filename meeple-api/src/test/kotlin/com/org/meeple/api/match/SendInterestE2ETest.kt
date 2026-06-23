@@ -5,6 +5,7 @@ import com.org.meeple.common.chat.ChatRoomStatus
 import com.org.meeple.common.integration.AbstractIntegrationSupport
 import com.org.meeple.common.integration.expect
 import com.org.meeple.common.integration.post
+import com.org.meeple.common.match.MatchMemberStatus
 import com.org.meeple.common.match.MatchStatus
 import com.org.meeple.common.user.Gender
 import com.org.meeple.core.match.command.domain.MatchMembers
@@ -34,12 +35,12 @@ import io.kotest.matchers.shouldBe
  */
 class SendInterestE2ETest : AbstractIntegrationSupport({
 
-	// 1:1 매칭 헤더 + 두 참가자(남/녀, 수락 여부 포함)를 함께 저장하고 헤더를 반환한다.
+	// 1:1 매칭 헤더 + 두 참가자(남/녀, 신청 상태 포함)를 함께 저장하고 헤더를 반환한다.
 	fun persistMatch(
 		maleUserId: Long,
 		femaleUserId: Long,
-		maleAccepted: Boolean? = null,
-		femaleAccepted: Boolean? = null,
+		maleStatus: MatchMemberStatus = MatchMemberStatus.WAITING,
+		femaleStatus: MatchMemberStatus = MatchMemberStatus.WAITING,
 		status: MatchStatus = MatchStatus.PROPOSED,
 	): SoloMatchEntity {
 		val match: SoloMatchEntity = IntegrationUtil.persist(
@@ -50,10 +51,10 @@ class SendInterestE2ETest : AbstractIntegrationSupport({
 		)
 		val matchId: Long = match.id!!
 		IntegrationUtil.persist(
-			SoloMatchMemberEntityFixture.create(matchId = matchId, userId = maleUserId, gender = Gender.MALE, accepted = maleAccepted),
+			SoloMatchMemberEntityFixture.create(matchId = matchId, userId = maleUserId, gender = Gender.MALE, status = maleStatus),
 		)
 		IntegrationUtil.persist(
-			SoloMatchMemberEntityFixture.create(matchId = matchId, userId = femaleUserId, gender = Gender.FEMALE, accepted = femaleAccepted),
+			SoloMatchMemberEntityFixture.create(matchId = matchId, userId = femaleUserId, gender = Gender.FEMALE, status = femaleStatus),
 		)
 		return match
 	}
@@ -98,11 +99,11 @@ class SendInterestE2ETest : AbstractIntegrationSupport({
 			it("수락 비용이 차감되고 성사된다 (200, MATCHED) + 채팅방 생성 + 성사된 두 사람 모두에게 '매칭 성사' 알람") {
 				val maleUserId = 1002L
 				val femaleUserId = 2002L
-				// 상대(여성)가 이미 수락한 PARTIALLY_ACCEPTED 매칭
+				// 상대(여성)가 이미 신청한 PARTIALLY_ACCEPTED 매칭
 				val match: SoloMatchEntity = persistMatch(
 					maleUserId = maleUserId,
 					femaleUserId = femaleUserId,
-					femaleAccepted = true,
+					femaleStatus = MatchMemberStatus.APPLY,
 					status = MatchStatus.PARTIALLY_ACCEPTED,
 				)
 				// 두 사람 프로필 — 성사 알람 문구에 각자 상대의 닉네임이 들어간다.

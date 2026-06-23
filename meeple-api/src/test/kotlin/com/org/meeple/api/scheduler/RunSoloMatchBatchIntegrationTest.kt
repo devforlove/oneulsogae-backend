@@ -172,8 +172,10 @@ private fun persistMatch(userIdA: Long, userIdB: Long, status: MatchStatus, intr
 			introducedDate = introducedDate,
 		),
 	)
-	IntegrationUtil.persist(SoloMatchMemberEntityFixture.create(matchId = match.id!!, userId = userIdA, gender = Gender.MALE))
-	IntegrationUtil.persist(SoloMatchMemberEntityFixture.create(matchId = match.id!!, userId = userIdB, gender = Gender.FEMALE))
+	// 성사(MATCHED) 매치의 멤버는 ACTIVE, 그 외(PROPOSED 등)는 WAITING.
+	val memberStatus: MatchMemberStatus = if (status == MatchStatus.MATCHED) MatchMemberStatus.ACTIVE else MatchMemberStatus.WAITING
+	IntegrationUtil.persist(SoloMatchMemberEntityFixture.create(matchId = match.id!!, userId = userIdA, gender = Gender.MALE, status = memberStatus))
+	IntegrationUtil.persist(SoloMatchMemberEntityFixture.create(matchId = match.id!!, userId = userIdB, gender = Gender.FEMALE, status = memberStatus))
 }
 
 // [leaverId]가 [stayerId]와의 MATCHED 매치를 나가 DEACTIVE인 상태를 만든다. (매치 헤더는 MATCHED, leaver만 DEACTIVE)

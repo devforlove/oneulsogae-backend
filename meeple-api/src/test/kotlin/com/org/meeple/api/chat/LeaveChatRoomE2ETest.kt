@@ -98,8 +98,8 @@ class LeaveChatRoomE2ETest : AbstractIntegrationSupport({
 				val me = 9101L
 				val partner = 9102L
 				val matchId: Long = IntegrationUtil.persist(SoloMatchEntityFixture.create(memberKey = "9101-9102")).id!!
-				IntegrationUtil.persist(SoloMatchMemberEntityFixture.create(matchId = matchId, userId = me, gender = Gender.MALE))
-				IntegrationUtil.persist(SoloMatchMemberEntityFixture.create(matchId = matchId, userId = partner, gender = Gender.FEMALE))
+				IntegrationUtil.persist(SoloMatchMemberEntityFixture.create(matchId = matchId, userId = me, gender = Gender.MALE, status = MatchMemberStatus.ACTIVE))
+				IntegrationUtil.persist(SoloMatchMemberEntityFixture.create(matchId = matchId, userId = partner, gender = Gender.FEMALE, status = MatchMemberStatus.ACTIVE))
 				val roomId: Long = IntegrationUtil.persist(ChatRoomEntityFixture.create(matchId = matchId)).id!!
 				IntegrationUtil.persist(ChatRoomMemberEntityFixture.create(chatRoomId = roomId, userId = me))
 				IntegrationUtil.persist(ChatRoomMemberEntityFixture.create(chatRoomId = roomId, userId = partner))
@@ -126,8 +126,8 @@ class LeaveChatRoomE2ETest : AbstractIntegrationSupport({
 				val me = 9201L
 				val partner = 9202L
 				val matchId: Long = IntegrationUtil.persist(SoloMatchEntityFixture.create(memberKey = "9201-9202")).id!!
-				IntegrationUtil.persist(SoloMatchMemberEntityFixture.create(matchId = matchId, userId = me, gender = Gender.MALE))
-				IntegrationUtil.persist(SoloMatchMemberEntityFixture.create(matchId = matchId, userId = partner, gender = Gender.FEMALE))
+				IntegrationUtil.persist(SoloMatchMemberEntityFixture.create(matchId = matchId, userId = me, gender = Gender.MALE, status = MatchMemberStatus.ACTIVE))
+				IntegrationUtil.persist(SoloMatchMemberEntityFixture.create(matchId = matchId, userId = partner, gender = Gender.FEMALE, status = MatchMemberStatus.ACTIVE))
 				val roomId: Long = IntegrationUtil.persist(ChatRoomEntityFixture.create(matchId = matchId)).id!!
 				IntegrationUtil.persist(ChatRoomMemberEntityFixture.create(chatRoomId = roomId, userId = me))
 				// 상대는 이미 나간(비활성) 상태 → me가 마지막 활성 참가자라 나가면 방이 닫히고 매칭도 제거된다.

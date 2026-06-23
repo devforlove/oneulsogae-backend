@@ -24,13 +24,14 @@ class MatchTest : DescribeSpec({
 		MatchFixture.create(id = id, members = MatchFixture.membersOf(maleUserId = maleUserId, femaleUserId = femaleUserId))
 
 	describe("respond - 성사 시 만료 연장") {
-		it("양쪽이 수락해 MATCHED가 되면 만료 시각을 100년 뒤로 미룬다") {
+		it("양쪽이 수락해 MATCHED가 되면 만료 시각을 100년 뒤로 미루고 전원 ACTIVE로 승격한다") {
 			val proposed: Match = proposedMatch()
 
 			val matched: Match = proposed.respond(maleUserId).respond(femaleUserId)
 
 			matched.status shouldBe MatchStatus.MATCHED
 			matched.expiresAt shouldBe proposed.expiresAt.plusYears(Match.MATCHED_EXPIRATION_EXTENSION_YEARS)
+			matched.members.values.all { it.status == MatchMemberStatus.ACTIVE } shouldBe true
 		}
 
 		it("한쪽만 수락해 PARTIALLY_ACCEPTED면 만료 시각을 유지한다") {

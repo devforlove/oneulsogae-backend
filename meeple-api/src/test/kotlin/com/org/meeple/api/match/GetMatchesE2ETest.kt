@@ -3,6 +3,7 @@ package com.org.meeple.api.match
 import com.org.meeple.common.integration.AbstractIntegrationSupport
 import com.org.meeple.common.integration.expect
 import com.org.meeple.common.integration.get
+import com.org.meeple.common.match.MatchMemberStatus
 import com.org.meeple.common.match.MatchStatus
 import com.org.meeple.common.user.Gender
 import com.org.meeple.common.user.UserStatus
@@ -61,13 +62,13 @@ class GetMatchesE2ETest : AbstractIntegrationSupport({
 					),
 				)
 				val matchId: Long = match.id!!
-				// 나: 미응답(null) → hasUserInterest=false
+				// 나: 미신청(WAITING) → hasUserInterest=false
 				IntegrationUtil.persist(
-					SoloMatchMemberEntityFixture.create(matchId = matchId, userId = meUserId, gender = Gender.MALE, accepted = null),
+					SoloMatchMemberEntityFixture.create(matchId = matchId, userId = meUserId, gender = Gender.MALE, status = MatchMemberStatus.WAITING),
 				)
-				// 상대: 수락(true) → hasPartnerInterest=true
+				// 상대: 신청(APPLY) → hasPartnerInterest=true
 				IntegrationUtil.persist(
-					SoloMatchMemberEntityFixture.create(matchId = matchId, userId = partnerUserId, gender = Gender.FEMALE, accepted = true),
+					SoloMatchMemberEntityFixture.create(matchId = matchId, userId = partnerUserId, gender = Gender.FEMALE, status = MatchMemberStatus.APPLY),
 				)
 
 				get("/matches/v1") {
