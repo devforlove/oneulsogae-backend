@@ -2,10 +2,10 @@ package com.org.meeple.scheduler.match.command.application
 
 import com.org.meeple.common.user.Gender
 import com.org.meeple.scheduler.match.command.application.port.`in`.RunDailyMatchBatchUseCase
+import com.org.meeple.scheduler.match.command.application.port.out.RegionProximityPort
 import com.org.meeple.scheduler.match.command.application.port.out.SaveMatchPoolPort
 import com.org.meeple.scheduler.match.command.application.port.out.TimeGenerator
 import com.org.meeple.scheduler.match.command.domain.MatchBatchResult
-import com.org.meeple.scheduler.match.command.domain.MatchPoolByGender
 import com.org.meeple.scheduler.match.command.domain.MatchPoolGroup
 import com.org.meeple.scheduler.match.query.dao.GetActiveUserDao
 import com.org.meeple.scheduler.match.query.dao.GetMatchBatchTargetDao
@@ -23,7 +23,7 @@ import java.time.LocalDateTime
  * [RunDailyMatchBatchUseCase] 구현.
  * 대상 사용자를 (lastLoginAt, userId) 커서 페이징으로 순회하며, 오늘 아직 소개가 없는 사용자에게 한 명을 소개한다.
  * 매칭에 필요한 프로필은 [MatchBatchTarget]에 이미 실려 오므로, 사용자별 추가 단건 조회 없이 처리한다.
- * 소개 상대는 미리 적재해 둔 (반대 성별, 같은 권역) Redis 풀에서 한 명씩 꺼내(pop) 재소개 이력이 없는 첫 후보로 정한다.
+ * 소개 상대는 미리 적재해 둔 (반대 성별, 지역) Redis 풀에서 근접 지역 순서대로 꺼내(pop) 재소개 이력이 없는 첫 후보로 정한다.
  * 전체를 하나의 트랜잭션으로 묶지 않으며, 한 사용자의 실패가 다른 사용자에게 전파되지 않도록 사용자 단위로 격리한다.
  * 예기치 못한 오류만 실패로 집계한다.
  */
@@ -33,6 +33,7 @@ class RunDailyMatchBatchService(
 	private val getMatchRecordDao: GetMatchRecordDao,
 	private val getActiveUserDao: GetActiveUserDao,
 	private val saveMatchPoolPort: SaveMatchPoolPort,
+	private val regionProximityPort: RegionProximityPort,
 	private val matchIntroducer: MatchIntroducer,
 	private val timeGenerator: TimeGenerator,
 ) : RunDailyMatchBatchUseCase {
@@ -43,6 +44,9 @@ class RunDailyMatchBatchService(
 		val now: LocalDateTime = timeGenerator.now()
 		val loginAfter: LocalDateTime = now.minusWeeks(RECENT_LOGIN_WEEKS)
 
+		// 근접 지역 순서 스냅샷을 최신 regions로 갱신한다. (참조 데이터 변경 반영 — 이후 소개에서 재사용)
+		regionProximityPort.refresh()
+
 		// 이미 성사(MATCHED)된 매칭에 속한 사용자 ID를 배치 시작에 한 번 적재한다. (풀 적재·대상 순회 양쪽에서 재사용)
 		val matchedUserIds: MatchedUserIds = getMatchRecordDao.findMatchedUserIds()
 
@@ -51,11 +55,11 @@ class RunDailyMatchBatchService(
 		// 온보딩 등 배치 외 당일 소개는 별개로 허용하므로, DB에서 당일 소개를 미리 적재하지 않는다.
 		val introducedInThisRun: MutableSet<Long> = mutableSetOf()
 
-		// 소개를 돌리기 전에 매칭 풀(권역별·성별)을 Redis에 적재하고, 적재에 쓴 활성 유저 목록을 받는다.
+		// 소개를 돌리기 전에 매칭 풀(지역별)을 Redis에 적재하고, 적재에 쓴 활성 유저 목록을 받는다.
 		val activeUsers: List<ActiveUser> = loadMatchPools(loginAfter, matchedUserIds)
 
-		// 성별 풀에서 뽑은 상대의 권역을 알아내, 매칭 후 그 사람의 권역 풀에서도 빼주기 위한 조회표. (추가 쿼리 없이 메모리에서 산출)
-		val regionByUserId: Map<Long, Int> = activeUsers.associate { user: ActiveUser -> user.userId to user.regionCode }
+		// 매칭 후 상대의 지역 풀에서도 빼주기 위한 (userId -> regionId) 조회표. (추가 쿼리 없이 메모리에서 산출)
+		val regionByUserId: Map<Long, Long> = activeUsers.associate { user: ActiveUser -> user.userId to user.regionId }
 
 		// (lastLoginAt, userId) 복합 키셋 커서. 첫 페이지는 null로 시작한다.
 		var cursor: MatchBatchCursor? = null
@@ -78,9 +82,9 @@ class RunDailyMatchBatchService(
 						skipped++
 						continue
 					}
-					val regionCode: Int? = target.regionCode
-					if (regionCode == null) {
-						// 활동 권역 미입력은 매칭 풀에 들어갈 수 없어 대상 아님
+					val regionId: Long? = target.regionId
+					if (regionId == null) {
+						// 활동 지역 미입력은 매칭 풀에 들어갈 수 없어 대상 아님
 						skipped++
 						continue
 					}
@@ -97,8 +101,8 @@ class RunDailyMatchBatchService(
 						continue
 					}
 
-					// 반대 성별·같은 권역 풀에서 재소개 이력 없는 후보를 찾아 소개한다. 후보가 없으면 이번엔 건너뛴다.
-					val partnerId: Long? = matchIntroducer.introduce(id, gender, regionCode, regionByUserId, now)
+					// 가까운 지역 순서로 반대 성별 풀에서 재소개 이력 없는 후보를 찾아 소개한다. 후보가 없으면 이번엔 건너뛴다.
+					val partnerId: Long? = matchIntroducer.introduce(id, gender, regionId, regionByUserId, now)
 					if (partnerId != null) {
 						// 소개된 두 사람을 집합에 추가해, 상대가 뒤이어 대상이 될 때 이중 소개를 막는다.
 						introducedInThisRun.add(id)
@@ -125,8 +129,8 @@ class RunDailyMatchBatchService(
 
 	/**
 	 * 매칭 풀을 적재하고, 적재에 쓴 활성 유저 목록을 반환한다.
-	 * 활성 유저에서 이미 매칭(MATCHED)된 사용자를 빼고, (성별:지역) 그룹 + 지역 무관 성별 풀로 묶어 적재 순서 편향을 없애려 한 번 섞어 Redis에 적재한다.
-	 * 성별 풀은 같은 권역 후보가 마른 경우의 폴백용이다. 반환한 목록은 이후 대상 순회의 권역 조회표 산출에 재사용한다.
+	 * 활성 유저에서 이미 매칭(MATCHED)된 사용자를 빼고, (성별, 지역) 그룹으로 묶어 적재 순서 편향을 없애려 한 번 섞어 Redis에 적재한다.
+	 * 반환한 목록은 이후 대상 순회의 지역 조회표 산출에 재사용한다.
 	 */
 	private fun loadMatchPools(loginAfter: LocalDateTime, matchedUserIds: MatchedUserIds): List<ActiveUser> {
 		val activeUsers: List<ActiveUser> = matchedUserIds.exclude(getActiveUserDao.findActiveUsers(loginAfter))
@@ -134,12 +138,9 @@ class RunDailyMatchBatchService(
 		val groups: List<MatchPoolGroup> = MatchPoolGroup.group(activeUsers)
 		groups.forEach { group: MatchPoolGroup -> saveMatchPoolPort.save(group.shuffled()) }
 
-		val genderPools: List<MatchPoolByGender> = MatchPoolByGender.group(activeUsers)
-		genderPools.forEach { pool: MatchPoolByGender -> saveMatchPoolPort.saveByGender(pool.shuffled()) }
-
 		log.info(
-			"활성 유저 매칭 풀 그룹핑 완료: groups={}, genderPools={}, activeUsers={}, matchedExcluded={}",
-			groups.size, genderPools.size, activeUsers.size, matchedUserIds.size,
+			"활성 유저 매칭 풀 그룹핑 완료: groups={}, activeUsers={}, matchedExcluded={}",
+			groups.size, activeUsers.size, matchedUserIds.size,
 		)
 		return activeUsers
 	}
