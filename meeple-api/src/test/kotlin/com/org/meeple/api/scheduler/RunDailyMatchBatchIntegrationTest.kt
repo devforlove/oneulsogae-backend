@@ -1,6 +1,7 @@
 package com.org.meeple.api.scheduler
 
 import com.org.meeple.common.integration.AbstractIntegrationSupport
+import com.org.meeple.common.match.MatchMemberStatus
 import com.org.meeple.common.match.MatchStatus
 import com.org.meeple.common.match.SoloMatchType
 import com.org.meeple.common.user.Gender
@@ -75,6 +76,21 @@ class RunDailyMatchBatchIntegrationTest(
 
 				result.recommended shouldBe 0
 				proposedMatchBetween(maleId, femaleId).shouldBeNull()
+			}
+		}
+
+		context("성사(MATCHED) 매치를 나가(DEACTIVE) 매치 헤더는 MATCHED로 남은 유저는") {
+			it("다시 소개 대상이 된다") {
+				val regionId: Long = persistRegion("서울특별시", "강남구", 37.50, 127.00)
+				val leaverId: Long = persistMatchableUser(userId = 1001L, gender = Gender.MALE, regionId = regionId)
+				val femaleId: Long = persistMatchableUser(userId = 1002L, gender = Gender.FEMALE, regionId = regionId)
+				// 1001이 9001과의 MATCHED 매치를 나가 DEACTIVE 상태(매치 헤더는 MATCHED로 남음). 과거 소개라 '오늘 매칭' 제외엔 안 걸린다.
+				persistMatchedMatchWithLeaver(leaverId = 1001L, stayerId = 9001L)
+
+				val result: MatchBatchResult = runDailyMatchBatchUseCase.run()
+
+				result.recommended shouldBe 1
+				proposedMatchBetween(leaverId, femaleId).shouldNotBeNull()
 			}
 		}
 
@@ -158,6 +174,19 @@ private fun persistMatch(userIdA: Long, userIdB: Long, status: MatchStatus, intr
 	)
 	IntegrationUtil.persist(SoloMatchMemberEntityFixture.create(matchId = match.id!!, userId = userIdA, gender = Gender.MALE))
 	IntegrationUtil.persist(SoloMatchMemberEntityFixture.create(matchId = match.id!!, userId = userIdB, gender = Gender.FEMALE))
+}
+
+// [leaverId]가 [stayerId]와의 MATCHED 매치를 나가 DEACTIVE인 상태를 만든다. (매치 헤더는 MATCHED, leaver만 DEACTIVE)
+private fun persistMatchedMatchWithLeaver(leaverId: Long, stayerId: Long) {
+	val match: SoloMatchEntity = IntegrationUtil.persist(
+		SoloMatchEntityFixture.create(
+			memberKey = MatchMembers.memberKeyOf(listOf(leaverId, stayerId)),
+			status = MatchStatus.MATCHED,
+			introducedDate = LocalDate.now().minusDays(5),
+		),
+	)
+	IntegrationUtil.persist(SoloMatchMemberEntityFixture.create(matchId = match.id!!, userId = leaverId, gender = Gender.MALE, status = MatchMemberStatus.DEACTIVE))
+	IntegrationUtil.persist(SoloMatchMemberEntityFixture.create(matchId = match.id!!, userId = stayerId, gender = Gender.FEMALE, status = MatchMemberStatus.ACTIVE))
 }
 
 private fun proposedMatchBetween(userIdA: Long, userIdB: Long): SoloMatchEntity? {

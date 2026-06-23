@@ -1,5 +1,6 @@
 package com.org.meeple.infra.match.query
 
+import com.org.meeple.common.match.MatchMemberStatus
 import com.org.meeple.common.match.MatchStatus
 import com.org.meeple.core.match.command.domain.MatchMembers
 import com.org.meeple.infra.match.command.entity.QSoloMatchEntity
@@ -29,9 +30,9 @@ class GetMatchRecordDaoImpl(
 			.fetchFirst() != null
 	}
 
-	// 성사(MATCHED) 매칭에 속한 사용자 ID 전체를 Set으로 정리해 일급 컬렉션으로 감싼다.
-	// 참가자 행에서 출발해 매칭 헤더와 명시 조인하고, 상태만 where로 거른다. (중복 정리는 Set이 맡는다)
-	// TODO 매치를 나간 유저도 고려해야
+	// 성사(MATCHED) 매칭에 '활성(ACTIVE) 참가자로' 속한 사용자 ID 전체를 Set으로 정리해 일급 컬렉션으로 감싼다.
+	// 참가자 행에서 출발해 매칭 헤더와 명시 조인하고, 매칭 상태(MATCHED) + 참가자 상태(ACTIVE)로 거른다. (중복 정리는 Set이 맡는다)
+	// 채팅방 나가기로 참가가 DEACTIVE된 유저는 매치 헤더가 MATCHED로 남아 있어도 제외 → 다시 소개 대상이 된다. (마지막 1명이 나가면 매치 자체가 소프트 삭제됨)
 	override fun findMatchedUserIds(): MatchedUserIds {
 		val soloMatchMember: QSoloMatchMemberEntity = QSoloMatchMemberEntity.soloMatchMemberEntity
 		val soloMatch: QSoloMatchEntity = QSoloMatchEntity.soloMatchEntity
@@ -39,7 +40,10 @@ class GetMatchRecordDaoImpl(
 			.select(soloMatchMember.userId)
 			.from(soloMatchMember)
 			.join(soloMatch).on(soloMatch.id.eq(soloMatchMember.matchId))
-			.where(soloMatch.status.eq(MatchStatus.MATCHED))
+			.where(
+				soloMatch.status.eq(MatchStatus.MATCHED),
+				soloMatchMember.status.eq(MatchMemberStatus.ACTIVE),
+			)
 			.fetch()
 		return MatchedUserIds(userIds.toSet())
 	}
