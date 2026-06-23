@@ -7,6 +7,7 @@ import jakarta.persistence.Column
 import jakarta.persistence.Entity
 import jakarta.persistence.EnumType
 import jakarta.persistence.Enumerated
+import jakarta.persistence.Index
 import jakarta.persistence.Table
 import jakarta.persistence.UniqueConstraint
 import org.hibernate.annotations.SQLRestriction
@@ -25,6 +26,12 @@ import java.time.LocalDateTime
 	name = "solo_matches",
 	uniqueConstraints = [
 		UniqueConstraint(name = "ux_member_key", columnNames = ["member_key"]),
+	],
+	indexes = [
+		// 오늘 소개된 유저 제외(introduced_date = today) seek용
+		Index(name = "idx_introduced_date", columnList = "introduced_date"),
+		// 성사(status = MATCHED) 유저 제외 seek용
+		Index(name = "idx_status", columnList = "status"),
 	],
 )
 class SoloMatchEntity(
