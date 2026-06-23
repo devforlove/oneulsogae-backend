@@ -33,7 +33,7 @@ meeple-common ──> (없음)                                                  
 
 - 배치 알고리즘·유스케이스·전용 포트/도메인은 `meeple-scheduler`에 둔다.
   scheduler도 [CQRS 패키지 분리](hexagonal-cqrs.md)처럼 **`command`/`query` 패키지로 분리**한다
-  (예: command `com.org.meeple.scheduler.match.command.application.RunDailyMatchBatchService`,
+  (예: command `com.org.meeple.scheduler.match.command.application.RunSoloMatchBatchService`,
   command `...command.application.port.out.{SaveMatchPoolPort, MatchPoolPort, SaveMatchRecordPort, TimeGenerator}`,
   command `...command.domain.{MatchBatchResult, MatchPoolGroup, MatchPoolByGender}`,
   query `...query.dao.{ActiveUserDao, MatchBatchTargetDao, MatchRecordDao}`,
@@ -43,7 +43,7 @@ meeple-common ──> (없음)                                                  
   (command out-port는 `command/adapter`의 `MatchAdapter` → core `Match.propose`/`GetMatchPort`/`SaveMatchPort`, 조회 dao는 `query`의 `MatchRecordDaoImpl`로 분리). 시각 구현은 scheduler가 직접 제공한다
   (`SystemBatchTimeGenerator`; core의 `SystemTimeGenerator`와 빈 이름이 겹치지 않게 클래스명을 구분).
 - `@Scheduled` **크론 트리거**는 `meeple-api`의 `scheduler` 패키지(`com.org.meeple.scheduler.match.MatchBatchScheduler`)에
-  `@Component`로 두고, scheduler 모듈의 실행 로직(`MatchBatchJob` → `RunDailyMatchBatchUseCase`)을 호출한다.
+  `@Component`로 두고, scheduler 모듈의 실행 로직(`SoloMatchBatchJob` → `RunDailyMatchBatchUseCase`)을 호출한다.
   스케줄러는 "언제 실행할지(@Scheduled)"만, 모듈은 "무엇을 실행할지(배치 로직)"만 책임진다.
   초기 단계라 별도 스케줄러 인스턴스 없이 api 프로세스에서 함께 구동한다.
   단, **api를 스케일아웃하면 배치가 인스턴스마다 중복 실행**되므로, 다중 인스턴스 시점엔 ShedLock 등 분산 락이나

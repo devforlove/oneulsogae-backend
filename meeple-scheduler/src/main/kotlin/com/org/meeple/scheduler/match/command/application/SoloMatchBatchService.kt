@@ -25,7 +25,7 @@ import java.time.LocalDateTime
  * 한 사용자의 실패가 다른 사용자에 전파되지 않도록 대상 단위로 격리하고, 예외만 failed로 집계한다.
  */
 @Service
-class DailyMatchBatchService(
+class SoloMatchBatchService(
 	private val getMatchableUserDao: GetMatchableUserDao,
 	private val getMatchRecordDao: GetMatchRecordDao,
 	private val saveMatchRecordPort: SaveMatchRecordPort,

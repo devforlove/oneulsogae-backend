@@ -17,7 +17,7 @@ import java.util.concurrent.atomic.AtomicBoolean
  * 크론과 수동 트리거가 모두 이 단일 진입점을 거치므로, 프로세스 내 가드([running])로 동시/중복 실행을 막는다.
  */
 @Component
-class MatchBatchJob(
+class SoloMatchBatchJob(
 	private val runDailyMatchBatchUseCase: RunDailyMatchBatchUseCase,
 ) {
 

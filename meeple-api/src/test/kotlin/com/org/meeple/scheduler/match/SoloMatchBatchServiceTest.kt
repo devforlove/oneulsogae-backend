@@ -1,7 +1,7 @@
 package com.org.meeple.scheduler.match
 
 import com.org.meeple.common.user.Gender
-import com.org.meeple.scheduler.match.command.application.DailyMatchBatchService
+import com.org.meeple.scheduler.match.command.application.SoloMatchBatchService
 import com.org.meeple.scheduler.match.command.application.port.out.RegionProximityPort
 import com.org.meeple.scheduler.match.command.application.port.out.SaveMatchRecordPort
 import com.org.meeple.scheduler.match.command.application.port.out.TimeGenerator
@@ -16,7 +16,7 @@ import io.kotest.matchers.shouldBe
 import java.time.LocalDate
 import java.time.LocalDateTime
 
-class DailyMatchBatchServiceTest : DescribeSpec({
+class SoloMatchBatchServiceTest : DescribeSpec({
 
 	val now: LocalDateTime = LocalDateTime.of(2026, 6, 23, 12, 0)
 	fun user(id: Long, gender: Gender, regionId: Long): MatchableUser =
@@ -29,7 +29,7 @@ class DailyMatchBatchServiceTest : DescribeSpec({
 			val nearFemale: MatchableUser = user(2L, Gender.FEMALE, 1L)
 			val farFemale: MatchableUser = user(3L, Gender.FEMALE, 2L)
 			val saved = BatchFakeSaveMatchRecordPort()
-			val service = DailyMatchBatchService(
+			val service = SoloMatchBatchService(
 				BatchFakeGetMatchableUserDao(listOf(male, nearFemale, farFemale)),
 				BatchFakeGetMatchRecordDao(),
 				saved,
@@ -48,7 +48,7 @@ class DailyMatchBatchServiceTest : DescribeSpec({
 			val introduced: MatchableUser = user(2L, Gender.FEMALE, 1L)
 			val fresh: MatchableUser = user(3L, Gender.FEMALE, 1L)
 			val saved = BatchFakeSaveMatchRecordPort()
-			val service = DailyMatchBatchService(
+			val service = SoloMatchBatchService(
 				BatchFakeGetMatchableUserDao(listOf(male, introduced, fresh)),
 				BatchFakeGetMatchRecordDao(existingPairs = setOf(1L to 2L)),
 				saved,
@@ -66,7 +66,7 @@ class DailyMatchBatchServiceTest : DescribeSpec({
 			val matchedFemale: MatchableUser = user(2L, Gender.FEMALE, 1L)   // 성사 상태
 			val todayFemale: MatchableUser = user(3L, Gender.FEMALE, 1L)     // 오늘 매칭됨
 			val saved = BatchFakeSaveMatchRecordPort()
-			val service = DailyMatchBatchService(
+			val service = SoloMatchBatchService(
 				BatchFakeGetMatchableUserDao(listOf(male, matchedFemale, todayFemale)),
 				BatchFakeGetMatchRecordDao(matchedUserIds = setOf(2L), introducedTodayUserIds = setOf(3L)),
 				saved,
@@ -84,7 +84,7 @@ class DailyMatchBatchServiceTest : DescribeSpec({
 			val male2: MatchableUser = user(2L, Gender.MALE, 1L)
 			val female: MatchableUser = user(3L, Gender.FEMALE, 1L)
 			val saved = BatchFakeSaveMatchRecordPort()
-			val service = DailyMatchBatchService(
+			val service = SoloMatchBatchService(
 				BatchFakeGetMatchableUserDao(listOf(male1, male2, female)),
 				BatchFakeGetMatchRecordDao(),
 				saved,

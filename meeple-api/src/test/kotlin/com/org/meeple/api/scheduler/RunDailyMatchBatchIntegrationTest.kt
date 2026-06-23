@@ -27,7 +27,7 @@ import java.time.LocalDate
 import java.time.LocalDateTime
 
 /**
- * [RunDailyMatchBatchUseCase](DailyMatchBatchService) 통합 테스트. 실 컨텍스트 + Testcontainers(MySQL).
+ * [RunDailyMatchBatchUseCase](SoloMatchBatchService) 통합 테스트. 실 컨텍스트 + Testcontainers(MySQL).
  * 배치가 시작 시 regionProximityPort.refresh()로 근접 스냅샷을 적재하므로, regions·match_user를 적재한 뒤 호출한다.
  */
 class RunDailyMatchBatchIntegrationTest(
