@@ -31,6 +31,7 @@ class GetMatchRecordDaoImpl(
 
 	// 성사(MATCHED) 매칭에 속한 사용자 ID 전체를 Set으로 정리해 일급 컬렉션으로 감싼다.
 	// 참가자 행에서 출발해 매칭 헤더와 명시 조인하고, 상태만 where로 거른다. (중복 정리는 Set이 맡는다)
+	// TODO 매치를 나간 유저도 고려해야
 	override fun findMatchedUserIds(): MatchedUserIds {
 		val soloMatchMember: QSoloMatchMemberEntity = QSoloMatchMemberEntity.soloMatchMemberEntity
 		val soloMatch: QSoloMatchEntity = QSoloMatchEntity.soloMatchEntity
