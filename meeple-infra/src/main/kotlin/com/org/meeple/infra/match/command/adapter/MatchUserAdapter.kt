@@ -11,35 +11,35 @@ import com.org.meeple.infra.match.command.mapper.applyFrom
 import com.org.meeple.infra.match.command.mapper.toDomain
 import com.org.meeple.infra.match.command.mapper.toEntity
 import com.org.meeple.infra.match.command.repository.MatchUserJpaRepository
+import com.org.meeple.infra.region.RegionProximityRegistry
 import org.springframework.data.domain.PageRequest
+import org.springframework.data.domain.Pageable
 import org.springframework.stereotype.Component
 import java.time.LocalDateTime
-import java.util.concurrent.ThreadLocalRandom
 
 /**
  * [MatchUserEntity]의 command 영속성 어댑터. (엔티티당 어댑터 하나 — 매칭 읽기 모델의 후보 조회/적재/삭제 out-port를 함께 구현)
- * 후보 선정([GetMatchCandidatePort])은 match_user 단독 조회로 수행한다(user_details 조인 제거).
+ * 후보 선정([GetMatchCandidatePort])은 요청자 지역에서 가까운 지역부터 순회하며, 각 지역의 최근접 신선 후보를 match_user 단독 조회로 찾는다.
  * 적재/삭제/조회([SaveMatchUserPort]/[DeleteMatchUserPort]/[GetMatchUserPort])는 user 도메인 이벤트 동기화에 쓰인다.
  */
 @Component
 class MatchUserAdapter(
 	private val matchUserJpaRepository: MatchUserJpaRepository,
+	private val regionProximityRegistry: RegionProximityRegistry,
 ) : GetMatchCandidatePort, SaveMatchUserPort, GetMatchUserPort, DeleteMatchUserPort {
 
 	/**
-	 * 반대 성별·같은 활동 권역·최근 로그인 후보 수를 센 뒤, [0, count) 랜덤 오프셋으로 한 명만 뽑는다(LIMIT offset, 1).
-	 * id 분포(탈퇴로 생긴 구멍)와 무관하게 각 후보가 1/N 확률로 균등하게 선택된다.
-	 * (대규모에서는 offset 스캔 비용이 커지므로, 그때는 커서/시드 기반으로 재검토한다)
+	 * 요청자 지역에서 가까운 지역 순으로 순회하며, 각 지역의 "반대 성별·최근 로그인·재소개 이력 없음" 후보 중
+	 * 최근 로그인 1명을 찾는다. 가장 가까운 지역에서 먼저 찾으면 즉시 반환하고, 끝까지 없으면 null.
 	 */
-	override fun findOneCandidate(gender: Gender, regionCode: Int, loginAfter: LocalDateTime): Long? {
-		val count: Long = matchUserJpaRepository.countCandidates(gender, regionCode, loginAfter)
-		if (count == 0L) return null // 후보 풀이 비어 있음
-
-		// [0, count) 랜덤 오프셋 1명 (PageRequest(page, size=1) -> LIMIT offset, 1)
-		val offset: Int = ThreadLocalRandom.current().nextLong(count).toInt()
-		return matchUserJpaRepository
-			.findCandidateUserIds(gender, regionCode, loginAfter, PageRequest.of(offset, 1))
-			.firstOrNull()
+	override fun findOneCandidate(requesterId: Long, gender: Gender, regionId: Long, loginAfter: LocalDateTime): Long? {
+		val limitOne: Pageable = PageRequest.of(0, 1)
+		return regionProximityRegistry.nearbyRegionIds(regionId)
+			.firstNotNullOfOrNull { candidateRegionId: Long ->
+				matchUserJpaRepository
+					.findNearestCandidateInRegion(requesterId, gender, candidateRegionId, loginAfter, limitOne)
+					.firstOrNull()
+			}
 	}
 
 	// user_id 기준 upsert: 기존 행이 있으면 가변 필드만 갱신(UPDATE), 없으면 새 엔티티로 INSERT.

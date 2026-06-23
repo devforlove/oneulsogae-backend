@@ -33,11 +33,12 @@ class RecommendMatchService(
 
 		// 최근 RECENT_LOGIN_WEEKS주 이내 로그인한 사용자만 후보로 삼는다. 후보가 없으면 null(이번엔 소개 생략).
 		val loginAfter: LocalDateTime = timeGenerator.now().minusWeeks(RECENT_LOGIN_WEEKS)
-		// 같은 활동 권역(regionCode)의 반대 성별 후보만 소개한다.
+		// 가까운 지역의 반대 성별·재소개 이력 없는 후보만 소개한다. 후보가 없으면 null(이번엔 소개 생략).
 		val candidateId: Long = getMatchCandidatePort.findOneCandidate(
-			profile.partnerGender(),
-			profile.regionCode,
-			loginAfter,
+			requesterId = profile.userId,
+			gender = profile.partnerGender(),
+			regionId = profile.regionId,
+			loginAfter = loginAfter,
 		)
 			?: return null
 
