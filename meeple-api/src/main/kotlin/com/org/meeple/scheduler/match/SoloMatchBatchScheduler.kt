@@ -10,12 +10,12 @@ import org.springframework.stereotype.Component
  * 실제 배치 실행 로직은 [SoloMatchBatchJob]에 있고, 이 클래스는 api 프로세스에서 "언제 돌릴지"만 책임진다.
  */
 @Component
-class MatchBatchScheduler(
+class SoloMatchBatchScheduler(
 	private val soloMatchBatchJob: SoloMatchBatchJob,
 ) {
 
 	@Scheduled(cron = "\${meeple.match.batch.cron}", zone = "Asia/Seoul")
-	fun runDailyMatch() {
+	fun runSoloMatch() {
 		soloMatchBatchJob.run()
 	}
 }
