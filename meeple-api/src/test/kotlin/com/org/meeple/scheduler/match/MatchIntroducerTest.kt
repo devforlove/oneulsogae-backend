@@ -8,6 +8,7 @@ import com.org.meeple.scheduler.match.command.application.port.out.SaveMatchReco
 import com.org.meeple.scheduler.match.query.dao.GetMatchRecordDao
 import com.org.meeple.scheduler.match.query.dto.MatchedUserIds
 import io.kotest.core.spec.style.DescribeSpec
+import java.time.LocalDate
 import io.kotest.matchers.nulls.shouldBeNull
 import io.kotest.matchers.shouldBe
 import java.time.LocalDateTime
@@ -111,6 +112,7 @@ private class FakeGetMatchRecordDao(
 	}
 
 	override fun findMatchedUserIds(): MatchedUserIds = MatchedUserIds(emptySet())
+	override fun findUserIdsIntroducedOn(date: LocalDate): Set<Long> = emptySet()
 }
 
 private class FakeSaveMatchRecordPort : SaveMatchRecordPort {
