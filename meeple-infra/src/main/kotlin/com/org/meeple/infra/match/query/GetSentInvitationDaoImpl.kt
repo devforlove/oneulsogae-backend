@@ -32,7 +32,7 @@ class GetSentInvitationDaoImpl(
 		val teamMember: QTeamMemberEntity = QTeamMemberEntity.teamMemberEntity
 
 		val header: Tuple = queryFactory
-			.select(team.id, team.name, team.introduction, team.status)
+			.select(team.id, team.name, team.regionId, team.introduction, team.status)
 			.from(teamMember)
 			.join(team).on(team.id.eq(teamMember.teamId))
 			.where(
@@ -73,6 +73,7 @@ class GetSentInvitationDaoImpl(
 		return SentInvitation(
 			teamId = teamId,
 			name = header.get(team.name)!!,
+			regionId = header.get(team.regionId)!!,
 			introduction = header.get(team.introduction),
 			status = header.get(team.status)!!,
 			members = members,

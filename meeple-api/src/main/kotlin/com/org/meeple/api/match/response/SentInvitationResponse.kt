@@ -15,6 +15,7 @@ import java.time.LocalDate
 data class SentInvitationResponse(
 	val teamId: Long,
 	val name: String,
+	val regionId: Long,
 	val introduction: String?,
 	val status: TeamStatus,
 	val members: List<Member>,
@@ -39,6 +40,7 @@ data class SentInvitationResponse(
 				SentInvitationResponse(
 					teamId = invitation.teamId,
 					name = invitation.name,
+					regionId = invitation.regionId,
 					introduction = invitation.introduction,
 					status = invitation.status,
 					members = invitation.members

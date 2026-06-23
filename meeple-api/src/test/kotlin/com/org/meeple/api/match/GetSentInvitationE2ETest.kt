@@ -74,6 +74,7 @@ class GetSentInvitationE2ETest : AbstractIntegrationSupport({
 					body("success", true)
 					body("data.teamId", teamId.toInt())
 					body("data.name", "우리팀")
+					body("data.regionId", 1)
 					body("data.introduction", "함께 즐겁게 활동할 팀이에요")
 					body("data.status", TeamStatus.INVITING.name)
 					// INVITING 팀이라 초대자 본인(3001, ACTIVE)은 제외되고 초대 대상(3002, INVITED)만 노출된다
