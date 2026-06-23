@@ -13,36 +13,33 @@ import org.springframework.stereotype.Component
  * scheduler [GetRecommendableSoloUserDao]의 QueryDSL 구현. (조회 전용)
  * match_user 단독 베이스 + team_members NOT EXISTS로 팀 미소속 유저만 거른다.
  * (team_members @SQLRestriction이 소프트 삭제 행을 제외하므로, NOT EXISTS = 비삭제 소속이 전혀 없음 = 팀 미소속)
- * user_id 오름차순 키셋(ux_user_id) seek로 페이징한다. (filesort 없음)
+ * 솔로 매칭 배치와 동일하게 대상 전체를 한 번에 반환한다.
  */
 @Component
 class GetRecommendableSoloUserDaoImpl(
-	private val queryFactory: JPAQueryFactory,
+    private val queryFactory: JPAQueryFactory,
 ) : GetRecommendableSoloUserDao {
 
-	override fun findTargets(cursor: Long?, limit: Int): List<RecommendableSoloUser> {
-		val matchUser: QMatchUserEntity = QMatchUserEntity.matchUserEntity
-		val teamMember: QTeamMemberEntity = QTeamMemberEntity.teamMemberEntity
+    override fun findRecommendableSoloUsers(): List<RecommendableSoloUser> {
+        val matchUser: QMatchUserEntity = QMatchUserEntity.matchUserEntity
+        val teamMember: QTeamMemberEntity = QTeamMemberEntity.teamMemberEntity
 
-		return queryFactory
-			.select(
-				Projections.constructor(
-					RecommendableSoloUser::class.java,
-					matchUser.userId,
-					matchUser.gender,
-					matchUser.regionCode,
-				),
-			)
-			.from(matchUser)
-			.where(
-				cursor?.let { last: Long -> matchUser.userId.gt(last) },
-				JPAExpressions.selectOne()
-					.from(teamMember)
-					.where(teamMember.userId.eq(matchUser.userId))
-					.notExists(),
-			)
-			.orderBy(matchUser.userId.asc())
-			.limit(limit.toLong())
-			.fetch()
-	}
+        return queryFactory
+            .select(
+                Projections.constructor(
+                    RecommendableSoloUser::class.java,
+                    matchUser.userId,
+                    matchUser.gender,
+                    matchUser.regionId,
+                ),
+            )
+            .from(matchUser)
+            .where(
+                JPAExpressions.selectOne()
+                    .from(teamMember)
+                    .where(teamMember.userId.eq(matchUser.userId))
+                    .notExists(),
+            )
+            .fetch()
+    }
 }

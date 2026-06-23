@@ -1,61 +1,36 @@
 package com.org.meeple.infra.match.query
 
 import com.org.meeple.common.match.TeamStatus
-import com.org.meeple.common.user.Gender
-import com.org.meeple.infra.match.command.entity.QMatchUserEntity
 import com.org.meeple.infra.match.command.entity.QTeamEntity
-import com.org.meeple.infra.match.command.entity.QTeamMemberEntity
 import com.org.meeple.scheduler.match.query.dao.GetCandidateTeamDao
-import com.querydsl.core.types.dsl.BooleanExpression
-import com.querydsl.jpa.JPAExpressions
+import com.org.meeple.scheduler.match.query.dto.CandidateTeam
+import com.querydsl.core.types.Projections
 import com.querydsl.jpa.impl.JPAQueryFactory
 import org.springframework.stereotype.Component
-import java.util.concurrent.ThreadLocalRandom
 
 /**
  * scheduler [GetCandidateTeamDao]의 QueryDSL 구현. (조회 전용)
- * teams 베이스에 팀 성별(teams.gender=teamGender) 동등 조건 + EXISTS(팀원 중 한 명이라도 match_user.region_code=regionCode)로 후보를 좁힌다.
- * (EXISTS라 팀당 1행 → fan-out 없음) 후보 수를 센 뒤 [0,count) 랜덤 오프셋으로 1개의 team_id를 뽑는다.
- * (대규모에서 offset 스캔 비용이 커지면 커서/시드 기반으로 재검토한다 — 표시 전용 추천이라 현 단계에선 단순화)
+ * teams(@SQLRestriction으로 소프트삭제 제외)에서 status=ACTIVE인 팀의 id·성별·활동권역(region_id)을 전부 반환한다.
+ * 권역은 teams.region_id를 직접 쓴다. (팀당 1행 — 조인/fan-out 없음)
  */
 @Component
 class GetCandidateTeamDaoImpl(
-	private val queryFactory: JPAQueryFactory,
+    private val queryFactory: JPAQueryFactory,
 ) : GetCandidateTeamDao {
 
-	override fun findOneCandidateTeamId(teamGender: Gender, regionCode: Int): Long? {
-		val team: QTeamEntity = QTeamEntity.teamEntity
-
-		val count: Long = queryFactory
-			.select(team.count())
-			.from(team)
-			.where(*candidatePredicates(team, teamGender, regionCode))
-			.fetchOne() ?: 0L
-		if (count == 0L) return null
-
-		val offset: Long = ThreadLocalRandom.current().nextLong(count)
-		return queryFactory
-			.select(team.id)
-			.from(team)
-			.where(*candidatePredicates(team, teamGender, regionCode))
-			.orderBy(team.id.asc())
-			.offset(offset)
-			.limit(1)
-			.fetchOne()
-	}
-
-	// 결성(ACTIVE) + 팀 성별=teamGender(teams.gender 직접 비교) + 팀원 중 한 명이라도 같은 권역.
-	private fun candidatePredicates(team: QTeamEntity, teamGender: Gender, regionCode: Int): Array<BooleanExpression> {
-		val regionTeamMember: QTeamMemberEntity = QTeamMemberEntity("regionTeamMember")
-		val matchUser: QMatchUserEntity = QMatchUserEntity.matchUserEntity
-		return arrayOf(
-			team.status.eq(TeamStatus.ACTIVE),
-			team.gender.eq(teamGender),
-			JPAExpressions.selectOne()
-				.from(regionTeamMember)
-				.join(matchUser).on(matchUser.userId.eq(regionTeamMember.userId))
-				.where(regionTeamMember.teamId.eq(team.id), matchUser.regionCode.eq(regionCode))
-				.exists(),
-		)
-	}
+    override fun findCandidateTeams(): List<CandidateTeam> {
+        val team: QTeamEntity = QTeamEntity.teamEntity
+        return queryFactory
+            .select(
+                Projections.constructor(
+                    CandidateTeam::class.java,
+                    team.id,
+                    team.gender,
+                    team.regionId,
+                ),
+            )
+            .from(team)
+            .where(team.status.eq(TeamStatus.ACTIVE))
+            .fetch()
+    }
 }
