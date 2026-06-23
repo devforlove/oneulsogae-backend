@@ -14,7 +14,9 @@ import com.org.meeple.infra.match.command.mapper.toDomain
 import com.org.meeple.infra.match.command.mapper.toEntity
 import com.org.meeple.infra.match.command.repository.MatchUserJpaRepository
 import com.org.meeple.infra.region.RegionProximityRegistry
+import com.querydsl.core.types.dsl.BooleanExpression
 import com.querydsl.core.types.dsl.CaseBuilder
+import com.querydsl.core.types.dsl.Expressions
 import com.querydsl.core.types.dsl.NumberExpression
 import com.querydsl.jpa.JPAExpressions
 import com.querydsl.jpa.impl.JPAQueryFactory
@@ -23,7 +25,7 @@ import java.time.LocalDateTime
 
 /**
  * [MatchUserEntity]의 command 영속성 어댑터. (엔티티당 어댑터 하나 — 매칭 읽기 모델의 후보 조회/적재/삭제 out-port를 함께 구현)
- * 후보 선정([GetMatchCandidatePort])은 가까운 [NEAREST_REGION_FANOUT]개 지역에서 먼저 단일 쿼리로 찾고, 없으면 나머지 지역으로 폴백한다.
+ * 후보 선정([GetMatchCandidatePort])은 가까운 [NEAREST_REGION_FANOUT]개 지역에서 먼저 찾고, 없으면 자격 후보 중 완전 랜덤으로 폴백한다.
  * 적재/삭제/조회([SaveMatchUserPort]/[DeleteMatchUserPort]/[GetMatchUserPort])는 user 도메인 이벤트 동기화에 쓰인다.
  */
 @Component
@@ -34,31 +36,25 @@ class MatchUserAdapter(
 ) : GetMatchCandidatePort, SaveMatchUserPort, GetMatchUserPort, DeleteMatchUserPort {
 
 	/**
-	 * 요청자([requesterId]) 지역에서 가까운 지역 순으로, "반대 성별([gender])·최근 로그인([loginAfter] 이후)·재소개 이력 없음" 후보 중
-	 * 가장 가까운(같은 지역 내에서는 최근 로그인) 1명을 반환한다. 근접 지역 어디에도 없으면 null.
+	 * 요청자([requesterId])에게 "반대 성별([gender])·최근 로그인([loginAfter] 이후)·재소개 이력 없음" 후보 1명을 반환한다.
 	 *
-	 * 가까운 [NEAREST_REGION_FANOUT]개 지역으로 먼저 한 번 조회하고(거의 대부분 여기서 후보가 잡힌다), 비면 나머지 지역으로 한 번 더 폴백한다.
-	 * 근접 순서는 정렬 키(거리 순위 CASE)로 싣는다. CASE 정렬은 인덱스로 못 받아 filesort가 생기므로, region_id IN 대상을 K개로 제한해
-	 * 정렬 대상 행 수를 묶어 둔다. (전체 지역을 한 번에 IN으로 넣으면 반대 성별 활성 풀 전체를 filesort하게 된다)
-	 * 왕복은 보통 1회, 가까운 K개에 후보가 전무한 드문 경우만 2회다.
+	 * 1차로 가까운 [NEAREST_REGION_FANOUT]개 지역에서 가장 가까운(같은 지역 내에서는 최근 로그인) 후보를 찾는다.
+	 * (거의 대부분 여기서 잡힌다. 근접 순서는 거리 순위 CASE로 정렬하는데, CASE 정렬은 인덱스로 못 받아 filesort가 생기므로
+	 * region_id IN 대상을 K개로 제한해 정렬 대상 행 수를 묶어 둔다)
+	 * 가까운 K개에 신선 후보가 전무한 드문 경우(또는 지역 정보가 없으면)에는 **거리를 포기하고 자격 후보 중 완전 랜덤으로 1명**을 매칭한다.
+	 * 어떤 자격 후보도 없으면 null.
 	 */
 	override fun findOneCandidate(requesterId: Long, gender: Gender, regionId: Long, loginAfter: LocalDateTime): Long? {
-		val orderedRegionIds: List<Long> = regionProximityRegistry.nearbyRegionIds(regionId)
-		if (orderedRegionIds.isEmpty()) return null
-
-		// 1차: 가장 가까운 K개 지역. 2차(폴백): 나머지 지역. 각 목록은 이미 가까운 순이라 거리 순위 CASE가 그대로 유효하다.
-		val nearest: List<Long> = orderedRegionIds.take(NEAREST_REGION_FANOUT)
-		findNearestFreshCandidate(requesterId, gender, nearest, loginAfter)?.let { candidateId: Long -> return candidateId }
-
-		val rest: List<Long> = orderedRegionIds.drop(NEAREST_REGION_FANOUT)
-		if (rest.isEmpty()) return null
-		return findNearestFreshCandidate(requesterId, gender, rest, loginAfter)
+		val nearest: List<Long> = regionProximityRegistry.nearbyRegionIds(regionId).take(NEAREST_REGION_FANOUT)
+		if (nearest.isNotEmpty()) {
+			findNearestFreshCandidate(requesterId, gender, nearest, loginAfter)?.let { candidateId: Long -> return candidateId }
+		}
+		// 가까운 지역에 후보가 없으면 거리를 포기하고 자격(반대 성별·최근 로그인·이력 없음) 후보 중 무작위 1명.
+		return findRandomFreshCandidate(requesterId, gender, loginAfter)
 	}
 
 	/**
 	 * [regionIds](가까운 순) 안에서 "반대 성별·최근 로그인·재소개 이력 없음" 후보를 거리 순위(같은 지역 내 최근 로그인)로 1명 조회한다.
-	 * 이력 제외는 두 사람이 한 매칭(solo_match_members)에 함께 참가한 적이 있는지로 판단한다.
-	 * (소프트 삭제된 매칭은 @SQLRestriction으로 제외 — command의 existsByPair와 동일 의미)
 	 */
 	private fun findNearestFreshCandidate(
 		requesterId: Long,
@@ -67,8 +63,6 @@ class MatchUserAdapter(
 		loginAfter: LocalDateTime,
 	): Long? {
 		val matchUser: QMatchUserEntity = QMatchUserEntity.matchUserEntity
-		val me: QSoloMatchMemberEntity = QSoloMatchMemberEntity.soloMatchMemberEntity
-		val other: QSoloMatchMemberEntity = QSoloMatchMemberEntity("other")
 
 		return queryFactory
 			.select(matchUser.userId)
@@ -77,16 +71,47 @@ class MatchUserAdapter(
 				matchUser.gender.eq(gender),
 				matchUser.regionId.`in`(regionIds),
 				matchUser.lastLoginAt.goe(loginAfter),
-				JPAExpressions
-					.selectOne()
-					.from(me)
-					.join(other).on(other.matchId.eq(me.matchId))
-					.where(me.userId.eq(requesterId).and(other.userId.eq(matchUser.userId)))
-					.notExists(),
+				notIntroducedBefore(matchUser, requesterId),
 			)
 			.orderBy(regionDistanceRank(matchUser, regionIds).asc(), matchUser.lastLoginAt.desc())
 			.limit(1)
 			.fetchFirst()
+	}
+
+	/**
+	 * 지역과 무관하게 "반대 성별·최근 로그인·재소개 이력 없음" 자격 후보 중 무작위 1명을 조회한다. (가까운 지역에 후보가 없을 때의 폴백)
+	 * 드물게만 타는 경로라 정렬을 무작위(`rand()`)로 둔다.
+	 */
+	private fun findRandomFreshCandidate(requesterId: Long, gender: Gender, loginAfter: LocalDateTime): Long? {
+		val matchUser: QMatchUserEntity = QMatchUserEntity.matchUserEntity
+
+		return queryFactory
+			.select(matchUser.userId)
+			.from(matchUser)
+			.where(
+				matchUser.gender.eq(gender),
+				matchUser.lastLoginAt.goe(loginAfter),
+				notIntroducedBefore(matchUser, requesterId),
+			)
+			.orderBy(Expressions.numberTemplate(Double::class.java, "function('rand')").asc())
+			.limit(1)
+			.fetchFirst()
+	}
+
+	/**
+	 * [matchUser]가 [requesterId]와 함께 소개된 적이 없음을 뜻하는 조건. (재소개 방지)
+	 * 두 사람이 한 매칭(solo_match_members)에 함께 참가한 적이 있는지로 판단한다.
+	 * (소프트 삭제된 매칭은 @SQLRestriction으로 제외 — command의 existsByPair와 동일 의미)
+	 */
+	private fun notIntroducedBefore(matchUser: QMatchUserEntity, requesterId: Long): BooleanExpression {
+		val me: QSoloMatchMemberEntity = QSoloMatchMemberEntity.soloMatchMemberEntity
+		val other: QSoloMatchMemberEntity = QSoloMatchMemberEntity("other")
+		return JPAExpressions
+			.selectOne()
+			.from(me)
+			.join(other).on(other.matchId.eq(me.matchId))
+			.where(me.userId.eq(requesterId).and(other.userId.eq(matchUser.userId)))
+			.notExists()
 	}
 
 	/**
