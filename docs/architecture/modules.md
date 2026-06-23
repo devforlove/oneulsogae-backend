@@ -33,11 +33,11 @@ meeple-common ──> (없음)                                                  
 
 - 배치 알고리즘·유스케이스·전용 포트/도메인은 `meeple-scheduler`에 둔다.
   scheduler도 [CQRS 패키지 분리](hexagonal-cqrs.md)처럼 **`command`/`query` 패키지로 분리**한다
-  (예: command `com.org.meeple.scheduler.match.command.application.RunSoloMatchBatchService`,
-  command `...command.application.port.out.{SaveMatchPoolPort, MatchPoolPort, SaveMatchRecordPort, TimeGenerator}`,
-  command `...command.domain.{SoloMatchBatchResult, MatchPoolGroup, MatchPoolByGender}`,
-  query `...query.dao.{ActiveUserDao, MatchBatchTargetDao, MatchRecordDao}`,
-  query `...query.dto.{ActiveUser, MatchBatchTarget, MatchBatchCursor, MatchedUserIds}`).
+  (예: command `com.org.meeple.scheduler.match.command.application.SoloMatchBatchService`,
+  command `...command.application.port.out.{SaveMatchRecordPort, RegionProximityPort, TimeGenerator}`,
+  command `...command.domain.{SoloMatchBatchResult, MatchPool}`,
+  query `...query.dao.{MatchableUserDao, MatchRecordDao}`,
+  query `...query.dto.{MatchableUser, MatchedUserIds}`).
 - `meeple-scheduler`는 **`meeple-core`에 의존하지 않으므로**, 배치가 쓰는 매칭 이력 기록/조회·시각 등 공유 동작도
   scheduler가 **자기 out-port·dao**(`SaveMatchRecordPort`·`MatchRecordDao`, `TimeGenerator`)로 정의하고, **infra가 core 도메인에 위임해 구현**한다
   (command out-port는 `command/adapter`의 `MatchAdapter` → core `Match.propose`/`GetMatchPort`/`SaveMatchPort`, 조회 dao는 `query`의 `MatchRecordDaoImpl`로 분리). 시각 구현은 scheduler가 직접 제공한다
