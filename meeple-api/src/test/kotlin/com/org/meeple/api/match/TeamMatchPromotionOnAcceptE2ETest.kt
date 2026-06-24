@@ -105,6 +105,8 @@ class TeamMatchPromotionOnAcceptE2ETest : AbstractIntegrationSupport({
 				val teamMatches: List<TeamMatchEntity> = allTeamMatches()
 				teamMatches.size shouldBe 1
 				teamMatches[0].memberKey shouldBe listOf(teamId, recTeam).sorted().joinToString("-")
+				teamMatches[0].status shouldBe MatchStatus.PROPOSED
+				teamMatches[0].matchType shouldBe TeamMatchType.RECOMMENDED
 			}
 		}
 
