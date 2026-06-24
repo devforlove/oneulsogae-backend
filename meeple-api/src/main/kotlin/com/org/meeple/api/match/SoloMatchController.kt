@@ -25,7 +25,7 @@ import org.springframework.web.bind.annotation.RestController
 @Tag(name = "매칭", description = "남녀 1:1 매칭 엔드포인트. 매칭 목록 조회 및 관심 보내기(신청/수락 통합)를 제공한다.")
 @RestController
 @RequestMapping("/matches/v1")
-class MatchController(
+class SoloMatchController(
 	private val getMatchesUseCase: GetMatchesUseCase,
 	private val sendInterestUseCase: SendInterestUseCase,
 	private val timeGenerator: TimeGenerator,
