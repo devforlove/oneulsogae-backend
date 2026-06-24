@@ -16,6 +16,7 @@ import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
 import java.time.LocalDate
+import java.time.LocalDateTime
 import kotlin.random.Random
 
 /**
@@ -41,14 +42,16 @@ class RecommendedTeamBatchService(
     private val log: Logger = LoggerFactory.getLogger(javaClass)
 
     override fun run(): RecommendedTeamBatchResult {
-        val today: LocalDate = timeGenerator.today()
+        val now: LocalDateTime = timeGenerator.now()
+        val loginAfter: LocalDateTime = now.minusWeeks(RECENT_LOGIN_WEEKS)
+        val today: LocalDate = now.toLocalDate()
 
         // 근접 스냅샷을 최신화한다. (가까운 권역 순서 계산의 기준)
         regionProximityPort.refresh()
 
         // 하루 1회: 오늘 이미 추천받은 유저는 제외한다. (재실행 멱등)
         val excluded: Set<Long> = getRecommendedTeamRecordDao.findUserIdsRecommendedOn(today)
-        val targets: List<RecommendableSoloUser> = getRecommendableSoloUserDao.findRecommendableSoloUsers()
+        val targets: List<RecommendableSoloUser> = getRecommendableSoloUserDao.findRecommendableSoloUsers(loginAfter)
             .filterNot { user: RecommendableSoloUser -> user.userId in excluded }
         val pool: TeamPool = TeamPool.of(getCandidateTeamDao.findCandidateTeams())
 
@@ -85,5 +88,10 @@ class RecommendedTeamBatchService(
             if (teamIds.isNotEmpty()) return teamIds.random(random)
         }
         return null
+    }
+
+    companion object {
+        /** 추천 대상으로 인정하는 최근 로그인 기간(주). */
+        private const val RECENT_LOGIN_WEEKS = 2L
     }
 }
