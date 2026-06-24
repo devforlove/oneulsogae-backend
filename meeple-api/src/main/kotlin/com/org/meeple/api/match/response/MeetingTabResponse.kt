@@ -6,8 +6,8 @@ import com.org.meeple.core.match.query.dto.MyActiveTeam
 import java.time.LocalDate
 
 /**
- * 미팅탭 화면 응답. 추천 팀 목록·받은 초대 개수·내 결성(ACTIVE) 팀을 한 번에 담는다.
- * - [recommendedTeams]: 추천이 없으면 빈 리스트.
+ * 미팅탭 화면 응답. 팀 카드 목록·받은 초대 개수·내 결성(ACTIVE) 팀을 한 번에 담는다.
+ * - [recommendedTeams]: 결성 팀이 없으면 추천 팀, 있으면 내 팀과 진행 중으로 매칭된 상대 팀. (없으면 빈 리스트)
  * - [receivedInvitationCount]: 내가 INVITED인 INVITING 팀 개수.
  * - [myActiveTeam]: 내 결성 팀이 없으면 null.
  */
