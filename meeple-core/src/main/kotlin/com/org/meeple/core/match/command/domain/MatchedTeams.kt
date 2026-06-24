@@ -24,6 +24,14 @@ data class MatchedTeams(
 	fun withTeamMatchId(teamMatchId: Long): MatchedTeams =
 		MatchedTeams(values.map { matchedTeam: MatchedTeam -> matchedTeam.copy(teamMatchId = teamMatchId) })
 
+	/** 모든 참가 팀을 비활성(DEACTIVE)으로 전이한 새 컬렉션. (팀 해체로 미성사 매칭을 종료할 때) */
+	fun deactivateAll(): MatchedTeams =
+		MatchedTeams(values.map { matchedTeam: MatchedTeam -> matchedTeam.deactivate() })
+
+	/** [teamId]가 아닌 상대 팀의 teamId. (2:2 매칭이므로 한 팀) */
+	fun opponentTeamIdOf(teamId: Long): Long =
+		values.first { matchedTeam: MatchedTeam -> matchedTeam.teamId != teamId }.teamId
+
 	companion object {
 
 		/** teamId들로 참가 팀 목록을 만든다. (teamMatchId는 저장 시 채워진다) */
