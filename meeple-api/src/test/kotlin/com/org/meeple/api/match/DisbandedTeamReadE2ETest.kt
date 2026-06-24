@@ -90,7 +90,7 @@ class DisbandedTeamReadE2ETest : AbstractIntegrationSupport({
 				persistMatchedMatch(myTeamId, opponentTeamId)
 
 				// 해체 전: 내 결성 팀과 매칭된 상대 팀이 추천 슬롯에 내려온다.
-				get("/teams/v1/meeting-tab") {
+				get("/team-matches/v1/meeting-tab") {
 					bearer(accessTokenFor(me))
 				} expect {
 					status(200)
@@ -106,7 +106,7 @@ class DisbandedTeamReadE2ETest : AbstractIntegrationSupport({
 				}
 
 				// 해체 후: 결성 팀이 사라져 myActiveTeam=null, 추천 슬롯은 추천 팀 경로(시드 없음 → 빈 리스트)로 되돌아간다.
-				get("/teams/v1/meeting-tab") {
+				get("/team-matches/v1/meeting-tab") {
 					bearer(accessTokenFor(me))
 				} expect {
 					status(200)

@@ -31,7 +31,7 @@ import java.time.LocalDate
 import java.time.LocalDateTime
 
 /**
- * `GET /teams/v1/meeting-tab` E2E 테스트. (미팅탭 화면 집계)
+ * `GET /team-matches/v1/meeting-tab` E2E 테스트. (미팅탭 화면 집계)
  * 추천 팀 목록(recommendedTeams, 없으면 빈 리스트) + 받은 초대 개수(receivedInvitationCount) + 내 결성 팀(myActiveTeam, 없으면 null)을 한 번에 반환한다.
  */
 class GetMeetingTabE2ETest : AbstractIntegrationSupport({
@@ -68,7 +68,7 @@ class GetMeetingTabE2ETest : AbstractIntegrationSupport({
 		IntegrationUtil.persist(MatchedTeamEntity(teamMatchId = teamMatchId, teamId = teamId))
 	}
 
-	describe("GET /teams/v1/meeting-tab") {
+	describe("GET /team-matches/v1/meeting-tab") {
 
 		context("추천 팀이 적재된 솔로 유저") {
 			it("recommendedTeams에 팀·팀원 프로필을, count=0·myActiveTeam=null로 반환한다 (200)") {
@@ -96,7 +96,7 @@ class GetMeetingTabE2ETest : AbstractIntegrationSupport({
 					RecommendedTeamEntityFixture.create(userId = soloUserId, teamId = teamId, recommendedDate = LocalDate.of(2026, 6, 22)),
 				)
 
-				get("/teams/v1/meeting-tab") {
+				get("/team-matches/v1/meeting-tab") {
 					bearer(accessTokenFor(soloUserId))
 				} expect {
 					status(200)
@@ -131,7 +131,7 @@ class GetMeetingTabE2ETest : AbstractIntegrationSupport({
 					persistMember(teamId, me, TeamMemberStatus.INVITED)
 				}
 
-				get("/teams/v1/meeting-tab") {
+				get("/team-matches/v1/meeting-tab") {
 					bearer(accessTokenFor(me))
 				} expect {
 					status(200)
@@ -152,7 +152,7 @@ class GetMeetingTabE2ETest : AbstractIntegrationSupport({
 				persistMember(teamId, me, TeamMemberStatus.ACTIVE)
 				persistMember(teamId, friend, TeamMemberStatus.ACTIVE)
 
-				get("/teams/v1/meeting-tab") {
+				get("/team-matches/v1/meeting-tab") {
 					bearer(accessTokenFor(me))
 				} expect {
 					status(200)
@@ -194,7 +194,7 @@ class GetMeetingTabE2ETest : AbstractIntegrationSupport({
 				persistMatchedTeam(expiredMatch, myTeamId)
 				persistMatchedTeam(expiredMatch, expiredOppTeamId)
 
-				get("/teams/v1/meeting-tab") {
+				get("/team-matches/v1/meeting-tab") {
 					bearer(accessTokenFor(me))
 				} expect {
 					status(200)
@@ -212,7 +212,7 @@ class GetMeetingTabE2ETest : AbstractIntegrationSupport({
 				val me = 5004L
 				persistMatchUser(me, Gender.MALE)
 
-				get("/teams/v1/meeting-tab") {
+				get("/team-matches/v1/meeting-tab") {
 					bearer(accessTokenFor(me))
 				} expect {
 					status(200)
