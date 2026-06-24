@@ -36,6 +36,14 @@ class TeamMatchAdapter(
 		return savedEntity.toDomain(savedMatchedTeams)
 	}
 
+	override fun findById(teamMatchId: Long): TeamMatch? {
+		val header: TeamMatchEntity = teamMatchJpaRepository.findById(teamMatchId).orElse(null) ?: return null
+		val matchedTeams: MatchedTeams = MatchedTeams(
+			matchedTeamJpaRepository.findByTeamMatchIdIn(listOf(teamMatchId)).map { it.toDomain() },
+		)
+		return header.toDomain(matchedTeams)
+	}
+
 	override fun findActiveByTeamId(teamId: Long): List<TeamMatch> {
 		// ① 이 팀의 참가 행으로 소속 팀 매칭 id 수집 (idx_team_id seek)
 		val teamMatchIds: List<Long> = matchedTeamJpaRepository.findByTeamId(teamId)
