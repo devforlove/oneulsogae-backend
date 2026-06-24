@@ -1,15 +1,29 @@
 package com.org.meeple.core.match.command.domain
 
+import com.org.meeple.common.match.MatchedTeamStatus
 import java.time.LocalDateTime
 
 /**
  * 팀 매칭([TeamMatch])에 참가한 한 팀을 (teamMatchId, teamId) 한 쌍으로 나타내는 도메인 모델.
- * 매치별 수락 여부([accepted])를 팀이 아니라 이 모델이 보관한다. (응답 전이면 null)
+ * 매치별 상태([status])를 팀이 아니라 이 모델이 보관한다. (WAITING→APPLY→ACTIVE/DEACTIVE)
  */
 data class MatchedTeam(
 	val id: Long = 0,
 	val teamMatchId: Long,
 	val teamId: Long,
-	val accepted: Boolean? = null,
+	val status: MatchedTeamStatus = MatchedTeamStatus.WAITING,
 	val deletedAt: LocalDateTime? = null,
-)
+) {
+
+	/** 이 팀이 매칭을 신청한(APPLY) 새 모델을 반환한다. */
+	fun apply(): MatchedTeam =
+		copy(status = MatchedTeamStatus.APPLY)
+
+	/** 이 팀을 활성(ACTIVE)으로 승격한 새 모델을 반환한다. (양 팀 신청으로 팀 매칭 성사 시) */
+	fun activate(): MatchedTeam =
+		copy(status = MatchedTeamStatus.ACTIVE)
+
+	/** 이 팀을 비활성(DEACTIVE)으로 전이한 새 모델을 반환한다. (팀의 모든 구성원 탈퇴로 팀 해체 시) */
+	fun deactivate(): MatchedTeam =
+		copy(status = MatchedTeamStatus.DEACTIVE)
+}

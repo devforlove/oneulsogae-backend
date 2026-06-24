@@ -38,7 +38,7 @@ data class TeamMatch(
 		val EXPIRATION: Duration = Duration.ofDays(1)
 
 		/**
-		 * 두 팀([teamAId], [teamBId])을 참가 팀으로 하는 신규 팀 매칭을 생성한다. (status PROPOSED, 양쪽 accepted=null)
+		 * 두 팀([teamAId], [teamBId])을 참가 팀으로 하는 신규 팀 매칭을 생성한다. (status PROPOSED, 양쪽 팀 WAITING)
 		 * 소개 일자(introducedDate)는 [now]의 날짜, 만료 시각(expiresAt)은 [now] + [EXPIRATION]으로 설정한다.
 		 * 팀 매칭 신청/수락 코인 비용은 [CoinUsageType]에서 가져오고, 생성 경로는 [matchType]으로 기록한다.
 		 */

@@ -4,6 +4,7 @@ import com.org.meeple.common.integration.AbstractIntegrationSupport
 import com.org.meeple.common.integration.expect
 import com.org.meeple.common.integration.post
 import com.org.meeple.common.match.MatchStatus
+import com.org.meeple.common.match.MatchedTeamStatus
 import com.org.meeple.common.match.TeamMatchType
 import com.org.meeple.common.match.TeamStatus
 import com.org.meeple.common.user.Gender
@@ -61,7 +62,7 @@ class TeamMatchPromotionOnAcceptE2ETest : AbstractIntegrationSupport({
 	describe("POST /teams/v1/{teamId}/acceptance — 추천 팀 승격") {
 
 		context("두 구성원 모두 ACTIVE 추천 팀이 있으면") {
-			it("각 추천 팀이 PROPOSED·RECOMMENDED 팀 매칭으로 승격된다 (2건, 양쪽 accepted=null)") {
+			it("각 추천 팀이 PROPOSED·RECOMMENDED 팀 매칭으로 승격된다 (2건, 양쪽 팀 WAITING)") {
 				val ownerId = 3001L
 				val invitedUserId = 3002L
 				persistMatchUser(ownerId, Gender.MALE)
@@ -85,7 +86,7 @@ class TeamMatchPromotionOnAcceptE2ETest : AbstractIntegrationSupport({
 				teamMatches.forEach { teamMatch: TeamMatchEntity ->
 					val matched: List<MatchedTeamEntity> = matchedTeamsOf(teamMatch.id!!)
 					matched.size shouldBe 2
-					matched.all { it.accepted == null } shouldBe true
+					matched.all { it.status == MatchedTeamStatus.WAITING } shouldBe true
 				}
 			}
 		}

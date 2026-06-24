@@ -1,6 +1,7 @@
 package com.org.meeple.domain.match
 
 import com.org.meeple.common.match.MatchStatus
+import com.org.meeple.common.match.MatchedTeamStatus
 import com.org.meeple.common.match.TeamMatchType
 import com.org.meeple.core.match.command.domain.TeamMatch
 import io.kotest.core.spec.style.DescribeSpec
@@ -31,7 +32,7 @@ class TeamMatchTest : DescribeSpec({
 			teamMatch.dateInitAmount shouldBe 40
 			teamMatch.dateAcceptAmount shouldBe 40
 			teamMatch.matchedTeams.teamIds() shouldBe listOf(10L, 20L)
-			teamMatch.matchedTeams.values.all { it.accepted == null } shouldBe true
+			teamMatch.matchedTeams.values.all { it.status == MatchedTeamStatus.WAITING } shouldBe true
 		}
 
 		it("matchedTeamsWith는 참가 팀 전원에 teamMatchId를 채워 돌려준다") {
