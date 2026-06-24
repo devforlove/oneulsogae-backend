@@ -26,4 +26,8 @@ data class MatchedTeam(
 	/** 이 팀을 비활성(DEACTIVE)으로 전이한 새 모델을 반환한다. (팀의 모든 구성원 탈퇴로 팀 해체 시) */
 	fun deactivate(): MatchedTeam =
 		copy(status = MatchedTeamStatus.DEACTIVE)
+
+	/** 이 팀이 신청(또는 성사로 활성)했는지 여부. (APPLY/ACTIVE) */
+	val hasApplied: Boolean
+		get() = status == MatchedTeamStatus.APPLY || status == MatchedTeamStatus.ACTIVE
 }
