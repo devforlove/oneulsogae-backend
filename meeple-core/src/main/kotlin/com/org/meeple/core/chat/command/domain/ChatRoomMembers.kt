@@ -32,6 +32,10 @@ data class ChatRoomMembers(
 	fun delete(now: LocalDateTime): ChatRoomMembers =
 		ChatRoomMembers(values.map { it.delete(now) })
 
+	/** [userIds]에 해당하는 참가자만 비활성(DEACTIVE)으로 전이한 (대상만 담은) 컬렉션을 반환한다. (팀 해체로 그 팀원의 채팅 입장을 막을 때) */
+	fun deactivate(userIds: Set<Long>): ChatRoomMembers =
+		ChatRoomMembers(values.filter { it.userId in userIds }.map { it.deactivate() })
+
 	companion object {
 
 		/** 빈 참가자 목록. */
