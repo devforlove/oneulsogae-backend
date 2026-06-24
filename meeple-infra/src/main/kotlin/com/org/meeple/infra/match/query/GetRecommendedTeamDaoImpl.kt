@@ -1,5 +1,6 @@
 package com.org.meeple.infra.match.query
 
+import com.org.meeple.common.coin.CoinUsageType
 import com.org.meeple.common.match.TeamStatus
 import com.org.meeple.core.match.query.dao.GetRecommendedTeamDao
 import com.org.meeple.core.match.query.dto.RecommendedTeam
@@ -59,6 +60,13 @@ class GetRecommendedTeamDaoImpl(
 				introduction = header.get(team.introduction),
 				activityArea = header.get(teamActivityArea),
 				members = membersByTeamId[teamId].orEmpty(),
+				// 순수 추천 팀은 아직 team_match가 없어, 관심 보낼 때 생성될 매칭의 기본 비용(MEETING_INIT/ACCEPT)을 채운다.
+				datingInitAmount = CoinUsageType.MEETING_INIT.coinAmount,
+				datingAcceptAmount = CoinUsageType.MEETING_ACCEPT.coinAmount,
+				// 아직 매칭이 없으므로 매칭 상태/관심 여부는 비어 있다.
+				teamMatchStatus = null,
+				hasUserInterest = false,
+				hasPartnerInterest = false,
 			)
 		}
 	}

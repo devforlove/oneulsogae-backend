@@ -41,7 +41,11 @@ class GetMatchedTeamDaoImpl(
 		val teamActivityArea: StringExpression = teamRegion.sido.concat(" ").concat(teamRegion.sigungu)
 
 		val headers: List<Tuple> = queryFactory
-			.select(team.id, team.name, team.introduction, teamActivityArea)
+			.select(
+				team.id, team.name, team.introduction, teamActivityArea,
+				teamMatch.dateInitAmount, teamMatch.dateAcceptAmount,
+				teamMatch.status, mine.status, opp.status,
+			)
 			.from(mine)
 			.join(teamMatch).on(teamMatch.id.eq(mine.teamMatchId))
 			.join(opp).on(opp.teamMatchId.eq(mine.teamMatchId).and(opp.teamId.ne(mine.teamId)))
@@ -70,7 +74,16 @@ class GetMatchedTeamDaoImpl(
 				introduction = header.get(team.introduction),
 				activityArea = header.get(teamActivityArea),
 				members = membersByTeamId[teamId].orEmpty(),
+				datingInitAmount = header.get(teamMatch.dateInitAmount)!!,
+				datingAcceptAmount = header.get(teamMatch.dateAcceptAmount)!!,
+				teamMatchStatus = header.get(teamMatch.status)!!,
+				hasUserInterest = hasApplied(header.get(mine.status)!!),
+				hasPartnerInterest = hasApplied(header.get(opp.status)!!),
 			)
 		}
 	}
+
+	// 참가 팀이 관심(신청)을 보냈는지 여부. APPLY(신청) 또는 ACTIVE(성사)면 신청한 것으로 본다.
+	private fun hasApplied(status: MatchedTeamStatus): Boolean =
+		status == MatchedTeamStatus.APPLY || status == MatchedTeamStatus.ACTIVE
 }

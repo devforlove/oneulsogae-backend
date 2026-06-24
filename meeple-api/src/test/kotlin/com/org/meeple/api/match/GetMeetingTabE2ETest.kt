@@ -4,6 +4,7 @@ import com.org.meeple.common.integration.AbstractIntegrationSupport
 import com.org.meeple.common.integration.expect
 import com.org.meeple.common.integration.get
 import com.org.meeple.common.match.MatchStatus
+import com.org.meeple.common.match.MatchedTeamStatus
 import com.org.meeple.common.match.TeamMatchType
 import com.org.meeple.common.match.TeamMemberStatus
 import com.org.meeple.common.match.TeamStatus
@@ -51,7 +52,13 @@ class GetMeetingTabE2ETest : AbstractIntegrationSupport({
 		IntegrationUtil.persist(TeamMemberEntity(teamId = teamId, userId = userId, status = status))
 	}
 
-	fun persistTeamMatch(memberKey: String, expiresAt: LocalDateTime, status: MatchStatus = MatchStatus.PROPOSED): Long =
+	fun persistTeamMatch(
+		memberKey: String,
+		expiresAt: LocalDateTime,
+		status: MatchStatus = MatchStatus.PROPOSED,
+		dateInitAmount: Int = 40,
+		dateAcceptAmount: Int = 40,
+	): Long =
 		IntegrationUtil.persist(
 			TeamMatchEntity(
 				memberKey = memberKey,
@@ -59,13 +66,13 @@ class GetMeetingTabE2ETest : AbstractIntegrationSupport({
 				expiresAt = expiresAt,
 				status = status,
 				matchType = TeamMatchType.RECOMMENDED,
-				dateInitAmount = 40,
-				dateAcceptAmount = 40,
+				dateInitAmount = dateInitAmount,
+				dateAcceptAmount = dateAcceptAmount,
 			),
 		).id!!
 
-	fun persistMatchedTeam(teamMatchId: Long, teamId: Long) {
-		IntegrationUtil.persist(MatchedTeamEntity(teamMatchId = teamMatchId, teamId = teamId))
+	fun persistMatchedTeam(teamMatchId: Long, teamId: Long, status: MatchedTeamStatus = MatchedTeamStatus.WAITING) {
+		IntegrationUtil.persist(MatchedTeamEntity(teamMatchId = teamMatchId, teamId = teamId, status = status))
 	}
 
 	describe("GET /team-matches/v1/meeting-tab") {
@@ -114,6 +121,13 @@ class GetMeetingTabE2ETest : AbstractIntegrationSupport({
 					body("data.recommendedTeams[0].members[0].introduction", "반가워요")
 					body("data.recommendedTeams[0].members[0].traits", hasSize<Any>(0))
 					body("data.recommendedTeams[0].members[0].interests", hasSize<Any>(0))
+					// 팀에 관심을 보낼 때 드는 코인 비용(MEETING_INIT/ACCEPT = 40)
+					body("data.recommendedTeams[0].datingInitAmount", 40)
+					body("data.recommendedTeams[0].datingAcceptAmount", 40)
+					// 순수 추천 팀은 아직 매칭이 없어 상태 null·양 팀 관심 false
+					body("data.recommendedTeams[0].teamMatchStatus", nullValue())
+					body("data.recommendedTeams[0].hasUserInterest", false)
+					body("data.recommendedTeams[0].hasPartnerInterest", false)
 					body("data.receivedInvitationCount", 0)
 					body("data.myActiveTeam", nullValue())
 				}
@@ -184,9 +198,17 @@ class GetMeetingTabE2ETest : AbstractIntegrationSupport({
 				persistMatchUser(5402L, Gender.FEMALE)
 				IntegrationUtil.persist(UserDetailEntityFixture.create(userId = 5401L, gender = Gender.FEMALE))
 				IntegrationUtil.persist(UserDetailEntityFixture.create(userId = 5402L, gender = Gender.FEMALE))
-				val liveMatch: Long = persistTeamMatch("$myTeamId-$oppTeamId", expiresAt = LocalDateTime.of(2999, 1, 1, 0, 0))
-				persistMatchedTeam(liveMatch, myTeamId)
-				persistMatchedTeam(liveMatch, oppTeamId)
+				// 비용은 team_matches(DB)에서 내려오므로, 상수 기본값(40)과 다른 값으로 저장해 DB 조회임을 검증한다.
+				// 상대 팀만 신청(APPLY)한 PARTIALLY_ACCEPTED 상태 → 내 팀 관심 false, 상대 팀 관심 true.
+				val liveMatch: Long = persistTeamMatch(
+					"$myTeamId-$oppTeamId",
+					expiresAt = LocalDateTime.of(2999, 1, 1, 0, 0),
+					status = MatchStatus.PARTIALLY_ACCEPTED,
+					dateInitAmount = 55,
+					dateAcceptAmount = 65,
+				)
+				persistMatchedTeam(liveMatch, myTeamId, MatchedTeamStatus.WAITING)
+				persistMatchedTeam(liveMatch, oppTeamId, MatchedTeamStatus.APPLY)
 
 				// 만료된 매칭으로 묶인 상대 팀(제외 대상).
 				val expiredOppTeamId: Long = persistTeam(TeamStatus.ACTIVE, Gender.FEMALE)
@@ -201,6 +223,13 @@ class GetMeetingTabE2ETest : AbstractIntegrationSupport({
 					body("data.recommendedTeams", hasSize<Any>(1))
 					body("data.recommendedTeams[0].teamId", oppTeamId.toInt())
 					body("data.recommendedTeams[0].members", hasSize<Any>(2))
+					// 비용은 team_matches(DB)에서 조회한 값(55/65)이 그대로 내려온다.
+					body("data.recommendedTeams[0].datingInitAmount", 55)
+					body("data.recommendedTeams[0].datingAcceptAmount", 65)
+					// 헤더 상태 + 양 팀 관심 여부(상대만 APPLY → 내 팀 false, 상대 true)
+					body("data.recommendedTeams[0].teamMatchStatus", MatchStatus.PARTIALLY_ACCEPTED.name)
+					body("data.recommendedTeams[0].hasUserInterest", false)
+					body("data.recommendedTeams[0].hasPartnerInterest", true)
 					body("data.myActiveTeam.teamId", myTeamId.toInt())
 					body("data.receivedInvitationCount", 0)
 				}

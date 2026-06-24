@@ -1,5 +1,6 @@
 package com.org.meeple.api.match.response
 
+import com.org.meeple.common.match.MatchStatus
 import com.org.meeple.common.user.Gender
 import com.org.meeple.core.common.time.ageAt
 import com.org.meeple.core.match.query.dto.RecommendedTeam
@@ -7,7 +8,9 @@ import com.org.meeple.core.match.query.dto.RecommendedTeamMember
 import java.time.LocalDate
 
 /**
- * 미팅탭에 노출할 추천 팀 응답. 팀 메타와 팀원 표시 프로필(나이는 생일+오늘로 산출)을 담는다.
+ * 미팅탭에 노출할 추천 팀 응답. 팀 메타와 팀원 표시 프로필(나이는 생일+오늘로 산출),
+ * 이 팀에 관심을 보낼 때 드는 코인 비용(신청/수락), 그리고 팀 매칭 상태·양 팀 관심 여부를 담는다.
+ * 비용·상태는 매칭된 상대 팀이면 team_matches(DB)에서, 순수 추천이면 비용은 MEETING 상수·상태는 비어 있음. ([RecommendedTeam]에서 산출 완료)
  */
 data class RecommendedTeamResponse(
 	val teamId: Long,
@@ -15,6 +18,14 @@ data class RecommendedTeamResponse(
 	val introduction: String?,
 	val activityArea: String?,
 	val members: List<Member>,
+	val datingInitAmount: Int,
+	val datingAcceptAmount: Int,
+	/** 이 팀과의 팀 매칭 상태. 아직 매칭이 없는 순수 추천 팀이면 null. */
+	val teamMatchStatus: MatchStatus?,
+	/** 내 팀이 이 매칭에 관심(신청)을 보냈는지 여부. */
+	val hasUserInterest: Boolean,
+	/** 상대 팀이 이 매칭에 관심(신청)을 보냈는지 여부. */
+	val hasPartnerInterest: Boolean,
 ) {
 
 	/**
@@ -61,6 +72,11 @@ data class RecommendedTeamResponse(
 							interests = member.interests,
 						)
 					},
+					datingInitAmount = recommendedTeam.datingInitAmount,
+					datingAcceptAmount = recommendedTeam.datingAcceptAmount,
+					teamMatchStatus = recommendedTeam.teamMatchStatus,
+					hasUserInterest = recommendedTeam.hasUserInterest,
+					hasPartnerInterest = recommendedTeam.hasPartnerInterest,
 				)
 			}
 	}
