@@ -31,8 +31,9 @@ import java.time.LocalDateTime
 		Index(name = "idx_last_login_at_user_id", columnList = "last_login_at, user_id"),
 		// 초대 가능 유저 닉네임 검색(nickname=, gender= seek + userId 정렬)용
 		Index(name = "idx_nickname_gender_user_id", columnList = "nickname, gender, user_id"),
-		// 온보딩 추천 후보 선정(반대 성별·같은 지역·최근 로그인)용 — regionId 기반
-		Index(name = "idx_gender_region_id_last_login_at", columnList = "gender, region_id, last_login_at"),
+		// 온보딩 추천 후보 선정(반대 성별·같은 지역·최근 로그인순)용 — regionId 기반.
+		// last_login_at은 DESC 정렬(최근 로그인 1명)에 맞춰 내림차순으로 둬 backward index scan을 없앤다.
+		Index(name = "idx_gender_region_id_last_login_at", columnList = "gender, region_id, last_login_at desc"),
 	],
 )
 class MatchUserEntity(
