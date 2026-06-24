@@ -28,6 +28,10 @@ data class TeamMatch(
 	fun memberKey(): String =
 		matchedTeams.memberKey()
 
+	/** 참가 팀들에 이 팀 매칭의 id([teamMatchId])를 채워 반환한다. (영속화 직전, 헤더 저장으로 id를 얻은 뒤 호출) */
+	fun matchedTeamsWith(teamMatchId: Long): MatchedTeams =
+		matchedTeams.withTeamMatchId(teamMatchId)
+
 	companion object {
 
 		/** 팀 매칭의 유효 기간. 생성 시각으로부터 이 기간이 지나면 만료된 것으로 본다. */

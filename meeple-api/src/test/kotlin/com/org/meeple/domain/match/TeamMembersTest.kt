@@ -62,6 +62,16 @@ class TeamMembersTest : DescribeSpec({
         }
     }
 
+    describe("withTeamId") {
+        it("모든 구성원에 teamId를 채운 새 컬렉션을 돌려준다") {
+            val assigned: TeamMembers = invitingMembers().withTeamId(7L)
+
+            assigned.values.all { member: TeamMember -> member.teamId == 7L } shouldBe true
+            // 원본은 그대로(불변)
+            invitingMembers().values.all { member: TeamMember -> member.teamId == 0L } shouldBe true
+        }
+    }
+
     describe("deactivateAll") {
         it("전원을 DEACTIVE + deletedAt으로 표시한다") {
             val now: LocalDateTime = LocalDateTime.of(2026, 6, 20, 12, 0)

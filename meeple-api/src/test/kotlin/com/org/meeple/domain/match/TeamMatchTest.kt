@@ -34,6 +34,19 @@ class TeamMatchTest : DescribeSpec({
 			teamMatch.matchedTeams.values.all { it.accepted == null } shouldBe true
 		}
 
+		it("matchedTeamsWith는 참가 팀 전원에 teamMatchId를 채워 돌려준다") {
+			val teamMatch: TeamMatch = TeamMatch.propose(
+				teamAId = 10L,
+				teamBId = 20L,
+				matchType = TeamMatchType.RECOMMENDED,
+				now = now,
+			)
+
+			teamMatch.matchedTeamsWith(5L).values.all { it.teamMatchId == 5L } shouldBe true
+			// 원본은 그대로(불변)
+			teamMatch.matchedTeams.values.all { it.teamMatchId == 0L } shouldBe true
+		}
+
 		it("memberKey는 두 teamId를 정렬해 '-'로 잇는다 (순서 무관)") {
 			val teamMatch: TeamMatch = TeamMatch.propose(
 				teamAId = 20L,

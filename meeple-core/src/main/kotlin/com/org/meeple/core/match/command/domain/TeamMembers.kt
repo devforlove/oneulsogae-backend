@@ -40,6 +40,10 @@ data class TeamMembers(
 	fun invitedId(): Long =
 		values.first { member: TeamMember -> member.status == TeamMemberStatus.INVITED }.userId
 
+	/** 모든 구성원에 소속 팀 id([teamId])를 채운 새 컬렉션. (헤더 저장으로 id를 얻은 뒤 영속화 직전에 호출) */
+	fun withTeamId(teamId: Long): TeamMembers =
+		TeamMembers(values.map { member: TeamMember -> member.copy(teamId = teamId) })
+
 	/** [userId] 구성원만 ACTIVE로 전환한 새 컬렉션. (나머지는 그대로) */
 	fun accept(userId: Long): TeamMembers =
 		TeamMembers(

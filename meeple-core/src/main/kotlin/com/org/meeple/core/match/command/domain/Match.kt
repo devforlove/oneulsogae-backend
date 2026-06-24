@@ -62,6 +62,10 @@ data class Match(
 	fun participantUserIds(): List<Long> =
 		members.userIds()
 
+	/** 참가자들에 이 매칭의 id([matchId])를 채워 반환한다. (영속화 직전, 헤더 저장으로 id를 얻은 뒤 호출) */
+	fun membersWith(matchId: Long): MatchMembers =
+		members.withMatchId(matchId)
+
 	/**
 	 * 매칭 실패(미성사 만료/채팅 종료)로 제거될 때, 참가자별 환불 금액 목록을 산정한다.
 	 * 실제로 코인을 지불한(신청한) 참가자에게만, 신청 비용([datingInitAmount])의 절반(내림)을 돌려준다.

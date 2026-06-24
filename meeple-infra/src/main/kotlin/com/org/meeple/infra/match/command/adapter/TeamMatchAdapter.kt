@@ -5,6 +5,7 @@ import com.org.meeple.core.match.command.domain.MatchedTeams
 import com.org.meeple.core.match.command.domain.TeamMatch
 import com.org.meeple.infra.match.command.entity.TeamMatchEntity
 import com.org.meeple.infra.match.command.mapper.toDomain
+import com.org.meeple.infra.match.command.mapper.toEntities
 import com.org.meeple.infra.match.command.mapper.toEntity
 import com.org.meeple.infra.match.command.repository.MatchedTeamJpaRepository
 import com.org.meeple.infra.match.command.repository.TeamMatchJpaRepository
@@ -26,7 +27,7 @@ class TeamMatchAdapter(
 		val teamMatchId: Long = savedEntity.id!!
 		val savedMatchedTeams: MatchedTeams = MatchedTeams(
 			matchedTeamJpaRepository
-				.saveAll(teamMatch.matchedTeams.values.map { it.copy(teamMatchId = teamMatchId).toEntity() })
+				.saveAll(teamMatch.matchedTeamsWith(teamMatchId).toEntities())
 				.map { it.toDomain() },
 		)
 		return savedEntity.toDomain(savedMatchedTeams)

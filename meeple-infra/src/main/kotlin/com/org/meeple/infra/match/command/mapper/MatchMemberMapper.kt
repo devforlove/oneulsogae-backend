@@ -1,6 +1,7 @@
 package com.org.meeple.infra.match.command.mapper
 
 import com.org.meeple.core.match.command.domain.MatchMember
+import com.org.meeple.core.match.command.domain.MatchMembers
 import com.org.meeple.infra.match.command.entity.SoloMatchMemberEntity
 import java.time.LocalDateTime
 
@@ -30,3 +31,7 @@ fun MatchMember.toEntity(): SoloMatchMemberEntity =
 		if (id != 0L) it.id = id
 		deletedAt?.let { at: LocalDateTime -> it.softDelete(at) }
 	}
+
+/** 참가자 일급 컬렉션 -> 영속성 엔티티 목록. (어댑터가 [MatchMembers.values]를 직접 들추지 않도록 변환을 캡슐화) */
+fun MatchMembers.toEntities(): List<SoloMatchMemberEntity> =
+	values.map { member: MatchMember -> member.toEntity() }

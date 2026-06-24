@@ -9,6 +9,7 @@ import com.org.meeple.core.match.command.domain.TeamMembers
 import com.org.meeple.infra.match.command.entity.TeamEntity
 import com.org.meeple.infra.match.command.entity.TeamMemberEntity
 import com.org.meeple.infra.match.command.mapper.toDomain
+import com.org.meeple.infra.match.command.mapper.toEntities
 import com.org.meeple.infra.match.command.mapper.toEntity
 import com.org.meeple.infra.match.command.repository.TeamJpaRepository
 import com.org.meeple.infra.match.command.repository.TeamMemberJpaRepository
@@ -33,7 +34,7 @@ class TeamAdapter(
 		val teamId: Long = savedEntity.id!!
 		val savedMembers: TeamMembers = TeamMembers(
 			teamMemberJpaRepository
-				.saveAll(team.members.values.map { it.copy(teamId = teamId).toEntity() })
+				.saveAll(team.membersWith(teamId).toEntities())
 				.map { it.toDomain() },
 		)
 		return savedEntity.toDomain(savedMembers)

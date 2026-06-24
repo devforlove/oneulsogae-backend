@@ -20,6 +20,10 @@ data class MatchedTeams(
 	fun memberKey(): String =
 		teamIds().sorted().joinToString("-")
 
+	/** 모든 참가 팀에 소속 팀 매칭 id([teamMatchId])를 채운 새 컬렉션. (헤더 저장으로 id를 얻은 뒤 영속화 직전에 호출) */
+	fun withTeamMatchId(teamMatchId: Long): MatchedTeams =
+		MatchedTeams(values.map { matchedTeam: MatchedTeam -> matchedTeam.copy(teamMatchId = teamMatchId) })
+
 	companion object {
 
 		/** teamId들로 참가 팀 목록을 만든다. (teamMatchId는 저장 시 채워진다) */

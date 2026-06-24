@@ -10,6 +10,7 @@ import com.org.meeple.core.match.command.domain.Match
 import com.org.meeple.core.match.command.domain.MatchMembers
 import com.org.meeple.infra.match.command.entity.SoloMatchEntity
 import com.org.meeple.infra.match.command.mapper.toDomain
+import com.org.meeple.infra.match.command.mapper.toEntities
 import com.org.meeple.infra.match.command.mapper.toEntity
 import com.org.meeple.infra.match.command.repository.MatchJpaRepository
 import com.org.meeple.infra.match.command.repository.MatchMemberJpaRepository
@@ -50,7 +51,7 @@ class MatchAdapter(
 	 */
 	override fun delete(match: Match) {
 		matchJpaRepository.save(match.toEntity())
-		matchMemberJpaRepository.saveAll(match.members.values.map { it.toEntity() })
+		matchMemberJpaRepository.saveAll(match.members.toEntities())
 	}
 
 	/**
@@ -62,7 +63,7 @@ class MatchAdapter(
 		val matchId: Long = savedEntity.id!!
 		val savedMembers: MatchMembers = MatchMembers(
 			matchMemberJpaRepository
-				.saveAll(match.members.values.map { it.copy(matchId = matchId).toEntity() })
+				.saveAll(match.membersWith(matchId).toEntities())
 				.map { it.toDomain() },
 		)
 		return savedEntity.toDomain(savedMembers)

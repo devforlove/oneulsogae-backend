@@ -1,6 +1,7 @@
 package com.org.meeple.infra.match.command.mapper
 
 import com.org.meeple.core.match.command.domain.MatchedTeam
+import com.org.meeple.core.match.command.domain.MatchedTeams
 import com.org.meeple.infra.match.command.entity.MatchedTeamEntity
 import java.time.LocalDateTime
 
@@ -28,3 +29,7 @@ fun MatchedTeam.toEntity(): MatchedTeamEntity =
 		if (id != 0L) it.id = id
 		deletedAt?.let { at: LocalDateTime -> it.softDelete(at) }
 	}
+
+/** 참가 팀 일급 컬렉션 -> 영속성 엔티티 목록. (어댑터가 [MatchedTeams.values]를 직접 들추지 않도록 변환을 캡슐화) */
+fun MatchedTeams.toEntities(): List<MatchedTeamEntity> =
+	values.map { matchedTeam: MatchedTeam -> matchedTeam.toEntity() }
