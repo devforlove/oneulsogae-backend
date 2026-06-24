@@ -8,4 +8,7 @@ enum class TeamMatchType(val description: String) {
 
 	/** 사용자 요청(필수 신청)으로 생성된 팀 매칭. */
 	REQUIRED("요청 팀 매칭"),
+
+	/** 팀 결성 시 구성원 개인 추천(recommended_teams)을 결성된 팀의 매칭으로 승격해 생성된 팀 매칭. */
+	RECOMMENDED("추천 팀 매칭"),
 }

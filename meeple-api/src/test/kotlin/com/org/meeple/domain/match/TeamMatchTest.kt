@@ -1,0 +1,48 @@
+package com.org.meeple.domain.match
+
+import com.org.meeple.common.match.MatchStatus
+import com.org.meeple.common.match.TeamMatchType
+import com.org.meeple.core.match.command.domain.TeamMatch
+import io.kotest.core.spec.style.DescribeSpec
+import io.kotest.matchers.shouldBe
+import java.time.LocalDateTime
+
+/**
+ * [TeamMatch] 도메인 유닛 테스트.
+ * 프레임워크·인프라 없이 순수 도메인 로직(팀 매칭 생성, 멤버 키 산출)을 검증한다.
+ */
+class TeamMatchTest : DescribeSpec({
+
+	val now: LocalDateTime = LocalDateTime.of(2026, 6, 24, 12, 0)
+
+	describe("propose - 팀 매칭 생성") {
+		it("두 팀을 참가 팀으로 담아 PROPOSED 상태의 팀 매칭을 생성한다") {
+			val teamMatch: TeamMatch = TeamMatch.propose(
+				teamAId = 10L,
+				teamBId = 20L,
+				matchType = TeamMatchType.RECOMMENDED,
+				now = now,
+			)
+
+			teamMatch.status shouldBe MatchStatus.PROPOSED
+			teamMatch.matchType shouldBe TeamMatchType.RECOMMENDED
+			teamMatch.introducedDate shouldBe now.toLocalDate()
+			teamMatch.expiresAt shouldBe now.plusDays(1)
+			teamMatch.dateInitAmount shouldBe 40
+			teamMatch.dateAcceptAmount shouldBe 40
+			teamMatch.matchedTeams.teamIds() shouldBe listOf(10L, 20L)
+			teamMatch.matchedTeams.values.all { it.accepted == null } shouldBe true
+		}
+
+		it("memberKey는 두 teamId를 정렬해 '-'로 잇는다 (순서 무관)") {
+			val teamMatch: TeamMatch = TeamMatch.propose(
+				teamAId = 20L,
+				teamBId = 10L,
+				matchType = TeamMatchType.RECOMMENDED,
+				now = now,
+			)
+
+			teamMatch.memberKey() shouldBe "10-20"
+		}
+	}
+})
