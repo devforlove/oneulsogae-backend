@@ -6,13 +6,13 @@ import com.org.meeple.core.match.query.dto.MyActiveTeam
 import java.time.LocalDate
 
 /**
- * 미팅탭 화면 응답. 추천 팀·받은 초대 개수·내 결성(ACTIVE) 팀을 한 번에 담는다.
- * - [recommendedTeam]: 추천이 없으면 null.
+ * 미팅탭 화면 응답. 추천 팀 목록·받은 초대 개수·내 결성(ACTIVE) 팀을 한 번에 담는다.
+ * - [recommendedTeams]: 추천이 없으면 빈 리스트.
  * - [receivedInvitationCount]: 내가 INVITED인 INVITING 팀 개수.
  * - [myActiveTeam]: 내 결성 팀이 없으면 null.
  */
 data class MeetingTabResponse(
-	val recommendedTeam: RecommendedTeamResponse?,
+	val recommendedTeams: List<RecommendedTeamResponse>,
 	val receivedInvitationCount: Long,
 	val myActiveTeam: MyActiveTeamResponse?,
 ) {
@@ -28,7 +28,7 @@ data class MeetingTabResponse(
 	companion object {
 		fun of(meetingTab: MeetingTab, today: LocalDate): MeetingTabResponse =
 			MeetingTabResponse(
-				recommendedTeam = RecommendedTeamResponse.of(meetingTab.recommendedTeam, today),
+				recommendedTeams = RecommendedTeamResponse.of(meetingTab.recommendedTeams, today),
 				receivedInvitationCount = meetingTab.receivedInvitationCount,
 				myActiveTeam = meetingTab.myActiveTeam?.let { team: MyActiveTeam ->
 					MyActiveTeamResponse(

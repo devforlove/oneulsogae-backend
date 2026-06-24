@@ -106,3 +106,6 @@ meeple:
   match:
     batch:
       cron: ${MEEPLE_MATCH_BATCH_CRON:0 * * * * *}
+    recommended-team-batch:
+      # 팀 없는 솔로 유저에게 가까운 결성 팀 추천. 매일 04:00 (Asia/Seoul). 운영에서 MEEPLE_RECOMMENDED_TEAM_BATCH_CRON 환경변수로 덮어쓸 수 있다.
+      cron: ${MEEPLE_RECOMMENDED_TEAM_BATCH_CRON:0 * * * * *}

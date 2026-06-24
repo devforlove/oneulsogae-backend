@@ -23,7 +23,7 @@ class GetMeetingTabService(
 
 	override fun get(userId: Long): MeetingTab =
 		MeetingTab(
-			recommendedTeam = getRecommendedTeamDao.findByUserId(userId),
+			recommendedTeams = getRecommendedTeamDao.findByUserId(userId),
 			receivedInvitationCount = getReceivedInvitationsDao.countInvited(userId),
 			myActiveTeam = getMyActiveTeamDao.findLatestActiveTeam(userId),
 		)
