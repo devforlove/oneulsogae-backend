@@ -3,6 +3,7 @@ package com.org.meeple.core.match.command.application
 import com.org.meeple.common.alarm.AlarmType
 import com.org.meeple.core.alarm.command.application.port.`in`.SaveAlarmUseCase
 import com.org.meeple.core.alarm.command.application.port.`in`.command.SaveAlarmCommand
+import com.org.meeple.core.match.command.domain.event.OpponentsNotifiedOnDisband
 import com.org.meeple.core.match.command.domain.event.TeamInvitationAccepted
 import com.org.meeple.core.match.command.domain.event.TeamInvitationCanceled
 import com.org.meeple.core.match.command.domain.event.TeamInvitationDeclined
@@ -113,5 +114,23 @@ class TeamEventHandler(
 				fromTeamId = event.teamId,
 			),
 		)
+	}
+
+	/** 팀 해체 → 상대 팀 활성 구성원 각자에게 "상대 팀 해체" 알람. (수신자 목록만큼 개별 저장) */
+	@TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
+	@Transactional(propagation = Propagation.REQUIRES_NEW)
+	fun onOpponentsNotifiedOnDisband(event: OpponentsNotifiedOnDisband) {
+		event.recipientUserIds.forEach { recipientUserId: Long ->
+			saveAlarmUseCase.save(
+				SaveAlarmCommand(
+					userId = recipientUserId,
+					type = AlarmType.MANY_TO_MANY_OPPONENT_DISBANDED,
+					title = "상대 팀 해체",
+					description = "상대 팀이 해체되었어요.",
+					link = "",
+					fromTeamId = event.disbandedTeamId,
+				),
+			)
+		}
 	}
 }
