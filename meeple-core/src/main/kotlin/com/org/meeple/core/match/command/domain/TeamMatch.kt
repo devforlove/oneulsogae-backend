@@ -32,6 +32,18 @@ data class TeamMatch(
 	fun matchedTeamsWith(teamMatchId: Long): MatchedTeams =
 		matchedTeams.withTeamMatchId(teamMatchId)
 
+	/** 미성사 매칭을 종료한 새 모델. status를 CLOSED로 바꾸고 참가 팀 전원을 DEACTIVE로 전이한다. (기록은 보존, 소프트 삭제 안 함) */
+	fun close(): TeamMatch =
+		copy(status = MatchStatus.CLOSED, matchedTeams = matchedTeams.deactivateAll())
+
+	/** 성사(MATCHED)된 매칭인지 여부. */
+	fun isMatched(): Boolean =
+		status == MatchStatus.MATCHED
+
+	/** [teamId]가 아닌 상대 팀의 teamId. */
+	fun opponentTeamIdOf(teamId: Long): Long =
+		matchedTeams.opponentTeamIdOf(teamId)
+
 	companion object {
 
 		/** 팀 매칭의 유효 기간. 생성 시각으로부터 이 기간이 지나면 만료된 것으로 본다. */

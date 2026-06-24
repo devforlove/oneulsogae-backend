@@ -59,4 +59,35 @@ class TeamMatchTest : DescribeSpec({
 			teamMatch.memberKey() shouldBe "10-20"
 		}
 	}
+
+	describe("close - 미성사 매칭 종료") {
+		it("status를 CLOSED로 바꾸고 참가 팀 전원을 DEACTIVE로 전이한다") {
+			val teamMatch: TeamMatch = TeamMatch.propose(
+				teamAId = 10L,
+				teamBId = 20L,
+				matchType = TeamMatchType.RECOMMENDED,
+				now = now,
+			)
+
+			val closed: TeamMatch = teamMatch.close()
+
+			closed.status shouldBe MatchStatus.CLOSED
+			closed.matchedTeams.values.all { it.status == MatchedTeamStatus.DEACTIVE } shouldBe true
+		}
+	}
+
+	describe("isMatched / opponentTeamIdOf") {
+		it("isMatched는 status가 MATCHED일 때만 true다") {
+			val proposed: TeamMatch = TeamMatch.propose(10L, 20L, TeamMatchType.RECOMMENDED, now)
+
+			proposed.isMatched() shouldBe false
+			proposed.copy(status = MatchStatus.MATCHED).isMatched() shouldBe true
+		}
+
+		it("opponentTeamIdOf는 내 팀이 아닌 상대 팀 id를 돌려준다") {
+			val teamMatch: TeamMatch = TeamMatch.propose(10L, 20L, TeamMatchType.RECOMMENDED, now)
+
+			teamMatch.opponentTeamIdOf(10L) shouldBe 20L
+		}
+	}
 })
