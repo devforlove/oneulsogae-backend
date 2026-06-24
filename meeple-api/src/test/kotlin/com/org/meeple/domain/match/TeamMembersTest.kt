@@ -4,6 +4,7 @@ import com.org.meeple.common.match.TeamMemberStatus
 import com.org.meeple.core.match.command.domain.TeamMember
 import com.org.meeple.core.match.command.domain.TeamMembers
 import io.kotest.core.spec.style.DescribeSpec
+import io.kotest.matchers.collections.shouldContainExactlyInAnyOrder
 import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
 import java.time.LocalDateTime
@@ -35,6 +36,13 @@ class TeamMembersTest : DescribeSpec({
         it("ACTIVE 구성원을 초대자, INVITED 구성원을 초대 대상으로 돌려준다") {
             invitingMembers().inviterId() shouldBe ownerId
             invitingMembers().invitedId() shouldBe invitedId
+        }
+    }
+
+    describe("activeMemberIds") {
+        it("ACTIVE 구성원의 userId만 돌려준다") {
+            invitingMembers().activeMemberIds() shouldBe listOf(ownerId)
+            invitingMembers().accept(invitedId).activeMemberIds() shouldContainExactlyInAnyOrder listOf(ownerId, invitedId)
         }
     }
 

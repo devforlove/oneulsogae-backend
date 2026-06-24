@@ -46,6 +46,9 @@ data class Team(
 	/** 초대 단계(INVITING) 팀의 초대 대상(INVITED 구성원) userId. */
 	fun invitedId(): Long = members.invitedId()
 
+	/** 활성(ACTIVE) 구성원의 userId 목록. (결성([TeamStatus.ACTIVE])된 팀이면 전원) */
+	fun activeMemberIds(): List<Long> = members.activeMemberIds()
+
 	/**
 	 * 초대 단계([TeamStatus.INVITING])의 팀을 철회한다. (초대받은 사람의 거절 / 초대자의 취소 공통)
 	 * 팀을 [TeamStatus.DEACTIVATED]로 전이하고 팀·구성원을 [now]로 소프트 삭제한 새 모델을 반환한다.

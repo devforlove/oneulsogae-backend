@@ -23,6 +23,11 @@ data class TeamMembers(
 	fun userIds(): List<Long> =
 		values.map { it.userId }
 
+	/** 활성([TeamMemberStatus.ACTIVE]) 구성원의 userId 목록. (결성된 팀이면 전원) */
+	fun activeMemberIds(): List<Long> =
+		values.filter { member: TeamMember -> member.status == TeamMemberStatus.ACTIVE }
+			.map { member: TeamMember -> member.userId }
+
 	/** [userId] 구성원을 찾는다. 없으면 null. */
 	fun find(userId: Long): TeamMember? =
 		values.firstOrNull { member: TeamMember -> member.userId == userId }

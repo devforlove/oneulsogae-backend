@@ -1,7 +1,6 @@
 package com.org.meeple.core.match.command.application
 
 import com.org.meeple.common.match.TeamMatchType
-import com.org.meeple.common.match.TeamMemberStatus
 import com.org.meeple.common.match.TeamStatus
 import com.org.meeple.core.common.error.BusinessException
 import com.org.meeple.core.common.event.DomainEventPublisher
@@ -16,7 +15,6 @@ import com.org.meeple.core.match.command.application.port.out.SaveTeamMatchPort
 import com.org.meeple.core.match.command.application.port.out.SaveTeamPort
 import com.org.meeple.core.match.command.domain.Team
 import com.org.meeple.core.match.command.domain.TeamMatch
-import com.org.meeple.core.match.command.domain.TeamMember
 import com.org.meeple.core.match.command.domain.event.TeamInvitationAccepted
 import com.org.meeple.core.match.command.domain.event.TeamInvitationCanceled
 import com.org.meeple.core.match.command.domain.event.TeamInvitationDeclined
@@ -94,10 +92,7 @@ class AcceptTeamInvitationService(
 	 * 두 구성원이 같은 팀을 추천받았으면 distinct로 한 번만 승격한다. (member_key 유니크 충돌 방지)
 	 */
 	private fun promoteRecommendedTeams(team: Team, now: LocalDateTime) {
-		val memberIds: List<Long> = team.members.values
-			.filter { member: TeamMember -> member.status == TeamMemberStatus.ACTIVE }
-			.map { member: TeamMember -> member.userId }
-		val recommendedTeamIds: List<Long> = memberIds
+		val recommendedTeamIds: List<Long> = team.activeMemberIds()
 			.mapNotNull { memberId: Long -> getRecommendedTeamPort.findRecommendedTeamId(memberId) }
 			.distinct()
 			.filter { recommendedTeamId: Long -> recommendedTeamId != team.id }
