@@ -23,6 +23,7 @@ import com.org.meeple.infra.match.command.entity.MatchedTeamEntity
 import com.org.meeple.infra.match.command.entity.QMatchUserEntity
 import com.org.meeple.infra.match.command.entity.QMatchedTeamEntity
 import com.org.meeple.infra.match.command.entity.QTeamEntity
+import com.org.meeple.infra.match.command.entity.QTeamMatchEntity
 import com.org.meeple.infra.match.command.entity.QTeamMemberEntity
 import com.org.meeple.infra.match.command.entity.TeamMatchEntity
 import io.kotest.matchers.shouldBe
@@ -124,6 +125,8 @@ class DisbandTeamMatchTeardownE2ETest : AbstractIntegrationSupport({
 				}
 
 				teamMatchStatus(teamMatchId) shouldBe MatchStatus.CLOSED
+				matchedTeamStatus(teamMatchId, myTeamId) shouldBe MatchedTeamStatus.DEACTIVE
+				matchedTeamStatus(teamMatchId, opponentTeamId) shouldBe MatchedTeamStatus.DEACTIVE
 				disbandAlarms(oppOwnerId).size shouldBe 1
 				disbandAlarms(oppInvitedUserId).size shouldBe 1
 			}
@@ -135,6 +138,7 @@ class DisbandTeamMatchTeardownE2ETest : AbstractIntegrationSupport({
 		IntegrationUtil.deleteAll(QChatRoomMemberEntity.chatRoomMemberEntity)
 		IntegrationUtil.deleteAll(QChatRoomEntity.chatRoomEntity)
 		IntegrationUtil.deleteAll(QMatchedTeamEntity.matchedTeamEntity)
+		IntegrationUtil.deleteAll(QTeamMatchEntity.teamMatchEntity)
 		IntegrationUtil.deleteAll(QTeamMemberEntity.teamMemberEntity)
 		IntegrationUtil.deleteAll(QTeamEntity.teamEntity)
 		IntegrationUtil.deleteAll(QMatchUserEntity.matchUserEntity)
@@ -144,6 +148,12 @@ class DisbandTeamMatchTeardownE2ETest : AbstractIntegrationSupport({
 private fun teamMatchStatus(teamMatchId: Long): MatchStatus {
 	val q = com.org.meeple.infra.match.command.entity.QTeamMatchEntity.teamMatchEntity
 	return IntegrationUtil.getQuery().select(q.status).from(q).where(q.id.eq(teamMatchId)).fetchOne()!!
+}
+
+private fun matchedTeamStatus(teamMatchId: Long, teamId: Long): MatchedTeamStatus {
+	val q = QMatchedTeamEntity.matchedTeamEntity
+	return IntegrationUtil.getQuery().select(q.status).from(q)
+		.where(q.teamMatchId.eq(teamMatchId).and(q.teamId.eq(teamId))).fetchOne()!!
 }
 
 private fun memberStatus(chatRoomId: Long, userId: Long): ChatRoomMemberStatus {

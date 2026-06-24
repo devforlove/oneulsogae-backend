@@ -54,7 +54,7 @@ class TeamMatchAdapter(
 
 		return headers.map { header: TeamMatchEntity ->
 			val matchedTeams: MatchedTeams = MatchedTeams(
-				membersByMatchId[header.id].orEmpty().map { it.toDomain() },
+				membersByMatchId[header.id!!].orEmpty().map { it.toDomain() },
 			)
 			header.toDomain(matchedTeams)
 		}

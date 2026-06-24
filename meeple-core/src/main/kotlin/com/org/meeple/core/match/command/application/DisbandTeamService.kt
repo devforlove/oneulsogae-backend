@@ -38,6 +38,7 @@ class DisbandTeamService(
 	private val timeGenerator: TimeGenerator,
 ) : DisbandTeamUseCase {
 
+	// 락은 해체 대상 팀에만 건다. 팀 매칭 성사(accept) 흐름 구현 시, 상대 팀 매칭/채팅 동시 변경과의 경합을 막도록 락 범위를 재검토한다.
 	@DistributedLock(prefix = LockKeyConstraints.TEAM_LIFECYCLE, keys = ["#teamId"], waitTime = 0)
 	@Transactional
 	override fun disband(userId: Long, teamId: Long): Team {
