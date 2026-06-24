@@ -3,6 +3,8 @@ package com.org.meeple.api.match
 import com.org.meeple.common.integration.AbstractIntegrationSupport
 import com.org.meeple.common.integration.expect
 import com.org.meeple.common.integration.get
+import com.org.meeple.common.match.MatchStatus
+import com.org.meeple.common.match.TeamMatchType
 import com.org.meeple.common.match.TeamMemberStatus
 import com.org.meeple.common.match.TeamStatus
 import com.org.meeple.common.user.Gender
@@ -11,17 +13,22 @@ import com.org.meeple.infra.fixture.MatchUserEntityFixture
 import com.org.meeple.infra.fixture.RecommendedTeamEntityFixture
 import com.org.meeple.infra.fixture.RegionEntityFixture
 import com.org.meeple.infra.fixture.UserDetailEntityFixture
+import com.org.meeple.infra.match.command.entity.MatchedTeamEntity
 import com.org.meeple.infra.match.command.entity.QMatchUserEntity
+import com.org.meeple.infra.match.command.entity.QMatchedTeamEntity
 import com.org.meeple.infra.match.command.entity.QRecommendedTeamEntity
 import com.org.meeple.infra.match.command.entity.QTeamEntity
+import com.org.meeple.infra.match.command.entity.QTeamMatchEntity
 import com.org.meeple.infra.match.command.entity.QTeamMemberEntity
 import com.org.meeple.infra.match.command.entity.TeamEntity
+import com.org.meeple.infra.match.command.entity.TeamMatchEntity
 import com.org.meeple.infra.match.command.entity.TeamMemberEntity
 import com.org.meeple.infra.region.entity.QRegionEntity
 import com.org.meeple.infra.user.command.entity.QUserDetailEntity
 import org.hamcrest.Matchers.hasSize
 import org.hamcrest.Matchers.nullValue
 import java.time.LocalDate
+import java.time.LocalDateTime
 
 /**
  * `GET /teams/v1/meeting-tab` E2E 테스트. (미팅탭 화면 집계)
@@ -42,6 +49,23 @@ class GetMeetingTabE2ETest : AbstractIntegrationSupport({
 
 	fun persistMember(teamId: Long, userId: Long, status: TeamMemberStatus) {
 		IntegrationUtil.persist(TeamMemberEntity(teamId = teamId, userId = userId, status = status))
+	}
+
+	fun persistTeamMatch(memberKey: String, expiresAt: LocalDateTime, status: MatchStatus = MatchStatus.PROPOSED): Long =
+		IntegrationUtil.persist(
+			TeamMatchEntity(
+				memberKey = memberKey,
+				introducedDate = LocalDate.of(2026, 6, 24),
+				expiresAt = expiresAt,
+				status = status,
+				matchType = TeamMatchType.RECOMMENDED,
+				dateInitAmount = 40,
+				dateAcceptAmount = 40,
+			),
+		).id!!
+
+	fun persistMatchedTeam(teamMatchId: Long, teamId: Long) {
+		IntegrationUtil.persist(MatchedTeamEntity(teamMatchId = teamMatchId, teamId = teamId))
 	}
 
 	describe("GET /teams/v1/meeting-tab") {
@@ -142,6 +166,47 @@ class GetMeetingTabE2ETest : AbstractIntegrationSupport({
 			}
 		}
 
+		context("결성(ACTIVE) 팀이 있고 진행 중 매칭이 있는 유저") {
+			it("recommendedTeams에 추천 팀이 아니라 내 팀과 매칭된 상대 팀을 내려준다 (만료 매칭은 제외, 200)") {
+				val me = 5005L
+				val friend = 5305L
+				persistMatchUser(me, Gender.MALE)
+				persistMatchUser(friend, Gender.MALE)
+				val myTeamId: Long = persistTeam(TeamStatus.ACTIVE, Gender.MALE)
+				persistMember(myTeamId, me, TeamMemberStatus.ACTIVE)
+				persistMember(myTeamId, friend, TeamMemberStatus.ACTIVE)
+
+				// 진행 중 매칭으로 묶인 상대 팀(표시 대상).
+				val oppTeamId: Long = persistTeam(TeamStatus.ACTIVE, Gender.FEMALE)
+				persistMember(oppTeamId, 5401L, TeamMemberStatus.ACTIVE)
+				persistMember(oppTeamId, 5402L, TeamMemberStatus.ACTIVE)
+				persistMatchUser(5401L, Gender.FEMALE)
+				persistMatchUser(5402L, Gender.FEMALE)
+				IntegrationUtil.persist(UserDetailEntityFixture.create(userId = 5401L, gender = Gender.FEMALE))
+				IntegrationUtil.persist(UserDetailEntityFixture.create(userId = 5402L, gender = Gender.FEMALE))
+				val liveMatch: Long = persistTeamMatch("$myTeamId-$oppTeamId", expiresAt = LocalDateTime.of(2999, 1, 1, 0, 0))
+				persistMatchedTeam(liveMatch, myTeamId)
+				persistMatchedTeam(liveMatch, oppTeamId)
+
+				// 만료된 매칭으로 묶인 상대 팀(제외 대상).
+				val expiredOppTeamId: Long = persistTeam(TeamStatus.ACTIVE, Gender.FEMALE)
+				val expiredMatch: Long = persistTeamMatch("$myTeamId-$expiredOppTeamId", expiresAt = LocalDateTime.of(2000, 1, 1, 0, 0))
+				persistMatchedTeam(expiredMatch, myTeamId)
+				persistMatchedTeam(expiredMatch, expiredOppTeamId)
+
+				get("/teams/v1/meeting-tab") {
+					bearer(accessTokenFor(me))
+				} expect {
+					status(200)
+					body("data.recommendedTeams", hasSize<Any>(1))
+					body("data.recommendedTeams[0].teamId", oppTeamId.toInt())
+					body("data.recommendedTeams[0].members", hasSize<Any>(2))
+					body("data.myActiveTeam.teamId", myTeamId.toInt())
+					body("data.receivedInvitationCount", 0)
+				}
+			}
+		}
+
 		context("추천·초대·결성 팀이 모두 없는 유저") {
 			it("recommendedTeams=[], count=0, myActiveTeam=null을 반환한다 (200)") {
 				val me = 5004L
@@ -160,6 +225,8 @@ class GetMeetingTabE2ETest : AbstractIntegrationSupport({
 	}
 
 	afterTest {
+		IntegrationUtil.deleteAll(QMatchedTeamEntity.matchedTeamEntity)
+		IntegrationUtil.deleteAll(QTeamMatchEntity.teamMatchEntity)
 		IntegrationUtil.deleteAll(QRecommendedTeamEntity.recommendedTeamEntity)
 		IntegrationUtil.deleteAll(QTeamMemberEntity.teamMemberEntity)
 		IntegrationUtil.deleteAll(QTeamEntity.teamEntity)

@@ -1,5 +1,7 @@
 package com.org.meeple.core.match.command.application
 
+import com.org.meeple.common.match.TeamMatchType
+import com.org.meeple.common.match.TeamStatus
 import com.org.meeple.core.common.error.BusinessException
 import com.org.meeple.core.common.event.DomainEventPublisher
 import com.org.meeple.core.common.lock.DistributedLock
@@ -7,9 +9,12 @@ import com.org.meeple.core.common.lock.LockKeyConstraints
 import com.org.meeple.core.common.time.TimeGenerator
 import com.org.meeple.core.match.TeamErrorCode
 import com.org.meeple.core.match.command.application.port.`in`.AcceptTeamInvitationUseCase
+import com.org.meeple.core.match.command.application.port.out.GetRecommendedTeamPort
 import com.org.meeple.core.match.command.application.port.out.GetTeamPort
+import com.org.meeple.core.match.command.application.port.out.SaveTeamMatchPort
 import com.org.meeple.core.match.command.application.port.out.SaveTeamPort
 import com.org.meeple.core.match.command.domain.Team
+import com.org.meeple.core.match.command.domain.TeamMatch
 import com.org.meeple.core.match.command.domain.event.TeamInvitationAccepted
 import com.org.meeple.core.match.command.domain.event.TeamInvitationCanceled
 import com.org.meeple.core.match.command.domain.event.TeamInvitationDeclined
@@ -27,6 +32,8 @@ import org.springframework.transaction.annotation.Transactional
 class AcceptTeamInvitationService(
 	private val getTeamPort: GetTeamPort,
 	private val saveTeamPort: SaveTeamPort,
+	private val getRecommendedTeamPort: GetRecommendedTeamPort,
+	private val saveTeamMatchPort: SaveTeamMatchPort,
 	private val timeGenerator: TimeGenerator,
 	private val domainEventPublisher: DomainEventPublisher,
 ) : AcceptTeamInvitationUseCase {
@@ -38,6 +45,10 @@ class AcceptTeamInvitationService(
 			?: throw BusinessException(TeamErrorCode.TEAM_NOT_FOUND)
 		val accepted: Team = saveTeamPort.save(team.acceptInvitation(userId))
 		deactivateOtherInvitations(userId, teamId)
+		// 전원 수락으로 팀이 결성(ACTIVE)되면, 구성원 개인 추천(recommended_teams)을 결성된 팀의 팀 매칭으로 승격한다.
+		if (accepted.status == TeamStatus.ACTIVE) {
+			promoteRecommendedTeams(accepted, timeGenerator.now())
+		}
 		// 초대받은 사람이 수락 → 초대했던 사람에게 알람이 가도록 이벤트 발행. (커밋 이후 핸들러가 처리)
 		// 초대자는 수락 직전(INVITING — 유일한 ACTIVE) 팀에서 읽는다. 수락 후엔 전원 ACTIVE라 초대자/수락자를 구분할 수 없다.
 		domainEventPublisher.publish(
@@ -72,6 +83,26 @@ class AcceptTeamInvitationService(
 			domainEventPublisher.publish(TeamInvitationDeclined(team.id, inviterUserId = inviterId, invitedUserId = invitedId))
 		} else {
 			domainEventPublisher.publish(TeamInvitationCanceled(team.id, inviterUserId = inviterId, invitedUserId = invitedId))
+		}
+	}
+
+	/**
+	 * 팀이 결성(ACTIVE)되면, 구성원들에게 개인 추천됐던 팀(recommended_teams)을 결성된 팀 [team]과의 팀 매칭으로 승격한다.
+	 * 추천 팀이 여전히 ACTIVE일 때만 PROPOSED 팀 매칭을 생성한다. (추천 없는 구성원·해체된 추천 팀은 스킵)
+	 * 두 구성원이 같은 팀을 추천받았으면 distinct로 한 번만 승격한다. (member_key 유니크 충돌 방지)
+	 */
+	private fun promoteRecommendedTeams(team: Team, now: LocalDateTime) {
+		val recommendedTeamIds: List<Long> = team.activeMemberIds()
+			.mapNotNull { memberId: Long -> getRecommendedTeamPort.findRecommendedTeamId(memberId) }
+			.distinct()
+			.filter { recommendedTeamId: Long -> recommendedTeamId != team.id }
+		recommendedTeamIds.forEach { recommendedTeamId: Long ->
+			val recommended: Team? = getTeamPort.findById(recommendedTeamId)
+			if (recommended != null && recommended.status == TeamStatus.ACTIVE) {
+				saveTeamMatchPort.save(
+					TeamMatch.propose(team.id, recommendedTeamId, TeamMatchType.RECOMMENDED, now),
+				)
+			}
 		}
 	}
 }

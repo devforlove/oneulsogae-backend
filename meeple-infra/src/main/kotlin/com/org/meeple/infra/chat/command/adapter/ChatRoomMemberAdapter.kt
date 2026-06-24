@@ -11,6 +11,7 @@ import com.org.meeple.core.chat.command.application.port.out.GetChatRoomMemberPo
 import com.org.meeple.core.chat.command.application.port.out.SaveChatRoomMemberPort
 import com.org.meeple.infra.chat.command.entity.ChatRoomMemberEntity
 import com.org.meeple.infra.chat.command.mapper.toDomain
+import com.org.meeple.infra.chat.command.mapper.toEntities
 import com.org.meeple.infra.chat.command.mapper.toEntity
 import com.org.meeple.infra.chat.command.repository.ChatRoomMemberJpaRepository
 import org.springframework.stereotype.Component
@@ -42,12 +43,10 @@ class ChatRoomMemberAdapter(
 	override fun save(member: ChatRoomMember): ChatRoomMember =
 		chatRoomMemberJpaRepository.save(member.toEntity()).toDomain()
 
-	override fun saveAll(members: ChatRoomMembers): ChatRoomMembers {
-		val entities: List<ChatRoomMemberEntity> = members.values.map { it.toEntity() }
-		return ChatRoomMembers(
-			chatRoomMemberJpaRepository.saveAll(entities).map { it.toDomain() },
+	override fun saveAll(members: ChatRoomMembers): ChatRoomMembers =
+		ChatRoomMembers(
+			chatRoomMemberJpaRepository.saveAll(members.toEntities()).map { it.toDomain() },
 		)
-	}
 
 	// chatting(발송 경로): 발신자가 그 방의 활성 참가자인지 존재 검증. (나간(DEACTIVE) 사용자는 발송 불가)
 	override fun existsByChatRoomIdAndUserId(chatRoomId: Long, userId: Long): Boolean =

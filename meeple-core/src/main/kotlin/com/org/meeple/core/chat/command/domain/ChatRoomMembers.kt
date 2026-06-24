@@ -32,6 +32,17 @@ data class ChatRoomMembers(
 	fun delete(now: LocalDateTime): ChatRoomMembers =
 		ChatRoomMembers(values.map { it.delete(now) })
 
+	/** [userIds]에 해당하는 참가자만 비활성(DEACTIVE)으로 전이한 (대상만 담은) 컬렉션을 반환한다. (팀 해체로 그 팀원의 채팅 입장을 막을 때) */
+	fun deactivate(userIds: Set<Long>): ChatRoomMembers =
+		ChatRoomMembers(values.filter { it.userId in userIds }.map { it.deactivate() })
+
+	/**
+	 * [excludedUserIds]를 제외한 활성 참가자가 새 메세지를 받은 것으로 안 읽은 개수를 올린 (대상만 담은) 컬렉션을 반환한다.
+	 * (팀 해체 안내 시스템 메세지를 방에 남는 상대 팀원에게 안 읽음으로 반영할 때)
+	 */
+	fun receiveExcept(excludedUserIds: Set<Long>): ChatRoomMembers =
+		ChatRoomMembers(values.filter { it.userId !in excludedUserIds && it.isActive }.map { it.receiveMessage() })
+
 	companion object {
 
 		/** 빈 참가자 목록. */

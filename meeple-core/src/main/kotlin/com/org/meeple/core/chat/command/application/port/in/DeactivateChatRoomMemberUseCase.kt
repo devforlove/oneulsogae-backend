@@ -1,0 +1,12 @@
+package com.org.meeple.core.chat.command.application.port.`in`
+
+/**
+ * 매칭의 채팅방에서 특정 사용자들의 참가를 비활성화하는 인포트.
+ * 팀 해체 시 나가는 팀원이 (성사된 매칭의) 채팅방에 더는 들어가지 못하도록, 그 팀원들의 참가자 행을 DEACTIVE로 전이한다.
+ * 방을 닫지는 않는다. (상대 팀의 참가는 유지)
+ */
+interface DeactivateChatRoomMemberUseCase {
+
+	/** [matchId]의 채팅방에서 [userIds] 참가자를 비활성화한다. 채팅방이 없으면 아무것도 하지 않는다. */
+	fun deactivate(matchId: Long, userIds: List<Long>)
+}

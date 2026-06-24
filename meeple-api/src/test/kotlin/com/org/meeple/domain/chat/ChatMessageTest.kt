@@ -1,5 +1,6 @@
 package com.org.meeple.domain.chat
 
+import com.org.meeple.common.chat.ChatMessageType
 import com.org.meeple.core.chat.ChatErrorCode
 import com.org.meeple.core.chat.command.domain.ChatMessage
 import com.org.meeple.core.common.error.BusinessException
@@ -50,6 +51,25 @@ class ChatMessageTest : DescribeSpec({
 			val message: ChatMessage = ChatMessage.create(chatRoomId, senderId, maxLength, now)
 
 			message.content.length shouldBe ChatMessage.MAX_CONTENT_LENGTH
+		}
+	}
+
+	describe("createSystem") {
+		it("발신자 없는 SYSTEM 안내 메세지를 생성한다") {
+			val message: ChatMessage = ChatMessage.createSystem(chatRoomId, "상대 팀이 채팅방을 나갔어요", now)
+
+			message.chatRoomId shouldBe chatRoomId
+			message.senderId shouldBe null
+			message.type shouldBe ChatMessageType.SYSTEM
+			message.content shouldBe "상대 팀이 채팅방을 나갔어요"
+			message.sentAt shouldBe now
+		}
+
+		it("본문이 비어 있으면 EMPTY_MESSAGE를 던진다") {
+			val exception: BusinessException = shouldThrow {
+				ChatMessage.createSystem(chatRoomId, "  ", now)
+			}
+			exception.errorCode shouldBe ChatErrorCode.EMPTY_MESSAGE
 		}
 	}
 })

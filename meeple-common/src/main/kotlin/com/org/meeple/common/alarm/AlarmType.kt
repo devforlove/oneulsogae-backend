@@ -26,4 +26,7 @@ enum class AlarmType(val description: String) {
 
 	/** [팀 매칭] 보낸 초대가 수락됨(초대받은 사람이 수락 → 초대자에게). */
 	TEAM_INVITATION_ACCEPTED("팀 초대 수락됨"),
+
+	/** [팀 매칭] 팀이 해체됨(해체를 실행한 구성원을 제외한 같은 팀의 남은 구성원에게). */
+	TEAM_DISBANDED("팀 해체됨"),
 }

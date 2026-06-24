@@ -1,6 +1,7 @@
 package com.org.meeple.infra.chat.command.mapper
 
 import com.org.meeple.core.chat.command.domain.ChatRoomMember
+import com.org.meeple.core.chat.command.domain.ChatRoomMembers
 import com.org.meeple.infra.chat.command.entity.ChatRoomMemberEntity
 import java.time.LocalDateTime
 
@@ -38,3 +39,7 @@ fun ChatRoomMember.toEntity(): ChatRoomMemberEntity =
 		if (id != 0L) it.id = id
 		deletedAt?.let { at: LocalDateTime -> it.softDelete(at) }
 	}
+
+/** 참가자 일급 컬렉션 -> 영속성 엔티티 목록. (어댑터가 [ChatRoomMembers.values]를 직접 들추지 않도록 변환을 캡슐화) */
+fun ChatRoomMembers.toEntities(): List<ChatRoomMemberEntity> =
+	values.map { member: ChatRoomMember -> member.toEntity() }

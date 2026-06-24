@@ -45,6 +45,16 @@ class MatchMembersTest : DescribeSpec({
 		}
 	}
 
+	describe("withMatchId") {
+		it("모든 참가자에 matchId를 채운 새 컬렉션을 돌려준다") {
+			val assigned: MatchMembers = members().withMatchId(9L)
+
+			assigned.values.all { it.matchId == 9L } shouldBe true
+			// 원본은 그대로(불변)
+			members().values.all { it.matchId == 0L } shouldBe true
+		}
+	}
+
 	describe("activateAll") {
 		it("전원을 ACTIVE로 승격한다") {
 			val activated: MatchMembers = members().apply(100L).apply(200L).activateAll()

@@ -51,6 +51,10 @@ data class MatchMembers(
 	fun applied(): List<MatchMember> =
 		values.filter { it.hasApplied }
 
+	/** 모든 참가자에 소속 매칭 id([matchId])를 채운 새 컬렉션. (헤더 저장으로 id를 얻은 뒤 영속화 직전에 호출) */
+	fun withMatchId(matchId: Long): MatchMembers =
+		MatchMembers(values.map { member: MatchMember -> member.copy(matchId = matchId) })
+
 	/** [userId] 참가자를 신청(APPLY) 처리한 새 컬렉션을 반환한다. */
 	fun apply(userId: Long): MatchMembers =
 		MatchMembers(values.map { if (it.userId == userId) it.apply() else it })

@@ -23,6 +23,11 @@ data class TeamMembers(
 	fun userIds(): List<Long> =
 		values.map { it.userId }
 
+	/** 활성([TeamMemberStatus.ACTIVE]) 구성원의 userId 목록. (결성된 팀이면 전원) */
+	fun activeMemberIds(): List<Long> =
+		values.filter { member: TeamMember -> member.status == TeamMemberStatus.ACTIVE }
+			.map { member: TeamMember -> member.userId }
+
 	/** [userId] 구성원을 찾는다. 없으면 null. */
 	fun find(userId: Long): TeamMember? =
 		values.firstOrNull { member: TeamMember -> member.userId == userId }
@@ -34,6 +39,10 @@ data class TeamMembers(
 	/** 초대 대상(유일한 INVITED 구성원)의 userId. (초대 단계(INVITING) 팀 기준) */
 	fun invitedId(): Long =
 		values.first { member: TeamMember -> member.status == TeamMemberStatus.INVITED }.userId
+
+	/** 모든 구성원에 소속 팀 id([teamId])를 채운 새 컬렉션. (헤더 저장으로 id를 얻은 뒤 영속화 직전에 호출) */
+	fun withTeamId(teamId: Long): TeamMembers =
+		TeamMembers(values.map { member: TeamMember -> member.copy(teamId = teamId) })
 
 	/** [userId] 구성원만 ACTIVE로 전환한 새 컬렉션. (나머지는 그대로) */
 	fun accept(userId: Long): TeamMembers =

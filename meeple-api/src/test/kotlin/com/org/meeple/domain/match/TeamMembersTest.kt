@@ -4,6 +4,7 @@ import com.org.meeple.common.match.TeamMemberStatus
 import com.org.meeple.core.match.command.domain.TeamMember
 import com.org.meeple.core.match.command.domain.TeamMembers
 import io.kotest.core.spec.style.DescribeSpec
+import io.kotest.matchers.collections.shouldContainExactlyInAnyOrder
 import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
 import java.time.LocalDateTime
@@ -38,6 +39,13 @@ class TeamMembersTest : DescribeSpec({
         }
     }
 
+    describe("activeMemberIds") {
+        it("ACTIVE 구성원의 userId만 돌려준다") {
+            invitingMembers().activeMemberIds() shouldBe listOf(ownerId)
+            invitingMembers().accept(invitedId).activeMemberIds() shouldContainExactlyInAnyOrder listOf(ownerId, invitedId)
+        }
+    }
+
     describe("accept") {
         it("해당 구성원만 ACTIVE로 바꾸고 나머지는 그대로 둔다") {
             val accepted: TeamMembers = invitingMembers().accept(invitedId)
@@ -51,6 +59,16 @@ class TeamMembersTest : DescribeSpec({
         it("전원 ACTIVE면 true, 하나라도 아니면 false다") {
             invitingMembers().allActive() shouldBe false
             invitingMembers().accept(invitedId).allActive() shouldBe true
+        }
+    }
+
+    describe("withTeamId") {
+        it("모든 구성원에 teamId를 채운 새 컬렉션을 돌려준다") {
+            val assigned: TeamMembers = invitingMembers().withTeamId(7L)
+
+            assigned.values.all { member: TeamMember -> member.teamId == 7L } shouldBe true
+            // 원본은 그대로(불변)
+            invitingMembers().values.all { member: TeamMember -> member.teamId == 0L } shouldBe true
         }
     }
 
