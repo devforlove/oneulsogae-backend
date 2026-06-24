@@ -1,5 +1,6 @@
 package com.org.meeple.domain.chat
 
+import com.org.meeple.common.chat.ChatRoomMatchType
 import com.org.meeple.common.chat.ChatRoomStatus
 import com.org.meeple.core.chat.ChatErrorCode
 import com.org.meeple.core.chat.command.domain.ChatRoom
@@ -22,9 +23,10 @@ class ChatRoomTest : DescribeSpec({
 	val matchId: Long = 42L
 
 	describe("open") {
-		it("매칭 id와 ACTIVE 상태, now + EXPIRATION 만료 시각으로 생성한다") {
-			val room: ChatRoom = ChatRoom.open(matchId = matchId, now = now)
+		it("매칭 타입·id와 ACTIVE 상태, now + EXPIRATION 만료 시각으로 생성한다") {
+			val room: ChatRoom = ChatRoom.open(matchType = ChatRoomMatchType.TEAM, matchId = matchId, now = now)
 
+			room.matchType shouldBe ChatRoomMatchType.TEAM
 			room.matchId shouldBe matchId
 			room.status shouldBe ChatRoomStatus.ACTIVE
 			room.expiredAt shouldBe now.plus(ChatRoom.EXPIRATION)
@@ -32,7 +34,7 @@ class ChatRoomTest : DescribeSpec({
 		}
 
 		it("마지막 메세지는 null로 시작한다") {
-			val room: ChatRoom = ChatRoom.open(matchId, now)
+			val room: ChatRoom = ChatRoom.open(ChatRoomMatchType.SOLO, matchId, now)
 
 			room.lastMessage shouldBe null
 			room.lastMessageAt shouldBe null

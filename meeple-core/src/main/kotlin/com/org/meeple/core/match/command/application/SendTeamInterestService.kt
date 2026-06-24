@@ -1,5 +1,6 @@
 package com.org.meeple.core.match.command.application
 
+import com.org.meeple.common.chat.ChatRoomMatchType
 import com.org.meeple.common.coin.CoinUsageType
 import com.org.meeple.common.match.MatchStatus
 import com.org.meeple.core.chat.command.application.port.`in`.SaveChatRoomUseCase
@@ -72,7 +73,7 @@ class SendTeamInterestService(
 		spend(userId, amount = teamMatch.dateAcceptAmount, usageType = CoinUsageType.MEETING_ACCEPT)
 		val allMemberIds: List<Long> = teams.flatMap { team: Team -> team.activeMemberIds() }
 		saveChatRoomUseCase.save(
-			SaveChatRoomCommand(matchId = teamMatch.id, participantUserIds = allMemberIds),
+			SaveChatRoomCommand(matchType = ChatRoomMatchType.TEAM, matchId = teamMatch.id, participantUserIds = allMemberIds),
 		)
 		domainEventPublisher.publish(
 			TeamMatchAccepted(teamMatchId = teamMatch.id, recipientUserIds = allMemberIds.filter { it != userId }),

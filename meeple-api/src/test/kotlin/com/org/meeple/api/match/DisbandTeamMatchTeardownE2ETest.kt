@@ -2,6 +2,7 @@ package com.org.meeple.api.match
 
 import com.org.meeple.common.alarm.AlarmType
 import com.org.meeple.common.chat.ChatMessageType
+import com.org.meeple.common.chat.ChatRoomMatchType
 import com.org.meeple.common.chat.ChatRoomMemberStatus
 import com.org.meeple.common.match.MatchStatus
 import com.org.meeple.common.match.MatchedTeamStatus
@@ -89,7 +90,7 @@ class DisbandTeamMatchTeardownE2ETest : AbstractIntegrationSupport({
 				val teamMatchId: Long = persistTeamMatch(myTeamId, opponentTeamId, MatchStatus.MATCHED)
 
 				// 성사 매칭의 채팅방 + 양 팀 참가자 (matchId == teamMatchId 전제)
-				val room = IntegrationUtil.persist(ChatRoomEntityFixture.create(matchId = teamMatchId))
+				val room = IntegrationUtil.persist(ChatRoomEntityFixture.create(matchType = ChatRoomMatchType.TEAM, matchId = teamMatchId))
 				val roomId: Long = room.id!!
 				listOf(ownerId, invitedUserId, oppOwnerId, oppInvitedUserId).forEach { uid: Long ->
 					IntegrationUtil.persist(ChatRoomMemberEntityFixture.create(chatRoomId = roomId, userId = uid))

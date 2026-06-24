@@ -1,6 +1,7 @@
 package com.org.meeple.infra.chat.command.adapter
 
 import com.org.meeple.chatting.chat.application.port.out.UpdateChatRoomPort
+import com.org.meeple.common.chat.ChatRoomMatchType
 import com.org.meeple.core.chat.command.domain.ChatRoom
 import com.org.meeple.core.chat.command.application.port.out.GetChatRoomPort
 import com.org.meeple.core.chat.command.application.port.out.SaveChatRoomPort
@@ -34,9 +35,9 @@ class ChatRoomAdapter(
 	override fun findByIdForUpdate(chatRoomId: Long): ChatRoom? =
 		chatRoomJpaRepository.findByIdForUpdate(chatRoomId)?.toDomain()
 
-	// 매칭 id 단건 조회. (match_id 유니크라 단건) 멱등 생성에서 기존 방 존재 확인에 쓴다.
-	override fun findByMatchId(matchId: Long): ChatRoom? =
-		chatRoomJpaRepository.findByMatchId(matchId)?.toDomain()
+	// 매칭 타입+id 단건 조회. ((match_type, match_id) 유니크라 단건) 멱등 생성에서 기존 방 존재 확인에 쓴다.
+	override fun findByMatchTypeAndMatchId(matchType: ChatRoomMatchType, matchId: Long): ChatRoom? =
+		chatRoomJpaRepository.findByMatchTypeAndMatchId(matchType, matchId)?.toDomain()
 
 	// 발송 경로(chatting): ACTIVE인 방만 마지막 메세지/시각을 조건부 UPDATE. (방을 로드하지 않는다. 이 UPDATE가 방 X락을 잡아 발송의 락 게이트도 겸한다)
 	override fun updateLastMessageIfActive(chatRoomId: Long, lastMessage: String, lastMessageAt: LocalDateTime): Boolean =

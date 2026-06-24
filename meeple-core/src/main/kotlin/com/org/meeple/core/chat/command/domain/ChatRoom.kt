@@ -1,5 +1,6 @@
 package com.org.meeple.core.chat.command.domain
 
+import com.org.meeple.common.chat.ChatRoomMatchType
 import com.org.meeple.common.chat.ChatRoomStatus
 import com.org.meeple.core.chat.ChatErrorCode
 import com.org.meeple.core.common.error.BusinessException
@@ -18,6 +19,7 @@ import java.time.LocalDateTime
  */
 data class ChatRoom(
 	val id: Long = 0,
+	val matchType: ChatRoomMatchType,
 	val matchId: Long,
 	val status: ChatRoomStatus = ChatRoomStatus.ACTIVE,
 	val expiredAt: LocalDateTime,
@@ -76,11 +78,12 @@ data class ChatRoom(
 
 		/**
 		 * 신규 채팅방을 생성한다. (status ACTIVE)
-		 * 어느 매칭에서 생성됐는지 [matchId]로 보관하고, 만료 시각(expiredAt)은 [now] + [EXPIRATION]으로 설정한다.
+		 * 어느 매칭에서 생성됐는지 [matchType](solo/team)+[matchId]로 보관하고, 만료 시각(expiredAt)은 [now] + [EXPIRATION]으로 설정한다.
 		 * 참가자는 방이 아니라 [ChatRoomMember]로 따로 생성한다. (방은 참가자 식별 컬럼을 들지 않는다)
 		 */
-		fun open(matchId: Long, now: LocalDateTime): ChatRoom =
+		fun open(matchType: ChatRoomMatchType, matchId: Long, now: LocalDateTime): ChatRoom =
 			ChatRoom(
+				matchType = matchType,
 				matchId = matchId,
 				status = ChatRoomStatus.ACTIVE,
 				expiredAt = now.plus(EXPIRATION),

@@ -1,5 +1,6 @@
 package com.org.meeple.core.chat.command.application
 
+import com.org.meeple.common.chat.ChatRoomMatchType
 import com.org.meeple.core.chat.command.application.port.`in`.DeactivateChatRoomMemberUseCase
 import com.org.meeple.core.chat.command.application.port.out.GetChatRoomMemberPort
 import com.org.meeple.core.chat.command.application.port.out.GetChatRoomPort
@@ -32,9 +33,9 @@ class DeactivateChatRoomMemberService(
 	private val timeGenerator: TimeGenerator,
 ) : DeactivateChatRoomMemberUseCase {
 
-	override fun deactivate(matchId: Long, userIds: List<Long>) {
+	override fun deactivate(matchType: ChatRoomMatchType, matchId: Long, userIds: List<Long>) {
 		if (userIds.isEmpty()) return
-		val chatRoom: ChatRoom = getChatRoomPort.findByMatchId(matchId) ?: return
+		val chatRoom: ChatRoom = getChatRoomPort.findByMatchTypeAndMatchId(matchType, matchId) ?: return
 		val leaving: Set<Long> = userIds.toSet()
 		val members: ChatRoomMembers = getChatRoomMemberPort.findAllByChatRoomId(chatRoom.id)
 		val now: LocalDateTime = timeGenerator.now()

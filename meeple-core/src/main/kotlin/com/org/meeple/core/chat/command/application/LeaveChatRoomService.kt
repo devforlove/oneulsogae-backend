@@ -1,5 +1,6 @@
 package com.org.meeple.core.chat.command.application
 
+import com.org.meeple.common.chat.ChatRoomMatchType
 import com.org.meeple.core.chat.ChatErrorCode
 import com.org.meeple.core.chat.command.application.port.`in`.LeaveChatRoomUseCase
 import com.org.meeple.core.chat.command.application.port.out.GetChatRoomMemberPort
@@ -60,17 +61,23 @@ class LeaveChatRoomService(
 		}
 	}
 
-	// 마지막 참가자가 나가 방이 닫힌다. 방·참가자 전체·연결 매칭을 모두 종료/소프트 삭제한다. (매칭 제거와 동일한 정리)
+	// 마지막 참가자가 나가 방이 닫힌다. 방·참가자 전체를 종료/소프트 삭제하고, 1:1(solo) 매칭이면 연결 매칭도 제거한다.
 	private fun closeChatRoom(chatRoom: ChatRoom) {
 		val now: LocalDateTime = timeGenerator.now()
 		saveChatRoomPort.save(chatRoom.delete(now))
 		saveChatRoomMemberPort.saveAll(getChatRoomMemberPort.findAllByChatRoomId(chatRoom.id).delete(now))
-		removeMatchUseCase.remove(chatRoom.matchId)
+		// 연결 매칭 제거는 1:1(solo) 매칭만 해당한다. (RemoveMatchUseCase는 solo_matches 전용)
+		// 팀(2:2) 매칭은 채팅방 나가기로 정리하지 않는다(팀 해체 흐름이 담당). matchId가 team_matches.id면 solo 매치를 잘못 건드리지 않도록 호출하지 않는다.
+		if (chatRoom.matchType == ChatRoomMatchType.SOLO) {
+			removeMatchUseCase.remove(chatRoom.matchId)
+		}
 	}
 
-	// 남은 참가자가 있으면 방·상대는 그대로 두고, 나가는 사용자의 채팅 참가자 행과 매칭 참가자를 비활성화한다.
+	// 남은 참가자가 있으면 방·상대는 그대로 두고, 나가는 사용자의 채팅 참가자 행을 비활성화한다. 1:1(solo)이면 매칭 참가자도 함께 비활성화한다.
 	private fun deactivateMember(chatRoom: ChatRoom, member: ChatRoomMember) {
 		saveChatRoomMemberPort.save(member.deactivate())
-		deactivateMatchMemberUseCase.deactivate(chatRoom.matchId, member.userId)
+		if (chatRoom.matchType == ChatRoomMatchType.SOLO) {
+			deactivateMatchMemberUseCase.deactivate(chatRoom.matchId, member.userId)
+		}
 	}
 }

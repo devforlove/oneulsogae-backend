@@ -1,5 +1,6 @@
 package com.org.meeple.core.match.command.application
 
+import com.org.meeple.common.chat.ChatRoomMatchType
 import com.org.meeple.core.chat.command.application.port.`in`.DeactivateChatRoomMemberUseCase
 import com.org.meeple.core.common.error.BusinessException
 import com.org.meeple.core.common.event.DomainEventPublisher
@@ -61,7 +62,7 @@ class DisbandTeamService(
 	private fun teardownMatches(teamId: Long, leavingMemberIds: List<Long>) {
 		getTeamMatchPort.findActiveByTeamId(teamId).forEach { teamMatch: TeamMatch ->
 			if (teamMatch.isMatched()) {
-				deactivateChatRoomMemberUseCase.deactivate(teamMatch.id, leavingMemberIds)
+				deactivateChatRoomMemberUseCase.deactivate(ChatRoomMatchType.TEAM, teamMatch.id, leavingMemberIds)
 			} else {
 				saveTeamMatchPort.save(teamMatch.close())
 			}

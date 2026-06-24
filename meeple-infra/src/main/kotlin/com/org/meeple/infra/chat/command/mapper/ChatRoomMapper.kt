@@ -8,6 +8,7 @@ import java.time.LocalDateTime
 fun ChatRoomEntity.toDomain(): ChatRoom =
 	ChatRoom(
 		id = id ?: 0,
+		matchType = matchType,
 		matchId = matchId,
 		status = status,
 		expiredAt = expiredAt,
@@ -23,6 +24,7 @@ fun ChatRoomEntity.toDomain(): ChatRoom =
  */
 fun ChatRoom.toEntity(): ChatRoomEntity =
 	ChatRoomEntity(
+		matchType = matchType,
 		matchId = matchId,
 		status = status,
 		expiredAt = expiredAt,

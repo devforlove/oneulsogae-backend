@@ -1,5 +1,6 @@
 package com.org.meeple.infra.chat.command.entity
 
+import com.org.meeple.common.chat.ChatRoomMatchType
 import com.org.meeple.common.chat.ChatRoomStatus
 import com.org.meeple.infra.common.BaseEntity
 import jakarta.persistence.Column
@@ -23,10 +24,16 @@ import java.time.LocalDateTime
 @Table(
 	name = "chat_rooms",
 	// 매칭당 채팅방은 1개. 동시/재시도로 인한 중복 생성을 DB에서 막는다. (멱등 생성의 최종 가드)
-	uniqueConstraints = [UniqueConstraint(name = "ux_match_id", columnNames = ["match_id"])],
+	// match_id는 solo_matches.id와 team_matches.id를 함께 가리키는 다형성 참조라, 타입(match_type)을 포함한 복합 유니크로 타입별 1방을 보장한다.
+	uniqueConstraints = [UniqueConstraint(name = "ux_match_type_match_id", columnNames = ["match_type", "match_id"])],
 )
 class ChatRoomEntity(
-	/** 이 채팅방을 생성시킨 매칭 id. */
+	/** 이 채팅방을 생성시킨 매칭의 종류(solo/team). match_id가 어느 테이블의 id인지 구분한다. */
+	@Enumerated(EnumType.STRING)
+	@Column(name = "match_type", nullable = false, columnDefinition = "varchar(20)")
+	val matchType: ChatRoomMatchType,
+
+	/** 이 채팅방을 생성시킨 매칭 id. (match_type에 따라 solo_matches.id 또는 team_matches.id) */
 	@Column(name = "match_id", nullable = false)
 	val matchId: Long,
 

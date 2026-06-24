@@ -3,6 +3,7 @@ package com.org.meeple.api.match
 import com.org.meeple.common.integration.AbstractIntegrationSupport
 import com.org.meeple.common.integration.delete
 import com.org.meeple.common.integration.expect
+import com.org.meeple.common.chat.ChatRoomMatchType
 import com.org.meeple.common.integration.get
 import com.org.meeple.common.match.MatchStatus
 import com.org.meeple.common.match.MatchedTeamStatus
@@ -133,7 +134,7 @@ class DisbandedTeamReadE2ETest : AbstractIntegrationSupport({
 				val teamMatchId: Long = persistMatchedMatch(myTeamId, opponentTeamId)
 
 				// 성사 매칭의 채팅방 + 양 팀 참가자 (matchId == teamMatchId 전제)
-				val roomId: Long = IntegrationUtil.persist(ChatRoomEntityFixture.create(matchId = teamMatchId)).id!!
+				val roomId: Long = IntegrationUtil.persist(ChatRoomEntityFixture.create(matchType = ChatRoomMatchType.TEAM, matchId = teamMatchId)).id!!
 				listOf(me, friend, opponentOwner, opponentFriend).forEach { uid: Long ->
 					IntegrationUtil.persist(ChatRoomMemberEntityFixture.create(chatRoomId = roomId, userId = uid))
 				}

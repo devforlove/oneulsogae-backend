@@ -1,5 +1,6 @@
 package com.org.meeple.core.chat.command.application.port.out
 
+import com.org.meeple.common.chat.ChatRoomMatchType
 import com.org.meeple.core.chat.command.domain.ChatRoom
 
 /**
@@ -18,6 +19,6 @@ interface GetChatRoomPort {
 	 */
 	fun findByIdForUpdate(chatRoomId: Long): ChatRoom?
 
-	/** 매칭 id로 채팅방을 조회한다. 없으면 null. (매칭당 1개이므로 단건, 멱등 생성 시 중복 방지용) */
-	fun findByMatchId(matchId: Long): ChatRoom?
+	/** 매칭 타입+id로 채팅방을 조회한다. 없으면 null. (타입별 매칭당 1개이므로 단건, 멱등 생성 시 중복 방지용) */
+	fun findByMatchTypeAndMatchId(matchType: ChatRoomMatchType, matchId: Long): ChatRoom?
 }

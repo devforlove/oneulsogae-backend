@@ -30,11 +30,11 @@ class SaveChatRoomService(
 
 	override fun save(command: SaveChatRoomCommand): ChatRoom {
 		// 멱등 생성: 이미 이 매칭의 채팅방이 있으면 새로 만들지 않고 그대로 반환한다. (이벤트 재전달/중복 호출 대비)
-		getChatRoomPort.findByMatchId(command.matchId)?.let { return it }
+		getChatRoomPort.findByMatchTypeAndMatchId(command.matchType, command.matchId)?.let { return it }
 
 		val now: LocalDateTime = timeGenerator.now()
 		val chatRoom: ChatRoom = saveChatRoomPort.save(
-			ChatRoom.open(matchId = command.matchId, now = now),
+			ChatRoom.open(matchType = command.matchType, matchId = command.matchId, now = now),
 		)
 		saveChatRoomMemberPort.saveAll(
 			ChatRoomMembers(

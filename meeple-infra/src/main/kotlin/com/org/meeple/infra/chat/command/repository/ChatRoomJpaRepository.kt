@@ -1,5 +1,6 @@
 package com.org.meeple.infra.chat.command.repository
 
+import com.org.meeple.common.chat.ChatRoomMatchType
 import com.org.meeple.infra.chat.command.entity.ChatRoomEntity
 import jakarta.persistence.LockModeType
 import org.springframework.data.jpa.repository.JpaRepository
@@ -16,8 +17,8 @@ import java.time.LocalDateTime
  */
 interface ChatRoomJpaRepository : JpaRepository<ChatRoomEntity, Long> {
 
-	/** 매칭 id로 채팅방을 단건 조회한다. 없으면 null. (match_id 유니크) */
-	fun findByMatchId(matchId: Long): ChatRoomEntity?
+	/** 매칭 타입+id로 채팅방을 단건 조회한다. 없으면 null. ((match_type, match_id) 유니크) */
+	fun findByMatchTypeAndMatchId(matchType: ChatRoomMatchType, matchId: Long): ChatRoomEntity?
 
 	/**
 	 * 변경 흐름에서 방 행을 비관적 쓰기 락으로 조회한다. (SELECT ... FOR UPDATE)

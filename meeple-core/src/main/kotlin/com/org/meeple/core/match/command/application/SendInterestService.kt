@@ -1,5 +1,6 @@
 package com.org.meeple.core.match.command.application
 
+import com.org.meeple.common.chat.ChatRoomMatchType
 import com.org.meeple.common.coin.CoinUsageType
 import com.org.meeple.common.match.MatchStatus
 import com.org.meeple.core.chat.command.application.port.`in`.SaveChatRoomUseCase
@@ -68,7 +69,7 @@ class SendInterestService(
 		spend(userId, amount = match.datingAcceptAmount, usageType = CoinUsageType.DATING_ACCEPT)
 		// 채팅방 생성은 성사의 필수 산출물이라 같은 트랜잭션에서 동기로 처리한다. (실패 시 함께 롤백)
 		saveChatRoomUseCase.save(
-			SaveChatRoomCommand(matchId = match.id, participantUserIds = match.participantUserIds()),
+			SaveChatRoomCommand(matchType = ChatRoomMatchType.SOLO, matchId = match.id, participantUserIds = match.participantUserIds()),
 		)
 		// 성사 알람만 이벤트로 위임한다. (수락자는 이번에 관심을 보낸 본인)
 		domainEventPublisher.publish(MatchAccepted.from(match, acceptedByUserId = userId))
