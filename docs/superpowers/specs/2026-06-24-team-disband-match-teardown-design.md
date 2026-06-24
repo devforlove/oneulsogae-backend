@@ -3,6 +3,10 @@
 작성일: 2026-06-24
 브랜치: feat/team-match-promotion
 
+> **정정 (2026-06-24):** 알림 수신자는 "상대 팀(매칭된 상대) 구성원"이 아니라 **해체를 실행한 구성원을 제외한 같은 팀의 남은 구성원**이다.
+> 아래 본문의 "상대 팀 알림" 관련 서술은 이 정정으로 대체된다. 매칭 정리(미성사 CLOSED 종료 / MATCHED 유지 + 나간 팀원 채팅 차단)는 그대로다.
+> 구현 반영: 이벤트 `TeamDisbanded`, 알림타입 `TEAM_DISBANDED("팀 해체됨")`, 문구 "함께하던 팀이 해체되었어요."
+
 ## 배경 / 목표
 
 `DisbandTeamService.disband(userId, teamId)`는 현재 팀과 팀원만 비활성화(`TeamStatus.DEACTIVATED`)하고, 그 팀이 참여 중이던

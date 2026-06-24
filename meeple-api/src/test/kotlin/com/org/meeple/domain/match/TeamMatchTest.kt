@@ -76,18 +76,12 @@ class TeamMatchTest : DescribeSpec({
 		}
 	}
 
-	describe("isMatched / opponentTeamIdOf") {
+	describe("isMatched") {
 		it("isMatched는 status가 MATCHED일 때만 true다") {
 			val proposed: TeamMatch = TeamMatch.propose(10L, 20L, TeamMatchType.RECOMMENDED, now)
 
 			proposed.isMatched() shouldBe false
 			proposed.copy(status = MatchStatus.MATCHED).isMatched() shouldBe true
-		}
-
-		it("opponentTeamIdOf는 내 팀이 아닌 상대 팀 id를 돌려준다") {
-			val teamMatch: TeamMatch = TeamMatch.propose(10L, 20L, TeamMatchType.RECOMMENDED, now)
-
-			teamMatch.opponentTeamIdOf(10L) shouldBe 20L
 		}
 	}
 })

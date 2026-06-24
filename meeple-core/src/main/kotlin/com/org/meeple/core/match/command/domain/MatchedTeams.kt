@@ -28,10 +28,6 @@ data class MatchedTeams(
 	fun deactivateAll(): MatchedTeams =
 		MatchedTeams(values.map { matchedTeam: MatchedTeam -> matchedTeam.deactivate() })
 
-	/** [teamId]가 아닌 상대 팀의 teamId. (2:2 매칭이므로 한 팀) */
-	fun opponentTeamIdOf(teamId: Long): Long =
-		values.first { matchedTeam: MatchedTeam -> matchedTeam.teamId != teamId }.teamId
-
 	companion object {
 
 		/** teamId들로 참가 팀 목록을 만든다. (teamMatchId는 저장 시 채워진다) */

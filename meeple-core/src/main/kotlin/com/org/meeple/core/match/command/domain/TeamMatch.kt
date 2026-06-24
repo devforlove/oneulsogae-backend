@@ -40,10 +40,6 @@ data class TeamMatch(
 	fun isMatched(): Boolean =
 		status == MatchStatus.MATCHED
 
-	/** [teamId]가 아닌 상대 팀의 teamId. */
-	fun opponentTeamIdOf(teamId: Long): Long =
-		matchedTeams.opponentTeamIdOf(teamId)
-
 	companion object {
 
 		/** 팀 매칭의 유효 기간. 생성 시각으로부터 이 기간이 지나면 만료된 것으로 본다. */

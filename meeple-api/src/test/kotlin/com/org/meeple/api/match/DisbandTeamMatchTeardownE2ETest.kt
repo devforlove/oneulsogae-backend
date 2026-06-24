@@ -31,9 +31,10 @@ import java.time.LocalDate
 import java.time.LocalDateTime
 
 /**
- * 팀 해체 시 매칭 정리·채팅 차단·상대 알림 E2E.
- * - 성사(MATCHED) 매칭: 그대로 유지, 나간 팀원의 chatroom_member만 DEACTIVE, 상대에게 알림
- * - 미성사(PROPOSED) 매칭: CLOSED + matched_teams DEACTIVE, 상대에게 알림
+ * 팀 해체 시 매칭 정리·채팅 차단·팀원 알림 E2E.
+ * - 성사(MATCHED) 매칭: 그대로 유지, 나간 팀원의 chatroom_member만 DEACTIVE
+ * - 미성사(PROPOSED) 매칭: CLOSED + matched_teams DEACTIVE
+ * 알림 수신자는 해체 실행자를 제외한 같은 팀의 남은 구성원이며, 상대 팀은 받지 않는다.
  */
 class DisbandTeamMatchTeardownE2ETest : AbstractIntegrationSupport({
 
@@ -75,7 +76,7 @@ class DisbandTeamMatchTeardownE2ETest : AbstractIntegrationSupport({
 	describe("DELETE /teams/v1/{teamId} — 매칭 정리") {
 
 		context("성사(MATCHED) 매칭이 있는 팀을 해체하면") {
-			it("매칭은 유지되고, 나간 팀원의 채팅 참가만 비활성화되며, 상대 팀원에게 알림이 간다") {
+			it("매칭은 유지되고, 나간 팀원의 채팅 참가만 비활성화되며, 남은 팀원에게 알림이 간다") {
 				val ownerId = 5001L
 				val invitedUserId = 5002L
 				val oppOwnerId = 5003L
@@ -103,14 +104,16 @@ class DisbandTeamMatchTeardownE2ETest : AbstractIntegrationSupport({
 				memberStatus(roomId, invitedUserId) shouldBe ChatRoomMemberStatus.DEACTIVE
 				memberStatus(roomId, oppOwnerId) shouldBe ChatRoomMemberStatus.ACTIVE
 				memberStatus(roomId, oppInvitedUserId) shouldBe ChatRoomMemberStatus.ACTIVE
-				// 상대 팀원에게 알림
-				disbandAlarms(oppOwnerId).size shouldBe 1
-				disbandAlarms(oppInvitedUserId).size shouldBe 1
+				// 해체 실행자(invitedUserId) 제외, 남은 팀원(ownerId)에게만 알림. 상대 팀은 받지 않는다
+				disbandAlarms(ownerId).size shouldBe 1
+				disbandAlarms(invitedUserId).size shouldBe 0
+				disbandAlarms(oppOwnerId).size shouldBe 0
+				disbandAlarms(oppInvitedUserId).size shouldBe 0
 			}
 		}
 
 		context("미성사(PROPOSED) 매칭이 있는 팀을 해체하면") {
-			it("매칭이 CLOSED로 종료되고, 상대 팀원에게 알림이 간다") {
+			it("매칭이 CLOSED로 종료되고, 남은 팀원에게 알림이 간다") {
 				val ownerId = 5101L
 				val invitedUserId = 5102L
 				val oppOwnerId = 5103L
@@ -127,8 +130,11 @@ class DisbandTeamMatchTeardownE2ETest : AbstractIntegrationSupport({
 				teamMatchStatus(teamMatchId) shouldBe MatchStatus.CLOSED
 				matchedTeamStatus(teamMatchId, myTeamId) shouldBe MatchedTeamStatus.DEACTIVE
 				matchedTeamStatus(teamMatchId, opponentTeamId) shouldBe MatchedTeamStatus.DEACTIVE
-				disbandAlarms(oppOwnerId).size shouldBe 1
-				disbandAlarms(oppInvitedUserId).size shouldBe 1
+				// 해체 실행자(invitedUserId) 제외, 남은 팀원(ownerId)에게만 알림
+				disbandAlarms(ownerId).size shouldBe 1
+				disbandAlarms(invitedUserId).size shouldBe 0
+				disbandAlarms(oppOwnerId).size shouldBe 0
+				disbandAlarms(oppInvitedUserId).size shouldBe 0
 			}
 		}
 	}
@@ -165,5 +171,5 @@ private fun memberStatus(chatRoomId: Long, userId: Long): ChatRoomMemberStatus {
 private fun disbandAlarms(userId: Long): List<AlarmEntity> {
 	val q = QAlarmEntity.alarmEntity
 	return IntegrationUtil.getQuery().selectFrom(q)
-		.where(q.userId.eq(userId).and(q.type.eq(AlarmType.MANY_TO_MANY_OPPONENT_DISBANDED))).fetch()
+		.where(q.userId.eq(userId).and(q.type.eq(AlarmType.TEAM_DISBANDED))).fetch()
 }
