@@ -28,6 +28,26 @@ data class MatchedTeams(
 	fun deactivateAll(): MatchedTeams =
 		MatchedTeams(values.map { matchedTeam: MatchedTeam -> matchedTeam.deactivate() })
 
+	/** [teamId]가 이 팀 매칭의 참가 팀인지 여부. */
+	fun isParticipant(teamId: Long): Boolean =
+		values.any { matchedTeam: MatchedTeam -> matchedTeam.teamId == teamId }
+
+	/** [teamId] 팀을 신청(APPLY) 처리한 새 컬렉션을 반환한다. (나머지는 그대로) */
+	fun apply(teamId: Long): MatchedTeams =
+		MatchedTeams(values.map { matchedTeam: MatchedTeam -> if (matchedTeam.teamId == teamId) matchedTeam.apply() else matchedTeam })
+
+	/** 모든 참가 팀이 신청했는지 여부. (참가 팀이 있고 전원 APPLY/ACTIVE) */
+	fun allApplied(): Boolean =
+		values.isNotEmpty() && values.all { matchedTeam: MatchedTeam -> matchedTeam.hasApplied }
+
+	/** 한 팀이라도 신청했는지 여부. */
+	fun anyApplied(): Boolean =
+		values.any { matchedTeam: MatchedTeam -> matchedTeam.hasApplied }
+
+	/** 모든 참가 팀을 활성(ACTIVE)으로 승격한 새 컬렉션을 반환한다. (양 팀 신청으로 성사 시) */
+	fun activateAll(): MatchedTeams =
+		MatchedTeams(values.map { matchedTeam: MatchedTeam -> matchedTeam.activate() })
+
 	companion object {
 
 		/** teamId들로 참가 팀 목록을 만든다. (teamMatchId는 저장 시 채워진다) */
