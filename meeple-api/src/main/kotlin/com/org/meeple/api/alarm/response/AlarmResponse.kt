@@ -1,7 +1,10 @@
 package com.org.meeple.api.alarm.response
 
 import com.org.meeple.common.alarm.AlarmType
+import com.org.meeple.core.alarm.query.dto.AlarmFrom
+import com.org.meeple.core.alarm.query.dto.AlarmFroms
 import com.org.meeple.core.alarm.query.dto.AlarmView
+import com.org.meeple.core.alarm.query.dto.AlarmViews
 import com.org.meeple.core.alarm.query.dto.AlarmsResult
 import java.time.LocalDateTime
 
@@ -43,9 +46,16 @@ data class AlarmResponse(
 		 * 발신 유저 프로필([AlarmsResult.froms])을 userId로 색인해 각 알람의 [froms]에 매핑한다. (IN 조회 1회로 모은 결과를 재사용)
 		 */
 		fun listOf(result: AlarmsResult): List<AlarmResponse> {
-			val fromByUserId: Map<Long, AlarmFromResponse> =
-				result.froms.values.associate { it.userId to AlarmFromResponse.of(it) }
-			return result.alarms.values.map { of(it, fromByUserId) }
+			val fromByUserId: Map<Long, AlarmFromResponse> = result.froms.toResponseByUserId()
+			return result.alarms.toResponses(fromByUserId)
 		}
+
+		// 발신 유저 프로필을 userId로 색인해 응답으로 변환한다. (수신자 자신의 목록만 순회 — values 노출 캡슐화)
+		private fun AlarmFroms.toResponseByUserId(): Map<Long, AlarmFromResponse> =
+			values.associate { from: AlarmFrom -> from.userId to AlarmFromResponse.of(from) }
+
+		// 알람 목록을 응답 목록으로 변환한다. (수신자 자신의 목록만 순회 — values 노출 캡슐화)
+		private fun AlarmViews.toResponses(fromByUserId: Map<Long, AlarmFromResponse>): List<AlarmResponse> =
+			values.map { alarm: AlarmView -> of(alarm, fromByUserId) }
 	}
 }
