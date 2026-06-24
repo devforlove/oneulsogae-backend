@@ -35,6 +35,21 @@ data class ChatMessage(
 			return ChatMessage(chatRoomId = chatRoomId, senderId = senderId, content = content, sentAt = now)
 		}
 
+		/**
+		 * 시스템(SYSTEM) 안내 메세지를 생성한다. (예: 상대 팀이 채팅방을 나감)
+		 * 보낸 사람이 없어 [senderId]는 null이다. 본문을 검증(빈 값/최대 길이)한 뒤 [now]를 생성 시각으로 둔다.
+		 */
+		fun createSystem(chatRoomId: Long, content: String, now: LocalDateTime): ChatMessage {
+			validateContent(content)
+			return ChatMessage(
+				chatRoomId = chatRoomId,
+				senderId = null,
+				content = content,
+				type = ChatMessageType.SYSTEM,
+				sentAt = now,
+			)
+		}
+
 		private fun validateContent(content: String) {
 			if (content.isBlank()) {
 				throw BusinessException(ChatErrorCode.EMPTY_MESSAGE)

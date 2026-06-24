@@ -1,6 +1,7 @@
 package com.org.meeple.api.match
 
 import com.org.meeple.common.alarm.AlarmType
+import com.org.meeple.common.chat.ChatMessageType
 import com.org.meeple.common.chat.ChatRoomMemberStatus
 import com.org.meeple.common.match.MatchStatus
 import com.org.meeple.common.match.MatchedTeamStatus
@@ -12,7 +13,9 @@ import com.org.meeple.common.integration.expect
 import com.org.meeple.common.integration.post
 import com.org.meeple.infra.alarm.command.entity.AlarmEntity
 import com.org.meeple.infra.alarm.command.entity.QAlarmEntity
+import com.org.meeple.infra.chat.command.entity.ChatMessageEntity
 import com.org.meeple.infra.chat.command.entity.ChatRoomMemberEntity
+import com.org.meeple.infra.chat.command.entity.QChatMessageEntity
 import com.org.meeple.infra.chat.command.entity.QChatRoomEntity
 import com.org.meeple.infra.chat.command.entity.QChatRoomMemberEntity
 import com.org.meeple.infra.fixture.ChatRoomEntityFixture
@@ -109,6 +112,14 @@ class DisbandTeamMatchTeardownE2ETest : AbstractIntegrationSupport({
 				disbandAlarms(invitedUserId).size shouldBe 0
 				disbandAlarms(oppOwnerId).size shouldBe 0
 				disbandAlarms(oppInvitedUserId).size shouldBe 0
+				// 채팅방에 "상대 팀이 채팅방을 나갔어요" 시스템 메세지가 남고, 남은 상대 팀원의 안 읽음이 오른다
+				val systemMessages: List<ChatMessageEntity> =
+					chatMessages(roomId).filter { it.type == ChatMessageType.SYSTEM }
+				systemMessages.size shouldBe 1
+				systemMessages.first().content shouldBe "상대 팀이 채팅방을 나갔어요"
+				systemMessages.first().senderId shouldBe null
+				memberUnread(roomId, oppOwnerId) shouldBe 1
+				memberUnread(roomId, oppInvitedUserId) shouldBe 1
 			}
 		}
 
@@ -141,6 +152,7 @@ class DisbandTeamMatchTeardownE2ETest : AbstractIntegrationSupport({
 
 	afterTest {
 		IntegrationUtil.deleteAll(QAlarmEntity.alarmEntity)
+		IntegrationUtil.deleteAll(QChatMessageEntity.chatMessageEntity)
 		IntegrationUtil.deleteAll(QChatRoomMemberEntity.chatRoomMemberEntity)
 		IntegrationUtil.deleteAll(QChatRoomEntity.chatRoomEntity)
 		IntegrationUtil.deleteAll(QMatchedTeamEntity.matchedTeamEntity)
@@ -165,6 +177,17 @@ private fun matchedTeamStatus(teamMatchId: Long, teamId: Long): MatchedTeamStatu
 private fun memberStatus(chatRoomId: Long, userId: Long): ChatRoomMemberStatus {
 	val q = QChatRoomMemberEntity.chatRoomMemberEntity
 	return IntegrationUtil.getQuery().select(q.status).from(q)
+		.where(q.chatRoomId.eq(chatRoomId).and(q.userId.eq(userId))).fetchOne()!!
+}
+
+private fun chatMessages(chatRoomId: Long): List<ChatMessageEntity> {
+	val q = QChatMessageEntity.chatMessageEntity
+	return IntegrationUtil.getQuery().selectFrom(q).where(q.chatRoomId.eq(chatRoomId)).fetch()
+}
+
+private fun memberUnread(chatRoomId: Long, userId: Long): Int {
+	val q = QChatRoomMemberEntity.chatRoomMemberEntity
+	return IntegrationUtil.getQuery().select(q.unreadCount).from(q)
 		.where(q.chatRoomId.eq(chatRoomId).and(q.userId.eq(userId))).fetchOne()!!
 }
 
