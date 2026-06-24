@@ -23,4 +23,11 @@ object LockKeyConstraints {
 	 * 수락(invited)과 초대취소(owner) 동시 요청으로 인한 ACTIVE↔DEACTIVATED lost update를 막는다.
 	 */
 	const val TEAM_LIFECYCLE: String = "TEAM_LIFECYCLE"
+
+	/**
+	 * 팀 매칭 관심(신청/수락) 처리 락. teamMatchId로 잠가 같은 팀 매칭의 상태 변경을 직렬화한다.
+	 * 두 팀이 공유하는 "팀 매칭"이 경합 대상이므로 userId/teamId가 아니라 teamMatchId로 잠근다.
+	 * 동시 요청·더블클릭으로 인한 lost update·코인 이중 차감을 막는다. (waitTime=0이면 겹친 요청은 즉시 실패)
+	 */
+	const val TEAM_MATCH_INTEREST: String = "TEAM_MATCH_INTEREST"
 }
