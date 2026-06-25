@@ -1,5 +1,6 @@
 package com.org.meeple.api.chat
 
+import com.org.meeple.common.chat.ChatRoomMatchType
 import com.org.meeple.common.chat.ChatRoomMemberStatus
 import com.org.meeple.common.chat.ChatRoomStatus
 import com.org.meeple.common.integration.AbstractIntegrationSupport
@@ -49,6 +50,23 @@ class MyChatRoomsE2ETest : AbstractIntegrationSupport({
 		members.forEach { (memberUserId: Long, unreadCount: Int) ->
 			IntegrationUtil.persist(
 				ChatRoomMemberEntityFixture.create(chatRoomId = roomId, userId = memberUserId, unreadCount = unreadCount),
+			)
+		}
+		return roomId
+	}
+
+	// TEAM(2:2) 방과 참가자 행들을 함께 저장한다. members: (userId, unreadCount, teamId) 목록.
+	fun openTeamRoomWithMembers(
+		matchId: Long,
+		members: List<Triple<Long, Int, Long?>>,
+	): Long {
+		val room: ChatRoomEntity = IntegrationUtil.persist(
+			ChatRoomEntityFixture.create(matchType = ChatRoomMatchType.TEAM, matchId = matchId),
+		)
+		val roomId: Long = room.id!!
+		members.forEach { (memberUserId: Long, unreadCount: Int, teamId: Long?) ->
+			IntegrationUtil.persist(
+				ChatRoomMemberEntityFixture.create(chatRoomId = roomId, userId = memberUserId, unreadCount = unreadCount, teamId = teamId),
 			)
 		}
 		return roomId
@@ -269,6 +287,44 @@ class MyChatRoomsE2ETest : AbstractIntegrationSupport({
 			it("401을 반환한다") {
 				get("/chat/v1/rooms") {} expect {
 					status(401)
+				}
+			}
+		}
+
+		context("TEAM(2:2) 매칭 채팅방을 조회하면") {
+			it("내 팀원을 제외하고 상대 팀 구성원만 participants로 내려준다") {
+				val userId = 7201L
+				val teammate = 7202L
+				val opponentA = 7203L
+				val opponentB = 7204L
+				val myTeamId = 100L
+				val oppTeamId = 200L
+
+				// 팀원도 프로필을 둬서, 팀원이 '프로필 없음'이 아니라 팀 필터로 빠지는 것을 검증한다
+				IntegrationUtil.persist(UserDetailEntityFixture.create(userId = teammate, nickname = "내팀원", gender = Gender.MALE))
+				IntegrationUtil.persist(UserDetailEntityFixture.create(userId = opponentA, nickname = "상대A", gender = Gender.FEMALE))
+				IntegrationUtil.persist(UserDetailEntityFixture.create(userId = opponentB, nickname = "상대B", gender = Gender.FEMALE))
+
+				openTeamRoomWithMembers(
+					matchId = 50L,
+					members = listOf(
+						Triple(userId, 3, myTeamId),
+						Triple(teammate, 0, myTeamId),
+						Triple(opponentA, 0, oppTeamId),
+						Triple(opponentB, 0, oppTeamId),
+					),
+				)
+
+				get("/chat/v1/rooms") {
+					bearer(accessTokenFor(userId))
+				} expect {
+					status(200)
+					body("success", true)
+					body("data.size()", 1)
+					// 상대 팀 2명만 (내 팀원 제외)
+					body("data[0].participants.size()", 2)
+					body("data[0].participants.userId", hasItems(opponentA.toInt(), opponentB.toInt()))
+					body("data[0].unreadCount", 3) // 본인 관점
 				}
 			}
 		}

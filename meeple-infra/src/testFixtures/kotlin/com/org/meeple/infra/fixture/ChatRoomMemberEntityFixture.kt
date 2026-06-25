@@ -13,6 +13,7 @@ object ChatRoomMemberEntityFixture {
 	fun create(
 		chatRoomId: Long = 1L,
 		userId: Long = 1L,
+		teamId: Long? = null,
 		status: ChatRoomMemberStatus = ChatRoomMemberStatus.ACTIVE,
 		unreadCount: Int = 0,
 		lastReadAt: LocalDateTime? = null,
@@ -23,6 +24,7 @@ object ChatRoomMemberEntityFixture {
 		ChatRoomMemberEntity(
 			chatRoomId = chatRoomId,
 			userId = userId,
+			teamId = teamId,
 			status = status,
 			unreadCount = unreadCount,
 			lastReadAt = lastReadAt,

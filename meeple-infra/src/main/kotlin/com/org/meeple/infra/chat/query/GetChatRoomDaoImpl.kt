@@ -100,30 +100,34 @@ class GetChatRoomDaoImpl(
 	 * 그룹 키(chat_room_id)는 [ChatParticipant]에 담지 않고 묶음 키로만 쓰며, 참가자 행마다 [ChatParticipant]를 바로 만든다.
 	 * 나간(DEACTIVE) 참가자도 프로필 노출을 위해 status로 거르지 않는다. (나가기가 소프트 삭제가 아니라 @SQLRestriction이 이들을 빼지 않으므로 네이티브 없이 충분하다)
 	 * 프로필(user_details)은 @SQLRestriction으로 soft delete된 행이 자동 제외되고, gender는 enum 그대로 투영된다. 조회자(나)는 where에서 제외한다.
+	 * TEAM 방에서는 내 행(me)을 self-join해 상대 팀만(partner.team_id != me.team_id) 남긴다. SOLO는 me.team_id가 null이라 전원 유지.
 	 */
 	private fun findPartnerParticipants(roomIds: List<Long>, userId: Long): Map<Long, List<ChatParticipant>> {
-		val chatRoomMember: QChatRoomMemberEntity = QChatRoomMemberEntity.chatRoomMemberEntity
+		val partner: QChatRoomMemberEntity = QChatRoomMemberEntity("partner")
+		val me: QChatRoomMemberEntity = QChatRoomMemberEntity("me")
 		val userDetail: QUserDetailEntity = QUserDetailEntity.userDetailEntity
 
 		return queryFactory
-			.from(chatRoomMember)
-			.join(userDetail).on(userDetail.userId.eq(chatRoomMember.userId))
+			.from(partner)
+			.join(me).on(me.chatRoomId.eq(partner.chatRoomId).and(me.userId.eq(userId)))
+			.join(userDetail).on(userDetail.userId.eq(partner.userId))
 			.where(
-				chatRoomMember.chatRoomId.`in`(roomIds),
-				chatRoomMember.userId.ne(userId),
+				partner.chatRoomId.`in`(roomIds),
+				partner.userId.ne(userId),
+				me.teamId.isNull.or(partner.teamId.ne(me.teamId)),
 			)
-			.orderBy(chatRoomMember.chatRoomId.asc(), chatRoomMember.userId.asc())
+			.orderBy(partner.chatRoomId.asc(), partner.userId.asc())
 			.transform(
-				GroupBy.groupBy(chatRoomMember.chatRoomId).`as`(
+				GroupBy.groupBy(partner.chatRoomId).`as`(
 					GroupBy.list(
 						Projections.constructor(
 							ChatParticipant::class.java,
-							chatRoomMember.userId,
+							partner.userId,
 							userDetail.nickname,
 							userDetail.profileImageCode,
 							userDetail.gender,
-							chatRoomMember.lastReadMessageId,
-							chatRoomMember.status.eq(ChatRoomMemberStatus.ACTIVE),
+							partner.lastReadMessageId,
+							partner.status.eq(ChatRoomMemberStatus.ACTIVE),
 						),
 					),
 				),
