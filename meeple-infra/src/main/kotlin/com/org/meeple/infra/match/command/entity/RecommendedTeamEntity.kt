@@ -3,6 +3,7 @@ package com.org.meeple.infra.match.command.entity
 import com.org.meeple.infra.common.BaseEntity
 import jakarta.persistence.Column
 import jakarta.persistence.Entity
+import jakarta.persistence.Index
 import jakarta.persistence.Table
 import jakarta.persistence.UniqueConstraint
 import java.time.LocalDate
@@ -19,6 +20,10 @@ import java.time.LocalDate
 	uniqueConstraints = [
 		// 솔로 유저당 추천 1개. 일일 배치가 이 키로 교체(upsert)한다.
 		UniqueConstraint(name = "ux_user_id", columnNames = ["user_id"]),
+	],
+	indexes = [
+		// 오늘 추천된(recommended_date = today) 유저 제외 seek용. (일일 팀 추천 배치)
+		Index(name = "idx_recommended_date", columnList = "recommended_date"),
 	],
 )
 class RecommendedTeamEntity(

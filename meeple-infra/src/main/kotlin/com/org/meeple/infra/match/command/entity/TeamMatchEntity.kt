@@ -7,6 +7,7 @@ import jakarta.persistence.Column
 import jakarta.persistence.Entity
 import jakarta.persistence.EnumType
 import jakarta.persistence.Enumerated
+import jakarta.persistence.Index
 import jakarta.persistence.Table
 import jakarta.persistence.UniqueConstraint
 import org.hibernate.annotations.SQLRestriction
@@ -26,6 +27,12 @@ import java.time.LocalDateTime
 	name = "team_matches",
 	uniqueConstraints = [
 		UniqueConstraint(name = "ux_member_key", columnNames = ["member_key"]),
+	],
+	indexes = [
+		// 성사(status = MATCHED) 팀 제외 seek용. (일일 팀 매칭 배치)
+		Index(name = "idx_status", columnList = "status"),
+		// 오늘 소개된(introduced_date = today) 팀 제외 seek용. (일일 팀 매칭 배치)
+		Index(name = "idx_introduced_date", columnList = "introduced_date"),
 	],
 )
 class TeamMatchEntity(
