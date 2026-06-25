@@ -19,7 +19,7 @@ class ChatRoomMembersTest : DescribeSpec({
 	val roomId: Long = 100L
 
 	fun member(userId: Long, exited: Boolean = false): ChatRoomMember =
-		ChatRoomMember.join(chatRoomId = roomId, userId = userId, now = now)
+		ChatRoomMember.join(chatRoomId = roomId, userId = userId, teamId = null, now = now)
 			.let { if (exited) it.exit(now.plusHours(1)) else it }
 
 	describe("partnersOf") {

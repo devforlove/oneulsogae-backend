@@ -5,6 +5,7 @@ import com.org.meeple.common.coin.CoinUsageType
 import com.org.meeple.common.match.MatchStatus
 import com.org.meeple.core.chat.command.application.port.`in`.SaveChatRoomUseCase
 import com.org.meeple.core.chat.command.application.port.`in`.command.SaveChatRoomCommand
+import com.org.meeple.core.chat.command.application.port.`in`.command.SaveChatRoomParticipant
 import com.org.meeple.core.coin.command.application.port.`in`.SpendCoinUseCase
 import com.org.meeple.core.coin.command.application.port.`in`.command.SpendCoinCommand
 import com.org.meeple.core.common.error.BusinessException
@@ -71,12 +72,14 @@ class SendTeamInterestService(
 	/** 성사된 경우: 수락 비용 차감 + 4인 채팅방 생성(동기) + 성사 알림 위임(행위자 제외 양 팀 구성원). */
 	private fun completeMatch(userId: Long, teamMatch: TeamMatch, teams: List<Team>): TeamMatch {
 		spend(userId, amount = teamMatch.dateAcceptAmount, usageType = CoinUsageType.MEETING_ACCEPT)
-		val allMemberIds: List<Long> = teams.flatMap { team: Team -> team.activeMemberIds() }
+		val participants: List<SaveChatRoomParticipant> = teams.flatMap { team: Team ->
+			team.activeMemberIds().map { memberId: Long -> SaveChatRoomParticipant(userId = memberId, teamId = team.id) }
+		}
 		saveChatRoomUseCase.save(
-			SaveChatRoomCommand(matchType = ChatRoomMatchType.TEAM, matchId = teamMatch.id, participantUserIds = allMemberIds),
+			SaveChatRoomCommand(matchType = ChatRoomMatchType.TEAM, matchId = teamMatch.id, participants = participants),
 		)
 		domainEventPublisher.publish(
-			TeamMatchAccepted(teamMatchId = teamMatch.id, recipientUserIds = allMemberIds.filter { it != userId }),
+			TeamMatchAccepted(teamMatchId = teamMatch.id, recipientUserIds = participants.map { it.userId }.filter { it != userId }),
 		)
 		return teamMatch
 	}
