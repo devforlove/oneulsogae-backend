@@ -19,6 +19,8 @@ data class RecommendedTeam(
 	val datingInitAmount: Int,
 	/** 이 팀에 관심을 보낼 때 드는 수락 비용. 매칭된 상대 팀이면 team_matches.date_accept_amount(DB), 순수 추천이면 MEETING_ACCEPT 상수. */
 	val datingAcceptAmount: Int,
+	/** 이 팀과의 팀 매칭(team_matches) id. 관심 보내기 호출에 쓴다. 아직 매칭이 없는 순수 추천이면 null. */
+	val teamMatchId: Long?,
 	/** 이 팀과의 팀 매칭 상태. 매칭된 상대 팀이면 team_matches.status, 아직 매칭이 없는 순수 추천이면 null. */
 	val teamMatchStatus: MatchStatus?,
 	/** 내 팀이 이 매칭에 관심(신청)을 보냈는지 여부. 매칭이 없으면 false. */

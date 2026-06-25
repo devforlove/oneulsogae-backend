@@ -20,6 +20,8 @@ data class RecommendedTeamResponse(
 	val members: List<Member>,
 	val datingInitAmount: Int,
 	val datingAcceptAmount: Int,
+	/** 이 팀과의 팀 매칭 id. 관심 보내기 호출에 쓴다. 아직 매칭이 없는 순수 추천 팀이면 null. */
+	val teamMatchId: Long?,
 	/** 이 팀과의 팀 매칭 상태. 아직 매칭이 없는 순수 추천 팀이면 null. */
 	val teamMatchStatus: MatchStatus?,
 	/** 내 팀이 이 매칭에 관심(신청)을 보냈는지 여부. */
@@ -74,6 +76,7 @@ data class RecommendedTeamResponse(
 					},
 					datingInitAmount = recommendedTeam.datingInitAmount,
 					datingAcceptAmount = recommendedTeam.datingAcceptAmount,
+					teamMatchId = recommendedTeam.teamMatchId,
 					teamMatchStatus = recommendedTeam.teamMatchStatus,
 					hasUserInterest = recommendedTeam.hasUserInterest,
 					hasPartnerInterest = recommendedTeam.hasPartnerInterest,

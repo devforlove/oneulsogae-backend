@@ -33,7 +33,7 @@ import java.time.LocalDateTime
 
 /**
  * `GET /team-matches/v1/meeting-tab` E2E 테스트. (미팅탭 화면 집계)
- * 추천 팀 목록(recommendedTeams, 없으면 빈 리스트) + 받은 초대 개수(receivedInvitationCount) + 내 결성 팀(myActiveTeam, 없으면 null)을 한 번에 반환한다.
+ * 추천 팀 목록(recommendedTeams, 없으면 빈 리스트) + 받은 초대 개수(receivedInvitationCount) + 내 결성 팀(myTeam, 없으면 null)을 한 번에 반환한다.
  */
 class GetMeetingTabE2ETest : AbstractIntegrationSupport({
 
@@ -78,7 +78,7 @@ class GetMeetingTabE2ETest : AbstractIntegrationSupport({
 	describe("GET /team-matches/v1/meeting-tab") {
 
 		context("추천 팀이 적재된 솔로 유저") {
-			it("recommendedTeams에 팀·팀원 프로필을, count=0·myActiveTeam=null로 반환한다 (200)") {
+			it("recommendedTeams에 팀·팀원 프로필을, count=0·myTeam=null로 반환한다 (200)") {
 				val soloUserId = 5001L
 				persistMatchUser(soloUserId, Gender.MALE)
 				val gangnamId: Long = IntegrationUtil.persist(
@@ -125,11 +125,13 @@ class GetMeetingTabE2ETest : AbstractIntegrationSupport({
 					body("data.recommendedTeams[0].datingInitAmount", 40)
 					body("data.recommendedTeams[0].datingAcceptAmount", 40)
 					// 순수 추천 팀은 아직 매칭이 없어 상태 null·양 팀 관심 false
+					// 순수 추천 팀은 아직 매칭이 없어 teamMatchId도 null이다.
+					body("data.recommendedTeams[0].teamMatchId", nullValue())
 					body("data.recommendedTeams[0].teamMatchStatus", nullValue())
 					body("data.recommendedTeams[0].hasUserInterest", false)
 					body("data.recommendedTeams[0].hasPartnerInterest", false)
 					body("data.receivedInvitationCount", 0)
-					body("data.myActiveTeam", nullValue())
+					body("data.myTeam", nullValue())
 				}
 			}
 		}
@@ -151,13 +153,13 @@ class GetMeetingTabE2ETest : AbstractIntegrationSupport({
 					status(200)
 					body("data.receivedInvitationCount", 2)
 					body("data.recommendedTeams", hasSize<Any>(0))
-					body("data.myActiveTeam", nullValue())
+					body("data.myTeam", nullValue())
 				}
 			}
 		}
 
 		context("결성(ACTIVE) 팀에 속한 유저") {
-			it("myActiveTeam에 teamId와 내/친구 profileImageCode를 반환한다 (200)") {
+			it("myTeam에 teamId와 내/친구 profileImageCode를 반환한다 (200)") {
 				val me = 5003L
 				val friend = 5301L
 				persistMatchUser(me, Gender.MALE, profileImageCode = "3")
@@ -170,12 +172,37 @@ class GetMeetingTabE2ETest : AbstractIntegrationSupport({
 					bearer(accessTokenFor(me))
 				} expect {
 					status(200)
-					body("data.myActiveTeam.teamId", teamId.toInt())
-					body("data.myActiveTeam.gender", "MALE")
-					body("data.myActiveTeam.myProfileImageCode", "3")
-					body("data.myActiveTeam.partnerProfileImageCode", "7")
+					body("data.myTeam.teamId", teamId.toInt())
+					body("data.myTeam.status", "ACTIVE")
+					body("data.myTeam.gender", "MALE")
+					body("data.myTeam.myProfileImageCode", "3")
+					body("data.myTeam.partnerProfileImageCode", "7")
 					body("data.recommendedTeams", hasSize<Any>(0))
 					body("data.receivedInvitationCount", 0)
+				}
+			}
+		}
+
+		context("내가 만든 초대중(INVITING) 팀이 있는 유저") {
+			it("myTeam에 그 팀과 내/초대 대상 profileImageCode를 반환한다 (200)") {
+				val me = 5006L
+				val invitee = 5306L
+				persistMatchUser(me, Gender.MALE, profileImageCode = "4")
+				persistMatchUser(invitee, Gender.MALE, profileImageCode = "8")
+				// INVITING 팀: 요청자(나)는 ACTIVE 구성원(초대자), 초대 대상은 INVITED.
+				val teamId: Long = persistTeam(TeamStatus.INVITING, Gender.MALE)
+				persistMember(teamId, me, TeamMemberStatus.ACTIVE)
+				persistMember(teamId, invitee, TeamMemberStatus.INVITED)
+
+				get("/team-matches/v1/meeting-tab") {
+					bearer(accessTokenFor(me))
+				} expect {
+					status(200)
+					body("data.myTeam.teamId", teamId.toInt())
+					body("data.myTeam.status", "INVITING")
+					body("data.myTeam.gender", "MALE")
+					body("data.myTeam.myProfileImageCode", "4")
+					body("data.myTeam.partnerProfileImageCode", "8")
 				}
 			}
 		}
@@ -226,18 +253,20 @@ class GetMeetingTabE2ETest : AbstractIntegrationSupport({
 					// 비용은 team_matches(DB)에서 조회한 값(55/65)이 그대로 내려온다.
 					body("data.recommendedTeams[0].datingInitAmount", 55)
 					body("data.recommendedTeams[0].datingAcceptAmount", 65)
+					// 매칭된 상대 팀이라 관심 보내기 호출용 teamMatchId가 실린다.
+					body("data.recommendedTeams[0].teamMatchId", liveMatch.toInt())
 					// 헤더 상태 + 양 팀 관심 여부(상대만 APPLY → 내 팀 false, 상대 true)
 					body("data.recommendedTeams[0].teamMatchStatus", MatchStatus.PARTIALLY_ACCEPTED.name)
 					body("data.recommendedTeams[0].hasUserInterest", false)
 					body("data.recommendedTeams[0].hasPartnerInterest", true)
-					body("data.myActiveTeam.teamId", myTeamId.toInt())
+					body("data.myTeam.teamId", myTeamId.toInt())
 					body("data.receivedInvitationCount", 0)
 				}
 			}
 		}
 
 		context("추천·초대·결성 팀이 모두 없는 유저") {
-			it("recommendedTeams=[], count=0, myActiveTeam=null을 반환한다 (200)") {
+			it("recommendedTeams=[], count=0, myTeam=null을 반환한다 (200)") {
 				val me = 5004L
 				persistMatchUser(me, Gender.MALE)
 
@@ -247,7 +276,7 @@ class GetMeetingTabE2ETest : AbstractIntegrationSupport({
 					status(200)
 					body("data.recommendedTeams", hasSize<Any>(0))
 					body("data.receivedInvitationCount", 0)
-					body("data.myActiveTeam", nullValue())
+					body("data.myTeam", nullValue())
 				}
 			}
 		}

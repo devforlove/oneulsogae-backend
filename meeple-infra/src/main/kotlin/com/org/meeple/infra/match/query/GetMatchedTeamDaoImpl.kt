@@ -44,7 +44,7 @@ class GetMatchedTeamDaoImpl(
 			.select(
 				team.id, team.name, team.introduction, teamActivityArea,
 				teamMatch.dateInitAmount, teamMatch.dateAcceptAmount,
-				teamMatch.status, mine.status, opp.status,
+				teamMatch.id, teamMatch.status, mine.status, opp.status,
 			)
 			.from(mine)
 			.join(teamMatch).on(teamMatch.id.eq(mine.teamMatchId))
@@ -76,6 +76,7 @@ class GetMatchedTeamDaoImpl(
 				members = membersByTeamId[teamId].orEmpty(),
 				datingInitAmount = header.get(teamMatch.dateInitAmount)!!,
 				datingAcceptAmount = header.get(teamMatch.dateAcceptAmount)!!,
+				teamMatchId = header.get(teamMatch.id)!!,
 				teamMatchStatus = header.get(teamMatch.status)!!,
 				hasUserInterest = hasApplied(header.get(mine.status)!!),
 				hasPartnerInterest = hasApplied(header.get(opp.status)!!),
