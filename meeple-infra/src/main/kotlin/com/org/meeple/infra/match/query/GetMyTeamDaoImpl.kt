@@ -34,6 +34,7 @@ class GetMyTeamDaoImpl(
 				Projections.constructor(
 					MyTeam::class.java,
 					team.id,
+					team.status,
 					team.gender,
 					myMatchUser.profileImageCode,
 					partnerMatchUser.profileImageCode,

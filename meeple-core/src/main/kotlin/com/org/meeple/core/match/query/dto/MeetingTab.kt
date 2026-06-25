@@ -1,5 +1,6 @@
 package com.org.meeple.core.match.query.dto
 
+import com.org.meeple.common.match.TeamStatus
 import com.org.meeple.common.user.Gender
 
 /**
@@ -21,6 +22,8 @@ data class MeetingTab(
  */
 data class MyTeam(
 	val teamId: Long,
+	/** 팀 상태. 결성됨(ACTIVE) 또는 내가 만든 초대중(INVITING). */
+	val status: TeamStatus,
 	val gender: Gender,
 	val myProfileImageCode: String,
 	val partnerProfileImageCode: String,

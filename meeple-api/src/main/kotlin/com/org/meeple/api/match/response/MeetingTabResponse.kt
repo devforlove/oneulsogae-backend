@@ -1,5 +1,6 @@
 package com.org.meeple.api.match.response
 
+import com.org.meeple.common.match.TeamStatus
 import com.org.meeple.common.user.Gender
 import com.org.meeple.core.match.query.dto.MeetingTab
 import com.org.meeple.core.match.query.dto.MyTeam
@@ -17,9 +18,11 @@ data class MeetingTabResponse(
 	val myTeam: MyTeamResponse?,
 ) {
 
-	/** 내 팀(결성(ACTIVE) 또는 초대중(INVITING))의 표시 데이터. 팀 성별과 내/상대(친구 또는 초대 대상) 프로필 이미지 코드. */
+	/** 내 팀(결성(ACTIVE) 또는 초대중(INVITING))의 표시 데이터. 팀 상태·성별과 내/상대(친구 또는 초대 대상) 프로필 이미지 코드. */
 	data class MyTeamResponse(
 		val teamId: Long,
+		/** 팀 상태(백엔드 TeamStatus enum name: ACTIVE=결성됨 / INVITING=초대중). */
+		val status: TeamStatus,
 		val gender: Gender,
 		val myProfileImageCode: String,
 		val partnerProfileImageCode: String,
@@ -33,6 +36,7 @@ data class MeetingTabResponse(
 				myTeam = meetingTab.myTeam?.let { team: MyTeam ->
 					MyTeamResponse(
 						teamId = team.teamId,
+						status = team.status,
 						gender = team.gender,
 						myProfileImageCode = team.myProfileImageCode,
 						partnerProfileImageCode = team.partnerProfileImageCode,
