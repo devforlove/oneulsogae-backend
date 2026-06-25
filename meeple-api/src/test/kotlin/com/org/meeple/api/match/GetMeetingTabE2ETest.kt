@@ -184,7 +184,7 @@ class GetMeetingTabE2ETest : AbstractIntegrationSupport({
 		}
 
 		context("내가 만든 초대중(INVITING) 팀이 있는 유저") {
-			it("myTeam에 그 팀과 내/초대 대상 profileImageCode를 반환한다 (200)") {
+			it("myTeam을 반환하고, 카드 슬롯은 매칭이 아닌 추천 팀 경로를 탄다 (200)") {
 				val me = 5006L
 				val invitee = 5306L
 				persistMatchUser(me, Gender.MALE, profileImageCode = "4")
@@ -193,6 +193,18 @@ class GetMeetingTabE2ETest : AbstractIntegrationSupport({
 				val teamId: Long = persistTeam(TeamStatus.INVITING, Gender.MALE)
 				persistMember(teamId, me, TeamMemberStatus.ACTIVE)
 				persistMember(teamId, invitee, TeamMemberStatus.INVITED)
+
+				// 나에게 추천된 ACTIVE 팀. INVITING 팀은 결성 전이라 매칭 경로가 아니라 추천 경로를 타야 이 팀이 보인다.
+				val recommendedTeamId: Long = persistTeam(TeamStatus.ACTIVE, Gender.FEMALE)
+				persistMember(recommendedTeamId, 5501L, TeamMemberStatus.ACTIVE)
+				persistMember(recommendedTeamId, 5502L, TeamMemberStatus.ACTIVE)
+				persistMatchUser(5501L, Gender.FEMALE)
+				persistMatchUser(5502L, Gender.FEMALE)
+				IntegrationUtil.persist(UserDetailEntityFixture.create(userId = 5501L, gender = Gender.FEMALE))
+				IntegrationUtil.persist(UserDetailEntityFixture.create(userId = 5502L, gender = Gender.FEMALE))
+				IntegrationUtil.persist(
+					RecommendedTeamEntityFixture.create(userId = me, teamId = recommendedTeamId, recommendedDate = LocalDate.of(2026, 6, 22)),
+				)
 
 				get("/team-matches/v1/meeting-tab") {
 					bearer(accessTokenFor(me))
@@ -203,6 +215,9 @@ class GetMeetingTabE2ETest : AbstractIntegrationSupport({
 					body("data.myTeam.gender", "MALE")
 					body("data.myTeam.myProfileImageCode", "4")
 					body("data.myTeam.partnerProfileImageCode", "8")
+					// INVITING이라 추천 경로 → 추천된 팀이 카드로 보인다. (매칭 경로였다면 team_match가 없어 빈 리스트)
+					body("data.recommendedTeams", hasSize<Any>(1))
+					body("data.recommendedTeams[0].teamId", recommendedTeamId.toInt())
 				}
 			}
 		}
