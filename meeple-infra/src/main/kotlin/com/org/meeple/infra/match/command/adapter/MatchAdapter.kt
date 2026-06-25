@@ -1,6 +1,5 @@
 package com.org.meeple.infra.match.command.adapter
 
-import com.org.meeple.common.match.MatchStatus
 import com.org.meeple.common.match.SoloMatchType
 import com.org.meeple.common.user.Gender
 import com.org.meeple.core.match.command.application.port.out.DeleteMatchPort
@@ -14,7 +13,6 @@ import com.org.meeple.infra.match.command.mapper.toEntities
 import com.org.meeple.infra.match.command.mapper.toEntity
 import com.org.meeple.infra.match.command.repository.MatchJpaRepository
 import com.org.meeple.infra.match.command.repository.MatchMemberJpaRepository
-import com.org.meeple.scheduler.match.command.application.port.out.GetExpiredMatchIdsPort
 import com.org.meeple.scheduler.match.command.application.port.out.SaveMatchRecordPort
 import org.springframework.stereotype.Component
 import java.time.LocalDateTime
@@ -30,14 +28,7 @@ import java.time.LocalDateTime
 class MatchAdapter(
 	private val matchJpaRepository: MatchJpaRepository,
 	private val matchMemberJpaRepository: MatchMemberJpaRepository,
-) : GetMatchPort, SaveMatchPort, SaveMatchRecordPort, DeleteMatchPort, GetExpiredMatchIdsPort {
-
-	// 응답 대기(미성사) 상태로 만료 시각이 지난 소개의 id만 가져온다. (성사·종료는 대상 아님)
-	override fun findExpiredMatchIds(now: LocalDateTime): List<Long> =
-		matchJpaRepository.findExpiredMatchIds(
-			now,
-			listOf(MatchStatus.PROPOSED, MatchStatus.PARTIALLY_ACCEPTED),
-		)
+) : GetMatchPort, SaveMatchPort, SaveMatchRecordPort, DeleteMatchPort {
 
 	// 헤더 + 참가자를 함께 읽어 매칭 애그리거트로 조립한다.
 	override fun findById(id: Long): Match? =
