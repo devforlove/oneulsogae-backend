@@ -1,6 +1,7 @@
 package com.org.meeple.infra.match.command.adapter
 
 import com.org.meeple.common.match.MatchStatus
+import com.org.meeple.common.match.TeamMatchType
 import com.org.meeple.core.match.command.application.port.out.GetTeamMatchPort
 import com.org.meeple.core.match.command.application.port.out.SaveTeamMatchPort
 import com.org.meeple.core.match.command.domain.MatchedTeams
@@ -12,18 +13,26 @@ import com.org.meeple.infra.match.command.mapper.toEntities
 import com.org.meeple.infra.match.command.mapper.toEntity
 import com.org.meeple.infra.match.command.repository.MatchedTeamJpaRepository
 import com.org.meeple.infra.match.command.repository.TeamMatchJpaRepository
+import com.org.meeple.scheduler.match.command.application.port.out.SaveTeamMatchRecordPort
 import org.springframework.stereotype.Component
+import java.time.LocalDateTime
 
 /**
  * [TeamMatchEntity]의 command 영속성 어댑터. ([SaveTeamMatchPort], [GetTeamMatchPort] 구현)
  * 팀 매칭은 헤더(team_matches) + 참가 팀(matched_teams)으로 이뤄진 하나의 애그리거트이므로,
  * 이 어댑터가 두 테이블의 영속화·조회를 함께 책임진다. (헤더 저장 → id 획득 → 그 id로 참가 팀 행 저장)
+ * 같은 엔티티를 쓰는 scheduler의 배치 기록 아웃포트([SaveTeamMatchRecordPort])도 이 어댑터가 함께 구현한다.
  */
 @Component
 class TeamMatchAdapter(
 	private val teamMatchJpaRepository: TeamMatchJpaRepository,
 	private val matchedTeamJpaRepository: MatchedTeamJpaRepository,
-) : SaveTeamMatchPort, GetTeamMatchPort {
+) : SaveTeamMatchPort, GetTeamMatchPort, SaveTeamMatchRecordPort {
+
+	// 일일 팀 매칭 배치가 호출하는 경로 — DAILY 타입의 신규 소개(PROPOSED)로 기록한다.
+	override fun saveProposedTeamMatch(teamAId: Long, teamBId: Long, now: LocalDateTime) {
+		save(TeamMatch.propose(teamAId = teamAId, teamBId = teamBId, matchType = TeamMatchType.DAILY, now = now))
+	}
 
 	override fun save(teamMatch: TeamMatch): TeamMatch {
 		val savedEntity: TeamMatchEntity = teamMatchJpaRepository.save(teamMatch.toEntity())
