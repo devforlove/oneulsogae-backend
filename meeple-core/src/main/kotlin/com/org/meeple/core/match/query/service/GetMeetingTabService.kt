@@ -2,11 +2,11 @@ package com.org.meeple.core.match.query.service
 
 import com.org.meeple.core.common.time.TimeGenerator
 import com.org.meeple.core.match.query.dao.GetMatchedTeamDao
-import com.org.meeple.core.match.query.dao.GetMyActiveTeamDao
+import com.org.meeple.core.match.query.dao.GetMyTeamDao
 import com.org.meeple.core.match.query.dao.GetReceivedInvitationsDao
 import com.org.meeple.core.match.query.dao.GetRecommendedTeamDao
 import com.org.meeple.core.match.query.dto.MeetingTab
-import com.org.meeple.core.match.query.dto.MyActiveTeam
+import com.org.meeple.core.match.query.dto.MyTeam
 import com.org.meeple.core.match.query.dto.RecommendedTeam
 import com.org.meeple.core.match.query.service.port.`in`.GetMeetingTabUseCase
 import org.springframework.stereotype.Service
@@ -24,24 +24,24 @@ class GetMeetingTabService(
 	private val getRecommendedTeamDao: GetRecommendedTeamDao,
 	private val getMatchedTeamDao: GetMatchedTeamDao,
 	private val getReceivedInvitationsDao: GetReceivedInvitationsDao,
-	private val getMyActiveTeamDao: GetMyActiveTeamDao,
+	private val getMyTeamDao: GetMyTeamDao,
 	private val timeGenerator: TimeGenerator,
 ) : GetMeetingTabUseCase {
 
 	override fun get(userId: Long): MeetingTab {
-		val myActiveTeam: MyActiveTeam? = getMyActiveTeamDao.findLatestActiveTeam(userId)
+		val myTeam: MyTeam? = getMyTeamDao.findMyTeam(userId)
 		return MeetingTab(
 			// 결성 팀이 없으면 추천 팀, 있으면 그 팀과 진행 중으로 매칭된 상대 팀을 같은 슬롯에 내려준다.
-			recommendedTeams = teamCardsFor(userId, myActiveTeam),
+			recommendedTeams = teamCardsFor(userId, myTeam),
 			receivedInvitationCount = getReceivedInvitationsDao.countInvited(userId),
-			myActiveTeam = myActiveTeam,
+			myTeam = myTeam,
 		)
 	}
 
-	private fun teamCardsFor(userId: Long, myActiveTeam: MyActiveTeam?): List<RecommendedTeam> =
-		if (myActiveTeam == null) {
+	private fun teamCardsFor(userId: Long, myTeam: MyTeam?): List<RecommendedTeam> =
+		if (myTeam == null) {
 			getRecommendedTeamDao.findByUserId(userId)
 		} else {
-			getMatchedTeamDao.findInProgressByTeamId(myActiveTeam.teamId, timeGenerator.now())
+			getMatchedTeamDao.findInProgressByTeamId(myTeam.teamId, timeGenerator.now())
 		}
 }

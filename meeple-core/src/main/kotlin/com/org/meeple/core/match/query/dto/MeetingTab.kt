@@ -6,20 +6,20 @@ import com.org.meeple.common.user.Gender
  * 미팅탭 화면 집계(read model). 세 가지를 독립적으로 조회해 한 화면에 모은다.
  * - [recommendedTeams]: 팀 카드 목록(최신순, 없으면 빈 리스트). 결성 팀이 없으면 추천된 결성(ACTIVE) 팀, 결성 팀이 있으면 그 팀과 진행 중으로 매칭된 상대 팀.
  * - [receivedInvitationCount]: 내가 INVITED 구성원인 INVITING 팀 개수.
- * - [myActiveTeam]: 내 가장 최근 결성(ACTIVE) 팀. 없으면 null.
+ * - [myTeam]: 내 가장 최근 팀(결성(ACTIVE) 또는 내가 만든 초대중(INVITING)). 없으면 null.
  * query 전용 view이며 command 도메인을 참조하지 않는다.
  */
 data class MeetingTab(
 	val recommendedTeams: List<RecommendedTeam>,
 	val receivedInvitationCount: Long,
-	val myActiveTeam: MyActiveTeam?,
+	val myTeam: MyTeam?,
 )
 
 /**
- * 내 가장 최근 결성(ACTIVE) 팀의 표시 데이터. 내 프로필 이미지와 같은 팀 친구(상대 ACTIVE 구성원)의 프로필 이미지를 담는다.
+ * 내 가장 최근 팀(결성(ACTIVE) 또는 초대중(INVITING))의 표시 데이터. 내 프로필 이미지와 같은 팀 상대(친구 또는 초대 대상)의 프로필 이미지를 담는다.
  * (profileImageCode는 match_user에서 온다)
  */
-data class MyActiveTeam(
+data class MyTeam(
 	val teamId: Long,
 	val gender: Gender,
 	val myProfileImageCode: String,

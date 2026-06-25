@@ -38,7 +38,7 @@ import java.time.LocalDateTime
  *
  * 2:2 팀은 한 명이 나가면 유지될 수 없어 팀 전체가 비활성화된다(`DELETE /teams/v1/{teamId}`).
  * 해체 뒤 조회 경로가 의도대로 바뀌는지 검증한다.
- * - 미팅탭: 내 결성 팀이 사라지므로 `myActiveTeam=null`, 추천 슬롯이 "매칭된 상대 팀"에서 추천 팀 경로(시드 없으면 빈 리스트)로 되돌아간다.
+ * - 미팅탭: 내 결성 팀이 사라지므로 `myTeam=null`, 추천 슬롯이 "매칭된 상대 팀"에서 추천 팀 경로(시드 없으면 빈 리스트)로 되돌아간다.
  * - 채팅방 목록: 성사(MATCHED) 매칭이던 방의 나간 팀원 참가가 비활성화돼 그들의 목록에서 사라지고, 상대 팀에는 그대로 남는다.
  */
 class DisbandedTeamReadE2ETest : AbstractIntegrationSupport({
@@ -78,7 +78,7 @@ class DisbandedTeamReadE2ETest : AbstractIntegrationSupport({
 	describe("DELETE /teams/v1/{teamId} — 해체 후 조회") {
 
 		context("매칭 진행 중이던 결성 팀을 해체하면, 해체한 구성원의 미팅탭은") {
-			it("myActiveTeam=null로 바뀌고 매칭됐던 상대 팀이 추천 슬롯에서 사라진다") {
+			it("myTeam=null로 바뀌고 매칭됐던 상대 팀이 추천 슬롯에서 사라진다") {
 				val me = 6001L
 				val friend = 6002L
 				persistMatchUser(me)
@@ -95,7 +95,7 @@ class DisbandedTeamReadE2ETest : AbstractIntegrationSupport({
 					bearer(accessTokenFor(me))
 				} expect {
 					status(200)
-					body("data.myActiveTeam.teamId", myTeamId.toInt())
+					body("data.myTeam.teamId", myTeamId.toInt())
 					body("data.recommendedTeams", hasSize<Any>(1))
 					body("data.recommendedTeams[0].teamId", opponentTeamId.toInt())
 					body("data.receivedInvitationCount", 0)
@@ -106,12 +106,12 @@ class DisbandedTeamReadE2ETest : AbstractIntegrationSupport({
 					body("success", true)
 				}
 
-				// 해체 후: 결성 팀이 사라져 myActiveTeam=null, 추천 슬롯은 추천 팀 경로(시드 없음 → 빈 리스트)로 되돌아간다.
+				// 해체 후: 결성 팀이 사라져 myTeam=null, 추천 슬롯은 추천 팀 경로(시드 없음 → 빈 리스트)로 되돌아간다.
 				get("/team-matches/v1/meeting-tab") {
 					bearer(accessTokenFor(me))
 				} expect {
 					status(200)
-					body("data.myActiveTeam", nullValue())
+					body("data.myTeam", nullValue())
 					body("data.recommendedTeams", hasSize<Any>(0))
 					body("data.receivedInvitationCount", 0)
 				}

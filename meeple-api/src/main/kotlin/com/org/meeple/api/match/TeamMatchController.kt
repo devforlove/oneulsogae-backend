@@ -46,7 +46,7 @@ class TeamMatchController(
 	 * 미팅탭 화면 데이터를 한 번에 조회한다.
 	 * - recommendedTeams: 팀 카드 목록(최신순, 없으면 빈 리스트). 결성(ACTIVE) 팀이 없으면 추천된 팀(반대 성별·같은 권역), 결성 팀이 있으면 그 팀과 진행 중으로 매칭된 상대 팀.
 	 * - receivedInvitationCount: 내가 INVITED인 INVITING 팀 개수.
-	 * - myActiveTeam: 내 가장 최근 결성(ACTIVE) 팀의 teamId와 내/친구 profileImageCode. 없으면 null.
+	 * - myTeam: 내 가장 최근 팀(결성(ACTIVE) 또는 내가 만든 초대중(INVITING))의 teamId와 내/상대 profileImageCode. 없으면 null.
 	 */
 	@Operation(summary = "미팅탭 조회", description = "미팅탭 화면 데이터를 한 번에 반환한다. 팀 카드 목록(결성 팀 없으면 추천 팀, 있으면 매칭된 상대 팀, 없으면 빈 리스트), 받은 초대(INVITED) 개수, 내 결성(ACTIVE) 팀의 teamId·내/친구 프로필 이미지(없으면 null)를 담는다.")
 	@GetMapping("/meeting-tab")
