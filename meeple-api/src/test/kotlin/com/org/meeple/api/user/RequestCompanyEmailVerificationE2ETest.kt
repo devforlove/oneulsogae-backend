@@ -43,11 +43,10 @@ class RequestCompanyEmailVerificationE2ETest : AbstractIntegrationSupport({
 					body("data.expiresAt", notNullValue())
 				}
 
-				// 부수효과: 사용자 상태 전환 + 프로필(성별·권역) 저장 + 인증 요청 1건 생성
+				// 부수효과: 사용자 상태 전환 + 프로필(성별) 저장 + 인증 요청 1건 생성
 				userStatusOf(userId) shouldBe UserStatus.EMAIL_VERIFICATION_PENDING
 				val detail: UserDetailEntity = userDetailOf(userId)
 				detail.gender shouldBe Gender.MALE
-				detail.regionCode shouldBe 1
 				verificationCountOf(userId) shouldBe 1
 			}
 		}
@@ -75,7 +74,6 @@ class RequestCompanyEmailVerificationE2ETest : AbstractIntegrationSupport({
 				userStatusOf(userId) shouldBe UserStatus.EMAIL_VERIFICATION_PENDING
 				val detail: UserDetailEntity = userDetailOf(userId)
 				detail.gender shouldBe Gender.MALE
-				detail.regionCode shouldBe 1
 				verificationCountOf(userId) shouldBe 1
 				// 온보딩 커맨드 경로에서 코인 잔액 행이 준비된다. (조회가 아닌 커맨드가 생성을 담당)
 				coinBalanceCountOf(userId) shouldBe 1

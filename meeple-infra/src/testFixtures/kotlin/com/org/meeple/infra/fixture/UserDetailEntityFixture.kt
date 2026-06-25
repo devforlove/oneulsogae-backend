@@ -19,7 +19,6 @@ object UserDetailEntityFixture {
 		height: Int? = null,
 		job: String? = null,
 		regionId: Long? = null,
-		regionCode: Int? = null,
 		introduction: String? = null,
 		companyName: String? = null,
 	): UserDetailEntity =
@@ -32,7 +31,6 @@ object UserDetailEntityFixture {
 			height = height,
 			job = job,
 			regionId = regionId,
-			regionCode = regionCode,
 			introduction = introduction,
 			companyName = companyName,
 		)

@@ -21,8 +21,8 @@ import java.time.LocalDateTime
 
 /**
  * [UserDetail] 도메인 유닛 테스트.
- * 정식 가입(ACTIVE)으로 이어지는 프로필 입력/편집이 매칭 풀 필수값(성별·활동권역)을 강제하는지 검증한다.
- * 이 불변식이 매칭 풀 조회의 성별·권역 null 필터 제거를 떠받친다.
+ * 정식 가입(ACTIVE)으로 이어지는 프로필 입력/편집이 매칭 풀 필수값(성별·활동지역)을 강제하는지 검증한다.
+ * 이 불변식이 매칭 풀 조회의 성별·지역 null 필터 제거를 떠받친다.
  */
 class UserDetailTest : DescribeSpec({
 
@@ -30,7 +30,7 @@ class UserDetailTest : DescribeSpec({
 	val base: UserDetail = UserDetail.create(userId = 1L)
 
 	describe("initProfile") {
-		it("성별과 인식 가능한 활동지역이 주어지면 성별·권역이 채워진 프로필을 만든다") {
+		it("성별과 활동지역이 주어지면 성별·활동지역이 채워진 프로필을 만든다") {
 			val updated: UserDetail = base.initProfile(
 				nickname = "민수",
 				birthday = LocalDate.of(1995, 1, 1),
@@ -39,7 +39,6 @@ class UserDetailTest : DescribeSpec({
 				phoneNumber = null,
 				job = null,
 				regionId = 1L,
-					regionCode = 1,
 				introduction = null,
 				traits = emptyList(),
 				interests = emptyList(),
@@ -53,7 +52,7 @@ class UserDetailTest : DescribeSpec({
 			)
 
 			updated.gender shouldBe Gender.MALE
-			updated.regionCode shouldBe 1 // 서울 -> 권역 1
+			updated.regionId shouldBe 1L
 		}
 
 		it("성별이 없으면 GENDER_REQUIRED를 던진다") {
@@ -66,7 +65,6 @@ class UserDetailTest : DescribeSpec({
 					phoneNumber = null,
 					job = null,
 					regionId = 1L,
-					regionCode = 1,
 					introduction = null,
 					traits = emptyList(),
 					interests = emptyList(),
@@ -83,7 +81,7 @@ class UserDetailTest : DescribeSpec({
 			ex.errorCode shouldBe UserErrorCode.GENDER_REQUIRED
 		}
 
-		it("활동지역을 권역으로 인식하지 못하면 REGION_NOT_RESOLVED를 던진다") {
+		it("활동지역(regionId)이 없으면 REGION_NOT_RESOLVED를 던진다") {
 			val ex: BusinessException = shouldThrow {
 				base.initProfile(
 					nickname = "민수",
@@ -92,8 +90,7 @@ class UserDetailTest : DescribeSpec({
 					gender = Gender.MALE,
 					phoneNumber = null,
 					job = null,
-					regionId = 1L,
-						regionCode = null,
+					regionId = null,
 					introduction = null,
 					traits = emptyList(),
 					interests = emptyList(),
@@ -121,7 +118,6 @@ class UserDetailTest : DescribeSpec({
 					phoneNumber = "010-0000-0000",
 					job = "개발자",
 					regionId = 1L,
-					regionCode = 1,
 					introduction = "소개",
 					traits = listOf("성실함"),
 					interests = listOf("영화"),
@@ -148,7 +144,6 @@ class UserDetailTest : DescribeSpec({
 				phoneNumber = "010-0000-0000",
 				job = "개발자",
 				regionId = 1L,
-					regionCode = 1,
 				introduction = "소개",
 				traits = listOf("성실함"),
 				interests = listOf("영화"),
@@ -174,7 +169,6 @@ class UserDetailTest : DescribeSpec({
 				phoneNumber = "010-0000-0000",
 				job = "은퇴",
 				regionId = 1L,
-					regionCode = 1,
 				introduction = "소개",
 				traits = listOf("성실함"),
 				interests = listOf("영화"),
@@ -201,7 +195,6 @@ class UserDetailTest : DescribeSpec({
 					phoneNumber = "010-0000-0000",
 					job = "은퇴",
 					regionId = 1L,
-					regionCode = 1,
 					introduction = "소개",
 					traits = listOf("성실함"),
 					interests = listOf("영화"),
@@ -228,7 +221,6 @@ class UserDetailTest : DescribeSpec({
 					phoneNumber = "010-0000-0000",
 					job = "개발자",
 					regionId = 1L,
-					regionCode = 1,
 					introduction = "소개",
 					traits = listOf("성실함"),
 					interests = listOf("영화"),
@@ -255,7 +247,6 @@ class UserDetailTest : DescribeSpec({
 					phoneNumber = "010-0000-0000",
 					job = "개발자",
 					regionId = 1L,
-					regionCode = 1,
 					introduction = "소개",
 					traits = listOf("성실함"),
 					interests = listOf("영화"),
@@ -285,16 +276,15 @@ class UserDetailTest : DescribeSpec({
 	}
 
 	describe("editProfile") {
-		// 이미 가입을 마친(성별·권역이 채워진) 프로필을 픽스처로 만든다. (initProfile의 base는 온보딩 전 빈 프로필이라 팩토리를 그대로 쓴다)
+		// 이미 가입을 마친(성별·활동지역이 채워진) 프로필을 픽스처로 만든다. (initProfile의 base는 온보딩 전 빈 프로필이라 팩토리를 그대로 쓴다)
 		val registered: UserDetail = UserDetailFixture.create(gender = Gender.FEMALE)
 
-		it("인식 가능한 활동지역으로 편집하면 성별은 보존되고 권역이 갱신된다") {
+		it("활동지역을 편집하면 성별은 보존되고 활동지역이 갱신된다") {
 			val updated: UserDetail = registered.editProfile(
 				nickname = "지은",
 				profileImageCode = "3",
 				job = null,
 				regionId = 2L,
-					regionCode = 2,
 				introduction = null,
 				traits = emptyList(),
 				interests = emptyList(),
@@ -306,17 +296,16 @@ class UserDetailTest : DescribeSpec({
 			)
 
 			updated.gender shouldBe Gender.FEMALE // 편집에서 성별은 보존
-			updated.regionCode shouldBe 2 // 부산 -> 권역 2
+			updated.regionId shouldBe 2L
 		}
 
-		it("활동지역을 권역으로 인식하지 못하면 REGION_NOT_RESOLVED를 던진다") {
+		it("활동지역(regionId)이 없으면 REGION_NOT_RESOLVED를 던진다") {
 			val ex: BusinessException = shouldThrow {
 				registered.editProfile(
 					nickname = "지은",
 					profileImageCode = "3",
 					job = null,
-					regionId = 1L,
-						regionCode = null,
+					regionId = null,
 					introduction = null,
 					traits = emptyList(),
 					interests = emptyList(),
@@ -341,7 +330,7 @@ class UserDetailTest : DescribeSpec({
 				userId = 7L,
 				gender = Gender.FEMALE,
 				birthday = birthday,
-				regionCode = 2,
+				regionId = 1L,
 			)
 
 			val snapshot: MatchProfileSnapshot? = complete.matchProfileSnapshotOrNull(UserStatus.ACTIVE, loginAt)
@@ -350,7 +339,6 @@ class UserDetailTest : DescribeSpec({
 				gender = Gender.FEMALE,
 				birthday = birthday,
 				regionId = 1L,
-				regionCode = 2,
 				maritalStatus = complete.maritalStatus!!,
 				nickname = complete.nickname!!,
 				profileImageCode = complete.profileImageCode!!,
@@ -364,8 +352,8 @@ class UserDetailTest : DescribeSpec({
 			complete.matchProfileSnapshotOrNull(UserStatus.EMAIL_VERIFICATION_PENDING, loginAt).shouldBeNull()
 		}
 
-		it("필수 필드(권역)가 비어 있으면 null을 반환한다") {
-			val incomplete: UserDetail = UserDetailFixture.create(regionCode = null)
+		it("필수 필드(활동지역)가 비어 있으면 null을 반환한다") {
+			val incomplete: UserDetail = UserDetailFixture.create(regionId = null)
 
 			incomplete.matchProfileSnapshotOrNull(UserStatus.ACTIVE, loginAt).shouldBeNull()
 		}

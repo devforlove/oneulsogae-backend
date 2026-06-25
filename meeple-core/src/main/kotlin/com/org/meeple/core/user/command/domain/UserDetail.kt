@@ -33,8 +33,6 @@ data class UserDetail(
 	val job: String? = null,
 	/** 활동지역 id(regions FK). 서비스가 regionId로 받아 채운다. (표시용 지역명은 응답 시 regions join으로 내려준다) */
 	val regionId: Long? = null,
-	/** 활동지역 권역 코드(1~5). 서비스가 region에서 산출해 채운다. (매칭 풀 키) */
-	val regionCode: Int? = null,
 	val introduction: String? = null,
 	val traits: List<String> = emptyList(),
 	val interests: List<String> = emptyList(),
@@ -53,10 +51,10 @@ data class UserDetail(
 
 	/**
 	 * 온보딩 입력값으로 편집 가능 필드와 회사 이메일을 교체한다.
-	 * - regionId/regionCode는 서비스가 region 도메인에서 해석해 넘긴다. (regionId=활동지역 FK, regionCode=권역 1~5)
+	 * - regionId는 서비스가 region 도메인에서 해석해 넘긴다. (활동지역 FK)
 	 * - profileImageCode는 아직 없으면 서버가 랜덤 배정하고, 이미 있으면 기존 값을 유지한다.
 	 * - id/userId/companyName은 보존한다. (companyName은 회사 이메일 인증 완료 시점에만 채워진다)
-	 * - 정식 가입(ACTIVE)으로 이어지는 입력이므로, 매칭 풀에 필요한 성별·활동권역을 [validateMatchProfile]로 강제한다.
+	 * - 정식 가입(ACTIVE)으로 이어지는 입력이므로, 매칭 풀에 필요한 성별·활동지역을 [validateMatchProfile]로 강제한다.
 	 */
 	fun initProfile(
 		nickname: String?,
@@ -66,7 +64,6 @@ data class UserDetail(
 		phoneNumber: String?,
 		job: String?,
 		regionId: Long?,
-		regionCode: Int?,
 		introduction: String?,
 		traits: List<String>,
 		interests: List<String>,
@@ -86,7 +83,6 @@ data class UserDetail(
 			phoneNumber = phoneNumber,
 			job = job,
 			regionId = regionId,
-			regionCode = regionCode,
 			introduction = introduction,
 			traits = traits,
 			interests = interests,
@@ -104,17 +100,16 @@ data class UserDetail(
 
 	/**
 	 * 가입 이후 사용자가 자유롭게 바꿀 수 있는 프로필 필드만 교체한다.
-	 * - regionId/regionCode는 서비스가 region 도메인에서 해석해 넘긴다.
+	 * - regionId는 서비스가 region 도메인에서 해석해 넘긴다.
 	 * - profileImageCode는 사용자가 선택한 값으로 교체한다.
 	 * - 나이/성별/키/휴대폰번호/회사이메일/회사명과 id/userId는 보존한다.
-	 * - 편집으로 활동권역이 비워지지 않도록 [validateMatchProfile]로 성별·활동권역을 강제한다. (성별은 보존되므로 사실상 권역을 지킨다)
+	 * - 편집으로 활동지역이 비워지지 않도록 [validateMatchProfile]로 성별·활동지역을 강제한다. (성별은 보존되므로 사실상 지역을 지킨다)
 	 */
 	fun editProfile(
 		nickname: String?,
 		profileImageCode: String?,
 		job: String?,
 		regionId: Long?,
-		regionCode: Int?,
 		introduction: String?,
 		traits: List<String>,
 		interests: List<String>,
@@ -129,7 +124,6 @@ data class UserDetail(
 			profileImageCode = profileImageCode,
 			job = job,
 			regionId = regionId,
-			regionCode = regionCode,
 			introduction = introduction,
 			traits = traits,
 			interests = interests,
@@ -159,16 +153,15 @@ data class UserDetail(
 	fun age(today: LocalDate): Int? = birthday?.ageAt(today)
 
 	/**
-	 * 매칭 풀 적재에 필요한 성별·활동권역이 채워졌는지 검증한다. (정식 가입 경로의 프로필 입력·편집 시 호출)
-	 * 활동지역이 지원 지역(시/도)과 매칭되지 않으면 regionCode가 null이 되므로 여기서 함께 걸러진다.
-	 * 이 검증을 통과한 프로필만 ACTIVE로 이어지므로, ACTIVE 사용자는 성별·권역이 항상 채워져 있음을 보장한다.
-	 * (이 불변식 덕분에 매칭 풀 조회는 성별·권역 null 필터 없이 도메인 모델로 직접 투영할 수 있다)
+	 * 매칭 풀 적재에 필요한 성별·활동지역이 채워졌는지 검증한다. (정식 가입 경로의 프로필 입력·편집 시 호출)
+	 * 이 검증을 통과한 프로필만 ACTIVE로 이어지므로, ACTIVE 사용자는 성별·활동지역이 항상 채워져 있음을 보장한다.
+	 * (이 불변식 덕분에 매칭 풀 조회는 성별·지역 null 필터 없이 도메인 모델로 직접 투영할 수 있다)
 	 */
 	private fun validateMatchProfile() {
 		if (gender == null) {
 			throw BusinessException(UserErrorCode.GENDER_REQUIRED)
 		}
-		if (regionId == null || regionCode == null) {
+		if (regionId == null) {
 			throw BusinessException(UserErrorCode.REGION_NOT_RESOLVED)
 		}
 	}
@@ -191,7 +184,6 @@ data class UserDetail(
 			gender = gender ?: return null,
 			birthday = birthday ?: return null,
 			regionId = regionId ?: return null,
-			regionCode = regionCode ?: return null,
 			maritalStatus = maritalStatus ?: return null,
 			nickname = nickname ?: return null,
 			profileImageCode = profileImageCode ?: return null,

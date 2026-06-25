@@ -46,7 +46,7 @@ class MatchUserSyncE2ETest(
 						lastLoginAt = LocalDateTime.now(),
 					),
 				).id!!
-				// 매칭 필수 필드(성별·권역·결혼여부·생년월일·닉네임·프로필이미지코드)가 모두 채워진 완성 프로필
+				// 매칭 필수 필드(성별·활동지역·결혼여부·생년월일·닉네임·프로필이미지코드)가 모두 채워진 완성 프로필
 				IntegrationUtil.persist(
 					UserDetailEntity(
 						userId = userId,
@@ -55,7 +55,6 @@ class MatchUserSyncE2ETest(
 						gender = Gender.MALE,
 						birthday = LocalDate.of(1995, 1, 1),
 						regionId = 7L,
-						regionCode = 1,
 						maritalStatus = MaritalStatus.SINGLE,
 					),
 				)
@@ -92,7 +91,7 @@ class MatchUserSyncE2ETest(
 					UserEntityFixture.create(providerId = "me-requester", status = UserStatus.ACTIVE),
 				).id!!
 				IntegrationUtil.persist(
-					UserDetailEntity(userId = meUserId, nickname = "철수", gender = Gender.MALE, birthday = LocalDate.of(1996, 1, 1), regionCode = 1),
+					UserDetailEntity(userId = meUserId, nickname = "철수", gender = Gender.MALE, birthday = LocalDate.of(1996, 1, 1)),
 				)
 				IntegrationUtil.persist(
 					MatchUserEntityFixture.create(userId = meUserId, gender = Gender.MALE, regionId = regionId),

@@ -14,7 +14,6 @@ data class MatchProfileSnapshot(
 	val gender: Gender,
 	val birthday: LocalDate,
 	val regionId: Long,
-	val regionCode: Int,
 	val maritalStatus: MaritalStatus,
 	val nickname: String,
 	val profileImageCode: String,
