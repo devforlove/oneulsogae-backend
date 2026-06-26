@@ -4,12 +4,16 @@ import com.org.meeple.common.alarm.AlarmType
 import com.org.meeple.common.integration.AbstractIntegrationSupport
 import com.org.meeple.common.integration.expect
 import com.org.meeple.common.integration.get
+import com.org.meeple.common.match.TeamMemberStatus
 import com.org.meeple.common.user.Gender
 import com.org.meeple.infra.alarm.command.entity.QAlarmEntity
 import com.org.meeple.infra.fixture.AlarmEntityFixture
 import com.org.meeple.infra.fixture.IntegrationUtil
 import com.org.meeple.infra.fixture.UserDetailEntityFixture
+import com.org.meeple.infra.match.command.entity.QTeamMemberEntity
+import com.org.meeple.infra.match.command.entity.TeamMemberEntity
 import com.org.meeple.infra.user.command.entity.QUserDetailEntity
+import org.hamcrest.Matchers.containsInAnyOrder
 import org.hamcrest.Matchers.notNullValue
 import org.hamcrest.Matchers.nullValue
 import java.time.LocalDateTime
@@ -72,6 +76,33 @@ class MyAlarmsE2ETest : AbstractIntegrationSupport({
 			}
 		}
 
+		context("발신 팀(fromTeamId)이 있는 알람이면") {
+			it("그 팀 구성원들의 프로필을 froms에 담아 반환한다") {
+				val userId = 7104L
+				val teamId = 8800L
+				// 발신(상대) 팀 구성원 2인과 그 프로필. froms는 이 둘로 채워진다.
+				persistTeamMember(teamId = teamId, userId = 8801L)
+				persistTeamMember(teamId = teamId, userId = 8802L)
+				persistUserDetail(userId = 8801L, profileImageCode = "M01", gender = Gender.MALE)
+				persistUserDetail(userId = 8802L, profileImageCode = "M02", gender = Gender.MALE)
+
+				persistAlarmAt(userId, "팀 관심 알람", fromTeamId = teamId, createdAt = LocalDateTime.now().minusDays(1))
+
+				get("/alarms/v1") {
+					bearer(accessTokenFor(userId))
+				} expect {
+					status(200)
+					body("success", true)
+					body("data.size()", 1)
+					body("data[0].fromUserId", nullValue())
+					body("data[0].fromTeamId", teamId.toInt())
+					// froms: 발신 팀 구성원 2인의 프로필 (순서 무관)
+					body("data[0].froms.size()", 2)
+					body("data[0].froms.userId", containsInAnyOrder(8801, 8802))
+				}
+			}
+		}
+
 		context("발신자(fromUserId)가 없는 알람이면") {
 			it("froms가 빈 배열로 반환된다") {
 				val userId = 7103L
@@ -113,6 +144,7 @@ class MyAlarmsE2ETest : AbstractIntegrationSupport({
 	afterTest {
 		IntegrationUtil.deleteAll(QAlarmEntity.alarmEntity)
 		IntegrationUtil.deleteAll(QUserDetailEntity.userDetailEntity)
+		IntegrationUtil.deleteAll(QTeamMemberEntity.teamMemberEntity)
 	}
 })
 
@@ -123,11 +155,24 @@ private fun persistUserDetail(userId: Long, profileImageCode: String, gender: Ge
 	)
 }
 
+// 발신 팀 구성원(team_members) 한 행을 저장한다. fromTeamId 알람의 froms(팀 구성원 IN 조회) 검증용.
+private fun persistTeamMember(teamId: Long, userId: Long) {
+	IntegrationUtil.persist(
+		TeamMemberEntity(teamId = teamId, userId = userId, status = TeamMemberStatus.ACTIVE),
+	)
+}
+
 // 알람을 저장한 뒤 생성 시각(created_at)을 원하는 값으로 백데이트하고 id를 반환한다.
 // created_at은 JPA Auditing이 저장 시 now로 채우므로, 1개월 컷오프/정렬 검증을 위해 QueryDSL 업데이트로 덮어쓴다.
-private fun persistAlarmAt(userId: Long, title: String, fromUserId: Long?, createdAt: LocalDateTime): Long {
+private fun persistAlarmAt(
+	userId: Long,
+	title: String,
+	fromUserId: Long? = null,
+	fromTeamId: Long? = null,
+	createdAt: LocalDateTime,
+): Long {
 	val saved = IntegrationUtil.persist(
-		AlarmEntityFixture.create(userId = userId, title = title, fromUserId = fromUserId),
+		AlarmEntityFixture.create(userId = userId, title = title, fromUserId = fromUserId, fromTeamId = fromTeamId),
 	)
 	val id: Long = saved.id!!
 	val alarm: QAlarmEntity = QAlarmEntity.alarmEntity

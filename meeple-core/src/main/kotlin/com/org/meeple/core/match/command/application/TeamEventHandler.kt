@@ -45,7 +45,6 @@ class TeamEventHandler(
 				// 알람을 누르면 받은 초대 목록으로 이동한다. (프론트 라우팅에 맞춘 경로)
 				link = "/friend/invites",
 				fromUserId = event.inviterUserId,
-				fromTeamId = event.teamId,
 			),
 		)
 	}
@@ -67,7 +66,6 @@ class TeamEventHandler(
 				// 알람을 누르면 팀 구성 화면으로 이동한다. (프론트 라우팅에 맞춘 경로)
 				link = "/friend/team",
 				fromUserId = event.invitedUserId,
-				fromTeamId = event.teamId,
 			),
 		)
 	}
@@ -89,7 +87,6 @@ class TeamEventHandler(
 				// 알람을 누르면 받은 초대 목록으로 이동한다. (프론트 라우팅에 맞춘 경로)
 				link = "/friend/invites",
 				fromUserId = event.inviterUserId,
-				fromTeamId = event.teamId,
 			),
 		)
 	}
@@ -111,12 +108,11 @@ class TeamEventHandler(
 				// 알람을 누르면 팀 구성 화면으로 이동한다. (프론트 라우팅에 맞춘 경로)
 				link = "/friend/team",
 				fromUserId = event.invitedUserId,
-				fromTeamId = event.teamId,
 			),
 		)
 	}
 
-	/** 팀 해체 → 해체 실행자를 제외한 같은 팀의 남은 구성원 각자에게 "팀 해체됨" 알람. (수신자 목록만큼 개별 저장) */
+	/** 팀 해체 → 해체 실행자를 제외한 같은 팀의 남은 구성원 각자에게 "팀 해체됨" 알람. (발신 유저는 해체를 실행한 구성원, 수신자 목록만큼 개별 저장) */
 	@TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
 	@Transactional(propagation = Propagation.REQUIRES_NEW)
 	fun onTeamDisbanded(event: TeamDisbanded) {
@@ -128,7 +124,7 @@ class TeamEventHandler(
 					title = "팀 해체",
 					description = "함께하던 팀이 해체되었어요.",
 					link = "",
-					fromTeamId = event.disbandedTeamId,
+					fromUserId = event.disbandedByUserId,
 				),
 			)
 		}
