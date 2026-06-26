@@ -165,6 +165,14 @@ class TeamMatchTest : DescribeSpec({
 		it("성사된 매칭의 참가 팀이면 예외 없이 통과한다") {
 			matched().validateTerminable(10L)
 		}
+
+		it("이미 나간(비활성) 팀이 다시 종료하려 하면 TEAM_MATCH_ALREADY_CLOSED를 던진다") {
+			// 10번 팀이 먼저 나가 헤더는 MATCHED로 남고 10번만 DEACTIVE인 상태
+			val afterTenLeft: TeamMatch = matched().leave(10L, now)
+
+			val ex: BusinessException = shouldThrow { afterTenLeft.validateTerminable(10L) }
+			ex.errorCode shouldBe TeamMatchErrorCode.TEAM_MATCH_ALREADY_CLOSED
+		}
 	}
 
 	describe("isLastActiveTeam") {
@@ -180,18 +188,18 @@ class TeamMatchTest : DescribeSpec({
 		fun matched(): TeamMatch =
 			TeamMatch.propose(10L, 20L, TeamMatchType.RECOMMENDED, now).respond(10L).respond(20L)
 
-		it("상대 팀이 활성이면 내 팀만 DEACTIVE+deletedAt이 되고 헤더는 MATCHED로 유지된다") {
+		it("상대 팀이 활성이면 내 팀만 DEACTIVE로 전이되고(소프트 삭제 안 함) 헤더는 MATCHED로 유지된다") {
 			val left: TeamMatch = matched().leave(10L, now)
 
 			left.status shouldBe MatchStatus.MATCHED
 			val ten: com.org.meeple.core.match.command.domain.MatchedTeam = left.matchedTeams.values.first { it.teamId == 10L }
 			ten.status shouldBe MatchedTeamStatus.DEACTIVE
-			ten.deletedAt shouldBe now
+			ten.deletedAt shouldBe null
 			left.matchedTeams.values.first { it.teamId == 20L }.status shouldBe MatchedTeamStatus.ACTIVE
 			left.deletedAt shouldBe null
 		}
 
-		it("상대 팀이 이미 나간 마지막 종료면 헤더까지 CLOSED+deletedAt이 된다") {
+		it("상대 팀이 이미 나간 마지막 종료면 헤더와 참가 팀 전원이 CLOSED+deletedAt이 된다") {
 			val onlyTenActive: TeamMatch = matched().leave(20L, now)
 
 			val closed: TeamMatch = onlyTenActive.leave(10L, now)
@@ -199,6 +207,7 @@ class TeamMatchTest : DescribeSpec({
 			closed.status shouldBe MatchStatus.CLOSED
 			closed.deletedAt shouldBe now
 			closed.matchedTeams.values.all { it.status == MatchedTeamStatus.DEACTIVE } shouldBe true
+			closed.matchedTeams.values.all { it.deletedAt == now } shouldBe true
 		}
 	}
 })

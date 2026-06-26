@@ -35,13 +35,21 @@ data class MatchedTeams(
 	fun isParticipant(teamId: Long): Boolean =
 		values.any { matchedTeam: MatchedTeam -> matchedTeam.teamId == teamId }
 
+	/** [teamId] 팀을 찾는다. 없으면 null. */
+	fun find(teamId: Long): MatchedTeam? =
+		values.firstOrNull { matchedTeam: MatchedTeam -> matchedTeam.teamId == teamId }
+
 	/** [teamId] 팀을 신청(APPLY) 처리한 새 컬렉션을 반환한다. (나머지는 그대로) */
 	fun apply(teamId: Long): MatchedTeams =
 		MatchedTeams(values.map { matchedTeam: MatchedTeam -> if (matchedTeam.teamId == teamId) matchedTeam.apply() else matchedTeam })
 
-	/** [teamId] 팀만 비활성 + soft delete한 새 컬렉션을 반환한다. (나머지는 그대로) */
-	fun leave(teamId: Long, now: LocalDateTime): MatchedTeams =
-		MatchedTeams(values.map { matchedTeam: MatchedTeam -> if (matchedTeam.teamId == teamId) matchedTeam.leave(now) else matchedTeam })
+	/** [teamId] 팀만 비활성(DEACTIVE) 전이한 새 컬렉션을 반환한다. (나머지는 그대로, 소프트 삭제는 안 함) */
+	fun deactivate(teamId: Long): MatchedTeams =
+		MatchedTeams(values.map { matchedTeam: MatchedTeam -> if (matchedTeam.teamId == teamId) matchedTeam.deactivate() else matchedTeam })
+
+	/** 모든 참가 팀을 [now]에 소프트 삭제(제거)한 새 컬렉션을 반환한다. (마지막 종료로 매칭 헤더까지 제거될 때) */
+	fun delete(now: LocalDateTime): MatchedTeams =
+		MatchedTeams(values.map { matchedTeam: MatchedTeam -> matchedTeam.delete(now) })
 
 	/** [teamId]를 제외한 상대 팀이 모두 비활성(DEACTIVE)인지 여부. (이 팀이 나가면 알릴 상대가 없는 마지막 종료) */
 	fun isLastActiveTeam(teamId: Long): Boolean =

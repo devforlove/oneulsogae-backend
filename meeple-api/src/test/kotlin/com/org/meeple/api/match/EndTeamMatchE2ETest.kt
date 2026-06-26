@@ -37,9 +37,9 @@ import java.time.LocalDateTime
 /**
  * `DELETE /team-matches/v1/{teamMatchId}` E2E 테스트. (팀 매칭 종료 엔드포인트)
  *
- * 성사(MATCHED)된 팀 매칭을 한 팀이 종료하면, 그 팀의 matched_team만 DEACTIVE+소프트 삭제되고(상대 팀·헤더 유지),
- * 우리 팀원 전원이 채팅방에서 DEACTIVE가 되며 남는 상대 팀에 "상대 팀이 채팅방을 나갔어요" 메세지와 "매칭 종료" 알림이 간다.
- * 상대 팀까지 모두 나간 마지막 종료에서는 team_matches 헤더가 CLOSED+소프트 삭제되고 알림은 가지 않는다.
+ * 성사(MATCHED)된 팀 매칭을 한 팀이 종료하면, 그 팀의 matched_team만 DEACTIVE로 전이되고(소프트 삭제는 안 함, 상대 팀·헤더 유지),
+ * 우리 팀원 전원이 채팅방에서 DEACTIVE가 되며 남는 상대 팀에 "상대 팀이 매칭을 종료했어요" 메세지와 "매칭 종료" 알림이 간다.
+ * 상대 팀까지 모두 나간 마지막 종료에서는 team_matches 헤더와 참가 팀 전원이 CLOSED·소프트 삭제되고 알림은 가지 않는다.
  * 실제 서버(RANDOM_PORT) + Testcontainers(MySQL/Redis, 분산 락 포함)를 기동하고 HTTP를 호출한다.
  */
 class EndTeamMatchE2ETest : AbstractIntegrationSupport({
@@ -87,7 +87,7 @@ class EndTeamMatchE2ETest : AbstractIntegrationSupport({
 	describe("DELETE /team-matches/v1/{teamMatchId}") {
 
 		context("성사된 팀 매칭을 한 팀이 종료하면") {
-			it("내 팀 matched_team만 비활성·소프트 삭제되고, 우리 팀원이 채팅방에서 나가며 상대 팀에 안내·알림이 간다 (200)") {
+			it("내 팀 matched_team만 비활성(DEACTIVE) 전이되고, 우리 팀원이 채팅방에서 나가며 상대 팀에 안내·알림이 간다 (200)") {
 				val a1 = 4101L
 				val a2 = 4102L
 				val b1 = 5101L
@@ -104,8 +104,8 @@ class EndTeamMatchE2ETest : AbstractIntegrationSupport({
 					body("success", true)
 				}
 
-				// 내 팀(A) matched_team은 소프트 삭제로 조회에서 제외, 상대 팀(B)은 ACTIVE 유지, 헤더는 MATCHED 유지
-				matchedTeamStatus(teamMatchId, teamA) shouldBe null
+				// 내 팀(A) matched_team은 DEACTIVE로 전이(소프트 삭제 안 함), 상대 팀(B)은 ACTIVE 유지, 헤더는 MATCHED 유지
+				matchedTeamStatus(teamMatchId, teamA) shouldBe MatchedTeamStatus.DEACTIVE
 				matchedTeamStatus(teamMatchId, teamB) shouldBe MatchedTeamStatus.ACTIVE
 				teamMatchStatus(teamMatchId) shouldBe MatchStatus.MATCHED
 				// 우리 팀원 전원(A) 채팅 DEACTIVE, 상대 팀(B) ACTIVE 유지
@@ -229,7 +229,7 @@ class EndTeamMatchE2ETest : AbstractIntegrationSupport({
 	}
 })
 
-// @SQLRestriction("deleted_at is null") 적용 — 소프트 삭제된 matched_team은 조회에서 빠지므로 null이면 종료된 것.
+// @SQLRestriction("deleted_at is null") 적용 — 한 팀만 나간 동안은 DEACTIVE로 남고, 마지막 종료로 소프트 삭제되면 조회에서 빠져 null이 된다.
 private fun matchedTeamStatus(teamMatchId: Long, teamId: Long): MatchedTeamStatus? {
 	val q: QMatchedTeamEntity = QMatchedTeamEntity.matchedTeamEntity
 	return IntegrationUtil.getQuery().select(q.status).from(q)
