@@ -16,17 +16,25 @@ class ChatRoomMemberTest : DescribeSpec({
 	val now: LocalDateTime = LocalDateTime.of(2026, 6, 11, 12, 0)
 	val chatRoomId: Long = 10L
 	val userId: Long = 1L
+	val teamId: Long = 20L
 
 	describe("join") {
-		it("안 읽은 개수 0, 마지막 읽음 없음, 미퇴장 상태로 참가시킨다") {
-			val member: ChatRoomMember = ChatRoomMember.join(chatRoomId = chatRoomId, userId = userId, now = now)
+		it("TEAM 참가자는 team_id를, 안 읽은 개수 0·미퇴장 상태로 참가시킨다") {
+			val member: ChatRoomMember = ChatRoomMember.join(chatRoomId = chatRoomId, userId = userId, teamId = teamId, now = now)
 
 			member.chatRoomId shouldBe chatRoomId
 			member.userId shouldBe userId
+			member.teamId shouldBe teamId
 			member.unreadCount shouldBe 0
 			member.lastReadAt shouldBe null
 			member.joinedAt shouldBe now
 			member.isExited shouldBe false
+		}
+
+		it("SOLO 참가자는 team_id가 null이다") {
+			val member: ChatRoomMember = ChatRoomMember.join(chatRoomId = chatRoomId, userId = userId, teamId = null, now = now)
+
+			member.teamId shouldBe null
 		}
 	}
 

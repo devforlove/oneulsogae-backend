@@ -33,12 +33,33 @@ class GetReceivedInvitationsDaoImpl(
 ) : GetReceivedInvitationsDao {
 
 	override fun findInvited(userId: Long): List<ReceivedInvitation> {
+		val headers: List<ReceivedInvitation> = findInvitedTeamHeaders(userId)
+		if (headers.isEmpty()) return emptyList()
+
+		val participantsByTeamId: Map<Long, List<ReceivedInvitationParticipant>> =
+			findActiveParticipantsByTeamIds(headers.map { header: ReceivedInvitation -> header.teamId })
+
+		return headers.map { header: ReceivedInvitation ->
+			header.copy(participants = participantsByTeamId[header.teamId].orEmpty())
+		}
+	}
+
+	// ① 내가 INVITED인 INVITING 팀 헤더(팀 메타 + 내가 초대된 시각 me.created_at)를 team.id desc로 조회한다. (팀당 1행, fan-out 없음 — 구성원은 ②에서 채우므로 빈 목록으로 둔다)
+	private fun findInvitedTeamHeaders(userId: Long): List<ReceivedInvitation> {
 		val teamMember: QTeamMemberEntity = QTeamMemberEntity("teamMember")
 		val team: QTeamEntity = QTeamEntity.teamEntity
 
-		// ① 내가 INVITED인 INVITING 팀 헤더. (팀당 1행, fan-out 없음)
-		val headers: List<Tuple> = queryFactory
-			.select(team.id, team.name, team.introduction, teamMember.createdAt)
+		return queryFactory
+			.select(
+				Projections.constructor(
+					ReceivedInvitation::class.java,
+					team.id,
+					team.name,
+					team.introduction,
+					teamMember.createdAt,
+					Expressions.constant(emptyList<ReceivedInvitationParticipant>()),
+				),
+			)
 			.from(teamMember)
 			.join(team).on(team.id.eq(teamMember.teamId))
 			.where(
@@ -48,22 +69,6 @@ class GetReceivedInvitationsDaoImpl(
 			)
 			.orderBy(team.id.desc())
 			.fetch()
-
-		if (headers.isEmpty()) return emptyList()
-
-		val teamIds: List<Long> = headers.map { header: Tuple -> header.get(team.id)!! }
-		val participantsByTeamId: Map<Long, List<ReceivedInvitationParticipant>> = findActiveParticipantsByTeamIds(teamIds)
-
-		return headers.map { header: Tuple ->
-			val teamId: Long = header.get(team.id)!!
-			ReceivedInvitation(
-				teamId = teamId,
-				name = header.get(team.name)!!,
-				introduction = header.get(team.introduction),
-				invitedAt = header.get(teamMember.createdAt)!!,
-				participants = participantsByTeamId[teamId] ?: emptyList(),
-			)
-		}
 	}
 
 	override fun countInvited(userId: Long): Long {

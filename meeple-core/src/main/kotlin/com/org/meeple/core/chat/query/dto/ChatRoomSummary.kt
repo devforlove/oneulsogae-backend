@@ -1,5 +1,6 @@
 package com.org.meeple.core.chat.query.dto
 
+import com.org.meeple.common.chat.ChatRoomMatchType
 import com.org.meeple.common.chat.ChatRoomStatus
 import java.time.LocalDateTime
 
@@ -12,6 +13,8 @@ import java.time.LocalDateTime
 data class ChatRoomSummary(
 	val chatRoomId: Long,
 	val participants: List<ChatParticipant>,
+	/** 채팅방 종류(SOLO 1:1 / TEAM 2:2). 방을 생성시킨 매칭의 종류다. */
+	val matchType: ChatRoomMatchType,
 	val status: ChatRoomStatus,
 	val expiredAt: LocalDateTime,
 	val unreadCount: Int,

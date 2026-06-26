@@ -67,10 +67,6 @@ class UserDetailEntity(
 	@Column(name = "region_id")
 	var regionId: Long? = null,
 
-	/** 활동 지역으로부터 산출한 권역 코드(1~5). (매칭 풀 키) */
-	@Column(name = "region_code")
-	var regionCode: Int? = null,
-
 	/** 자기소개. */
 	@Column(name = "introduction", length = 1000)
 	var introduction: String? = null,

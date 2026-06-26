@@ -22,6 +22,9 @@ data class AlarmViews(
 	/** 알람을 유발한 발신 유저 id들을 중복 없이 모은다. (없는 알람은 제외) 발신 유저 프로필 일괄 조회에 쓴다. */
 	fun fromUserIds(): Set<Long> = values.mapNotNull { it.fromUserId }.toSet()
 
+	/** 알람을 유발한 발신 팀 id들을 중복 없이 모은다. (없는 알람은 제외) 발신 팀 구성원 일괄 조회에 쓴다. */
+	fun fromTeamIds(): Set<Long> = values.mapNotNull { it.fromTeamId }.toSet()
+
 	companion object {
 
 		/** 빈 알람 목록. */

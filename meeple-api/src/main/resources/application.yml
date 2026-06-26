@@ -67,12 +67,12 @@ meeple:
     batch:
       # 매일 12:00:00 1회 (Asia/Seoul). 운영에서 MEEPLE_MATCH_BATCH_CRON 환경변수로 덮어쓸 수 있다.
       cron: ${MEEPLE_MATCH_BATCH_CRON:0 0 12 * * *}
-    expire:
-      # 만료된(미응답) 소개 정리. 매 10분 0초 1회 (Asia/Seoul). 운영에서 MEEPLE_MATCH_EXPIRE_CRON 환경변수로 덮어쓸 수 있다.
-      cron: ${MEEPLE_MATCH_EXPIRE_CRON:0 */10 * * * *}
     recommended-team-batch:
       # 팀 없는 솔로 유저에게 가까운 결성 팀 추천. 매일 04:00 (Asia/Seoul). 운영에서 MEEPLE_RECOMMENDED_TEAM_BATCH_CRON 환경변수로 덮어쓸 수 있다.
       cron: ${MEEPLE_RECOMMENDED_TEAM_BATCH_CRON:0 0 4 * * *}
+    team-match-batch:
+      # 결성(ACTIVE) 팀끼리 가까운 권역으로 2:2 소개. 매일 13:00 (Asia/Seoul). 운영에서 MEEPLE_TEAM_MATCH_BATCH_CRON 환경변수로 덮어쓸 수 있다.
+      cron: ${MEEPLE_TEAM_MATCH_BATCH_CRON:0 0 13 * * *}
 
 logging:
   level:
@@ -109,3 +109,6 @@ meeple:
     recommended-team-batch:
       # 팀 없는 솔로 유저에게 가까운 결성 팀 추천. 매일 04:00 (Asia/Seoul). 운영에서 MEEPLE_RECOMMENDED_TEAM_BATCH_CRON 환경변수로 덮어쓸 수 있다.
       cron: ${MEEPLE_RECOMMENDED_TEAM_BATCH_CRON:0 * * * * *}
+    team-match-batch:
+      # 로컬에서는 팀 매칭 배치도 1분마다 돌려 동작을 빠르게 확인한다. (운영 기본값은 매일 13:00)
+      cron: ${MEEPLE_TEAM_MATCH_BATCH_CRON:0 * * * * *}

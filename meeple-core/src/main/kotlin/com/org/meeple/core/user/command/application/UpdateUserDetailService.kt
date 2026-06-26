@@ -1,9 +1,7 @@
 package com.org.meeple.core.user.command.application
 
-import com.org.meeple.common.user.Region
 import com.org.meeple.core.common.event.DomainEventPublisher
 import com.org.meeple.core.common.time.TimeGenerator
-import com.org.meeple.core.region.query.dto.RegionView
 import com.org.meeple.core.region.query.service.port.`in`.GetRegionUseCase
 import com.org.meeple.core.user.command.application.port.`in`.UpdateUserDetailUseCase
 import com.org.meeple.core.user.command.application.port.`in`.command.UpdateUserDetailCommand
@@ -17,7 +15,7 @@ import org.springframework.transaction.annotation.Transactional
 /**
  * [UpdateUserDetailUseCase] 구현.
  * 온보딩 입력값(프로필 상세 전체)을 도메인 모델([UserDetail.initProfile])에 위임해 갱신·저장한다.
- * 프로필 갱신 규칙(필드 교체/regionCode 산출/profileImageCode 배정)은 도메인이 담당하고,
+ * 프로필 갱신 규칙(필드 교체/profileImageCode 배정)은 도메인이 담당하고,
  * 서비스는 조회·저장만 맡는다.
  */
 @Service
@@ -35,9 +33,8 @@ class UpdateUserDetailService(
 		val existing: UserDetail = getUserDetailPort.findByUserId(userId)
 			?: UserDetail.create(userId)
 
-		// 활동지역은 regionId로 받는다. (없는 id면 REGION_NOT_FOUND) regionCode(권역 1~5)는 시/도에서 산출한다.
-		val region: RegionView = getRegionUseCase.getById(command.regionId)
-		val regionCode: Int? = Region.resolveAreaCode(region.sido)
+		// 활동지역은 regionId로 받는다. (없는 id면 REGION_NOT_FOUND)
+		getRegionUseCase.getById(command.regionId)
 
 		val updated: UserDetail = existing.initProfile(
 			nickname = command.nickname,
@@ -47,7 +44,6 @@ class UpdateUserDetailService(
 			phoneNumber = command.phoneNumber,
 			job = command.job,
 			regionId = command.regionId,
-			regionCode = regionCode,
 			introduction = command.introduction,
 			traits = command.traits,
 			interests = command.interests,

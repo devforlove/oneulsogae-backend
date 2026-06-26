@@ -1,9 +1,7 @@
 package com.org.meeple.infra.match.command.adapter
 
-import com.org.meeple.common.match.MatchStatus
 import com.org.meeple.common.match.SoloMatchType
 import com.org.meeple.common.user.Gender
-import com.org.meeple.core.match.command.application.port.out.DeleteMatchPort
 import com.org.meeple.core.match.command.application.port.out.GetMatchPort
 import com.org.meeple.core.match.command.application.port.out.SaveMatchPort
 import com.org.meeple.core.match.command.domain.Match
@@ -14,7 +12,6 @@ import com.org.meeple.infra.match.command.mapper.toEntities
 import com.org.meeple.infra.match.command.mapper.toEntity
 import com.org.meeple.infra.match.command.repository.MatchJpaRepository
 import com.org.meeple.infra.match.command.repository.MatchMemberJpaRepository
-import com.org.meeple.scheduler.match.command.application.port.out.GetExpiredMatchIdsPort
 import com.org.meeple.scheduler.match.command.application.port.out.SaveMatchRecordPort
 import org.springframework.stereotype.Component
 import java.time.LocalDateTime
@@ -30,29 +27,13 @@ import java.time.LocalDateTime
 class MatchAdapter(
 	private val matchJpaRepository: MatchJpaRepository,
 	private val matchMemberJpaRepository: MatchMemberJpaRepository,
-) : GetMatchPort, SaveMatchPort, SaveMatchRecordPort, DeleteMatchPort, GetExpiredMatchIdsPort {
-
-	// 응답 대기(미성사) 상태로 만료 시각이 지난 소개의 id만 가져온다. (성사·종료는 대상 아님)
-	override fun findExpiredMatchIds(now: LocalDateTime): List<Long> =
-		matchJpaRepository.findExpiredMatchIds(
-			now,
-			listOf(MatchStatus.PROPOSED, MatchStatus.PARTIALLY_ACCEPTED),
-		)
+) : GetMatchPort, SaveMatchPort, SaveMatchRecordPort {
 
 	// 헤더 + 참가자를 함께 읽어 매칭 애그리거트로 조립한다.
 	override fun findById(id: Long): Match? =
 		matchJpaRepository.findById(id).orElse(null)?.let { entity: SoloMatchEntity ->
 			entity.toDomain(loadMembers(entity.id!!))
 		}
-
-	/**
-	 * 주어진 매칭(헤더+참가자)을 그대로 영속화한다. (소프트 삭제 여부는 도메인 상태(deletedAt)가 들고, 매퍼가 적용한다)
-	 * 제거(소프트 삭제)는 유스케이스가 [Match.delete]로 표현해 넘기므로, 여기선 매핑·저장(merge)만 한다.
-	 */
-	override fun delete(match: Match) {
-		matchJpaRepository.save(match.toEntity())
-		matchMemberJpaRepository.saveAll(match.members.toEntities())
-	}
 
 	/**
 	 * 매칭 애그리거트를 저장한다. 헤더를 저장해 id를 얻고, 그 id로 참가자 행들을 함께 저장한다.

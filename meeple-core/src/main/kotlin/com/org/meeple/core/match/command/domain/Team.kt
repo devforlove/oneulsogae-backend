@@ -46,6 +46,9 @@ data class Team(
 	/** 초대 단계(INVITING) 팀의 초대 대상(INVITED 구성원) userId. */
 	fun invitedId(): Long = members.invitedId()
 
+	/** 활성(ACTIVE) 구성원 목록. (결성([TeamStatus.ACTIVE])된 팀이면 전원. 각 구성원은 소속 teamId를 보유) */
+	fun activeMembers(): List<TeamMember> = members.activeMembers()
+
 	/** 활성(ACTIVE) 구성원의 userId 목록. (결성([TeamStatus.ACTIVE])된 팀이면 전원) */
 	fun activeMemberIds(): List<Long> = members.activeMemberIds()
 

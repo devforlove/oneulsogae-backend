@@ -53,7 +53,7 @@ class DisbandTeamService(
 		// 해체 실행자를 제외한 남은 팀 구성원에게 팀 해체 알림.
 		val recipientUserIds: List<Long> = memberIds.filter { memberId: Long -> memberId != userId }
 		if (recipientUserIds.isNotEmpty()) {
-			domainEventPublisher.publish(TeamDisbanded(teamId, recipientUserIds))
+			domainEventPublisher.publish(TeamDisbanded(disbandedByUserId = userId, recipientUserIds = recipientUserIds))
 		}
 		return disbandedTeam
 	}

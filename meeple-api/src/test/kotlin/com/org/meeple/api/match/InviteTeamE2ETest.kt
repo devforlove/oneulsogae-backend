@@ -97,7 +97,8 @@ class InviteTeamE2ETest : AbstractIntegrationSupport({
 				val alarm: AlarmEntity = alarms[0]
 				alarm.type shouldBe AlarmType.TEAM_INVITATION_RECEIVED
 				alarm.fromUserId shouldBe ownerId
-				alarm.fromTeamId shouldBe teamId
+				// fromTeamId는 상대 팀 매칭 알림에만 쓰며, 초대 알림은 발신 유저(fromUserId)만 둔다.
+				alarm.fromTeamId shouldBe null
 				alarm.description shouldBe "철수님이 회원님을 팀에 초대했어요."
 				alarm.link shouldBe "/friend/invites"
 				// 초대자 본인에게는 알람이 가지 않는다.

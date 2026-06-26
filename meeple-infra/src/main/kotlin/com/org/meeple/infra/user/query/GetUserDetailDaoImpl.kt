@@ -39,7 +39,6 @@ class GetUserDetailDaoImpl(
 					detail.regionId,
 					// 표시용 활동지역은 regions를 join해 "시/도 시/군/구"로 만든다. (지역 미설정이면 null)
 					region.sido.concat(" ").concat(region.sigungu),
-					detail.regionCode,
 					detail.introduction,
 					Expressions.path(List::class.java, detail, "traits"),
 					Expressions.path(List::class.java, detail, "interests"),

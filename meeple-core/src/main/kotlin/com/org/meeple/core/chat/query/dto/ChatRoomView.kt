@@ -1,5 +1,6 @@
 package com.org.meeple.core.chat.query.dto
 
+import com.org.meeple.common.chat.ChatRoomMatchType
 import com.org.meeple.common.chat.ChatRoomStatus
 
 /**
@@ -9,5 +10,7 @@ import com.org.meeple.common.chat.ChatRoomStatus
  */
 data class ChatRoomView(
 	val chatRoomId: Long,
+	/** 채팅방 종류(SOLO 1:1 / TEAM 2:2). */
+	val matchType: ChatRoomMatchType,
 	val status: ChatRoomStatus,
 )

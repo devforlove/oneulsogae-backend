@@ -16,6 +16,8 @@ data class ChatRoomMember(
 	val id: Long = 0,
 	val chatRoomId: Long,
 	val userId: Long,
+	/** TEAM 매칭 방에서 이 참가자가 속한 팀 id. SOLO 방은 null. 목록 조회에서 내 팀/상대 팀 구분에 쓴다. */
+	val teamId: Long? = null,
 	val status: ChatRoomMemberStatus = ChatRoomMemberStatus.ACTIVE,
 	val unreadCount: Int = 0,
 	val lastReadAt: LocalDateTime? = null,
@@ -71,11 +73,12 @@ data class ChatRoomMember(
 
 	companion object {
 
-		/** [userId] 사용자를 [chatRoomId] 채팅방에 [now]에 참가시킨 신규 참가자를 생성한다. (안 읽은 개수 0, 미확인 상태) */
-		fun join(chatRoomId: Long, userId: Long, now: LocalDateTime): ChatRoomMember =
+		/** [userId] 사용자를 [chatRoomId] 채팅방에 [now]에 참가시킨 신규 참가자를 생성한다. ([teamId]는 TEAM 방의 소속 팀, SOLO는 null. 안 읽은 개수 0, 미확인 상태) */
+		fun join(chatRoomId: Long, userId: Long, teamId: Long?, now: LocalDateTime): ChatRoomMember =
 			ChatRoomMember(
 				chatRoomId = chatRoomId,
 				userId = userId,
+				teamId = teamId,
 				joinedAt = now,
 			)
 	}

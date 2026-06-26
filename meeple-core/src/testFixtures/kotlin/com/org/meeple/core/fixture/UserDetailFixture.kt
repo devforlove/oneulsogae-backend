@@ -11,8 +11,7 @@ import java.time.LocalDate
 
 /**
  * [UserDetail] 도메인 모델 테스트 픽스처.
- * 기본은 매칭에 필요한 필드(성별·활동권역·결혼여부 등)가 모두 채워진 완성 프로필이다.
- * 활동지역은 권역으로 인식되는 값("서울…")으로 둬 regionCode가 채워진 상태를 따른다.
+ * 기본은 매칭에 필요한 필드(성별·활동지역·결혼여부 등)가 모두 채워진 완성 프로필이다.
  */
 object UserDetailFixture {
 
@@ -27,7 +26,6 @@ object UserDetailFixture {
 		phoneNumber: String? = "010-1234-5678",
 		job: String? = "개발자",
 		regionId: Long? = 1L,
-		regionCode: Int? = 1,
 		introduction: String? = "안녕하세요",
 		traits: List<String> = listOf("성실함"),
 		interests: List<String> = listOf("영화"),
@@ -50,7 +48,6 @@ object UserDetailFixture {
 			phoneNumber = phoneNumber,
 			job = job,
 			regionId = regionId,
-			regionCode = regionCode,
 			introduction = introduction,
 			traits = traits,
 			interests = interests,

@@ -8,6 +8,7 @@ import com.org.meeple.infra.match.command.entity.QSoloMatchMemberEntity
 import com.org.meeple.scheduler.match.query.dao.GetMatchRecordDao
 import com.org.meeple.scheduler.match.query.dto.MatchedUserIds
 import com.querydsl.jpa.impl.JPAQueryFactory
+import jakarta.persistence.EntityManager
 import org.springframework.stereotype.Component
 import java.time.LocalDate
 
@@ -18,6 +19,7 @@ import java.time.LocalDate
 @Component
 class GetMatchRecordDaoImpl(
 	private val queryFactory: JPAQueryFactory,
+	private val entityManager: EntityManager,
 ) : GetMatchRecordDao {
 
 	// 참가자 조합 키(정렬된 userId)로 소개 이력 존재 여부만 확인한다. (ux_member_key)
@@ -48,16 +50,19 @@ class GetMatchRecordDaoImpl(
 		return MatchedUserIds(userIds.toSet())
 	}
 
-	// introduced_date로 그 날짜 소개 헤더를 seek(idx_introduced_date)하고, 참가자와 명시 조인해 userId를 모은다. (소프트 삭제 행은 @SQLRestriction으로 제외)
+	// introduced_date로 그 날짜에 소개된 유저를 모은다(idx_introduced_date seek). 취소된 소개(소프트 삭제)도 "오늘 소개 1회 소진"으로 세야
+	// 같은 날 재소개를 막으므로, @SQLRestriction("deleted_at is null")을 우회하기 위해 네이티브 쿼리로 조회한다. (QueryDSL·JPQL로는 우회 불가)
 	override fun findUserIdsIntroducedOn(date: LocalDate): Set<Long> {
-		val soloMatch: QSoloMatchEntity = QSoloMatchEntity.soloMatchEntity
-		val soloMatchMember: QSoloMatchMemberEntity = QSoloMatchMemberEntity.soloMatchMemberEntity
-		return queryFactory
-			.select(soloMatchMember.userId)
-			.from(soloMatch)
-			.join(soloMatchMember).on(soloMatchMember.matchId.eq(soloMatch.id))
-			.where(soloMatch.introducedDate.eq(date))
-			.fetch()
-			.toSet()
+		val sql: String = """
+			SELECT m.user_id
+			FROM solo_matches s
+			JOIN solo_match_members m ON m.match_id = s.id
+			WHERE s.introduced_date = :date
+		""".trimIndent()
+		val userIds: List<*> = entityManager
+			.createNativeQuery(sql)
+			.setParameter("date", date)
+			.resultList
+		return userIds.map { (it as Number).toLong() }.toSet()
 	}
 }

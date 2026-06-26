@@ -19,7 +19,7 @@ class ChatRoomMembersTest : DescribeSpec({
 	val roomId: Long = 100L
 
 	fun member(userId: Long, exited: Boolean = false): ChatRoomMember =
-		ChatRoomMember.join(chatRoomId = roomId, userId = userId, now = now)
+		ChatRoomMember.join(chatRoomId = roomId, userId = userId, teamId = null, now = now)
 			.let { if (exited) it.exit(now.plusHours(1)) else it }
 
 	describe("partnersOf") {
@@ -56,6 +56,20 @@ class ChatRoomMembersTest : DescribeSpec({
 			val members: ChatRoomMembers = ChatRoomMembers(listOf(member(1L)))
 
 			members.deactivate(setOf(99L)).values shouldBe emptyList()
+		}
+	}
+
+	describe("allInactiveAfterLeaving(leavingUserIds)") {
+		it("나가는 대상 외에 활성 참가자가 남으면 false다") {
+			val members: ChatRoomMembers = ChatRoomMembers(listOf(member(1L), member(2L)))
+
+			members.allInactiveAfterLeaving(setOf(1L)) shouldBe false
+		}
+
+		it("이미 비활성인 참가자만 남고 나머지가 모두 나가면 true다") {
+			val members: ChatRoomMembers = ChatRoomMembers(listOf(member(1L).deactivate(), member(2L)))
+
+			members.allInactiveAfterLeaving(setOf(2L)) shouldBe true
 		}
 	}
 

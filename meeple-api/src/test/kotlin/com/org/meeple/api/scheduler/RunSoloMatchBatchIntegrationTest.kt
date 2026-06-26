@@ -109,6 +109,21 @@ class RunSoloMatchBatchIntegrationTest(
 			}
 		}
 
+		context("오늘 소개됐다가 취소(소프트 삭제)된 유저는") {
+			it("같은 날 다시 소개되지 않는다") {
+				val regionId: Long = persistRegion("서울특별시", "강남구", 37.50, 127.00)
+				val maleId: Long = persistMatchableUser(userId = 1001L, gender = Gender.MALE, regionId = regionId)
+				val femaleId: Long = persistMatchableUser(userId = 1002L, gender = Gender.FEMALE, regionId = regionId)
+				// 1001이 오늘 9001과 소개됐다가 매칭을 취소해 소프트 삭제된 상태. 취소돼도 '오늘 소개 1회'는 소진된 것으로 본다.
+				persistCancelledMatchToday(userIdA = 1001L, userIdB = 9001L)
+
+				val result: SoloMatchBatchResult = runSoloMatchBatchUseCase.run()
+
+				result.recommended shouldBe 0
+				proposedMatchBetween(maleId, femaleId).shouldBeNull()
+			}
+		}
+
 		context("재소개 이력이 있는(과거 소개된) 쌍은") {
 			it("그 상대 대신 이력 없는 다른 후보와 소개한다") {
 				val regionId: Long = persistRegion("서울특별시", "강남구", 37.50, 127.00)
@@ -193,6 +208,24 @@ private fun persistMatch(userIdA: Long, userIdB: Long, status: MatchStatus, intr
 	val memberStatus: MatchMemberStatus = if (status == MatchStatus.MATCHED) MatchMemberStatus.ACTIVE else MatchMemberStatus.WAITING
 	IntegrationUtil.persist(SoloMatchMemberEntityFixture.create(matchId = match.id!!, userId = userIdA, gender = Gender.MALE, status = memberStatus))
 	IntegrationUtil.persist(SoloMatchMemberEntityFixture.create(matchId = match.id!!, userId = userIdB, gender = Gender.FEMALE, status = memberStatus))
+}
+
+// [userIdA]가 오늘 [userIdB]와 소개됐다가 매칭을 취소해 헤더·참가자가 모두 소프트 삭제된 상태를 만든다.
+// (softDelete()로 deleted_at을 채워 INSERT — @SQLRestriction은 INSERT엔 영향 없음)
+private fun persistCancelledMatchToday(userIdA: Long, userIdB: Long) {
+	val match: SoloMatchEntity = IntegrationUtil.persist(
+		SoloMatchEntityFixture.create(
+			memberKey = MatchMembers.memberKeyOf(listOf(userIdA, userIdB)),
+			status = MatchStatus.CLOSED,
+			introducedDate = LocalDate.now(),
+		).apply { softDelete() },
+	)
+	IntegrationUtil.persist(
+		SoloMatchMemberEntityFixture.create(matchId = match.id!!, userId = userIdA, gender = Gender.MALE, status = MatchMemberStatus.DEACTIVE).apply { softDelete() },
+	)
+	IntegrationUtil.persist(
+		SoloMatchMemberEntityFixture.create(matchId = match.id!!, userId = userIdB, gender = Gender.FEMALE, status = MatchMemberStatus.DEACTIVE).apply { softDelete() },
+	)
 }
 
 // [leaverId]가 [stayerId]와의 MATCHED 매치를 나가 DEACTIVE인 상태를 만든다. (매치 헤더는 MATCHED, leaver만 DEACTIVE)

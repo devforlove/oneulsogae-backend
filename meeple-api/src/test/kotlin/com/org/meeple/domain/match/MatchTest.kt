@@ -2,10 +2,14 @@ package com.org.meeple.domain.match
 
 import com.org.meeple.common.match.MatchMemberStatus
 import com.org.meeple.common.match.MatchStatus
+import com.org.meeple.core.common.error.BusinessException
 import com.org.meeple.core.fixture.MatchFixture
+import com.org.meeple.core.match.MatchErrorCode
 import com.org.meeple.core.match.command.domain.Match
 import com.org.meeple.core.match.command.domain.event.InterestSent
 import com.org.meeple.core.match.command.domain.event.MatchAccepted
+import com.org.meeple.core.match.command.domain.event.MatchEnded
+import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.core.spec.style.DescribeSpec
 import io.kotest.matchers.shouldBe
 import java.time.LocalDateTime
@@ -66,6 +70,103 @@ class MatchTest : DescribeSpec({
 		}
 	}
 
+	fun matchedMatch(
+		maleStatus: MatchMemberStatus = MatchMemberStatus.ACTIVE,
+		femaleStatus: MatchMemberStatus = MatchMemberStatus.ACTIVE,
+	): Match =
+		MatchFixture.create(
+			id = 7L,
+			members = MatchFixture.membersOf(
+				maleUserId = maleUserId,
+				femaleUserId = femaleUserId,
+				maleStatus = maleStatus,
+				femaleStatus = femaleStatus,
+			),
+			status = MatchStatus.MATCHED,
+		)
+
+	describe("isLastActiveMember - 마지막 활성 참가자 판별") {
+		it("상대가 아직 ACTIVE면 false다") {
+			matchedMatch().isLastActiveMember(maleUserId) shouldBe false
+		}
+
+		it("상대가 이미 나가(DEACTIVE) 있으면 true다") {
+			matchedMatch(femaleStatus = MatchMemberStatus.DEACTIVE).isLastActiveMember(maleUserId) shouldBe true
+		}
+	}
+
+	describe("leave - 나가기") {
+
+		it("혼자 나가면 본인만 DEACTIVE가 되고 상대·헤더는 그대로 유지된다") {
+			val now: LocalDateTime = LocalDateTime.of(2026, 6, 17, 12, 0)
+
+			val left: Match = matchedMatch().leave(maleUserId, now)
+
+			left.status shouldBe MatchStatus.MATCHED
+			left.deletedAt shouldBe null
+			left.members.find(maleUserId)!!.status shouldBe MatchMemberStatus.DEACTIVE
+			left.members.find(maleUserId)!!.deletedAt shouldBe null
+			left.members.find(femaleUserId)!!.status shouldBe MatchMemberStatus.ACTIVE
+		}
+
+		it("상대가 이미 나간 뒤 마지막 한 명이 나가면 헤더를 CLOSED·소프트 삭제하고 전원 제거한다") {
+			val now: LocalDateTime = LocalDateTime.of(2026, 6, 17, 12, 0)
+
+			val closed: Match = matchedMatch(femaleStatus = MatchMemberStatus.DEACTIVE).leave(maleUserId, now)
+
+			closed.status shouldBe MatchStatus.CLOSED
+			closed.deletedAt shouldBe now
+			closed.members.values.all { it.status == MatchMemberStatus.DEACTIVE } shouldBe true
+			closed.members.values.all { it.deletedAt == now } shouldBe true
+		}
+	}
+
+	describe("validateTerminable - 매칭 종료 가능 검증") {
+		fun matchedMatch(): Match =
+			MatchFixture.create(
+				id = 7L,
+				members = MatchFixture.membersOf(maleUserId = maleUserId, femaleUserId = femaleUserId),
+				status = MatchStatus.MATCHED,
+			)
+
+		it("성사(MATCHED)된 매칭의 참가자가 종료하면 통과한다") {
+			matchedMatch().validateTerminable(maleUserId)
+		}
+
+		it("참가자가 아니면 NOT_MATCH_PARTICIPANT를 던진다") {
+			val ex: BusinessException = shouldThrow { matchedMatch().validateTerminable(99L) }
+			ex.errorCode shouldBe MatchErrorCode.NOT_MATCH_PARTICIPANT
+		}
+
+		it("이미 종료(CLOSED)된 매칭이면 MATCH_ALREADY_CLOSED를 던진다") {
+			val closed: Match = matchedMatch().delete(LocalDateTime.of(2026, 6, 17, 12, 0))
+
+			val ex: BusinessException = shouldThrow { closed.validateTerminable(maleUserId) }
+			ex.errorCode shouldBe MatchErrorCode.MATCH_ALREADY_CLOSED
+		}
+
+		it("아직 성사되지 않은(PROPOSED) 매칭이면 MATCH_NOT_MATCHED를 던진다") {
+			val ex: BusinessException = shouldThrow { proposedMatch(id = 7L).validateTerminable(maleUserId) }
+			ex.errorCode shouldBe MatchErrorCode.MATCH_NOT_MATCHED
+		}
+
+		it("이미 나간(DEACTIVE) 참가자가 다시 종료하려 하면 MATCH_ALREADY_CLOSED를 던진다") {
+			val matchedWithLeftMale: Match = MatchFixture.create(
+				id = 7L,
+				members = MatchFixture.membersOf(
+					maleUserId = maleUserId,
+					femaleUserId = femaleUserId,
+					maleStatus = MatchMemberStatus.DEACTIVE,
+					femaleStatus = MatchMemberStatus.ACTIVE,
+				),
+				status = MatchStatus.MATCHED,
+			)
+
+			val ex: BusinessException = shouldThrow { matchedWithLeftMale.validateTerminable(maleUserId) }
+			ex.errorCode shouldBe MatchErrorCode.MATCH_ALREADY_CLOSED
+		}
+	}
+
 	describe("MatchAccepted.from") {
 		it("성사된 매칭의 id·수락자·상대를 이벤트로 옮긴다") {
 			val matched: Match = MatchFixture.create(
@@ -88,6 +189,16 @@ class MatchTest : DescribeSpec({
 			val event: InterestSent = InterestSent.from(match, senderUserId = maleUserId)
 
 			event shouldBe InterestSent(matchId = 7L, senderUserId = maleUserId, recipientUserId = femaleUserId)
+		}
+	}
+
+	describe("MatchEnded.from") {
+		it("나간 사람의 상대를 수신자로 하는 이벤트를 만든다") {
+			val match: Match = proposedMatch(id = 7L)
+
+			val event: MatchEnded = MatchEnded.from(match, leftByUserId = maleUserId)
+
+			event shouldBe MatchEnded(matchId = 7L, leftByUserId = maleUserId, partnerUserId = femaleUserId)
 		}
 	}
 })

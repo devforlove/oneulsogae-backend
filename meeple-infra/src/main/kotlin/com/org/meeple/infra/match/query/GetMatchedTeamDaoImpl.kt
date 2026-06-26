@@ -10,7 +10,8 @@ import com.org.meeple.infra.match.command.entity.QMatchedTeamEntity
 import com.org.meeple.infra.match.command.entity.QTeamEntity
 import com.org.meeple.infra.match.command.entity.QTeamMatchEntity
 import com.org.meeple.infra.region.entity.QRegionEntity
-import com.querydsl.core.Tuple
+import com.querydsl.core.types.Projections
+import com.querydsl.core.types.dsl.Expressions
 import com.querydsl.core.types.dsl.StringExpression
 import com.querydsl.jpa.impl.JPAQueryFactory
 import org.springframework.stereotype.Component
@@ -31,20 +32,41 @@ class GetMatchedTeamDaoImpl(
 ) : GetMatchedTeamDao {
 
 	override fun findInProgressByTeamId(myTeamId: Long, now: LocalDateTime): List<RecommendedTeam> {
+		val teams: List<RecommendedTeam> = findInProgressOpponentTeams(myTeamId, now)
+		if (teams.isEmpty()) return emptyList()
+
+		val membersByTeamId: Map<Long, List<RecommendedTeamMember>> =
+			recommendedTeamMemberLoader.loadByTeamIds(teams.map { team: RecommendedTeam -> team.teamId })
+
+		return teams.map { team: RecommendedTeam -> team.copy(members = membersByTeamId[team.teamId].orEmpty()) }
+	}
+
+	// ① 내 참가 행(mine) 기준으로 같은 팀 매칭의 상대 참가 행(opp)을 이어 진행 중인 상대 팀(ACTIVE) 헤더를 최신순으로 조회한다. (구성원은 ②에서 채우므로 빈 목록으로 둔다)
+	// 관심(신청) 여부는 참가 status가 APPLY(신청)/ACTIVE(성사)인지로 본다. 팀 활동지역은 regions를 left join해 "시/도 시/군/구"로 만든다. (지역 미설정이면 null)
+	private fun findInProgressOpponentTeams(myTeamId: Long, now: LocalDateTime): List<RecommendedTeam> {
 		val mine: QMatchedTeamEntity = QMatchedTeamEntity("mine")
 		val opp: QMatchedTeamEntity = QMatchedTeamEntity("opp")
 		val teamMatch: QTeamMatchEntity = QTeamMatchEntity.teamMatchEntity
 		val team: QTeamEntity = QTeamEntity.teamEntity
 		val teamRegion: QRegionEntity = QRegionEntity("teamRegion")
-
-		// 팀 활동지역은 teams.region_id를 regions에 join해 "시/도 시/군/구"로 만든다. (지역 미설정이면 null)
 		val teamActivityArea: StringExpression = teamRegion.sido.concat(" ").concat(teamRegion.sigungu)
 
-		val headers: List<Tuple> = queryFactory
+		return queryFactory
 			.select(
-				team.id, team.name, team.introduction, teamActivityArea,
-				teamMatch.dateInitAmount, teamMatch.dateAcceptAmount,
-				teamMatch.status, mine.status, opp.status,
+				Projections.constructor(
+					RecommendedTeam::class.java,
+					team.id,
+					team.name,
+					team.introduction,
+					teamActivityArea,
+					Expressions.constant(emptyList<RecommendedTeamMember>()),
+					teamMatch.dateInitAmount,
+					teamMatch.dateAcceptAmount,
+					teamMatch.id,
+					teamMatch.status,
+					mine.status.`in`(MatchedTeamStatus.APPLY, MatchedTeamStatus.ACTIVE),
+					opp.status.`in`(MatchedTeamStatus.APPLY, MatchedTeamStatus.ACTIVE),
+				),
 			)
 			.from(mine)
 			.join(teamMatch).on(teamMatch.id.eq(mine.teamMatchId))
@@ -60,30 +82,5 @@ class GetMatchedTeamDaoImpl(
 			)
 			.orderBy(teamMatch.introducedDate.desc(), team.id.desc())
 			.fetch()
-
-		if (headers.isEmpty()) return emptyList()
-
-		val teamIds: List<Long> = headers.map { header: Tuple -> header.get(team.id)!! }
-		val membersByTeamId: Map<Long, List<RecommendedTeamMember>> = recommendedTeamMemberLoader.loadByTeamIds(teamIds)
-
-		return headers.map { header: Tuple ->
-			val teamId: Long = header.get(team.id)!!
-			RecommendedTeam(
-				teamId = teamId,
-				name = header.get(team.name)!!,
-				introduction = header.get(team.introduction),
-				activityArea = header.get(teamActivityArea),
-				members = membersByTeamId[teamId].orEmpty(),
-				datingInitAmount = header.get(teamMatch.dateInitAmount)!!,
-				datingAcceptAmount = header.get(teamMatch.dateAcceptAmount)!!,
-				teamMatchStatus = header.get(teamMatch.status)!!,
-				hasUserInterest = hasApplied(header.get(mine.status)!!),
-				hasPartnerInterest = hasApplied(header.get(opp.status)!!),
-			)
-		}
 	}
-
-	// 참가 팀이 관심(신청)을 보냈는지 여부. APPLY(신청) 또는 ACTIVE(성사)면 신청한 것으로 본다.
-	private fun hasApplied(status: MatchedTeamStatus): Boolean =
-		status == MatchedTeamStatus.APPLY || status == MatchedTeamStatus.ACTIVE
 }

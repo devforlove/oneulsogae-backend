@@ -1,5 +1,6 @@
 package com.org.meeple.api.chat.response
 
+import com.org.meeple.common.chat.ChatRoomMatchType
 import com.org.meeple.common.chat.ChatRoomStatus
 import com.org.meeple.core.chat.query.dto.ChatRoomSummary
 import java.time.LocalDateTime
@@ -13,6 +14,8 @@ data class ChatRoomResponse(
 	val chatRoomId: Long,
 	/** 조회 사용자를 제외한 상대 참가자들. (1:1이면 한 명) */
 	val participants: List<ChatParticipantResponse>,
+	/** 채팅방 종류. SOLO(1:1) 또는 TEAM(2:2). */
+	val type: ChatRoomMatchType,
 	val status: ChatRoomStatus,
 	/** 채팅방 만료 시각. */
 	val expiredAt: LocalDateTime,
@@ -28,6 +31,7 @@ data class ChatRoomResponse(
 			ChatRoomResponse(
 				chatRoomId = summary.chatRoomId,
 				participants = summary.participants.map { ChatParticipantResponse.of(it) },
+				type = summary.matchType,
 				status = summary.status,
 				expiredAt = summary.expiredAt,
 				unreadCount = summary.unreadCount,

@@ -37,6 +37,10 @@ class ChatRoomMemberEntity(
 	@Column(name = "user_id", nullable = false)
 	val userId: Long,
 
+	/** TEAM 매칭 방에서 이 참가자가 속한 팀 id. SOLO 방은 null. 같은 방 내 상대 팀 판별(내 행과 비교)에 쓴다. */
+	@Column(name = "team_id")
+	val teamId: Long? = null,
+
 	/** 이 참가자의 활성 상태. (기본 활성) */
 	@Enumerated(EnumType.STRING)
 	@Column(name = "status", nullable = false, columnDefinition = "varchar(50)")

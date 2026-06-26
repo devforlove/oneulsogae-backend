@@ -2,6 +2,7 @@ package com.org.meeple.core.chat.command.application
 
 import com.org.meeple.core.chat.command.application.port.`in`.SaveChatRoomUseCase
 import com.org.meeple.core.chat.command.application.port.`in`.command.SaveChatRoomCommand
+import com.org.meeple.core.chat.command.application.port.`in`.command.SaveChatRoomParticipant
 import com.org.meeple.core.chat.command.application.port.out.GetChatRoomPort
 import com.org.meeple.core.chat.command.application.port.out.SaveChatRoomMemberPort
 import com.org.meeple.core.chat.command.application.port.out.SaveChatRoomPort
@@ -38,8 +39,8 @@ class SaveChatRoomService(
 		)
 		saveChatRoomMemberPort.saveAll(
 			ChatRoomMembers(
-				command.participantUserIds.map { participantUserId: Long ->
-					ChatRoomMember.join(chatRoomId = chatRoom.id, userId = participantUserId, now = now)
+				command.participants.map { participant: SaveChatRoomParticipant ->
+					ChatRoomMember.join(chatRoomId = chatRoom.id, userId = participant.userId, teamId = participant.teamId, now = now)
 				},
 			),
 		)

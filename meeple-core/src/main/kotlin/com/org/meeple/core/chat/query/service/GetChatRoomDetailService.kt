@@ -48,11 +48,12 @@ class GetChatRoomDetailService(
 		if (!existsChatRoomMemberDao.existsByChatRoomIdAndUserId(chatRoomId, userId)) {
 			throw BusinessException(ChatErrorCode.NOT_CHAT_ROOM_PARTICIPANT)
 		}
-		val participants: ChatParticipants = getChatParticipantDao.findByChatRoomId(chatRoomId)
+		val participants: ChatParticipants = getChatParticipantDao.findByChatRoomId(chatRoomId, userId)
 
 		val messages: ChatMessageViews = getChatMessageDao.findByChatRoom(chatRoomId, null, pageSize)
 		return ChatRoomDetail(
 			chatRoomId = chatRoom.chatRoomId,
+			matchType = chatRoom.matchType,
 			status = chatRoom.status,
 			participants = participants.values,
 			messages = messages,
@@ -67,6 +68,7 @@ class GetChatRoomDetailService(
 		val messages: ChatMessageViews = getChatMessageDao.findByChatRoom(chatRoomId, beforeMessageId, pageSize)
 		return ChatRoomDetail(
 			chatRoomId = chatRoomId,
+			matchType = null,
 			status = null,
 			participants = emptyList(),
 			messages = messages,

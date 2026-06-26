@@ -25,7 +25,6 @@ data class UserDetailView(
 	val regionId: Long?,
 	/** 활동지역 표시 문자열(시/도 시/군/구). regions join으로 채운다. */
 	val activityArea: String?,
-	val regionCode: Int?,
 	val introduction: String?,
 	val traits: List<String>,
 	val interests: List<String>,

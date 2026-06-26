@@ -5,6 +5,7 @@ import com.org.meeple.common.coin.CoinUsageType
 import com.org.meeple.common.match.MatchStatus
 import com.org.meeple.core.chat.command.application.port.`in`.SaveChatRoomUseCase
 import com.org.meeple.core.chat.command.application.port.`in`.command.SaveChatRoomCommand
+import com.org.meeple.core.chat.command.application.port.`in`.command.SaveChatRoomParticipant
 import com.org.meeple.core.coin.command.application.port.`in`.SpendCoinUseCase
 import com.org.meeple.core.coin.command.application.port.`in`.command.SpendCoinCommand
 import com.org.meeple.core.common.error.BusinessException
@@ -18,6 +19,8 @@ import com.org.meeple.core.match.command.application.port.out.GetTeamPort
 import com.org.meeple.core.match.command.application.port.out.SaveTeamMatchPort
 import com.org.meeple.core.match.command.domain.Team
 import com.org.meeple.core.match.command.domain.TeamMatch
+import com.org.meeple.core.match.command.domain.TeamMember
+import com.org.meeple.core.match.command.domain.Teams
 import com.org.meeple.core.match.command.domain.event.TeamMatchAccepted
 import com.org.meeple.core.match.command.domain.event.TeamMatchInterestSent
 import org.springframework.stereotype.Service
@@ -54,8 +57,8 @@ class SendTeamInterestService(
 			?: throw BusinessException(TeamMatchErrorCode.TEAM_MATCH_NOT_FOUND)
 
 		// 참가 두 팀을 로드해 행위자가 ACTIVE 구성원으로 속한 팀을 식별한다. (참가 검증 겸함)
-		val teams: List<Team> = teamMatch.matchedTeams.teamIds().mapNotNull { teamId: Long -> getTeamPort.findById(teamId) }
-		val actorTeam: Team = teams.firstOrNull { team: Team -> userId in team.activeMemberIds() }
+		val teams: Teams = Teams(teamMatch.matchedTeams.teamIds().mapNotNull { teamId: Long -> getTeamPort.findById(teamId) })
+		val actorTeam: Team = teams.findByActiveMember(userId)
 			?: throw BusinessException(TeamMatchErrorCode.NOT_TEAM_MATCH_PARTICIPANT)
 
 		teamMatch.validateRespondable(actorTeam.id)
@@ -69,23 +72,24 @@ class SendTeamInterestService(
 	}
 
 	/** 성사된 경우: 수락 비용 차감 + 4인 채팅방 생성(동기) + 성사 알림 위임(행위자 제외 양 팀 구성원). */
-	private fun completeMatch(userId: Long, teamMatch: TeamMatch, teams: List<Team>): TeamMatch {
+	private fun completeMatch(userId: Long, teamMatch: TeamMatch, teams: Teams): TeamMatch {
 		spend(userId, amount = teamMatch.dateAcceptAmount, usageType = CoinUsageType.MEETING_ACCEPT)
-		val allMemberIds: List<Long> = teams.flatMap { team: Team -> team.activeMemberIds() }
+		val participants: List<SaveChatRoomParticipant> = teams.activeMembers().map { member: TeamMember ->
+			SaveChatRoomParticipant(userId = member.userId, teamId = member.teamId)
+		}
 		saveChatRoomUseCase.save(
-			SaveChatRoomCommand(matchType = ChatRoomMatchType.TEAM, matchId = teamMatch.id, participantUserIds = allMemberIds),
+			SaveChatRoomCommand(matchType = ChatRoomMatchType.TEAM, matchId = teamMatch.id, participants = participants),
 		)
 		domainEventPublisher.publish(
-			TeamMatchAccepted(teamMatchId = teamMatch.id, recipientUserIds = allMemberIds.filter { it != userId }),
+			TeamMatchAccepted(teamMatchId = teamMatch.id, recipientUserIds = participants.map { it.userId }.filter { it != userId }),
 		)
 		return teamMatch
 	}
 
 	/** 미성사(신청)인 경우: 신청 비용 차감 + 상대 팀 구성원에게 관심 받음 알림 위임. */
-	private fun recordInterest(userId: Long, teamMatch: TeamMatch, actorTeam: Team, teams: List<Team>): TeamMatch {
+	private fun recordInterest(userId: Long, teamMatch: TeamMatch, actorTeam: Team, teams: Teams): TeamMatch {
 		spend(userId, amount = teamMatch.dateInitAmount, usageType = CoinUsageType.MEETING_INIT)
-		val opponentMemberIds: List<Long> = teams.filter { team: Team -> team.id != actorTeam.id }
-			.flatMap { team: Team -> team.activeMemberIds() }
+		val opponentMemberIds: List<Long> = teams.opponentActiveMemberIds(actorTeam.id)
 		domainEventPublisher.publish(
 			TeamMatchInterestSent(teamMatchId = teamMatch.id, senderTeamId = actorTeam.id, recipientUserIds = opponentMemberIds),
 		)
