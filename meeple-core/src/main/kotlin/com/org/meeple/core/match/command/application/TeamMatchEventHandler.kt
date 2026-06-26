@@ -4,6 +4,7 @@ import com.org.meeple.common.alarm.AlarmType
 import com.org.meeple.core.alarm.command.application.port.`in`.SaveAlarmUseCase
 import com.org.meeple.core.alarm.command.application.port.`in`.command.SaveAlarmCommand
 import com.org.meeple.core.match.command.domain.event.TeamMatchAccepted
+import com.org.meeple.core.match.command.domain.event.TeamMatchEnded
 import com.org.meeple.core.match.command.domain.event.TeamMatchInterestSent
 import org.springframework.stereotype.Component
 import org.springframework.transaction.annotation.Propagation
@@ -54,6 +55,24 @@ class TeamMatchEventHandler(
 					title = "매칭 성사",
 					description = "팀 매칭이 성사되었어요!",
 					link = "/chat",
+					fromTeamId = event.fromTeamId,
+				),
+			)
+		}
+	}
+
+	/** 팀 매칭 종료(한 팀이 나감) → 방에 남는 상대 팀 구성원들에게 "매칭 종료" 알림. (마지막 종료면 이벤트가 발행되지 않아 호출되지 않는다) */
+	@TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
+	@Transactional(propagation = Propagation.REQUIRES_NEW)
+	fun onTeamMatchEnded(event: TeamMatchEnded) {
+		event.recipientUserIds.forEach { recipientUserId: Long ->
+			saveAlarmUseCase.save(
+				SaveAlarmCommand(
+					userId = recipientUserId,
+					type = AlarmType.MANY_TO_MANY_MATCH_ENDED,
+					title = "매칭 종료",
+					description = "상대 팀이 매칭을 종료했어요.",
+					link = "/",
 					fromTeamId = event.fromTeamId,
 				),
 			)
