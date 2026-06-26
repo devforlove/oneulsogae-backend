@@ -113,10 +113,10 @@ class EndTeamMatchE2ETest : AbstractIntegrationSupport({
 				memberStatus(roomId, a2) shouldBe ChatRoomMemberStatus.DEACTIVE
 				memberStatus(roomId, b1) shouldBe ChatRoomMemberStatus.ACTIVE
 				memberStatus(roomId, b2) shouldBe ChatRoomMemberStatus.ACTIVE
-				// 방에 "상대 팀이 채팅방을 나갔어요" 시스템 메세지가 남는다
+				// 방에 "상대 팀이 매칭을 종료했어요" 시스템 메세지가 남는다
 				val systemMessages: List<ChatMessageEntity> = chatMessages(roomId).filter { it.type == ChatMessageType.SYSTEM }
 				systemMessages.size shouldBe 1
-				systemMessages.first().content shouldBe "상대 팀이 채팅방을 나갔어요"
+				systemMessages.first().content shouldBe "상대 팀이 매칭을 종료했어요"
 				// 상대 팀 두 명에게 "매칭 종료" 알림(fromTeamId=나간 팀 A), 우리 팀엔 알림 없음
 				alarmsOf(b1).map { it.type } shouldBe listOf(AlarmType.MANY_TO_MANY_MATCH_ENDED)
 				alarmsOf(b1).first().fromTeamId shouldBe teamA

@@ -59,7 +59,7 @@ class EndTeamMatchService(
 
 		saveTeamMatchPort.save(teamMatch.leave(actorTeam.id, now))
 
-		// 우리 팀원 전원을 채팅방에서 비활성화한다. (남는 상대 팀에 "상대 팀이 채팅방을 나갔어요" 안내 — 기존 TEAM 분기 재사용)
+		// 우리 팀원 전원을 채팅방에서 비활성화한다. (남는 상대 팀에 "상대 팀이 매칭을 종료했어요" 안내 — 기존 TEAM 분기 재사용)
 		deactivateChatRoomMemberUseCase.deactivate(ChatRoomMatchType.TEAM, teamMatchId, actorTeam.activeMemberIds())
 
 		if (!isLastTeam) {

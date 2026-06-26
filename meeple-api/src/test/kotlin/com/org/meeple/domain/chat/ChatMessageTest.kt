@@ -56,12 +56,12 @@ class ChatMessageTest : DescribeSpec({
 
 	describe("createSystem") {
 		it("발신자 없는 SYSTEM 안내 메세지를 생성한다") {
-			val message: ChatMessage = ChatMessage.createSystem(chatRoomId, "상대 팀이 채팅방을 나갔어요", now)
+			val message: ChatMessage = ChatMessage.createSystem(chatRoomId, "상대 팀이 매칭을 종료했어요", now)
 
 			message.chatRoomId shouldBe chatRoomId
 			message.senderId shouldBe null
 			message.type shouldBe ChatMessageType.SYSTEM
-			message.content shouldBe "상대 팀이 채팅방을 나갔어요"
+			message.content shouldBe "상대 팀이 매칭을 종료했어요"
 			message.sentAt shouldBe now
 		}
 

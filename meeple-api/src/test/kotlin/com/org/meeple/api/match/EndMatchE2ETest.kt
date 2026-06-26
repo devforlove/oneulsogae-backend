@@ -33,7 +33,7 @@ import io.kotest.matchers.shouldBe
  *
  * 성사(MATCHED)된 매칭의 참가자가 나가면, 종료자 본인의 매칭 참가만 DEACTIVE가 되고(매칭은 유지) 상대도 모두 나간 뒤
  * 마지막 한 명이 나갈 때 비로소 매칭(헤더+참가자)이 소프트 삭제된다(@SQLRestriction로 조회에서 제외).
- * 연결된 채팅방에서는 종료자 본인만 DEACTIVE가 되며, 방에 남는 상대에게 "상대방이 채팅방을 나갔어요" 시스템 메세지가 남는다.
+ * 연결된 채팅방에서는 종료자 본인만 DEACTIVE가 되며, 방에 남는 상대에게 "상대방이 매칭을 종료했어요" 시스템 메세지가 남는다.
  * 실제 서버(RANDOM_PORT) + Testcontainers(MySQL/Redis, 분산 락 포함)를 기동하고 HTTP를 호출한다.
  */
 class EndMatchE2ETest : AbstractIntegrationSupport({
@@ -96,11 +96,11 @@ class EndMatchE2ETest : AbstractIntegrationSupport({
 				// 채팅방에서도 종료자(남성)만 DEACTIVE, 상대(여성)는 ACTIVE 유지
 				memberStatus(roomId, maleUserId) shouldBe ChatRoomMemberStatus.DEACTIVE
 				memberStatus(roomId, femaleUserId) shouldBe ChatRoomMemberStatus.ACTIVE
-				// 방에 "상대방이 채팅방을 나갔어요" 시스템 메세지가 남고, 남는 상대의 안 읽음이 오른다
+				// 방에 "상대방이 매칭을 종료했어요" 시스템 메세지가 남고, 남는 상대의 안 읽음이 오른다
 				val systemMessages: List<ChatMessageEntity> =
 					chatMessages(roomId).filter { it.type == ChatMessageType.SYSTEM }
 				systemMessages.size shouldBe 1
-				systemMessages.first().content shouldBe "상대방이 채팅방을 나갔어요"
+				systemMessages.first().content shouldBe "상대방이 매칭을 종료했어요"
 				systemMessages.first().senderId shouldBe null
 				memberUnread(roomId, femaleUserId) shouldBe 1
 				// 남는 상대(여성)에게 "매칭 종료" 알람이 발송된다 (alarm 도메인)

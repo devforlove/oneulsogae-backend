@@ -113,11 +113,11 @@ class DisbandTeamMatchTeardownE2ETest : AbstractIntegrationSupport({
 				disbandAlarms(invitedUserId).size shouldBe 0
 				disbandAlarms(oppOwnerId).size shouldBe 0
 				disbandAlarms(oppInvitedUserId).size shouldBe 0
-				// 채팅방에 "상대 팀이 채팅방을 나갔어요" 시스템 메세지가 남고, 남은 상대 팀원의 안 읽음이 오른다
+				// 채팅방에 "상대 팀이 매칭을 종료했어요" 시스템 메세지가 남고, 남은 상대 팀원의 안 읽음이 오른다
 				val systemMessages: List<ChatMessageEntity> =
 					chatMessages(roomId).filter { it.type == ChatMessageType.SYSTEM }
 				systemMessages.size shouldBe 1
-				systemMessages.first().content shouldBe "상대 팀이 채팅방을 나갔어요"
+				systemMessages.first().content shouldBe "상대 팀이 매칭을 종료했어요"
 				systemMessages.first().senderId shouldBe null
 				memberUnread(roomId, oppOwnerId) shouldBe 1
 				memberUnread(roomId, oppInvitedUserId) shouldBe 1
