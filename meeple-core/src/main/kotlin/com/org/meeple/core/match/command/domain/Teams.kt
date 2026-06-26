@@ -20,4 +20,8 @@ data class Teams(
 	fun opponentActiveMemberIds(actorTeamId: Long): List<Long> =
 		values.filter { team: Team -> team.id != actorTeamId }
 			.flatMap { team: Team -> team.activeMemberIds() }
+
+	/** [teamId] 팀의 상대 팀 id. (2:2 매칭이라 상대는 정확히 한 팀) */
+	fun opponentTeamId(teamId: Long): Long =
+		values.first { team: Team -> team.id != teamId }.id
 }

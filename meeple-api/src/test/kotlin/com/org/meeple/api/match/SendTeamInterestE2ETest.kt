@@ -144,6 +144,10 @@ class SendTeamInterestE2ETest : AbstractIntegrationSupport({
 				matchedAlarms(oppOwner).size shouldBe 1
 				matchedAlarms(oppInvited).size shouldBe 1
 				matchedAlarms(myOwner).size shouldBe 0
+				// fromTeamId는 각 수신자의 상대 팀이다. 내 팀 동료(myInvited)는 상대 팀, 상대 팀원(oppOwner/oppInvited)은 내 팀.
+				matchedAlarms(myInvited).first().fromTeamId shouldBe opponentTeamId
+				matchedAlarms(oppOwner).first().fromTeamId shouldBe myTeamId
+				matchedAlarms(oppInvited).first().fromTeamId shouldBe myTeamId
 			}
 		}
 

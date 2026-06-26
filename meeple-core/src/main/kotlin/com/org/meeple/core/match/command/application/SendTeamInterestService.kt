@@ -80,9 +80,18 @@ class SendTeamInterestService(
 		saveChatRoomUseCase.save(
 			SaveChatRoomCommand(matchType = ChatRoomMatchType.TEAM, matchId = teamMatch.id, participants = participants),
 		)
-		domainEventPublisher.publish(
-			TeamMatchAccepted(teamMatchId = teamMatch.id, recipientUserIds = participants.map { it.userId }.filter { it != userId }),
-		)
+		// 성사 알림은 양 팀에 각각 발행한다. 각 팀 수신자(행위자 제외)에게 그들의 상대 팀을 fromTeamId로 담아, 알림에서 상대 팀이 보이도록 한다.
+		teams.values.forEach { team: Team ->
+			val recipientUserIds: List<Long> = team.activeMemberIds().filter { memberId: Long -> memberId != userId }
+			if (recipientUserIds.isEmpty()) return@forEach
+			domainEventPublisher.publish(
+				TeamMatchAccepted(
+					teamMatchId = teamMatch.id,
+					fromTeamId = teams.opponentTeamId(team.id),
+					recipientUserIds = recipientUserIds,
+				),
+			)
+		}
 		return teamMatch
 	}
 

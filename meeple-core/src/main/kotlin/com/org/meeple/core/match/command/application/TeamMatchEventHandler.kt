@@ -54,6 +54,7 @@ class TeamMatchEventHandler(
 					title = "매칭 성사",
 					description = "팀 매칭이 성사되었어요!",
 					link = "/chat",
+					fromTeamId = event.fromTeamId,
 				),
 			)
 		}
