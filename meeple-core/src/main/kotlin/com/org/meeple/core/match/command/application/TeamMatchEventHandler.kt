@@ -52,7 +52,7 @@ class TeamMatchEventHandler(
 					userId = recipientUserId,
 					type = AlarmType.MANY_TO_MANY_MATCHED,
 					title = "매칭 성사",
-					description = "상대 팀과 매칭되었어요!",
+					description = "팀 매칭이 성사되었어요!",
 					link = "/chat",
 				),
 			)
