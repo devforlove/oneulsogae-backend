@@ -72,7 +72,7 @@ class TeamMatchEventHandler(
 					type = AlarmType.MANY_TO_MANY_MATCH_ENDED,
 					title = "매칭 종료",
 					description = "상대 팀이 매칭을 종료했어요.",
-					link = "/",
+					link = "/meeting",
 					fromTeamId = event.fromTeamId,
 				),
 			)
