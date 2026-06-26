@@ -69,8 +69,8 @@ class MatchEventHandler(
 				type = AlarmType.ONE_TO_ONE_MATCH_ENDED,
 				title = "매칭 종료",
 				description = leftByNickname
-					?.let { "${it}님이 매칭을 나갔어요." }
-					?: "상대방이 매칭을 나갔어요.",
+					?.let { "${it}님이 매칭을 종료했어요." }
+					?: "상대방이 매칭을 종료했어요.",
 				// 알람을 누르면 해당 매칭으로 이동한다. (프론트 라우팅에 맞춘 경로)
 				link = "/",
 				fromUserId = event.leftByUserId,

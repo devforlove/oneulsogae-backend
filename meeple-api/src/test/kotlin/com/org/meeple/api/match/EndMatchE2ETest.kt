@@ -108,7 +108,7 @@ class EndMatchE2ETest : AbstractIntegrationSupport({
 				alarms.size shouldBe 1
 				alarms[0].type shouldBe AlarmType.ONE_TO_ONE_MATCH_ENDED
 				alarms[0].fromUserId shouldBe maleUserId
-				alarms[0].description shouldBe "상대방이 매칭을 나갔어요."
+				alarms[0].description shouldBe "상대방이 매칭을 종료했어요."
 			}
 		}
 
