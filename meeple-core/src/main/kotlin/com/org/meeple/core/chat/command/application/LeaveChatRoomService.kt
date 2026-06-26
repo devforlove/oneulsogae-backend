@@ -17,10 +17,10 @@ import java.time.LocalDateTime
 
 /**
  * [LeaveChatRoomUseCase] 구현.
- * 나가려는 사용자가 활성 참가자([ChatRoomMember])인지 검증한다. (없거나 이미 나갔으면 비참가자로 보고 거절)
+ * 나가려는 사용자의 활성 참가자([ChatRoomMember]) 행을 로드해(없거나 이미 나갔으면 비참가자로 보고 거절) 비활성([ChatRoomMember.deactivate])으로 전이한다.
  * 채팅방은 **남은 활성 참가자가 없을 때(이 사용자가 마지막 참가자일 때)만** 닫는다. 이때 방과 참가자 전체를 종료/소프트 삭제한다([ChatRoom.delete], [ChatRoomMembers.delete]).
- * 남은 참가자가 있으면 아무것도 하지 않는다(방은 ACTIVE를 유지한다). 전이 전 활성 참가자 수가 1 이하이면 이 사용자가 마지막이다.
- * 채팅방 나가기·종료는 **연결 매칭을 건드리지 않는다**(채팅과 매칭을 분리). 방이 닫혀도 매칭은 그대로 유지된다.
+ * 남은 참가자가 있으면 방·상대는 그대로 두고 나가는 사용자의 채팅 참가자 행만 비활성화한다(방은 ACTIVE를 유지한다). 전이 전 활성 참가자 수가 1 이하이면 이 사용자가 마지막이다.
+ * 채팅방 나가기·종료는 **연결 매칭을 건드리지 않는다**(채팅과 매칭을 분리). 본인 행만 비활성화할 뿐 매칭 참가자는 그대로 두고, 방이 닫혀도 매칭은 유지된다.
  * 방 닫기·참가자 소프트 삭제는 같은 트랜잭션에서 처리한다. 데드락 방지를 위해 방 행을 비관적 락(FOR UPDATE)으로 먼저 잡아 동시 변경을 직렬화한다.
  */
 @Service
@@ -35,7 +35,7 @@ class LeaveChatRoomService(
 
 	override fun leave(userId: Long, chatRoomId: Long) {
 		// 참가자 행은 status 무관하게 로드되므로(프로필 노출 정책), 이미 나간(비활성) 참가자는 여기서 비참가자로 보고 거절한다.
-		getChatRoomMemberPort.findByChatRoomIdAndUserId(chatRoomId, userId)
+		val member: ChatRoomMember = getChatRoomMemberPort.findByChatRoomIdAndUserId(chatRoomId, userId)
 			?.takeIf { it.isActive }
 			?: throw BusinessException(ChatErrorCode.NOT_CHAT_ROOM_PARTICIPANT)
 
@@ -48,6 +48,8 @@ class LeaveChatRoomService(
 
 		if (isLastMember) {
 			closeChatRoom(chatRoom)
+		} else {
+			deactivateMember(member)
 		}
 	}
 
@@ -56,5 +58,10 @@ class LeaveChatRoomService(
 		val now: LocalDateTime = timeGenerator.now()
 		saveChatRoomPort.save(chatRoom.delete(now))
 		saveChatRoomMemberPort.saveAll(getChatRoomMemberPort.findAllByChatRoomId(chatRoom.id).delete(now))
+	}
+
+	// 남은 참가자가 있으면 방·상대는 그대로 두고, 나가는 사용자의 채팅 참가자 행만 비활성화한다. (연결 매칭은 건드리지 않는다)
+	private fun deactivateMember(member: ChatRoomMember) {
+		saveChatRoomMemberPort.save(member.deactivate())
 	}
 }

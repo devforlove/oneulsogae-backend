@@ -94,7 +94,7 @@ class LeaveChatRoomE2ETest : AbstractIntegrationSupport({
 	describe("DELETE /chat/v1/rooms/{chatRoomId}/members") {
 
 		context("다른 참가자가 남아 있는 채팅방에서 한 명이 나가면") {
-			it("아무것도 바꾸지 않는다 — 방·참가자·매칭 모두 그대로 둔다 (마지막일 때만 방을 닫음) (200)") {
+			it("본인 채팅 참가자 행만 비활성화하고 상대·방·매칭은 그대로 둔다 (200)") {
 				val me = 9101L
 				val partner = 9102L
 				val matchId: Long = IntegrationUtil.persist(SoloMatchEntityFixture.create(memberKey = "9101-9102")).id!!
@@ -111,11 +111,11 @@ class LeaveChatRoomE2ETest : AbstractIntegrationSupport({
 					body("success", true)
 				}
 
-				// 남은 참가자가 있으므로 마지막이 아니다 → 채팅 참가자는 둘 다 그대로 ACTIVE, 방도 ACTIVE
-				activeMemberExists(roomId, me) shouldBe true
+				// 본인 채팅 참가자 행은 비활성(DEACTIVE)으로 빠지고, 상대 행은 그대로(ACTIVE), 방도 ACTIVE
+				activeMemberExists(roomId, me) shouldBe false
 				activeMemberExists(roomId, partner) shouldBe true
 				roomStatusOf(roomId) shouldBe ChatRoomStatus.ACTIVE
-				// 채팅방 나가기는 매칭을 건드리지 않는다 → 매칭·매칭 참가자 모두 유지
+				// 채팅방 나가기는 매칭을 건드리지 않는다 → 매칭·매칭 참가자 모두 유지(둘 다 ACTIVE)
 				matchExists(matchId) shouldBe true
 				matchMemberStatusOf(matchId, me) shouldBe MatchMemberStatus.ACTIVE
 				matchMemberStatusOf(matchId, partner) shouldBe MatchMemberStatus.ACTIVE
@@ -183,8 +183,8 @@ class LeaveChatRoomE2ETest : AbstractIntegrationSupport({
 			}
 		}
 
-		context("다른 참가자가 남아 있는 방에서 나가기를 요청한 뒤") {
-			it("마지막이 아니라 아무것도 바뀌지 않으므로 여전히 참가자로 상세 조회가 된다 (200)") {
+		context("나간 사용자가 같은 방에 다시 접근하면") {
+			it("더 이상 참가자가 아니므로 상세 조회가 403(CHAT-002)을 반환한다") {
 				val me = 9111L
 				val partner = 9112L
 				val roomId: Long = IntegrationUtil.persist(ChatRoomEntityFixture.create(matchId = 92L)).id!!
@@ -197,11 +197,12 @@ class LeaveChatRoomE2ETest : AbstractIntegrationSupport({
 					status(200)
 				}
 
-				// 마지막 참가자가 아니라 나가기는 no-op → 여전히 참가자이므로 상세 조회 200
+				// 본인 행이 비활성화돼 비참가자 취급 → 상세 조회 403
 				get("/chat/v1/rooms/$roomId") {
 					bearer(accessTokenFor(me))
 				} expect {
-					status(200)
+					status(403)
+					body("error.code", "CHAT-002")
 				}
 			}
 		}
