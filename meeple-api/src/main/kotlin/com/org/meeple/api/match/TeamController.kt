@@ -2,6 +2,7 @@ package com.org.meeple.api.match
 
 import com.org.meeple.api.match.request.InviteTeamRequest
 import com.org.meeple.api.match.request.SearchInvitableUsersRequest
+import com.org.meeple.api.match.request.UpdateTeamRequest
 import com.org.meeple.api.match.response.InvitableUserResponse
 import com.org.meeple.api.match.response.ReceivedInvitationResponse
 import com.org.meeple.api.match.response.SentInvitationResponse
@@ -13,6 +14,7 @@ import com.org.meeple.core.common.time.TimeGenerator
 import com.org.meeple.core.match.command.application.port.`in`.AcceptTeamInvitationUseCase
 import com.org.meeple.core.match.command.application.port.`in`.DisbandTeamUseCase
 import com.org.meeple.core.match.command.application.port.`in`.InviteTeamUseCase
+import com.org.meeple.core.match.command.application.port.`in`.UpdateTeamUseCase
 import com.org.meeple.core.match.command.application.port.`in`.WithdrawTeamInvitationUseCase
 import com.org.meeple.core.match.query.service.port.`in`.GetReceivedInvitationsUseCase
 import com.org.meeple.core.match.query.service.port.`in`.GetSentInvitationUseCase
@@ -23,6 +25,7 @@ import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.ModelAttribute
 import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.PostMapping
+import org.springframework.web.bind.annotation.PutMapping
 import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RequestMapping
 import io.swagger.v3.oas.annotations.Operation
@@ -32,6 +35,7 @@ import org.springframework.web.bind.annotation.RestController
 /**
  * 2:2(팀) 매칭의 팀 엔드포인트. (모두 인증 필요)
  * - POST /invitation: 다른 사용자를 초대해 팀을 결성한다. 초대 대상은 초대중(INVITED) 구성원으로 담기고 팀은 초대중(INVITING) 상태로 만들어진다.
+ * - PUT /{teamId}: 진행 중(INVITING)이거나 결성(ACTIVE)된 팀의 구성원이 팀 이름·소개·활동지역을 수정한다.
  * - POST /{teamId}/acceptance: 초대받은 사용자가 팀 초대를 수락한다. 전원 수락 시 팀이 결성(ACTIVE)된다.
  * - DELETE /{teamId}/invitation: 초대 단계(INVITING) 팀의 초대를 철회한다. (초대받은 사람의 거절 / 초대자의 취소)
  * - DELETE /{teamId}: 결성(ACTIVE)된 팀을 구성원이 해체한다. (떠나면 2인 팀이 유지될 수 없어 팀 전체 비활성화)
@@ -41,6 +45,7 @@ import org.springframework.web.bind.annotation.RestController
 @RequestMapping("/teams/v1")
 class TeamController(
 	private val inviteTeamUseCase: InviteTeamUseCase,
+	private val updateTeamUseCase: UpdateTeamUseCase,
 	private val acceptTeamInvitationUseCase: AcceptTeamInvitationUseCase,
 	private val withdrawTeamInvitationUseCase: WithdrawTeamInvitationUseCase,
 	private val disbandTeamUseCase: DisbandTeamUseCase,
@@ -61,6 +66,19 @@ class TeamController(
 		@RequestBody @Valid request: InviteTeamRequest,
 	): ApiResponse<TeamResponse> =
 		ApiResponse.success(TeamResponse.of(inviteTeamUseCase.invite(user.id, request.toCommand())))
+
+	/**
+	 * 팀의 이름·소개·활동지역을 수정한다.
+	 * 진행 중(INVITING)이거나 결성(ACTIVE)된 팀의 구성원이 요청 본문으로 받은 이름·소개·활동지역으로 전체 교체한다.
+	 */
+	@Operation(summary = "팀 정보 수정", description = "진행 중(INVITING)이거나 결성(ACTIVE)된 팀의 구성원이 팀 이름·소개·활동지역을 수정한다.")
+	@PutMapping("/{teamId}")
+	fun update(
+		@LoginUser user: AuthUser,
+		@PathVariable teamId: Long,
+		@RequestBody @Valid request: UpdateTeamRequest,
+	): ApiResponse<TeamResponse> =
+		ApiResponse.success(TeamResponse.of(updateTeamUseCase.update(user.id, teamId, request.toCommand())))
 
 	/** 초대받은 사용자가 팀 초대를 수락한다. 전원 수락 시 팀이 결성(ACTIVE)된다. */
 	@Operation(summary = "팀 초대 수락", description = "초대받은 사용자가 팀 초대를 수락한다. 전원 수락 시 팀이 결성(ACTIVE)된다.")

@@ -73,9 +73,29 @@ data class Team(
 		return deactivate(now)
 	}
 
+	/**
+	 * 팀의 표시 정보(이름·소개·활동지역)를 수정한 새 모델을 반환한다. (성별·구성원·상태는 바꾸지 않는다)
+	 * 이름·소개는 앞뒤 공백을 제거해 반영한다. (이름·소개 형식은 요청에서 Bean Validation으로 검증)
+	 * 상태·구성원 자격은 [validateUpdatable]로 검증한다.
+	 */
+	fun update(userId: Long, name: String, introduction: String, regionId: Long): Team {
+		validateUpdatable(userId)
+		return copy(name = name.trim(), introduction = introduction.trim(), regionId = regionId)
+	}
+
 	// INVITING 상태가 아니면 INVALID_TEAM_STATUS, 구성원이 아니면 NOT_TEAM_MEMBER.
 	private fun validateWithdrawable(userId: Long) {
 		if (status != TeamStatus.INVITING) {
+			throw BusinessException(TeamErrorCode.INVALID_TEAM_STATUS)
+		}
+		if (!members.isMember(userId)) {
+			throw BusinessException(TeamErrorCode.NOT_TEAM_MEMBER)
+		}
+	}
+
+	// INVITING/ACTIVE 상태가 아니면 INVALID_TEAM_STATUS, 구성원이 아니면 NOT_TEAM_MEMBER.
+	private fun validateUpdatable(userId: Long) {
+		if (status != TeamStatus.INVITING && status != TeamStatus.ACTIVE) {
 			throw BusinessException(TeamErrorCode.INVALID_TEAM_STATUS)
 		}
 		if (!members.isMember(userId)) {

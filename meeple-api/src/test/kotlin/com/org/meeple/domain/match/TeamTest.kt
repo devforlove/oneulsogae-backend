@@ -159,6 +159,61 @@ class TeamTest : DescribeSpec({
 		}
 	}
 
+	describe("update - 팀 정보 수정") {
+		fun invitingTeam(status: TeamStatus = TeamStatus.INVITING): Team =
+			Team(
+				name = "우리팀",
+				gender = Gender.MALE,
+				regionId = 1L,
+				introduction = validIntroduction,
+				members = TeamMembers(
+					listOf(
+						TeamMember(teamId = 0, userId = ownerId, status = TeamMemberStatus.ACTIVE),
+						TeamMember(teamId = 0, userId = invitedUserId, status = TeamMemberStatus.INVITED),
+					),
+				),
+				status = status,
+			)
+
+		it("INVITING 팀의 구성원이 수정하면 이름·소개·활동지역이 바뀐다 (상태·구성원은 유지)") {
+			val updated: Team = invitingTeam().update(ownerId, "새 팀 이름", "새롭게 바꾼 팀 소개입니다", 2L)
+
+			updated.name shouldBe "새 팀 이름"
+			updated.introduction shouldBe "새롭게 바꾼 팀 소개입니다"
+			updated.regionId shouldBe 2L
+			updated.status shouldBe TeamStatus.INVITING
+			updated.members.userIds() shouldContainExactlyInAnyOrder listOf(ownerId, invitedUserId)
+		}
+
+		it("ACTIVE 팀도 구성원이 수정할 수 있다") {
+			val updated: Team = invitingTeam(TeamStatus.ACTIVE).update(invitedUserId, "새 팀 이름", "새롭게 바꾼 팀 소개입니다", 2L)
+
+			updated.name shouldBe "새 팀 이름"
+			updated.status shouldBe TeamStatus.ACTIVE
+		}
+
+		it("앞뒤 공백을 제거한 이름·소개로 수정한다") {
+			val updated: Team = invitingTeam().update(ownerId, "  새 팀 이름  ", "  새롭게 바꾼 팀 소개입니다  ", 2L)
+
+			updated.name shouldBe "새 팀 이름"
+			updated.introduction shouldBe "새롭게 바꾼 팀 소개입니다"
+		}
+
+		it("DEACTIVATED 팀이면 INVALID_TEAM_STATUS를 던진다") {
+			val ex: BusinessException = shouldThrow {
+				invitingTeam(TeamStatus.DEACTIVATED).update(ownerId, "새 팀 이름", "새롭게 바꾼 팀 소개입니다", 2L)
+			}
+			ex.errorCode shouldBe TeamErrorCode.INVALID_TEAM_STATUS
+		}
+
+		it("구성원이 아니면 NOT_TEAM_MEMBER를 던진다") {
+			val ex: BusinessException = shouldThrow {
+				invitingTeam().update(999L, "새 팀 이름", "새롭게 바꾼 팀 소개입니다", 2L)
+			}
+			ex.errorCode shouldBe TeamErrorCode.NOT_TEAM_MEMBER
+		}
+	}
+
 	describe("disband - 해체·떠나기") {
 		val now: LocalDateTime = LocalDateTime.of(2026, 6, 20, 12, 0)
 
