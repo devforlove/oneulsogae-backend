@@ -1,5 +1,6 @@
 package com.org.meeple.api.match
 
+import com.org.meeple.common.alarm.AlarmType
 import com.org.meeple.common.chat.ChatMessageType
 import com.org.meeple.common.chat.ChatRoomMatchType
 import com.org.meeple.common.chat.ChatRoomMemberStatus
@@ -10,6 +11,8 @@ import com.org.meeple.common.match.MatchMemberStatus
 import com.org.meeple.common.match.MatchStatus
 import com.org.meeple.common.user.Gender
 import com.org.meeple.core.match.command.domain.MatchMembers
+import com.org.meeple.infra.alarm.command.entity.AlarmEntity
+import com.org.meeple.infra.alarm.command.entity.QAlarmEntity
 import com.org.meeple.infra.chat.command.entity.ChatMessageEntity
 import com.org.meeple.infra.chat.command.entity.QChatMessageEntity
 import com.org.meeple.infra.chat.command.entity.QChatRoomEntity
@@ -99,11 +102,17 @@ class EndMatchE2ETest : AbstractIntegrationSupport({
 				systemMessages.first().content shouldBe "상대방이 채팅방을 나갔어요"
 				systemMessages.first().senderId shouldBe null
 				memberUnread(roomId, femaleUserId) shouldBe 1
+				// 남는 상대(여성)에게 "매칭 종료" 알람이 발송된다 (alarm 도메인)
+				val alarms: List<AlarmEntity> = alarmsOf(femaleUserId)
+				alarms.size shouldBe 1
+				alarms[0].type shouldBe AlarmType.ONE_TO_ONE_MATCH_ENDED
+				alarms[0].fromUserId shouldBe maleUserId
+				alarms[0].description shouldBe "상대방이 매칭을 나갔어요."
 			}
 		}
 
 		context("성사된 매칭의 양쪽 참가자가 모두 나가면") {
-			it("마지막 한 명이 나갈 때 매칭(헤더+참가자)이 소프트 삭제된다 (200)") {
+			it("마지막 한 명이 나갈 때 매칭이 소프트 삭제되고, 마지막 종료자에게는 알람을 보내지 않는다 (200)") {
 				val maleUserId = 1004L
 				val femaleUserId = 2004L
 				val match: SoloMatchEntity = persistMatch(maleUserId, femaleUserId)
@@ -111,13 +120,15 @@ class EndMatchE2ETest : AbstractIntegrationSupport({
 				persistChatRoom(matchId, maleUserId, femaleUserId)
 
 				delete("/matches/v1/$matchId") { bearer(accessTokenFor(maleUserId)) } expect { status(200) }
-				// 한쪽만 나간 시점엔 매칭이 유지된다
+				// 첫 종료(남성): 매칭은 유지되고, 남는 상대(여성)에게 "매칭 종료" 알람 1건이 발송된다
 				matchExists(matchId) shouldBe true
+				alarmsOf(femaleUserId).size shouldBe 1
 
 				delete("/matches/v1/$matchId") { bearer(accessTokenFor(femaleUserId)) } expect { status(200) }
-				// 마지막 한 명까지 나가면 매칭(헤더+참가자)이 소프트 삭제되어 조회에서 제외된다
+				// 마지막 종료(여성): 매칭(헤더+참가자)이 소프트 삭제되고, 알릴 상대가 없어 종료자(남성)에게 알람이 가지 않는다
 				matchExists(matchId) shouldBe false
 				matchMemberCount(matchId) shouldBe 0L
+				alarmsOf(maleUserId).size shouldBe 0
 			}
 		}
 
@@ -173,6 +184,7 @@ class EndMatchE2ETest : AbstractIntegrationSupport({
 	}
 
 	afterTest {
+		IntegrationUtil.deleteAll(QAlarmEntity.alarmEntity)
 		IntegrationUtil.deleteAll(QChatMessageEntity.chatMessageEntity)
 		IntegrationUtil.deleteAll(QChatRoomMemberEntity.chatRoomMemberEntity)
 		IntegrationUtil.deleteAll(QChatRoomEntity.chatRoomEntity)
@@ -207,6 +219,12 @@ private fun memberStatus(chatRoomId: Long, userId: Long): ChatRoomMemberStatus {
 private fun chatMessages(chatRoomId: Long): List<ChatMessageEntity> {
 	val q: QChatMessageEntity = QChatMessageEntity.chatMessageEntity
 	return IntegrationUtil.getQuery().selectFrom(q).where(q.chatRoomId.eq(chatRoomId)).fetch()
+}
+
+// 해당 사용자의 알람 목록. (매칭 종료 알람 발송 확인용)
+private fun alarmsOf(userId: Long): List<AlarmEntity> {
+	val alarm: QAlarmEntity = QAlarmEntity.alarmEntity
+	return IntegrationUtil.getQuery().selectFrom(alarm).where(alarm.userId.eq(userId)).fetch()
 }
 
 private fun memberUnread(chatRoomId: Long, userId: Long): Int {

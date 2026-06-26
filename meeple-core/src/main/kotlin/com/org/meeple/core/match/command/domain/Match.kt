@@ -51,13 +51,20 @@ data class Match(
 		copy(members = members.deactivate(userId))
 
 	/**
+	 * [userId]가 이 매칭에 남은 마지막 활성 참가자인지 여부. (상대 참가자가 모두 비활성이면 true)
+	 * 이 사용자가 나가면 매칭이 종료되며, 방에 남아 안내를 받을 상대가 없음을 뜻한다.
+	 */
+	fun isLastActiveMember(userId: Long): Boolean =
+		members.partnersOf(userId).all { it.isDeactivated }
+
+	/**
 	 * [userId] 참가자가 이 매칭을 나간 새 모델을 반환한다.
-	 * 본인 참가만 비활성([MatchMemberStatus.DEACTIVE])으로 전이하되, 그 결과 상대 참가자도 모두 비활성이면(마지막 활성 참가자가 나가면)
+	 * 본인 참가만 비활성([MatchMemberStatus.DEACTIVE])으로 전이하되, 상대 참가자도 모두 비활성이면(마지막 활성 참가자가 나가면)
 	 * 매칭 헤더까지 종료([MatchStatus.CLOSED])·소프트 삭제([delete])한다. (혼자 나가면 매칭은 유지되고 상대는 그대로 남는다)
 	 */
 	fun leave(userId: Long, now: LocalDateTime): Match {
 		val left: Match = deactivateMember(userId)
-		return if (left.members.partnersOf(userId).all { it.isDeactivated }) left.delete(now) else left
+		return if (left.isLastActiveMember(userId)) left.delete(now) else left
 	}
 
 	/** 해당 사용자가 이 매칭의 참가자인지 여부. */

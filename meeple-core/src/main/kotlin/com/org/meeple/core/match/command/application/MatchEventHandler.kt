@@ -6,6 +6,7 @@ import com.org.meeple.core.alarm.command.application.port.`in`.command.SaveAlarm
 import com.org.meeple.core.user.query.service.port.`in`.GetUserDetailUseCase
 import com.org.meeple.core.match.command.domain.event.InterestSent
 import com.org.meeple.core.match.command.domain.event.MatchAccepted
+import com.org.meeple.core.match.command.domain.event.MatchEnded
 import org.springframework.stereotype.Component
 import org.springframework.transaction.annotation.Propagation
 import org.springframework.transaction.annotation.Transactional
@@ -54,6 +55,27 @@ class MatchEventHandler(
 		// 수락자의 상대(원래 관심을 보낸 쪽)에게는 수락자를, 수락자 본인에게는 그 상대를 가리키는 알람을 보낸다.
 		saveAlarmUseCase.save(matchedAlarm(recipientUserId = event.partnerOfAcceptor, matchedUserId = event.acceptedByUserId))
 		saveAlarmUseCase.save(matchedAlarm(recipientUserId = event.acceptedByUserId, matchedUserId = event.partnerOfAcceptor))
+	}
+
+	/** 매칭 종료(한쪽이 나감) → 방에 남는 상대에게 "상대가 매칭을 나감" 알람. (마지막 종료자면 이벤트가 발행되지 않아 호출되지 않는다) */
+	@TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
+	@Transactional(propagation = Propagation.REQUIRES_NEW)
+	fun onMatchEnded(event: MatchEnded) {
+		val leftByNickname: String? = getUserDetailUseCase.findByUserId(event.leftByUserId)?.nickname
+
+		saveAlarmUseCase.save(
+			SaveAlarmCommand(
+				userId = event.partnerUserId,
+				type = AlarmType.ONE_TO_ONE_MATCH_ENDED,
+				title = "매칭 종료",
+				description = leftByNickname
+					?.let { "${it}님이 매칭을 나갔어요." }
+					?: "상대방이 매칭을 나갔어요.",
+				// 알람을 누르면 해당 매칭으로 이동한다. (프론트 라우팅에 맞춘 경로)
+				link = "/",
+				fromUserId = event.leftByUserId,
+			),
+		)
 	}
 
 	// 매칭된 상대([matchedUserId])를 가리키는 "매칭 성사" 알람을 [recipientUserId]에게 보낼 커맨드를 만든다. (문구엔 상대 닉네임)

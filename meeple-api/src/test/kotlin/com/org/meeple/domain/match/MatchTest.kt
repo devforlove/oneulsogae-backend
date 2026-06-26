@@ -8,6 +8,7 @@ import com.org.meeple.core.match.MatchErrorCode
 import com.org.meeple.core.match.command.domain.Match
 import com.org.meeple.core.match.command.domain.event.InterestSent
 import com.org.meeple.core.match.command.domain.event.MatchAccepted
+import com.org.meeple.core.match.command.domain.event.MatchEnded
 import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.core.spec.style.DescribeSpec
 import io.kotest.matchers.shouldBe
@@ -69,21 +70,32 @@ class MatchTest : DescribeSpec({
 		}
 	}
 
+	fun matchedMatch(
+		maleStatus: MatchMemberStatus = MatchMemberStatus.ACTIVE,
+		femaleStatus: MatchMemberStatus = MatchMemberStatus.ACTIVE,
+	): Match =
+		MatchFixture.create(
+			id = 7L,
+			members = MatchFixture.membersOf(
+				maleUserId = maleUserId,
+				femaleUserId = femaleUserId,
+				maleStatus = maleStatus,
+				femaleStatus = femaleStatus,
+			),
+			status = MatchStatus.MATCHED,
+		)
+
+	describe("isLastActiveMember - 마지막 활성 참가자 판별") {
+		it("상대가 아직 ACTIVE면 false다") {
+			matchedMatch().isLastActiveMember(maleUserId) shouldBe false
+		}
+
+		it("상대가 이미 나가(DEACTIVE) 있으면 true다") {
+			matchedMatch(femaleStatus = MatchMemberStatus.DEACTIVE).isLastActiveMember(maleUserId) shouldBe true
+		}
+	}
+
 	describe("leave - 나가기") {
-		fun matchedMatch(
-			maleStatus: MatchMemberStatus = MatchMemberStatus.ACTIVE,
-			femaleStatus: MatchMemberStatus = MatchMemberStatus.ACTIVE,
-		): Match =
-			MatchFixture.create(
-				id = 7L,
-				members = MatchFixture.membersOf(
-					maleUserId = maleUserId,
-					femaleUserId = femaleUserId,
-					maleStatus = maleStatus,
-					femaleStatus = femaleStatus,
-				),
-				status = MatchStatus.MATCHED,
-			)
 
 		it("혼자 나가면 본인만 DEACTIVE가 되고 상대·헤더는 그대로 유지된다") {
 			val now: LocalDateTime = LocalDateTime.of(2026, 6, 17, 12, 0)
@@ -177,6 +189,16 @@ class MatchTest : DescribeSpec({
 			val event: InterestSent = InterestSent.from(match, senderUserId = maleUserId)
 
 			event shouldBe InterestSent(matchId = 7L, senderUserId = maleUserId, recipientUserId = femaleUserId)
+		}
+	}
+
+	describe("MatchEnded.from") {
+		it("나간 사람의 상대를 수신자로 하는 이벤트를 만든다") {
+			val match: Match = proposedMatch(id = 7L)
+
+			val event: MatchEnded = MatchEnded.from(match, leftByUserId = maleUserId)
+
+			event shouldBe MatchEnded(matchId = 7L, leftByUserId = maleUserId, partnerUserId = femaleUserId)
 		}
 	}
 })

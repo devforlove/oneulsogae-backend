@@ -9,6 +9,9 @@ enum class AlarmType(val description: String) {
 	/** [1:1 매칭] 매칭이 성사됨. */
 	ONE_TO_ONE_MATCHED("매칭 성사"),
 
+	/** [1:1 매칭] 성사된 매칭을 상대가 종료(나감). (방에 남는 상대에게) */
+	ONE_TO_ONE_MATCH_ENDED("매칭 종료"),
+
 	/** [다대다 매칭] 상대가 나에게 관심을 보냄. */
 	MANY_TO_MANY_INTEREST_RECEIVED("관심 받음"),
 
