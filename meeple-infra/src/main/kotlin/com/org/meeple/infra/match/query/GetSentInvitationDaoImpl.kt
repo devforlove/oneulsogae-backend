@@ -10,8 +10,9 @@ import com.org.meeple.infra.match.command.entity.QTeamEntity
 import com.org.meeple.infra.match.command.entity.QTeamMemberEntity
 import com.org.meeple.infra.region.entity.QRegionEntity
 import com.org.meeple.infra.user.command.entity.QUserDetailEntity
-import com.querydsl.core.Tuple
 import com.querydsl.core.types.Projections
+import com.querydsl.core.types.dsl.Expressions
+import com.querydsl.core.types.dsl.StringExpression
 import com.querydsl.jpa.impl.JPAQueryFactory
 import org.springframework.stereotype.Component
 
@@ -29,14 +30,31 @@ class GetSentInvitationDaoImpl(
 ) : GetSentInvitationDao {
 
 	override fun findLatestSentInvitation(userId: Long): SentInvitation? {
+		val invitation: SentInvitation = findLatestInvitingTeam(userId) ?: return null
+		return invitation.copy(members = findTeamMembers(invitation.teamId))
+	}
+
+	// ① 요청자가 ACTIVE 구성원(=초대자)인 INVITING·ACTIVE 팀 헤더 1건을 team.id desc로 조회한다. (구성원은 ②에서 채우므로 빈 목록으로 둔다)
+	// 표시용 활동지역은 regions를 left join해 "시/도 시/군/구"로 만든다. (지역 미설정/미존재면 null)
+	private fun findLatestInvitingTeam(userId: Long): SentInvitation? {
 		val team: QTeamEntity = QTeamEntity.teamEntity
 		val teamMember: QTeamMemberEntity = QTeamMemberEntity.teamMemberEntity
 		val region: QRegionEntity = QRegionEntity.regionEntity
-		// 표시용 활동지역은 regions를 join해 "시/도 시/군/구"로 만든다. (지역 미설정/미존재면 null)
-		val activityArea: com.querydsl.core.types.dsl.StringExpression = region.sido.concat(" ").concat(region.sigungu)
+		val activityArea: StringExpression = region.sido.concat(" ").concat(region.sigungu)
 
-		val header: Tuple = queryFactory
-			.select(team.id, team.name, team.regionId, activityArea, team.introduction, team.status)
+		return queryFactory
+			.select(
+				Projections.constructor(
+					SentInvitation::class.java,
+					team.id,
+					team.name,
+					team.regionId,
+					activityArea,
+					team.introduction,
+					team.status,
+					Expressions.constant(emptyList<SentInvitationMember>()),
+				),
+			)
 			.from(teamMember)
 			.join(team).on(team.id.eq(teamMember.teamId))
 			.leftJoin(region).on(region.id.eq(team.regionId))
@@ -48,13 +66,15 @@ class GetSentInvitationDaoImpl(
 			.orderBy(team.id.desc())
 			.limit(1)
 			.fetchOne()
-			?: return null
+	}
 
-		val teamId: Long = header.get(team.id)!!
-
+	// ② 그 팀의 구성원 전원을 표시용 프로필과 함께 조회한다. (요청자 본인(ACTIVE) 포함; 닉네임·프로필이미지=match_user, 직업·회사명=user_details)
+	private fun findTeamMembers(teamId: Long): List<SentInvitationMember> {
+		val teamMember: QTeamMemberEntity = QTeamMemberEntity.teamMemberEntity
 		val matchUser: QMatchUserEntity = QMatchUserEntity.matchUserEntity
 		val userDetail: QUserDetailEntity = QUserDetailEntity.userDetailEntity
-		val members: List<SentInvitationMember> = queryFactory
+
+		return queryFactory
 			.select(
 				Projections.constructor(
 					SentInvitationMember::class.java,
@@ -74,15 +94,5 @@ class GetSentInvitationDaoImpl(
 			.where(teamMember.teamId.eq(teamId))
 			.orderBy(teamMember.userId.asc())
 			.fetch()
-
-		return SentInvitation(
-			teamId = teamId,
-			name = header.get(team.name)!!,
-			regionId = header.get(team.regionId)!!,
-			activityArea = header.get(activityArea),
-			introduction = header.get(team.introduction),
-			status = header.get(team.status)!!,
-			members = members,
-		)
 	}
 }
