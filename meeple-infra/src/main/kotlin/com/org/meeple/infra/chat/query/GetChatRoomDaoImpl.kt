@@ -77,6 +77,7 @@ class GetChatRoomDaoImpl(
 					ChatRoomSummary::class.java,
 					chatRoom.id,
 					Expressions.constant(emptyList<ChatParticipant>()),
+					chatRoom.matchType,
 					chatRoom.status,
 					chatRoom.expiredAt,
 					chatRoomMember.unreadCount,

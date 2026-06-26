@@ -125,6 +125,7 @@ class MyChatRoomsE2ETest : AbstractIntegrationSupport({
 					body("data[0].participants[0].nickname", "지민")
 					body("data[0].participants[0].profileImageCode", "IMG_A")
 					body("data[0].participants[0].gender", Gender.FEMALE.name)
+					body("data[0].type", ChatRoomMatchType.SOLO.name)
 					body("data[0].status", ChatRoomStatus.ACTIVE.name)
 					body("data[0].unreadCount", 2) // 본인 관점
 					body("data[0].lastMessage", "최근 메세지")
@@ -321,6 +322,7 @@ class MyChatRoomsE2ETest : AbstractIntegrationSupport({
 					status(200)
 					body("success", true)
 					body("data.size()", 1)
+					body("data[0].type", ChatRoomMatchType.TEAM.name)
 					// 상대 팀 2명만 (내 팀원 제외)
 					body("data[0].participants.size()", 2)
 					body("data[0].participants.userId", hasItems(opponentA.toInt(), opponentB.toInt()))
