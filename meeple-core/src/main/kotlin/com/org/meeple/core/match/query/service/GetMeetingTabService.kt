@@ -48,16 +48,14 @@ class GetMeetingTabService(
 		if (myTeam?.status == TeamStatus.ACTIVE) {
 			getMatchedTeamDao.findInProgressByTeamId(myTeam.teamId, timeGenerator.now())
 		} else {
-			getRecommendedTeamDao.findByUserId(userId).ifEmpty {
-				// 추천이 없으면 유저와 가장 가까운 팀을 새 추천으로 적재한 뒤 다시 읽어 내려준다.
-				generateNearestRecommendation(userId)
-				getRecommendedTeamDao.findByUserId(userId)
-			}
+			// 추천이 없으면 유저와 가장 가까운 팀을 새 추천으로 적재하고, 적재한 그 카드를 그대로 내려준다. (재조회 없음)
+			getRecommendedTeamDao.findByUserId(userId).ifEmpty { generateNearestRecommendation(userId) }
 		}
 
-	// 유저와 가장 가까운 반대 성별 결성(ACTIVE) 팀을 추천(recommended_teams)으로 교체 적재한다. 후보가 없으면 아무것도 하지 않는다.
-	private fun generateNearestRecommendation(userId: Long) {
-		val nearestTeamId: Long = getNearestTeamDao.findNearestTeamId(userId) ?: return
-		saveRecommendedTeamPort.replace(userId, nearestTeamId, timeGenerator.today())
+	// 유저와 가장 가까운 반대 성별 결성(ACTIVE) 팀을 추천(recommended_teams)으로 교체 적재하고 그 카드를 반환한다. 후보가 없으면 빈 리스트.
+	private fun generateNearestRecommendation(userId: Long): List<RecommendedTeam> {
+		val nearest: RecommendedTeam = getNearestTeamDao.findNearestTeam(userId) ?: return emptyList()
+		saveRecommendedTeamPort.replace(userId, nearest.teamId, timeGenerator.today())
+		return listOf(nearest)
 	}
 }
