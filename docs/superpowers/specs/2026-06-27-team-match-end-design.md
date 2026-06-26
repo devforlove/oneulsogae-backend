@@ -97,7 +97,6 @@ fun validateTerminable(teamId: Long) {
     if (!isParticipant(teamId)) throw BusinessException(TeamMatchErrorCode.NOT_TEAM_MATCH_PARTICIPANT)
     if (status == MatchStatus.CLOSED) throw BusinessException(TeamMatchErrorCode.TEAM_MATCH_ALREADY_CLOSED)
     if (status != MatchStatus.MATCHED) throw BusinessException(TeamMatchErrorCode.TEAM_MATCH_NOT_MATCHED)
-    if (matchedTeams.hasLeft(teamId)) throw BusinessException(TeamMatchErrorCode.TEAM_MATCH_ALREADY_CLOSED)
 }
 
 /** [teamId]의 상대 팀이 모두 비활성인지 여부. (이 팀이 나가면 알릴 상대가 없는 마지막 종료) */
@@ -117,14 +116,6 @@ fun leave(teamId: Long, now: LocalDateTime): TeamMatch {
 `MatchedTeams`:
 
 ```kotlin
-/** [teamId] 팀의 참가 정보. 없으면 null. */
-fun find(teamId: Long): MatchedTeam? =
-    values.firstOrNull { it.teamId == teamId }
-
-/** [teamId] 팀이 이미 나간(DEACTIVE) 상태인지 여부. */
-fun hasLeft(teamId: Long): Boolean =
-    find(teamId)?.status == MatchedTeamStatus.DEACTIVE
-
 /** [teamId]를 제외한 상대 팀이 모두 비활성(DEACTIVE)인지 여부. */
 fun isLastActiveTeam(teamId: Long): Boolean =
     values.filter { it.teamId != teamId }.all { it.status == MatchedTeamStatus.DEACTIVE }
@@ -146,7 +137,9 @@ fun leave(now: LocalDateTime): MatchedTeam =
     copy(status = MatchedTeamStatus.DEACTIVE, deletedAt = now)
 ```
 
-> 설계 메모: `MatchedTeamStatus.DEACTIVE`(현재 "팀 해체"용)를 매치별 상태로 재사용한다. `matched_team`은 매치별 상태를 보관하므로 "이 팀이 이 매치에서 빠짐" 의미로 자연스럽다. 새 상태값은 만들지 않는다. 기존 `MatchedTeam.deactivate()`(status만 변경)는 `close()` 경로(미성사 종료, 기록 보존)에서 계속 쓰이므로 그대로 두고, soft delete가 필요한 종료 경로용 `leave(now)`를 별도로 추가한다.
+> 설계 메모 1: `MatchedTeamStatus.DEACTIVE`(현재 "팀 해체"용)를 매치별 상태로 재사용한다. `matched_team`은 매치별 상태를 보관하므로 "이 팀이 이 매치에서 빠짐" 의미로 자연스럽다. 새 상태값은 만들지 않는다. 기존 `MatchedTeam.deactivate()`(status만 변경)는 `close()` 경로(미성사 종료, 기록 보존)에서 계속 쓰이므로 그대로 두고, soft delete가 필요한 종료 경로용 `leave(now)`를 별도로 추가한다.
+>
+> 설계 메모 2 (soft delete on leave의 결과): `TeamMatchAdapter.findById`는 `matched_teams`를 `@SQLRestriction("deleted_at is null")` 엔티티로 로드하므로, **한 팀이 나간(soft delete된) 뒤 그 팀 매칭을 다시 조회하면 나간 팀 행이 빠진 채(상대 팀만) 로드된다.** 모든 정상 흐름은 이 상태에서도 올바르게 동작한다(마지막 팀이 나갈 때 남은 한 팀만 로드돼도 `allDeactivated()=true`로 헤더 CLOSED 판정, 알림 미발송이 성립). 부수 효과로 **이미 나간 팀이 종료를 다시 호출하면 그 팀이 참가 팀 목록에서 빠져 로드되어 `findByActiveMember`가 null → `NOT_TEAM_MATCH_PARTICIPANT`(403)** 가 된다(1:1의 409와 다른 지점). 그래서 `validateTerminable`에는 "이미 나간 팀" 검사를 넣지 않는다(도달 불가능). 또한 즉시 soft delete라 `findActiveByTeamId`에서 나간 팀이 그 매칭을 더 이상 진행 중으로 보지 않는다.
 
 ### 5. ErrorCode — `meeple-core`
 
@@ -212,18 +205,18 @@ MANY_TO_MANY_MATCH_ENDED("매칭 종료"),
 
 ### 유닛 (Kotest, `meeple-core`)
 
-- `TeamMatch.validateTerminable`: 비참가 팀(`NOT_TEAM_MATCH_PARTICIPANT`), CLOSED(`TEAM_MATCH_ALREADY_CLOSED`), 미성사(`TEAM_MATCH_NOT_MATCHED`), 이미 나간 팀(`TEAM_MATCH_ALREADY_CLOSED`), 정상(예외 없음).
+- `TeamMatch.validateTerminable`: 비참가 팀(`NOT_TEAM_MATCH_PARTICIPANT`), CLOSED(`TEAM_MATCH_ALREADY_CLOSED`), 미성사(`TEAM_MATCH_NOT_MATCHED`), 정상(예외 없음).
 - `TeamMatch.leave`: 상대 팀 활성 → 내 팀만 DEACTIVE+deletedAt, 헤더는 MATCHED 유지. 상대 팀 이미 DEACTIVE → 헤더까지 CLOSED+deletedAt.
 - `TeamMatch.isLastActiveTeam`: 상대 활성 → false, 상대 DEACTIVE → true.
-- `MatchedTeams` 신규 메서드(`find`/`hasLeft`/`isLastActiveTeam`/`allDeactivated`/`leave`).
+- `MatchedTeams` 신규 메서드(`isLastActiveTeam`/`allDeactivated`/`leave`).
 
 ### E2E (`meeple-api`, `AbstractIntegrationSupport` + 픽스처)
 
-- 정상 종료: 내 팀 `matched_team` 비활성·우리 팀원 채팅 멤버 비활성·상대 팀 유지·상대 팀에 알림 생성.
-- 비참가자 → 403.
+- 정상 종료: 내 팀 `matched_team` 비활성·soft delete(조회에서 제외)·우리 팀원 채팅 멤버 비활성·상대 팀 유지·상대 팀 두 명에 알림 생성(`MANY_TO_MANY_MATCH_ENDED`, `fromTeamId`=나간 팀, `link`=`/`).
+- 비참가자 → 403(`NOT_TEAM_MATCH_PARTICIPANT`).
 - 미성사(PROPOSED/PARTIALLY_ACCEPTED) 종료 시도 → 409(`TEAM_MATCH_NOT_MATCHED`).
-- 중복 종료(이미 나간 팀이 재호출) → 409.
-- 상대 팀이 이미 나간 뒤 마지막 종료 → `team_matches` 헤더 CLOSED + soft delete.
+- 상대 팀이 이미 나간 뒤 마지막 종료 → `team_matches` 헤더 CLOSED + soft delete, 채팅방도 종료, 알림 미발송.
+- 이미 나간 팀이 재호출 → 403(`NOT_TEAM_MATCH_PARTICIPANT`). (soft delete로 참가 팀 목록에서 빠지므로)
 
 ## 프론트엔드 영향 (백엔드는 수정하지 않음 — 안내만)
 
