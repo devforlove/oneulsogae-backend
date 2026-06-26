@@ -60,6 +60,38 @@ data class TeamMatch(
 	}
 
 	/**
+	 * [teamId] 팀이 이 팀 매칭을 종료할 수 있는 상태인지 검증한다.
+	 * 참가 팀이 아니면 [TeamMatchErrorCode.NOT_TEAM_MATCH_PARTICIPANT], 이미 종료(CLOSED)면 [TeamMatchErrorCode.TEAM_MATCH_ALREADY_CLOSED],
+	 * 아직 성사(MATCHED)되지 않았으면 [TeamMatchErrorCode.TEAM_MATCH_NOT_MATCHED]를 던진다. (성사된 매칭만 종료 가능)
+	 */
+	fun validateTerminable(teamId: Long) {
+		if (!isParticipant(teamId)) {
+			throw BusinessException(TeamMatchErrorCode.NOT_TEAM_MATCH_PARTICIPANT)
+		}
+		// MATCHED도 isClosed()=true(더 이상 응답을 안 받음)라, 여기선 종료(CLOSED)만 따로 거른다.
+		if (status == MatchStatus.CLOSED) {
+			throw BusinessException(TeamMatchErrorCode.TEAM_MATCH_ALREADY_CLOSED)
+		}
+		if (status != MatchStatus.MATCHED) {
+			throw BusinessException(TeamMatchErrorCode.TEAM_MATCH_NOT_MATCHED)
+		}
+	}
+
+	/** [teamId]의 상대 팀이 모두 비활성인지 여부. (이 팀이 나가면 방에 남아 알림을 받을 상대 팀이 없는 마지막 종료) */
+	fun isLastActiveTeam(teamId: Long): Boolean =
+		matchedTeams.isLastActiveTeam(teamId)
+
+	/**
+	 * [teamId] 팀이 이 매칭을 나간 새 모델을 반환한다.
+	 * 내 팀 참가([MatchedTeam])만 비활성·소프트 삭제하되, 상대 팀도 모두 비활성이면(마지막 종료) 헤더까지 [MatchStatus.CLOSED]·소프트 삭제한다.
+	 * (혼자 나가면 헤더는 MATCHED로 유지되고 상대 팀은 그대로 남는다)
+	 */
+	fun leave(teamId: Long, now: LocalDateTime): TeamMatch {
+		val left: TeamMatch = copy(matchedTeams = matchedTeams.leave(teamId, now))
+		return if (left.matchedTeams.allDeactivated()) left.copy(status = MatchStatus.CLOSED, deletedAt = now) else left
+	}
+
+	/**
 	 * 참가 팀의 관심 신청을 반영한 새 상태를 만든다. (참가/미종료 검증은 호출 측 책임)
 	 * 응답 팀을 APPLY로 바꾸고, 전원 신청이면 MATCHED로 만들며 전원을 ACTIVE로 승격한다. 일부만 신청이면 PARTIALLY_ACCEPTED.
 	 * 성사(MATCHED)되면 만료로 목록에서 사라지지 않게 만료 시각을 100년 뒤로 미룬다. (1:1 매칭과 동일)
