@@ -46,6 +46,10 @@ data class TeamMatch(
 	fun isParticipant(teamId: Long): Boolean =
 		matchedTeams.isParticipant(teamId)
 
+	/** 참가 팀 id 목록. (참가 두 팀을 로드할 때) */
+	fun teamIds(): List<Long> =
+		matchedTeams.teamIds()
+
 	/**
 	 * 해당 팀이 이 팀 매칭에 관심(신청)을 보낼 수 있는 상태인지 검증한다.
 	 * 참가 팀이 아니면 [TeamMatchErrorCode.NOT_TEAM_MATCH_PARTICIPANT], 이미 종료된 매칭이면 [TeamMatchErrorCode.TEAM_MATCH_ALREADY_CLOSED]를 던진다.

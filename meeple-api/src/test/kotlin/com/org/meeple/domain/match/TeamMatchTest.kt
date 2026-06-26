@@ -62,6 +62,17 @@ class TeamMatchTest : DescribeSpec({
 
 			teamMatch.memberKey() shouldBe "10-20"
 		}
+
+		it("teamIds는 참가 팀 id 목록을 돌려준다") {
+			val teamMatch: TeamMatch = TeamMatch.propose(
+				teamAId = 10L,
+				teamBId = 20L,
+				matchType = TeamMatchType.RECOMMENDED,
+				now = now,
+			)
+
+			teamMatch.teamIds() shouldBe listOf(10L, 20L)
+		}
 	}
 
 	describe("close - 미성사 매칭 종료") {

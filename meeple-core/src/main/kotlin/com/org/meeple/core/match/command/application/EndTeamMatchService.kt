@@ -47,7 +47,7 @@ class EndTeamMatchService(
 			?: throw BusinessException(TeamMatchErrorCode.TEAM_MATCH_NOT_FOUND)
 
 		// 참가 두 팀을 로드해 행위자가 ACTIVE 구성원으로 속한 팀을 식별한다. (참가 검증 겸함)
-		val teams: Teams = Teams(teamMatch.matchedTeams.teamIds().mapNotNull { teamId: Long -> getTeamPort.findById(teamId) })
+		val teams: Teams = Teams(teamMatch.teamIds().mapNotNull { teamId: Long -> getTeamPort.findById(teamId) })
 		val actorTeam: Team = teams.findByActiveMember(userId)
 			?: throw BusinessException(TeamMatchErrorCode.NOT_TEAM_MATCH_PARTICIPANT)
 
