@@ -35,7 +35,7 @@ class TeamMatchEventHandler(
 					type = AlarmType.MANY_TO_MANY_INTEREST_RECEIVED,
 					title = "새로운 관심",
 					description = "상대 팀이 회원님 팀에 관심을 보냈어요.",
-					link = "/",
+					link = "/meeting",
 					fromTeamId = event.senderTeamId,
 				),
 			)
