@@ -1,9 +1,11 @@
 package com.org.meeple.domain.match
 
 import com.org.meeple.common.match.MatchedTeamStatus
+import com.org.meeple.core.match.command.domain.MatchedTeam
 import com.org.meeple.core.match.command.domain.MatchedTeams
 import io.kotest.core.spec.style.DescribeSpec
 import io.kotest.matchers.shouldBe
+import java.time.LocalDateTime
 
 /**
  * [MatchedTeams] 일급 컬렉션 유닛 테스트.
@@ -67,6 +69,40 @@ class MatchedTeamsTest : DescribeSpec({
 
 			matchedTeams.isParticipant(10L) shouldBe true
 			matchedTeams.isParticipant(99L) shouldBe false
+		}
+	}
+
+	describe("leave - 특정 팀 종료(비활성+soft delete)") {
+		it("주어진 teamId 팀만 DEACTIVE + deletedAt을 채우고 나머지는 그대로다") {
+			val now: LocalDateTime = LocalDateTime.of(2026, 6, 27, 12, 0)
+			val matchedTeams: MatchedTeams = MatchedTeams.of(listOf(10L, 20L)).activateAll()
+
+			val left: MatchedTeams = matchedTeams.leave(10L, now)
+
+			val ten: MatchedTeam = left.values.first { it.teamId == 10L }
+			ten.status shouldBe MatchedTeamStatus.DEACTIVE
+			ten.deletedAt shouldBe now
+			val twenty: MatchedTeam = left.values.first { it.teamId == 20L }
+			twenty.status shouldBe MatchedTeamStatus.ACTIVE
+			twenty.deletedAt shouldBe null
+		}
+	}
+
+	describe("isLastActiveTeam / allDeactivated") {
+		it("상대 팀이 활성이면 isLastActiveTeam=false, allDeactivated=false") {
+			val matchedTeams: MatchedTeams = MatchedTeams.of(listOf(10L, 20L)).activateAll()
+
+			matchedTeams.isLastActiveTeam(10L) shouldBe false
+			matchedTeams.allDeactivated() shouldBe false
+		}
+
+		it("상대 팀이 이미 DEACTIVE면 isLastActiveTeam=true, 내가 나가면 allDeactivated=true") {
+			val now: LocalDateTime = LocalDateTime.of(2026, 6, 27, 12, 0)
+			val onlyTenActive: MatchedTeams = MatchedTeams.of(listOf(10L, 20L)).activateAll().leave(20L, now)
+
+			onlyTenActive.isLastActiveTeam(10L) shouldBe true
+			onlyTenActive.allDeactivated() shouldBe false
+			onlyTenActive.leave(10L, now).allDeactivated() shouldBe true
 		}
 	}
 })
