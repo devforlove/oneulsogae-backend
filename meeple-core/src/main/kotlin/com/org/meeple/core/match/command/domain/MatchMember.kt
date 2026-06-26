@@ -24,6 +24,10 @@ data class MatchMember(
 	val hasApplied: Boolean
 		get() = status == MatchMemberStatus.APPLY || status == MatchMemberStatus.ACTIVE
 
+	/** 이 참가자가 비활성(DEACTIVE) 상태인지 여부. (매칭을 나간 참가자) */
+	val isDeactivated: Boolean
+		get() = status == MatchMemberStatus.DEACTIVE
+
 	/** 이 참가자가 관심을 신청한(APPLY) 새 모델을 반환한다. */
 	fun apply(): MatchMember =
 		copy(status = MatchMemberStatus.APPLY)

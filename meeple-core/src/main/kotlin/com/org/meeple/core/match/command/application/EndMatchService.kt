@@ -8,17 +8,18 @@ import com.org.meeple.core.common.lock.LockKeyConstraints
 import com.org.meeple.core.common.time.TimeGenerator
 import com.org.meeple.core.match.MatchErrorCode
 import com.org.meeple.core.match.command.application.port.`in`.EndMatchUseCase
-import com.org.meeple.core.match.command.application.port.out.DeleteMatchPort
 import com.org.meeple.core.match.command.application.port.out.GetMatchPort
+import com.org.meeple.core.match.command.application.port.out.SaveMatchPort
 import com.org.meeple.core.match.command.domain.Match
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import java.time.LocalDateTime
 
 /**
- * [EndMatchUseCase] 구현. 성사된 1:1 매칭을 참가자 한쪽이 종료한다.
- * 참가자·성사 여부를 검증한 뒤 매칭(헤더+참가자)을 종료(CLOSED)·소프트 삭제([Match.delete])하고,
- * 연결된 채팅방에서 종료자 본인의 참가만 비활성화하면서 상대에게 "상대방이 채팅방을 나갔어요" 안내를 남긴다([DeactivateChatRoomMemberUseCase]).
+ * [EndMatchUseCase] 구현. 성사된 1:1 매칭을 참가자 한쪽이 나간다(종료).
+ * 참가자·성사 여부를 검증한 뒤 종료자 본인의 참가만 비활성화([MatchMemberStatus.DEACTIVE])하고([Match.leave]), 상대도 이미 나간 상태였다면
+ * (마지막 한 명이 나가면) 그때 매칭 헤더까지 종료(CLOSED)·소프트 삭제한다. 동시에 연결된 채팅방에서 종료자 본인의 참가만 비활성화하면서
+ * 상대에게 "상대방이 채팅방을 나갔어요" 안내를 남긴다([DeactivateChatRoomMemberUseCase]).
  * 채팅방은 닫지 않아 상대는 그대로 방을 유지하며 안내 메세지를 본다. 다른 도메인(chat)은 자기 out-port가 아니라 in-port로 참조한다.
  *
  * 매칭 제거와 채팅 처리는 같은 트랜잭션이라 한 단계라도 실패하면 함께 롤백된다.
@@ -29,7 +30,7 @@ import java.time.LocalDateTime
 @Service
 class EndMatchService(
 	private val getMatchPort: GetMatchPort,
-	private val deleteMatchPort: DeleteMatchPort,
+	private val saveMatchPort: SaveMatchPort,
 	private val deactivateChatRoomMemberUseCase: DeactivateChatRoomMemberUseCase,
 	private val timeGenerator: TimeGenerator,
 ) : EndMatchUseCase {
@@ -41,9 +42,9 @@ class EndMatchService(
 			?: throw BusinessException(MatchErrorCode.MATCH_NOT_FOUND)
 		match.validateTerminable(userId)
 
-		// 매칭(헤더+참가자)을 종료·소프트 삭제한다.
+		// 종료자 본인의 참가만 비활성화(DEACTIVE)한다. 상대도 이미 나갔으면(마지막 한 명) 매칭 헤더까지 종료·소프트 삭제된다.
 		val now: LocalDateTime = timeGenerator.now()
-		deleteMatchPort.delete(match.delete(now))
+		saveMatchPort.save(match.leave(userId, now))
 
 		// 연결된 채팅방에서 종료자 본인만 내보내고 상대에게 나감을 알린다. (방은 상대에게 유지)
 		deactivateChatRoomMemberUseCase.deactivate(ChatRoomMatchType.SOLO, matchId, listOf(userId))

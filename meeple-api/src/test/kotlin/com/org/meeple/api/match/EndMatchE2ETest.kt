@@ -27,8 +27,9 @@ import io.kotest.matchers.shouldBe
 /**
  * `DELETE /matches/v1/{matchId}` E2E 테스트. (매칭 종료 엔드포인트)
  *
- * 성사(MATCHED)된 매칭의 참가자가 종료하면, 매칭(헤더+참가자)이 소프트 삭제되고(@SQLRestriction로 조회에서 제외),
- * 연결된 채팅방에서 종료자 본인만 DEACTIVE가 되며, 방에 남는 상대에게 "상대방이 채팅방을 나갔어요" 시스템 메세지가 남는다.
+ * 성사(MATCHED)된 매칭의 참가자가 나가면, 종료자 본인의 매칭 참가만 DEACTIVE가 되고(매칭은 유지) 상대도 모두 나간 뒤
+ * 마지막 한 명이 나갈 때 비로소 매칭(헤더+참가자)이 소프트 삭제된다(@SQLRestriction로 조회에서 제외).
+ * 연결된 채팅방에서는 종료자 본인만 DEACTIVE가 되며, 방에 남는 상대에게 "상대방이 채팅방을 나갔어요" 시스템 메세지가 남는다.
  * 실제 서버(RANDOM_PORT) + Testcontainers(MySQL/Redis, 분산 락 포함)를 기동하고 HTTP를 호출한다.
  */
 class EndMatchE2ETest : AbstractIntegrationSupport({
@@ -68,8 +69,8 @@ class EndMatchE2ETest : AbstractIntegrationSupport({
 
 	describe("DELETE /matches/v1/{matchId}") {
 
-		context("성사된 매칭의 참가자가 종료하면") {
-			it("매칭이 소프트 삭제되고, 종료자만 채팅방에서 나가며, 상대에게 나감 안내가 남는다 (200)") {
+		context("성사된 매칭의 참가자 한쪽이 나가면") {
+			it("종료자 본인의 매칭 참가만 비활성화되고(매칭 유지), 종료자만 채팅방에서 나가며 상대에게 나감 안내가 남는다 (200)") {
 				val maleUserId = 1001L
 				val femaleUserId = 2001L
 				val match: SoloMatchEntity = persistMatch(maleUserId, femaleUserId)
@@ -83,10 +84,12 @@ class EndMatchE2ETest : AbstractIntegrationSupport({
 					body("success", true)
 				}
 
-				// 매칭(헤더+참가자)은 소프트 삭제되어 조회에서 제외된다.
-				matchExists(matchId) shouldBe false
-				matchMemberCount(matchId) shouldBe 0L
-				// 종료자(남성)만 DEACTIVE, 상대(여성)는 ACTIVE 유지
+				// 매칭은 유지되고(헤더·참가자 그대로), 종료자(남성)의 매칭 참가만 DEACTIVE, 상대(여성)는 ACTIVE.
+				matchExists(matchId) shouldBe true
+				matchMemberCount(matchId) shouldBe 2L
+				matchMemberStatus(matchId, maleUserId) shouldBe MatchMemberStatus.DEACTIVE
+				matchMemberStatus(matchId, femaleUserId) shouldBe MatchMemberStatus.ACTIVE
+				// 채팅방에서도 종료자(남성)만 DEACTIVE, 상대(여성)는 ACTIVE 유지
 				memberStatus(roomId, maleUserId) shouldBe ChatRoomMemberStatus.DEACTIVE
 				memberStatus(roomId, femaleUserId) shouldBe ChatRoomMemberStatus.ACTIVE
 				// 방에 "상대방이 채팅방을 나갔어요" 시스템 메세지가 남고, 남는 상대의 안 읽음이 오른다
@@ -96,6 +99,25 @@ class EndMatchE2ETest : AbstractIntegrationSupport({
 				systemMessages.first().content shouldBe "상대방이 채팅방을 나갔어요"
 				systemMessages.first().senderId shouldBe null
 				memberUnread(roomId, femaleUserId) shouldBe 1
+			}
+		}
+
+		context("성사된 매칭의 양쪽 참가자가 모두 나가면") {
+			it("마지막 한 명이 나갈 때 매칭(헤더+참가자)이 소프트 삭제된다 (200)") {
+				val maleUserId = 1004L
+				val femaleUserId = 2004L
+				val match: SoloMatchEntity = persistMatch(maleUserId, femaleUserId)
+				val matchId: Long = match.id!!
+				persistChatRoom(matchId, maleUserId, femaleUserId)
+
+				delete("/matches/v1/$matchId") { bearer(accessTokenFor(maleUserId)) } expect { status(200) }
+				// 한쪽만 나간 시점엔 매칭이 유지된다
+				matchExists(matchId) shouldBe true
+
+				delete("/matches/v1/$matchId") { bearer(accessTokenFor(femaleUserId)) } expect { status(200) }
+				// 마지막 한 명까지 나가면 매칭(헤더+참가자)이 소프트 삭제되어 조회에서 제외된다
+				matchExists(matchId) shouldBe false
+				matchMemberCount(matchId) shouldBe 0L
 			}
 		}
 
@@ -168,6 +190,12 @@ private fun matchExists(matchId: Long): Boolean {
 private fun matchMemberCount(matchId: Long): Long {
 	val q: QSoloMatchMemberEntity = QSoloMatchMemberEntity.soloMatchMemberEntity
 	return IntegrationUtil.getQuery().select(q.count()).from(q).where(q.matchId.eq(matchId)).fetchOne()!!
+}
+
+private fun matchMemberStatus(matchId: Long, userId: Long): MatchMemberStatus {
+	val q: QSoloMatchMemberEntity = QSoloMatchMemberEntity.soloMatchMemberEntity
+	return IntegrationUtil.getQuery().select(q.status).from(q)
+		.where(q.matchId.eq(matchId).and(q.userId.eq(userId))).fetchOne()!!
 }
 
 private fun memberStatus(chatRoomId: Long, userId: Long): ChatRoomMemberStatus {

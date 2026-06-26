@@ -69,6 +69,46 @@ class MatchTest : DescribeSpec({
 		}
 	}
 
+	describe("leave - 나가기") {
+		fun matchedMatch(
+			maleStatus: MatchMemberStatus = MatchMemberStatus.ACTIVE,
+			femaleStatus: MatchMemberStatus = MatchMemberStatus.ACTIVE,
+		): Match =
+			MatchFixture.create(
+				id = 7L,
+				members = MatchFixture.membersOf(
+					maleUserId = maleUserId,
+					femaleUserId = femaleUserId,
+					maleStatus = maleStatus,
+					femaleStatus = femaleStatus,
+				),
+				status = MatchStatus.MATCHED,
+			)
+
+		it("혼자 나가면 본인만 DEACTIVE가 되고 상대·헤더는 그대로 유지된다") {
+			val now: LocalDateTime = LocalDateTime.of(2026, 6, 17, 12, 0)
+
+			val left: Match = matchedMatch().leave(maleUserId, now)
+
+			left.status shouldBe MatchStatus.MATCHED
+			left.deletedAt shouldBe null
+			left.members.find(maleUserId)!!.status shouldBe MatchMemberStatus.DEACTIVE
+			left.members.find(maleUserId)!!.deletedAt shouldBe null
+			left.members.find(femaleUserId)!!.status shouldBe MatchMemberStatus.ACTIVE
+		}
+
+		it("상대가 이미 나간 뒤 마지막 한 명이 나가면 헤더를 CLOSED·소프트 삭제하고 전원 제거한다") {
+			val now: LocalDateTime = LocalDateTime.of(2026, 6, 17, 12, 0)
+
+			val closed: Match = matchedMatch(femaleStatus = MatchMemberStatus.DEACTIVE).leave(maleUserId, now)
+
+			closed.status shouldBe MatchStatus.CLOSED
+			closed.deletedAt shouldBe now
+			closed.members.values.all { it.status == MatchMemberStatus.DEACTIVE } shouldBe true
+			closed.members.values.all { it.deletedAt == now } shouldBe true
+		}
+	}
+
 	describe("validateTerminable - 매칭 종료 가능 검증") {
 		fun matchedMatch(): Match =
 			MatchFixture.create(
@@ -96,6 +136,22 @@ class MatchTest : DescribeSpec({
 		it("아직 성사되지 않은(PROPOSED) 매칭이면 MATCH_NOT_MATCHED를 던진다") {
 			val ex: BusinessException = shouldThrow { proposedMatch(id = 7L).validateTerminable(maleUserId) }
 			ex.errorCode shouldBe MatchErrorCode.MATCH_NOT_MATCHED
+		}
+
+		it("이미 나간(DEACTIVE) 참가자가 다시 종료하려 하면 MATCH_ALREADY_CLOSED를 던진다") {
+			val matchedWithLeftMale: Match = MatchFixture.create(
+				id = 7L,
+				members = MatchFixture.membersOf(
+					maleUserId = maleUserId,
+					femaleUserId = femaleUserId,
+					maleStatus = MatchMemberStatus.DEACTIVE,
+					femaleStatus = MatchMemberStatus.ACTIVE,
+				),
+				status = MatchStatus.MATCHED,
+			)
+
+			val ex: BusinessException = shouldThrow { matchedWithLeftMale.validateTerminable(maleUserId) }
+			ex.errorCode shouldBe MatchErrorCode.MATCH_ALREADY_CLOSED
 		}
 	}
 

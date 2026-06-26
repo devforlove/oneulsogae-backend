@@ -50,6 +50,16 @@ data class Match(
 	fun deactivateMember(userId: Long): Match =
 		copy(members = members.deactivate(userId))
 
+	/**
+	 * [userId] 참가자가 이 매칭을 나간 새 모델을 반환한다.
+	 * 본인 참가만 비활성([MatchMemberStatus.DEACTIVE])으로 전이하되, 그 결과 상대 참가자도 모두 비활성이면(마지막 활성 참가자가 나가면)
+	 * 매칭 헤더까지 종료([MatchStatus.CLOSED])·소프트 삭제([delete])한다. (혼자 나가면 매칭은 유지되고 상대는 그대로 남는다)
+	 */
+	fun leave(userId: Long, now: LocalDateTime): Match {
+		val left: Match = deactivateMember(userId)
+		return if (left.members.partnersOf(userId).all { it.isDeactivated }) left.delete(now) else left
+	}
+
 	/** 해당 사용자가 이 매칭의 참가자인지 여부. */
 	fun isParticipant(userId: Long): Boolean =
 		members.isParticipant(userId)
@@ -103,7 +113,7 @@ data class Match(
 
 	/**
 	 * 해당 사용자가 이 매칭을 종료할 수 있는 상태인지 검증한다.
-	 * 참가자가 아니면 [MatchErrorCode.NOT_MATCH_PARTICIPANT], 이미 종료된 매칭이면 [MatchErrorCode.MATCH_ALREADY_CLOSED],
+	 * 참가자가 아니면 [MatchErrorCode.NOT_MATCH_PARTICIPANT], 이미 종료된 매칭이거나 본인이 이미 나간(비활성) 참가자면 [MatchErrorCode.MATCH_ALREADY_CLOSED],
 	 * 아직 성사되지 않은(MATCHED가 아닌) 매칭이면 [MatchErrorCode.MATCH_NOT_MATCHED]를 던진다. (성사된 매칭만 종료 가능)
 	 */
 	fun validateTerminable(userId: Long) {
@@ -116,6 +126,10 @@ data class Match(
 		}
 		if (status != MatchStatus.MATCHED) {
 			throw BusinessException(MatchErrorCode.MATCH_NOT_MATCHED)
+		}
+		// 헤더가 MATCHED로 남아 있어도, 이미 나간(비활성) 참가자가 다시 종료를 호출하면 막는다. (중복 나감 안내·재처리 방지)
+		if (members.find(userId)?.isDeactivated == true) {
+			throw BusinessException(MatchErrorCode.MATCH_ALREADY_CLOSED)
 		}
 	}
 
