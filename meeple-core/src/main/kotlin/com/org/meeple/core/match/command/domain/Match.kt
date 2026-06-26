@@ -102,6 +102,24 @@ data class Match(
 	}
 
 	/**
+	 * 해당 사용자가 이 매칭을 종료할 수 있는 상태인지 검증한다.
+	 * 참가자가 아니면 [MatchErrorCode.NOT_MATCH_PARTICIPANT], 이미 종료된 매칭이면 [MatchErrorCode.MATCH_ALREADY_CLOSED],
+	 * 아직 성사되지 않은(MATCHED가 아닌) 매칭이면 [MatchErrorCode.MATCH_NOT_MATCHED]를 던진다. (성사된 매칭만 종료 가능)
+	 */
+	fun validateTerminable(userId: Long) {
+		if (!isParticipant(userId)) {
+			throw BusinessException(MatchErrorCode.NOT_MATCH_PARTICIPANT)
+		}
+		// MATCHED도 isClosed()=true(더 이상 응답을 안 받음)라, 여기선 종료(CLOSED)만 따로 거른다.
+		if (status == MatchStatus.CLOSED) {
+			throw BusinessException(MatchErrorCode.MATCH_ALREADY_CLOSED)
+		}
+		if (status != MatchStatus.MATCHED) {
+			throw BusinessException(MatchErrorCode.MATCH_NOT_MATCHED)
+		}
+	}
+
+	/**
 	 * 참가자의 관심 신청을 반영한 새 상태를 만든다. (참가자/미종료 검증은 호출 측 책임)
 	 * 응답자를 APPLY로 바꾸고, 전원 신청이면 매치를 MATCHED로 만들며 전원을 ACTIVE로 승격한다. 일부만 신청이면 PARTIALLY_ACCEPTED, 아무도 미신청이면 PROPOSED.
 	 * 성사(MATCHED)되면 만료로 목록에서 사라지지 않게 만료 시각을 100년 뒤로 미룬다.

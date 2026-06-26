@@ -2,10 +2,13 @@ package com.org.meeple.domain.match
 
 import com.org.meeple.common.match.MatchMemberStatus
 import com.org.meeple.common.match.MatchStatus
+import com.org.meeple.core.common.error.BusinessException
 import com.org.meeple.core.fixture.MatchFixture
+import com.org.meeple.core.match.MatchErrorCode
 import com.org.meeple.core.match.command.domain.Match
 import com.org.meeple.core.match.command.domain.event.InterestSent
 import com.org.meeple.core.match.command.domain.event.MatchAccepted
+import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.core.spec.style.DescribeSpec
 import io.kotest.matchers.shouldBe
 import java.time.LocalDateTime
@@ -63,6 +66,36 @@ class MatchTest : DescribeSpec({
 			deleted.deletedAt shouldBe now
 			deleted.members.values.all { it.status == MatchMemberStatus.DEACTIVE } shouldBe true
 			deleted.members.values.all { it.deletedAt == now } shouldBe true
+		}
+	}
+
+	describe("validateTerminable - 매칭 종료 가능 검증") {
+		fun matchedMatch(): Match =
+			MatchFixture.create(
+				id = 7L,
+				members = MatchFixture.membersOf(maleUserId = maleUserId, femaleUserId = femaleUserId),
+				status = MatchStatus.MATCHED,
+			)
+
+		it("성사(MATCHED)된 매칭의 참가자가 종료하면 통과한다") {
+			matchedMatch().validateTerminable(maleUserId)
+		}
+
+		it("참가자가 아니면 NOT_MATCH_PARTICIPANT를 던진다") {
+			val ex: BusinessException = shouldThrow { matchedMatch().validateTerminable(99L) }
+			ex.errorCode shouldBe MatchErrorCode.NOT_MATCH_PARTICIPANT
+		}
+
+		it("이미 종료(CLOSED)된 매칭이면 MATCH_ALREADY_CLOSED를 던진다") {
+			val closed: Match = matchedMatch().delete(LocalDateTime.of(2026, 6, 17, 12, 0))
+
+			val ex: BusinessException = shouldThrow { closed.validateTerminable(maleUserId) }
+			ex.errorCode shouldBe MatchErrorCode.MATCH_ALREADY_CLOSED
+		}
+
+		it("아직 성사되지 않은(PROPOSED) 매칭이면 MATCH_NOT_MATCHED를 던진다") {
+			val ex: BusinessException = shouldThrow { proposedMatch(id = 7L).validateTerminable(maleUserId) }
+			ex.errorCode shouldBe MatchErrorCode.MATCH_NOT_MATCHED
 		}
 	}
 

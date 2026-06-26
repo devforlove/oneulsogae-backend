@@ -12,9 +12,10 @@ object LockKeyConstraints {
 	const val DELIMITER: String = "::"
 
 	/**
-	 * 매칭 관심(신청/수락) 처리 락. matchId로 잠가 같은 매칭의 상태 변경을 직렬화한다.
-	 * 관심 보내기(SendInterestService, 신청·수락 통합)에서 두 참가자 동시 요청이나 더블클릭으로 인한
-	 * lost update·코인 이중 차감을 막는다.
+	 * 매칭 상태 변경(관심 신청/수락·종료) 처리 락. matchId로 잠가 같은 매칭의 상태 변경을 직렬화한다.
+	 * 관심 보내기(SendInterestService, 신청·수락 통합)와 매칭 종료(EndMatchService)가 같은 키를 공유해,
+	 * 두 참가자 동시 요청·더블클릭이나 종료와 관심이 같은 매칭 행에 동시에 쓰여 발생하는
+	 * lost update(예: 종료 직후 관심으로 매칭이 되살아남)·코인 이중 차감을 막는다.
 	 */
 	const val MATCH_INTEREST: String = "MATCH_INTEREST"
 

@@ -7,7 +7,9 @@ import com.org.meeple.auth.LoginUser
 import com.org.meeple.core.common.response.ApiResponse
 import com.org.meeple.core.common.time.TimeGenerator
 import com.org.meeple.core.match.query.service.port.`in`.GetMatchesUseCase
+import com.org.meeple.core.match.command.application.port.`in`.EndMatchUseCase
 import com.org.meeple.core.match.command.application.port.`in`.SendInterestUseCase
+import org.springframework.web.bind.annotation.DeleteMapping
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.PostMapping
@@ -21,6 +23,7 @@ import org.springframework.web.bind.annotation.RestController
  * 남녀 1:1 매칭 엔드포인트. (모두 인증 필요)
  * - GET  /: 내 매칭 목록을 조회한다. 온보딩 직후이면서 오늘 할당된 매칭이 없으면 한 명을 자동 소개한 뒤 목록을 반환한다.
  * - POST /{matchId}/interest: 소개받은 매칭에 관심을 보낸다. 상대가 이미 관심을 보냈으면 수락이 되어 성사된다. (신청/수락 통합)
+ * - DELETE /{matchId}: 성사된 매칭을 종료한다. 매칭을 제거하고 채팅방에서 본인을 내보낸 뒤 상대에게 나감을 알린다.
  */
 @Tag(name = "매칭", description = "남녀 1:1 매칭 엔드포인트. 매칭 목록 조회 및 관심 보내기(신청/수락 통합)를 제공한다.")
 @RestController
@@ -28,6 +31,7 @@ import org.springframework.web.bind.annotation.RestController
 class SoloMatchController(
 	private val getMatchesUseCase: GetMatchesUseCase,
 	private val sendInterestUseCase: SendInterestUseCase,
+	private val endMatchUseCase: EndMatchUseCase,
 	private val timeGenerator: TimeGenerator,
 ) {
 
@@ -56,4 +60,19 @@ class SoloMatchController(
 		@PathVariable matchId: Long,
 	): ApiResponse<MatchStatusResponse> =
 		ApiResponse.success(MatchStatusResponse.of(sendInterestUseCase.sendInterest(user.id, matchId)))
+
+	/**
+	 * 성사된 매칭을 종료한다. (요청 사용자는 그 매칭의 참가자여야 하고, 매칭이 성사(MATCHED) 상태여야 한다)
+	 * 매칭(헤더+참가자)을 종료(CLOSED)·소프트 삭제하고, 연결된 채팅방에서 본인 참가만 비활성화하면서 상대에게 "상대방이 채팅방을 나갔어요" 안내를 남긴다.
+	 * 채팅방은 닫지 않아 상대는 그대로 방을 유지한다. 관계(매칭)를 끝내는 의미이므로 DELETE로 둔다.
+	 */
+	@Operation(summary = "매칭 종료", description = "성사된 매칭을 종료한다. 매칭을 제거하고 연결된 채팅방에서 본인을 내보낸 뒤, 방에 남는 상대에게 '상대방이 채팅방을 나갔어요' 안내 메세지를 남긴다.")
+	@DeleteMapping("/{matchId}")
+	fun endMatch(
+		@LoginUser user: AuthUser,
+		@PathVariable matchId: Long,
+	): ApiResponse<Unit> {
+		endMatchUseCase.endMatch(user.id, matchId)
+		return ApiResponse.success()
+	}
 }
