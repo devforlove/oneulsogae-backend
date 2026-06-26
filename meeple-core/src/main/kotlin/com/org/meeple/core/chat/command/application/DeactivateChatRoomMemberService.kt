@@ -18,7 +18,8 @@ import java.time.LocalDateTime
 /**
  * [DeactivateChatRoomMemberUseCase] 구현.
  * 매칭 id로 채팅방을 찾아(없으면 no-op) 그 방 참가자 중 [userIds]에 해당하는 행만 비활성([ChatRoomMembers.deactivate])으로 전이하고,
- * 방에 남는 상대에게 나감 안내 시스템(SYSTEM) 메세지를 남긴다. 안내 문구는 채팅방 종류([ChatRoomMatchType])에 맞춘다(팀/1:1).
+ * notifyRemaining이 true면 방에 남는 상대에게 나감 안내 시스템(SYSTEM) 메세지를 남긴다. 안내 문구는 채팅방 종류([ChatRoomMatchType])에 맞춘다(팀/1:1).
+ * (REST 나가기는 같은 안내를 WebSocket이 발행·브로드캐스트하므로 notifyRemaining=false로 호출해 메세지·안 읽음 중복을 막는다)
  * (안내 메세지를 저장하고, 방 마지막 메세지와 남는 참가자의 안 읽은 개수를 갱신한다. 실시간 브로드캐스트는 하지 않는다)
  * 팀 해체(2:2)·1:1 매칭 종료 흐름(같은 트랜잭션)에서 호출되며, 나가는 본인을 포함해 활성 참가자가 한 명도 남지 않으면 방·참가자를 모두 종료(CLOSED)·소프트 삭제한다(이 경우 알릴 상대가 없어 안내 메세지는 남기지 않는다). 시각은 [TimeGenerator]로 얻는다.
  */
@@ -33,7 +34,7 @@ class DeactivateChatRoomMemberService(
 	private val timeGenerator: TimeGenerator,
 ) : DeactivateChatRoomMemberUseCase {
 
-	override fun deactivate(matchType: ChatRoomMatchType, matchId: Long, userIds: List<Long>) {
+	override fun deactivate(matchType: ChatRoomMatchType, matchId: Long, userIds: List<Long>, notifyRemaining: Boolean) {
 		if (userIds.isEmpty()) return
 		val chatRoom: ChatRoom = getChatRoomPort.findByMatchTypeAndMatchId(matchType, matchId) ?: return
 		val leaving: Set<Long> = userIds.toSet()
@@ -50,11 +51,14 @@ class DeactivateChatRoomMemberService(
 		// 나가는 팀원 비활성화 → 채팅방 입장 차단
 		saveChatRoomMemberPort.saveAll(members.deactivate(leaving))
 
-		// 남는 상대에게 나감 안내 시스템 메세지(채팅방 종류별 문구) 저장 + 방 마지막 메세지·남는 참가자 안 읽음 갱신
-		val message: ChatMessage = ChatMessage.createSystem(chatRoom.id, leftMessageOf(matchType), now)
-		saveChatMessagePort.save(message)
-		saveChatRoomPort.save(chatRoom.receiveMessage(message.content, now))
-		saveChatRoomMemberPort.saveAll(members.receiveExcept(leaving))
+		// 남는 상대에게 나감 안내가 필요할 때만(notifyRemaining) 시스템 메세지(채팅방 종류별 문구) 저장 + 방 마지막 메세지·남는 참가자 안 읽음 갱신.
+		// (REST 나가기는 WebSocket이 같은 안내를 발행·브로드캐스트하므로 false로 꺼 중복을 막는다)
+		if (notifyRemaining) {
+			val message: ChatMessage = ChatMessage.createSystem(chatRoom.id, leftMessageOf(matchType), now)
+			saveChatMessagePort.save(message)
+			saveChatRoomPort.save(chatRoom.receiveMessage(message.content, now))
+			saveChatRoomMemberPort.saveAll(members.receiveExcept(leaving))
+		}
 	}
 
 	// 채팅방 종류에 맞는 나감 안내 문구를 고른다. (팀 해체 vs 1:1 매칭 종료)

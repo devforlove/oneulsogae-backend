@@ -9,6 +9,10 @@ import com.org.meeple.common.chat.ChatRoomMatchType
  */
 interface DeactivateChatRoomMemberUseCase {
 
-	/** [matchType]+[matchId]의 채팅방에서 [userIds] 참가자를 비활성화한다. 채팅방이 없으면 아무것도 하지 않는다. */
-	fun deactivate(matchType: ChatRoomMatchType, matchId: Long, userIds: List<Long>)
+	/**
+	 * [matchType]+[matchId]의 채팅방에서 [userIds] 참가자를 비활성화한다. 채팅방이 없으면 아무것도 하지 않는다.
+	 * [notifyRemaining]이 true(기본)면 남는 상대에게 나감 안내 시스템 메세지를 남기고 안 읽음을 갱신한다.
+	 * false면 비활성화만 한다. (REST 나가기처럼 안내 메세지를 WebSocket이 따로 발행해 중복을 피해야 하는 경우)
+	 */
+	fun deactivate(matchType: ChatRoomMatchType, matchId: Long, userIds: List<Long>, notifyRemaining: Boolean = true)
 }

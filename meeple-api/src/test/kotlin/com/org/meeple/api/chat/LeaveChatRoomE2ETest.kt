@@ -116,7 +116,7 @@ class LeaveChatRoomE2ETest : AbstractIntegrationSupport({
 	describe("DELETE /chat/v1/rooms/{chatRoomId}/members") {
 
 		context("다른 참가자가 남아 있는 채팅방에서 한 명이 나가면") {
-			it("본인만 비활성화하고 남는 상대에게 나감 안내를 남기며, 방·매칭은 그대로 둔다 (200)") {
+			it("본인만 비활성화하고, 나감 안내·안 읽음은 남기지 않으며(WebSocket이 처리), 방·매칭은 그대로 둔다 (200)") {
 				val me = 9101L
 				val partner = 9102L
 				val matchId: Long = IntegrationUtil.persist(SoloMatchEntityFixture.create(memberKey = "9101-9102")).id!!
@@ -137,9 +137,9 @@ class LeaveChatRoomE2ETest : AbstractIntegrationSupport({
 				activeMemberExists(roomId, me) shouldBe false
 				activeMemberExists(roomId, partner) shouldBe true
 				roomStatusOf(roomId) shouldBe ChatRoomStatus.ACTIVE
-				// 매칭 종료·팀 해체와 동일하게 남는 상대(partner)에게 나감 안내(SOLO 문구)와 안 읽음을 남긴다. 나간 본인은 안 읽음이 오르지 않는다.
-				systemMessageContents(roomId) shouldBe listOf("상대방이 채팅방을 나갔어요")
-				unreadOf(roomId, partner) shouldBe 1
+				// REST 나가기는 나감 안내(SYSTEM)·안 읽음을 남기지 않는다. (같은 안내를 WebSocket이 발행·브로드캐스트하므로 중복 저장을 막는다)
+				systemMessageContents(roomId) shouldBe emptyList()
+				unreadOf(roomId, partner) shouldBe 0
 				unreadOf(roomId, me) shouldBe 0
 				// 채팅방 나가기는 매칭을 건드리지 않는다 → 매칭·매칭 참가자 모두 유지(둘 다 ACTIVE)
 				matchExists(matchId) shouldBe true
