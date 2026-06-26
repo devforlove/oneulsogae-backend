@@ -21,10 +21,4 @@ interface GetChatRoomMemberPort {
 	 * 방이 닫힐 때 참가자를 일괄 소프트 삭제하기 위해 로드한다.
 	 */
 	fun findAllByChatRoomId(chatRoomId: Long): ChatRoomMembers
-
-	/**
-	 * [chatRoomId] 채팅방의 활성(ACTIVE) 참가자 수를 센다.
-	 * 나가기에서 "남은 활성 참가자가 있는지"로 방 종료 여부를 정하는 데 쓴다. (나간(DEACTIVE) 참가자는 제외)
-	 */
-	fun countActiveByChatRoomId(chatRoomId: Long): Long
 }

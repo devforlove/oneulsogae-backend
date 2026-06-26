@@ -23,8 +23,6 @@ interface ChatRoomMemberJpaRepository : JpaRepository<ChatRoomMemberEntity, Long
 	/** 한 채팅방의 참가자 전체. (소프트삭제 행은 @SQLRestriction으로 제외) 방 종료 시 일괄 소프트 삭제용. */
 	fun findByChatRoomId(chatRoomId: Long): List<ChatRoomMemberEntity>
 
-	fun countByChatRoomIdAndStatus(chatRoomId: Long, status: ChatRoomMemberStatus): Long
-
 	/**
 	 * [chatRoomId] 방에서 [senderId]를 제외한 활성 참가자들의 안 읽은 개수를 1 증가시킨다. 갱신된 행 수를 반환한다.
 	 * 참가자 전체를 로드해 건별 save 하지 않고 한 번의 UPDATE로 처리한다. (인원수 무관)
