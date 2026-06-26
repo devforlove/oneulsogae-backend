@@ -17,7 +17,7 @@ import io.kotest.matchers.shouldBe
 class ChatParticipantsTest : DescribeSpec({
 
 	fun participant(userId: Long): ChatParticipant =
-		ChatParticipant(userId = userId, nickname = "user$userId", profileImageCode = null, gender = Gender.FEMALE, lastReadMessageId = null, active = true)
+		ChatParticipant(userId = userId, nickname = "user$userId", profileImageCode = null, gender = Gender.FEMALE, lastReadMessageId = null, active = true, isMyTeam = false)
 
 	describe("validateParticipant") {
 		it("참가자면 통과한다") {

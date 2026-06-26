@@ -55,6 +55,7 @@ class GetChatRoomDaoImpl(
 				Projections.constructor(
 					ChatRoomView::class.java,
 					chatRoom.id,
+					chatRoom.matchType,
 					chatRoom.status,
 				),
 			)
@@ -129,6 +130,8 @@ class GetChatRoomDaoImpl(
 							userDetail.gender,
 							partner.lastReadMessageId,
 							partner.status.eq(ChatRoomMemberStatus.ACTIVE),
+							// 목록은 상대 팀만 내려주므로(위 where에서 내 팀 제외) isMyTeam은 항상 false.
+							Expressions.constant(false),
 						),
 					),
 				),

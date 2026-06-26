@@ -7,6 +7,7 @@ import com.org.meeple.core.chat.query.dto.ChatParticipants
 import com.org.meeple.infra.chat.command.entity.QChatRoomMemberEntity
 import com.org.meeple.infra.user.command.entity.QUserDetailEntity
 import com.querydsl.core.types.Projections
+import com.querydsl.core.types.dsl.BooleanExpression
 import com.querydsl.jpa.impl.JPAQueryFactory
 import org.springframework.stereotype.Component
 
@@ -25,10 +26,16 @@ class GetChatParticipantDaoImpl(
 	 * WHERE는 복합 유니크 인덱스 ux_chat_room_id_user_id의 선두 컬럼 동등(chat_room_id)이라 인덱스 레인지 스캔을 탄다.
 	 * 정렬(user_id)은 그 인덱스의 두 번째 컬럼이라 chat_room_id 동등 뒤로 인덱스 순서와 일치해 추가 정렬이 없다.
 	 * 프로필 누락으로 참가 검증이 깨지지 않도록 left join으로 둔다. (참가자 행이 있으면 프로필 유무와 무관하게 결과에 남는다)
+	 * isMyTeam은 조회자 행([me])을 (chat_room_id, user_id) 유니크 인덱스로 seek해 team_id를 비교한다. (조회자 행은 접근 검증을 통과한 뒤라 항상 존재)
 	 */
-	override fun findByChatRoomId(chatRoomId: Long): ChatParticipants {
+	override fun findByChatRoomId(chatRoomId: Long, userId: Long): ChatParticipants {
 		val chatRoomMember: QChatRoomMemberEntity = QChatRoomMemberEntity.chatRoomMemberEntity
+		val me: QChatRoomMemberEntity = QChatRoomMemberEntity("me")
 		val userDetail: QUserDetailEntity = QUserDetailEntity.userDetailEntity
+
+		// 조회자 자신이거나, 같은 팀(team_id 동일)이면 내 팀. SOLO는 team_id가 null이라 조회자 자신만 true.
+		val isMyTeam: BooleanExpression = chatRoomMember.userId.eq(userId)
+			.or(chatRoomMember.teamId.isNotNull.and(chatRoomMember.teamId.eq(me.teamId)))
 
 		return ChatParticipants(
 			queryFactory
@@ -41,9 +48,11 @@ class GetChatParticipantDaoImpl(
 						userDetail.gender,
 						chatRoomMember.lastReadMessageId,
 						chatRoomMember.status.eq(ChatRoomMemberStatus.ACTIVE),
+						isMyTeam,
 					),
 				)
 				.from(chatRoomMember)
+				.join(me).on(me.chatRoomId.eq(chatRoomMember.chatRoomId).and(me.userId.eq(userId)))
 				.leftJoin(userDetail).on(userDetail.userId.eq(chatRoomMember.userId))
 				.where(
 					chatRoomMember.chatRoomId.eq(chatRoomId),

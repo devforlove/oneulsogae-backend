@@ -9,6 +9,9 @@ import com.org.meeple.core.chat.query.dto.ChatParticipants
  */
 interface GetChatParticipantDao {
 
-	/** 한 채팅방의 참가자 전체를 프로필(닉네임·이미지·성별)과 함께 조회한다. (나간 참가자도 포함) */
-	fun findByChatRoomId(chatRoomId: Long): ChatParticipants
+	/**
+	 * 한 채팅방의 참가자 전체를 프로필(닉네임·이미지·성별)과 함께 조회한다. (나간 참가자도 포함)
+	 * [userId]는 조회자다. 같은 방의 조회자 행과 team_id를 비교해 각 참가자의 같은 팀 여부([ChatParticipant.isMyTeam])를 채운다.
+	 */
+	fun findByChatRoomId(chatRoomId: Long, userId: Long): ChatParticipants
 }

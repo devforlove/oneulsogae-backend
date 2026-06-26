@@ -1,5 +1,6 @@
 package com.org.meeple.api.chat
 
+import com.org.meeple.common.chat.ChatRoomMatchType
 import com.org.meeple.common.chat.ChatRoomMemberStatus
 import com.org.meeple.common.integration.AbstractIntegrationSupport
 import com.org.meeple.common.integration.expect
@@ -65,10 +66,14 @@ class GetChatRoomDetailE2ETest : AbstractIntegrationSupport({
 					status(200)
 					body("success", true)
 					body("data.chatRoomId", roomId.toInt())
+					body("data.type", ChatRoomMatchType.SOLO.name)
 					// 참여자 2명 (순서 무관), 프로필 동반
 					body("data.participants.size()", 2)
 					body("data.participants.userId", hasItems(maleUserId.toInt(), femaleUserId.toInt()))
 					body("data.participants.nickname", hasItems("철수", "영희"))
+					// SOLO 방은 팀이 없어 조회자 자신만 isMyTeam=true (참가자는 userId 오름차순: index0=나, index1=상대)
+					body("data.participants[0].isMyTeam", true)
+					body("data.participants[1].isMyTeam", false)
 					// 메세지 3건, 과거부터(id 오름차순)
 					body("data.messages.size()", 3)
 					body("data.messages[0].senderId", maleUserId.toInt())
@@ -156,6 +161,7 @@ class GetChatRoomDetailE2ETest : AbstractIntegrationSupport({
 					status(200)
 					body("data.chatRoomId", roomId.toInt())
 					// 방·참여자 데이터는 첫 페이지에서만 → 이후 페이지엔 없음
+					body("data.type", nullValue())
 					body("data.status", nullValue())
 					body("data.participants.size()", 0)
 					// 더 과거 메세지만, 과거부터(id 오름차순)
@@ -254,6 +260,44 @@ class GetChatRoomDetailE2ETest : AbstractIntegrationSupport({
 					body("data.participants[1].userId", left.toInt())
 					body("data.participants[1].lastReadMessageId", 40)
 					body("data.participants[1].active", false)
+				}
+			}
+		}
+
+		context("TEAM(2:2) 방을 조회하면") {
+			it("조회자 자신·내 팀원은 isMyTeam=true, 상대 팀은 false로 내려준다 (200)") {
+				val me = 7601L          // myTeam
+				val teammate = 7602L    // myTeam
+				val opponentA = 7603L   // oppTeam
+				val opponentB = 7604L   // oppTeam (participants는 userId 오름차순)
+				val myTeamId = 100L
+				val oppTeamId = 200L
+
+				IntegrationUtil.persist(UserDetailEntityFixture.create(userId = me, nickname = "나"))
+				IntegrationUtil.persist(UserDetailEntityFixture.create(userId = teammate, nickname = "내팀원"))
+				IntegrationUtil.persist(UserDetailEntityFixture.create(userId = opponentA, nickname = "상대A"))
+				IntegrationUtil.persist(UserDetailEntityFixture.create(userId = opponentB, nickname = "상대B"))
+
+				val roomId: Long = IntegrationUtil.persist(
+					ChatRoomEntityFixture.create(matchType = ChatRoomMatchType.TEAM, matchId = 60L),
+				).id!!
+				IntegrationUtil.persist(ChatRoomMemberEntityFixture.create(chatRoomId = roomId, userId = me, teamId = myTeamId))
+				IntegrationUtil.persist(ChatRoomMemberEntityFixture.create(chatRoomId = roomId, userId = teammate, teamId = myTeamId))
+				IntegrationUtil.persist(ChatRoomMemberEntityFixture.create(chatRoomId = roomId, userId = opponentA, teamId = oppTeamId))
+				IntegrationUtil.persist(ChatRoomMemberEntityFixture.create(chatRoomId = roomId, userId = opponentB, teamId = oppTeamId))
+
+				get("/chat/v1/rooms/$roomId") {
+					bearer(accessTokenFor(me))
+				} expect {
+					status(200)
+					body("data.type", ChatRoomMatchType.TEAM.name)
+					// 상세는 내 팀원·상대 팀 전원 노출 (목록과 달리 팀 필터 없음)
+					body("data.participants.size()", 4)
+					// userId 오름차순: [나, 내팀원, 상대A, 상대B]
+					body("data.participants[0].isMyTeam", true)  // 나
+					body("data.participants[1].isMyTeam", true)  // 내 팀원
+					body("data.participants[2].isMyTeam", false) // 상대 팀
+					body("data.participants[3].isMyTeam", false) // 상대 팀
 				}
 			}
 		}

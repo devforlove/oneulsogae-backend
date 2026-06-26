@@ -1,6 +1,7 @@
 package com.org.meeple.api.chat.response
 
 import com.org.meeple.common.chat.ChatMessageType
+import com.org.meeple.common.chat.ChatRoomMatchType
 import com.org.meeple.common.chat.ChatRoomStatus
 import com.org.meeple.common.user.Gender
 import com.org.meeple.core.chat.query.dto.ChatMessageView
@@ -9,12 +10,14 @@ import com.org.meeple.core.chat.query.dto.ChatRoomDetail
 import java.time.LocalDateTime
 
 /**
- * 채팅방 상세 응답. 메세지([messages])와, 첫 페이지에서만 채워지는 방 상태([status])·참여자([participants])를 내려준다.
+ * 채팅방 상세 응답. 메세지([messages])와, 첫 페이지에서만 채워지는 방 종류([type])·방 상태([status])·참여자([participants])를 내려준다.
  * 메세지는 id 오름차순(과거→최신) 순이며, 더 과거를 이어 읽을 때 [nextCursor](가장 오래된 메세지 id)를 `cursor`로 넘긴다. (없으면 null)
- * 커서로 이후 페이지를 조회하면 방·참여자 데이터는 다시 내려주지 않는다. ([status]는 null, [participants]는 빈 목록)
+ * 커서로 이후 페이지를 조회하면 방·참여자 데이터는 다시 내려주지 않는다. ([type]·[status]는 null, [participants]는 빈 목록)
  */
 data class ChatRoomDetailResponse(
 	val chatRoomId: Long,
+	/** 채팅방 종류. SOLO(1:1) 또는 TEAM(2:2). 첫 페이지에서만 내려가고, 커서로 이후 페이지를 조회하면 null. */
+	val type: ChatRoomMatchType?,
 	/** 채팅방 상태. 첫 페이지에서만 내려가고, 커서로 이후 페이지를 조회하면 null. */
 	val status: ChatRoomStatus?,
 	val participants: List<ChatParticipantResponse>,
@@ -26,6 +29,7 @@ data class ChatRoomDetailResponse(
 		fun of(detail: ChatRoomDetail): ChatRoomDetailResponse =
 			ChatRoomDetailResponse(
 				chatRoomId = detail.chatRoomId,
+				type = detail.matchType,
 				status = detail.status,
 				participants = detail.participants.map { ChatParticipantResponse.of(it) },
 				messages = detail.messages.values.map { ChatMessageResponse.of(it) },
@@ -45,6 +49,8 @@ data class ChatParticipantResponse(
 	val lastReadMessageId: Long?,
 	/** 활성(미퇴장) 참가자 여부. false면 나간 참가자라 안 읽은 사람 수 카운트에서 제외한다. */
 	val active: Boolean,
+	/** 조회자와 같은 팀인지 여부. TEAM 방에서 조회자 자신·같은 팀원이 true, 상대 팀이 false. (SOLO 방은 조회자 자신만 true) */
+	val isMyTeam: Boolean,
 ) {
 	companion object {
 		fun of(participant: ChatParticipant): ChatParticipantResponse =
@@ -55,6 +61,7 @@ data class ChatParticipantResponse(
 				gender = participant.gender,
 				lastReadMessageId = participant.lastReadMessageId,
 				active = participant.active,
+				isMyTeam = participant.isMyTeam,
 			)
 	}
 }
