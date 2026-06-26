@@ -3,6 +3,7 @@ package com.org.meeple.api.match.request
 import com.org.meeple.core.match.command.application.port.`in`.command.UpdateTeamCommand
 import jakarta.validation.constraints.NotBlank
 import jakarta.validation.constraints.NotNull
+import jakarta.validation.constraints.Positive
 import jakarta.validation.constraints.Size
 
 /**
@@ -19,6 +20,7 @@ data class UpdateTeamRequest(
 	val introduction: String? = null,
 
 	@field:NotNull(message = "활동지역은 필수입니다.")
+	@field:Positive(message = "활동지역 ID는 0보다 커야 합니다.")
 	val regionId: Long? = null,
 ) {
 
