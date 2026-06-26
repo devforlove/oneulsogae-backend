@@ -7,6 +7,7 @@ import jakarta.persistence.Column
 import jakarta.persistence.Entity
 import jakarta.persistence.EnumType
 import jakarta.persistence.Enumerated
+import jakarta.persistence.Index
 import jakarta.persistence.Table
 import org.hibernate.annotations.SQLRestriction
 
@@ -19,7 +20,14 @@ import org.hibernate.annotations.SQLRestriction
  */
 @Entity
 @SQLRestriction("deleted_at is null")
-@Table(name = "teams")
+@Table(
+	name = "teams",
+	indexes = [
+		// 가까운 추천 후보 탐색(권역·성별·상태 동등 seek)용. 권역마다 1건씩 probe하므로 풀스캔을 없앤다.
+		// 셋 다 동등 조건이라 순서는 seek 가능성에 무관하나, 선택도 높은 region_id를 선두에 둔다.
+		Index(name = "idx_region_id_gender_status", columnList = "region_id, gender, status"),
+	],
+)
 class TeamEntity(
 	/** 팀 이름. */
 	@Column(name = "name", nullable = false, length = 50)
