@@ -4,10 +4,12 @@ import com.org.meeple.common.integration.AbstractIntegrationSupport
 import com.org.meeple.common.integration.delete
 import com.org.meeple.common.integration.expect
 import com.org.meeple.common.integration.get
+import com.org.meeple.common.chat.ChatMessageType
 import com.org.meeple.common.chat.ChatRoomMemberStatus
 import com.org.meeple.common.chat.ChatRoomStatus
 import com.org.meeple.common.match.MatchMemberStatus
 import com.org.meeple.common.user.Gender
+import com.org.meeple.infra.chat.command.entity.QChatMessageEntity
 import com.org.meeple.infra.chat.command.entity.QChatRoomEntity
 import com.org.meeple.infra.chat.command.entity.QChatRoomMemberEntity
 import com.org.meeple.infra.fixture.ChatRoomEntityFixture
@@ -81,6 +83,26 @@ class LeaveChatRoomE2ETest : AbstractIntegrationSupport({
 			.fetchFirst() != null
 	}
 
+	// 방에 남은 SYSTEM 메세지 본문 목록. (나감 안내 메세지 확인용)
+	fun systemMessageContents(chatRoomId: Long): List<String> {
+		val message: QChatMessageEntity = QChatMessageEntity.chatMessageEntity
+		return IntegrationUtil.getQuery()
+			.select(message.content)
+			.from(message)
+			.where(message.chatRoomId.eq(chatRoomId), message.type.eq(ChatMessageType.SYSTEM))
+			.fetch()
+	}
+
+	// 참가자의 안 읽은 개수.
+	fun unreadOf(chatRoomId: Long, userId: Long): Int {
+		val member: QChatRoomMemberEntity = QChatRoomMemberEntity.chatRoomMemberEntity
+		return IntegrationUtil.getQuery()
+			.select(member.unreadCount)
+			.from(member)
+			.where(member.chatRoomId.eq(chatRoomId), member.userId.eq(userId))
+			.fetchOne()!!
+	}
+
 	// 매칭 참가자의 현재 status. (소프트 삭제 안 된 행을 조회)
 	fun matchMemberStatusOf(matchId: Long, userId: Long): MatchMemberStatus {
 		val matchMember: QSoloMatchMemberEntity = QSoloMatchMemberEntity.soloMatchMemberEntity
@@ -94,7 +116,7 @@ class LeaveChatRoomE2ETest : AbstractIntegrationSupport({
 	describe("DELETE /chat/v1/rooms/{chatRoomId}/members") {
 
 		context("다른 참가자가 남아 있는 채팅방에서 한 명이 나가면") {
-			it("본인 채팅 참가자 행만 비활성화하고 상대·방·매칭은 그대로 둔다 (200)") {
+			it("본인만 비활성화하고 남는 상대에게 나감 안내를 남기며, 방·매칭은 그대로 둔다 (200)") {
 				val me = 9101L
 				val partner = 9102L
 				val matchId: Long = IntegrationUtil.persist(SoloMatchEntityFixture.create(memberKey = "9101-9102")).id!!
@@ -115,6 +137,10 @@ class LeaveChatRoomE2ETest : AbstractIntegrationSupport({
 				activeMemberExists(roomId, me) shouldBe false
 				activeMemberExists(roomId, partner) shouldBe true
 				roomStatusOf(roomId) shouldBe ChatRoomStatus.ACTIVE
+				// 매칭 종료·팀 해체와 동일하게 남는 상대(partner)에게 나감 안내(SOLO 문구)와 안 읽음을 남긴다. 나간 본인은 안 읽음이 오르지 않는다.
+				systemMessageContents(roomId) shouldBe listOf("상대방이 채팅방을 나갔어요")
+				unreadOf(roomId, partner) shouldBe 1
+				unreadOf(roomId, me) shouldBe 0
 				// 채팅방 나가기는 매칭을 건드리지 않는다 → 매칭·매칭 참가자 모두 유지(둘 다 ACTIVE)
 				matchExists(matchId) shouldBe true
 				matchMemberStatusOf(matchId, me) shouldBe MatchMemberStatus.ACTIVE
@@ -236,6 +262,7 @@ class LeaveChatRoomE2ETest : AbstractIntegrationSupport({
 	}
 
 	afterTest {
+		IntegrationUtil.deleteAll(QChatMessageEntity.chatMessageEntity)
 		IntegrationUtil.deleteAll(QChatRoomMemberEntity.chatRoomMemberEntity)
 		IntegrationUtil.deleteAll(QChatRoomEntity.chatRoomEntity)
 		IntegrationUtil.deleteAll(QSoloMatchMemberEntity.soloMatchMemberEntity)
