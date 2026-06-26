@@ -39,6 +39,14 @@ class TeamMembersTest : DescribeSpec({
         }
     }
 
+    describe("activeMembers") {
+        it("ACTIVE 구성원만(전체 객체) 돌려준다") {
+            invitingMembers().activeMembers().map { it.userId } shouldBe listOf(ownerId)
+            invitingMembers().accept(invitedId).activeMembers().map { it.userId } shouldContainExactlyInAnyOrder
+                listOf(ownerId, invitedId)
+        }
+    }
+
     describe("activeMemberIds") {
         it("ACTIVE 구성원의 userId만 돌려준다") {
             invitingMembers().activeMemberIds() shouldBe listOf(ownerId)
