@@ -4,6 +4,7 @@ import com.org.meeple.common.alarm.AlarmType
 import com.org.meeple.common.chat.ChatMessageType
 import com.org.meeple.common.chat.ChatRoomMatchType
 import com.org.meeple.common.chat.ChatRoomMemberStatus
+import com.org.meeple.common.chat.ChatRoomStatus
 import com.org.meeple.common.integration.AbstractIntegrationSupport
 import com.org.meeple.common.integration.delete
 import com.org.meeple.common.integration.expect
@@ -117,17 +118,19 @@ class EndMatchE2ETest : AbstractIntegrationSupport({
 				val femaleUserId = 2004L
 				val match: SoloMatchEntity = persistMatch(maleUserId, femaleUserId)
 				val matchId: Long = match.id!!
-				persistChatRoom(matchId, maleUserId, femaleUserId)
+				val roomId: Long = persistChatRoom(matchId, maleUserId, femaleUserId)
 
 				delete("/matches/v1/$matchId") { bearer(accessTokenFor(maleUserId)) } expect { status(200) }
-				// 첫 종료(남성): 매칭은 유지되고, 남는 상대(여성)에게 "매칭 종료" 알람 1건이 발송된다
+				// 첫 종료(남성): 매칭·채팅방은 유지되고, 남는 상대(여성)에게 "매칭 종료" 알람 1건이 발송된다
 				matchExists(matchId) shouldBe true
+				roomStatus(roomId) shouldBe ChatRoomStatus.ACTIVE
 				alarmsOf(femaleUserId).size shouldBe 1
 
 				delete("/matches/v1/$matchId") { bearer(accessTokenFor(femaleUserId)) } expect { status(200) }
-				// 마지막 종료(여성): 매칭(헤더+참가자)이 소프트 삭제되고, 알릴 상대가 없어 종료자(남성)에게 알람이 가지 않는다
+				// 마지막 종료(여성): 매칭이 소프트 삭제되고, 모든 참가자가 비활성이라 채팅방(헤더+참가자)도 종료(CLOSED)·소프트 삭제되며, 알릴 상대가 없어 종료자(남성)에게 알람이 가지 않는다
 				matchExists(matchId) shouldBe false
 				matchMemberCount(matchId) shouldBe 0L
+				roomExists(roomId) shouldBe false
 				alarmsOf(maleUserId).size shouldBe 0
 			}
 		}
@@ -208,6 +211,17 @@ private fun matchMemberStatus(matchId: Long, userId: Long): MatchMemberStatus {
 	val q: QSoloMatchMemberEntity = QSoloMatchMemberEntity.soloMatchMemberEntity
 	return IntegrationUtil.getQuery().select(q.status).from(q)
 		.where(q.matchId.eq(matchId).and(q.userId.eq(userId))).fetchOne()!!
+}
+
+private fun roomStatus(chatRoomId: Long): ChatRoomStatus {
+	val q: QChatRoomEntity = QChatRoomEntity.chatRoomEntity
+	return IntegrationUtil.getQuery().select(q.status).from(q).where(q.id.eq(chatRoomId)).fetchOne()!!
+}
+
+// @SQLRestriction("deleted_at is null")로 소프트 삭제된 방은 조회에서 빠지므로, 존재 여부로 종료(소프트 삭제)를 확인한다.
+private fun roomExists(chatRoomId: Long): Boolean {
+	val q: QChatRoomEntity = QChatRoomEntity.chatRoomEntity
+	return IntegrationUtil.getQuery().select(q.id).from(q).where(q.id.eq(chatRoomId)).fetchOne() != null
 }
 
 private fun memberStatus(chatRoomId: Long, userId: Long): ChatRoomMemberStatus {

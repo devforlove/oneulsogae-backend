@@ -20,7 +20,7 @@ import java.time.LocalDateTime
  * 매칭 id로 채팅방을 찾아(없으면 no-op) 그 방 참가자 중 [userIds]에 해당하는 행만 비활성([ChatRoomMembers.deactivate])으로 전이하고,
  * 방에 남는 상대에게 나감 안내 시스템(SYSTEM) 메세지를 남긴다. 안내 문구는 채팅방 종류([ChatRoomMatchType])에 맞춘다(팀/1:1).
  * (안내 메세지를 저장하고, 방 마지막 메세지와 남는 참가자의 안 읽은 개수를 갱신한다. 실시간 브로드캐스트는 하지 않는다)
- * 팀 해체(2:2)·1:1 매칭 종료 흐름(같은 트랜잭션)에서 호출되며, 방 자체는 닫지 않는다. 시각은 [TimeGenerator]로 얻는다.
+ * 팀 해체(2:2)·1:1 매칭 종료 흐름(같은 트랜잭션)에서 호출되며, 나가는 본인을 포함해 활성 참가자가 한 명도 남지 않으면 방·참가자를 모두 종료(CLOSED)·소프트 삭제한다(이 경우 알릴 상대가 없어 안내 메세지는 남기지 않는다). 시각은 [TimeGenerator]로 얻는다.
  */
 @Service
 @Transactional
@@ -40,10 +40,17 @@ class DeactivateChatRoomMemberService(
 		val members: ChatRoomMembers = getChatRoomMemberPort.findAllByChatRoomId(chatRoom.id)
 		val now: LocalDateTime = timeGenerator.now()
 
+		// 나가는 본인을 포함해 활성 참가자가 한 명도 남지 않으면, 방·참가자를 모두 종료(CLOSED)·소프트 삭제한다. (알릴 상대가 없어 안내 메세지는 남기지 않는다)
+		if (members.allInactiveAfterLeaving(leaving)) {
+			saveChatRoomMemberPort.saveAll(members.delete(now))
+			saveChatRoomPort.save(chatRoom.delete(now))
+			return
+		}
+
 		// 나가는 팀원 비활성화 → 채팅방 입장 차단
 		saveChatRoomMemberPort.saveAll(members.deactivate(leaving))
 
-		// 나감 안내 시스템 메세지(채팅방 종류별 문구) 저장 + 방 마지막 메세지·남는 참가자 안 읽음 갱신
+		// 남는 상대에게 나감 안내 시스템 메세지(채팅방 종류별 문구) 저장 + 방 마지막 메세지·남는 참가자 안 읽음 갱신
 		val message: ChatMessage = ChatMessage.createSystem(chatRoom.id, leftMessageOf(matchType), now)
 		saveChatMessagePort.save(message)
 		saveChatRoomPort.save(chatRoom.receiveMessage(message.content, now))

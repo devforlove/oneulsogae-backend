@@ -59,6 +59,20 @@ class ChatRoomMembersTest : DescribeSpec({
 		}
 	}
 
+	describe("allInactiveAfterLeaving(leavingUserIds)") {
+		it("나가는 대상 외에 활성 참가자가 남으면 false다") {
+			val members: ChatRoomMembers = ChatRoomMembers(listOf(member(1L), member(2L)))
+
+			members.allInactiveAfterLeaving(setOf(1L)) shouldBe false
+		}
+
+		it("이미 비활성인 참가자만 남고 나머지가 모두 나가면 true다") {
+			val members: ChatRoomMembers = ChatRoomMembers(listOf(member(1L).deactivate(), member(2L)))
+
+			members.allInactiveAfterLeaving(setOf(2L)) shouldBe true
+		}
+	}
+
 	describe("receiveExcept(excludedUserIds)") {
 		it("제외 대상이 아닌 활성 참가자만 안 읽은 개수를 1 올려 그 대상만 담아 돌려준다") {
 			val members: ChatRoomMembers = ChatRoomMembers(listOf(member(1L), member(2L), member(3L)))
