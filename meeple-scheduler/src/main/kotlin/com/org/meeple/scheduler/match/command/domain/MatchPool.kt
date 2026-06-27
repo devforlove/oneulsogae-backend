@@ -10,6 +10,7 @@ import com.org.meeple.scheduler.match.query.dto.MatchableUser
  */
 class MatchPool private constructor(
 	private val bucketsByKey: Map<BucketKey, List<MatchableUser>>,
+	private val regionsByGender: Map<Gender, Set<Long>>,
 	private val available: MutableSet<Long>,
 ) {
 
@@ -17,6 +18,10 @@ class MatchPool private constructor(
 	fun freshCandidates(gender: Gender, regionId: Long): List<MatchableUser> =
 		(bucketsByKey[BucketKey(gender, regionId)] ?: emptyList())
 			.filter { user: MatchableUser -> user.userId in available }
+
+	/** [gender] 후보가 (한 명이라도) 존재하는 지역 집합. (후보 없는 지역의 헛순회를 건너뛰는 데 쓴다) */
+	fun regionsWith(gender: Gender): Set<Long> =
+		regionsByGender[gender] ?: emptySet()
 
 	/** 매칭된 [user]를 가용에서 제거한다. */
 	fun remove(user: MatchableUser) {
@@ -36,8 +41,12 @@ class MatchPool private constructor(
 			val bucketsByKey: Map<BucketKey, List<MatchableUser>> = users
 				.sortedByDescending { user: MatchableUser -> user.lastLoginAt }
 				.groupBy { user: MatchableUser -> BucketKey(user.gender, user.regionId) }
+			// 성별별 "후보가 있는 지역" 집합을 미리 만들어, 후보 없는 지역의 헛순회를 O(1)로 건너뛴다.
+			val regionsByGender: Map<Gender, Set<Long>> = bucketsByKey.keys
+				.groupBy { key: BucketKey -> key.gender }
+				.mapValues { (_, keys: List<BucketKey>) -> keys.mapTo(mutableSetOf()) { key: BucketKey -> key.regionId } }
 			val available: MutableSet<Long> = users.mapTo(mutableSetOf()) { user: MatchableUser -> user.userId }
-			return MatchPool(bucketsByKey, available)
+			return MatchPool(bucketsByKey, regionsByGender, available)
 		}
 	}
 }

@@ -82,7 +82,11 @@ class SoloMatchBatchService(
 	/** [target] 지역에서 가까운 순 상위 N개 지역을 무작위 순서로 뒤져, 재소개 이력이 없는 첫 후보를 찾는다. (없으면 null) */
 	private fun findNearestFreshPartner(target: MatchableUser, pool: MatchPool): MatchableUser? {
 		val partnerGender: Gender = target.gender.opposite()
-		val regionOrder: List<Long> = regionShuffler.shuffleNearest(regionProximityPort.nearbyRegionIds(target.regionId))
+		// 후보가 있는 지역만 추려 셔플·순회한다. (풀에 상대 성별 후보가 없는 지역은 헛순회라 건너뛴다)
+		val populatedRegions: Set<Long> = pool.regionsWith(partnerGender)
+		val nearbyPopulated: List<Long> = regionProximityPort.nearbyRegionIds(target.regionId)
+			.filter { regionId: Long -> regionId in populatedRegions }
+		val regionOrder: List<Long> = regionShuffler.shuffleNearest(nearbyPopulated)
 		for (regionId: Long in regionOrder) {
 			for (candidate: MatchableUser in pool.freshCandidates(partnerGender, regionId)) {
 				if (!getMatchRecordDao.existsByPair(target.userId, candidate.userId)) return candidate

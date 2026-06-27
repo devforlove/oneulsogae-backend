@@ -5,6 +5,7 @@ import com.org.meeple.scheduler.match.command.domain.MatchPool
 import com.org.meeple.scheduler.match.query.dto.MatchableUser
 import io.kotest.core.spec.style.DescribeSpec
 import io.kotest.matchers.collections.shouldBeEmpty
+import io.kotest.matchers.collections.shouldContainExactlyInAnyOrder
 import io.kotest.matchers.shouldBe
 import java.time.LocalDateTime
 
@@ -31,6 +32,25 @@ class MatchPoolTest : DescribeSpec({
 			val pool: MatchPool = MatchPool.of(listOf(femaleRegion1, femaleRegion2, maleRegion1))
 
 			pool.freshCandidates(Gender.FEMALE, 1L) shouldBe listOf(femaleRegion1)
+		}
+	}
+
+	describe("regionsWith") {
+
+		it("그 성별 후보가 있는 지역만 돌려준다 (다른 성별·없는 지역은 제외)") {
+			val femaleRegion1: MatchableUser = user(10L, Gender.FEMALE, 1L, base)
+			val femaleRegion2: MatchableUser = user(11L, Gender.FEMALE, 2L, base)
+			val maleRegion3: MatchableUser = user(12L, Gender.MALE, 3L, base)
+			val pool: MatchPool = MatchPool.of(listOf(femaleRegion1, femaleRegion2, maleRegion3))
+
+			pool.regionsWith(Gender.FEMALE) shouldContainExactlyInAnyOrder setOf(1L, 2L)
+			pool.regionsWith(Gender.MALE) shouldContainExactlyInAnyOrder setOf(3L)
+		}
+
+		it("그 성별 후보가 없으면 빈 집합을 돌려준다") {
+			val pool: MatchPool = MatchPool.of(listOf(user(10L, Gender.FEMALE, 1L, base)))
+
+			pool.regionsWith(Gender.MALE).shouldBeEmpty()
 		}
 	}
 
