@@ -1,328 +1,446 @@
-# 추천 팀 배치: 유저별 재매칭 팀 제외 구현 플랜
+# 추천 팀 배치: 유저별 재매칭 팀 제외 구현 플랜 (접근 B)
 
-> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
+> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** 추천 팀 배치가 솔로 유저에게, 그 유저가 과거에 MATCHED됐던 상대 팀(team_id)을 다시 추천하지 않도록 한다.
+**Goal:** 매칭 성사 시 (유저 → 상대 팀) 이력을 전용 테이블에 기록하고, 추천 배치가 그 이력으로 유저별 재매칭 상대를 제외한다.
 
-**Architecture:** 기존 데이터에서 파생(접근 A). 신규 스키마 없음. 배치가 대상 유저들의 "과거 MATCHED 상대 팀" 맵을 한 번에 적재하고, 각 유저의 후보 선택에서 그 팀들을 제외한다. 과거 이력은 소프트 삭제된 `team_members`·`matched_teams`·`team_matches`에 흩어져 있어 네이티브 SQL로 `@SQLRestriction`을 우회해 읽고, 성사 여부는 `expires_at` 연장 흔적으로 판정한다.
+**Architecture:** 성사 처리(`SendTeamInterestService.completeMatch`)와 같은 트랜잭션에서 `recommended_team_histories`에 기록(멱등). 배치는 유저별 단건 seek로 제외 집합을 얻어 후보에서 `filterNot`. 신규 스키마 1개, 네이티브 SQL·휴리스틱 없음.
 
 **Tech Stack:** Kotlin 2.2.21 / Spring Boot 4 / Spring Data JPA / QueryDSL / MySQL / Kotest(DescribeSpec) / Testcontainers(E2E)
 
 ## Global Constraints
 
-- 응답·주석은 한국어. `meeple-backend`만 수정(프론트엔드 변경 금지).
+- 응답·주석은 한국어. `meeple-backend`만 수정.
 - 타입 명시: 변수·반환·람다 파라미터 타입을 생략하지 않는다.
-- 현재 시각은 `TimeGenerator`로 얻는다(`LocalDateTime.now()` 직접 호출 금지). 단 인프라 쿼리는 매칭의 자기 `introduced_date` 기준으로 비교하므로 시각 주입이 필요 없다.
-- CQRS: 조회 경로는 부수효과 없음. 새 조회는 scheduler `query/dao` 인터페이스 + infra `query` 구현으로 분리한다.
-- 조회 구현 우선순위 ①Spring Data ②QueryDSL ③JPQL이나, 본 건은 소프트 삭제 우회가 강제하는 예외로 **네이티브 SQL**을 쓴다(기존 사례: `GetMatchRecordDaoImpl`).
-- 성사 판정 임계값은 core `TeamMatch.MATCHED_EXPIRATION_EXTENSION_YEARS = 100`에 묶인 50년이다.
-- 스케줄러 도메인의 유닛 테스트는 `meeple-api/src/test/.../scheduler/match/`에 둔다(예: `TeamPoolTest`). 인프라 쿼리는 `meeple-api`의 E2E(Testcontainers)로 검증한다(infra·scheduler에는 테스트 소스셋이 없다).
+- 도메인 로직 캡슐화: 서비스가 일급 컬렉션 내부를 들춰 계산하지 말고 도메인 메서드(`Teams.matchHistories()`)로 응집.
+- 헥사고날: Controller→in-port, Service→out-port, infra Adapter가 out-port 구현. core port/out에 인터페이스, infra command/adapter에 구현.
+- CQRS: 쓰기는 command(adapter), 조회는 query(daoImpl). 조회 경로 부수효과 없음.
+- 영속성: 엔티티마다 어댑터 하나. 조회 구현 우선순위 ①Spring Data 파생 쿼리. infra query→command repository 참조 허용.
+- 멱등: `recommended_team_histories`는 `UNIQUE(user_id, team_id)`. 저장은 `exists` 체크 후 신규만 insert(유니크 위반으로 성사 트랜잭션이 롤백되지 않도록).
+- 쓰기는 성사와 **같은 트랜잭션**(`completeMatch` 본문). AFTER_COMMIT 이벤트 아님.
+- 테스트: core 도메인→Kotest 유닛(`meeple-api/src/test/.../domain/match`), scheduler→Kotest 유닛(`meeple-api/src/test/.../scheduler/match`), api/infra 경계→E2E(`meeple-api/src/test/.../api/match`, `AbstractIntegrationSupport` + `IntegrationUtil`). 테스트 스키마는 `ddl-auto: create-drop`이라 새 엔티티가 자동 생성된다.
+- 작업 트리에 이전 세션의 무관한 미커밋 변경이 있다. 절대 건드리거나 스테이지하지 말 것. 각 태스크의 `git add`는 명시된 파일만.
 
 ---
 
-### Task 1: `PreviouslyMatchedTeams` 읽기 모델 + `GetUserMatchHistoryDao` 포트
+### Task 1: core 도메인 이력 모델 + `Teams.matchHistories()` + SavePort
 
-scheduler 쪽 조회 계약(읽기 모델 + DAO 인터페이스)을 만든다. 읽기 모델은 일급 컬렉션으로 조회 로직을 담아 유닛 테스트한다.
+성사 시 남길 이력의 도메인 표현과, 두 팀에서 (구성원→상대 팀)을 만드는 도메인 메서드, 저장 out-port를 추가한다. Spring 컨텍스트 영향 없음(포트 구현은 Task 2).
 
 **Files:**
-- Create: `meeple-scheduler/src/main/kotlin/com/org/meeple/scheduler/match/query/dto/PreviouslyMatchedTeams.kt`
-- Create: `meeple-scheduler/src/main/kotlin/com/org/meeple/scheduler/match/query/dao/GetUserMatchHistoryDao.kt`
-- Test: `meeple-api/src/test/kotlin/com/org/meeple/scheduler/match/PreviouslyMatchedTeamsTest.kt`
+- Create: `meeple-core/src/main/kotlin/com/org/meeple/core/match/command/domain/RecommendedTeamHistory.kt`
+- Modify: `meeple-core/src/main/kotlin/com/org/meeple/core/match/command/domain/Teams.kt`
+- Create: `meeple-core/src/main/kotlin/com/org/meeple/core/match/command/application/port/out/SaveRecommendedTeamHistoryPort.kt`
+- Test: `meeple-api/src/test/kotlin/com/org/meeple/domain/match/TeamsTest.kt` (기존 파일에 describe 추가)
 
 **Interfaces:**
 - Produces:
-  - `class PreviouslyMatchedTeams(opponentTeamIdsByUser: Map<Long, Set<Long>>)` with `fun opponentTeamIdsOf(userId: Long): Set<Long>`
-  - `interface GetUserMatchHistoryDao { fun findPreviouslyMatchedTeamIdsByUser(userIds: Set<Long>): PreviouslyMatchedTeams }`
+  - `data class RecommendedTeamHistory(userId: Long, teamId: Long)` (teamId = 매칭한 상대 팀)
+  - `Teams.matchHistories(): List<RecommendedTeamHistory>`
+  - `interface SaveRecommendedTeamHistoryPort { fun saveAll(histories: List<RecommendedTeamHistory>) }`
 
-- [ ] **Step 1: 읽기 모델 유닛 테스트 작성 (실패)**
+- [ ] **Step 1: `Teams.matchHistories()` 유닛 테스트 작성 (실패)**
 
-`meeple-api/src/test/kotlin/com/org/meeple/scheduler/match/PreviouslyMatchedTeamsTest.kt`:
+`TeamsTest.kt`의 `describe("opponentActiveMemberIds")` 블록 뒤(닫는 `})` 직전)에 추가. 파일 상단 import에 `import com.org.meeple.core.match.command.domain.RecommendedTeamHistory` 추가:
 
 ```kotlin
-package com.org.meeple.scheduler.match
+	describe("matchHistories") {
+		it("각 팀의 ACTIVE 구성원마다 (구성원 → 상대 팀 id) 이력을 만든다") {
+			teams.matchHistories().map { history: RecommendedTeamHistory -> history.userId to history.teamId } shouldContainExactlyInAnyOrder
+				listOf(1L to 2L, 2L to 2L, 3L to 1L, 4L to 1L)
+		}
 
-import com.org.meeple.scheduler.match.query.dto.PreviouslyMatchedTeams
-import io.kotest.core.spec.style.DescribeSpec
-import io.kotest.matchers.shouldBe
-
-class PreviouslyMatchedTeamsTest : DescribeSpec({
-
-    describe("opponentTeamIdsOf") {
-        it("유저에 매핑된 상대 team_id 집합을 돌려준다") {
-            val previouslyMatched = PreviouslyMatchedTeams(mapOf(1L to setOf(100L, 200L)))
-            previouslyMatched.opponentTeamIdsOf(1L) shouldBe setOf(100L, 200L)
-        }
-
-        it("이력이 없는 유저는 빈 집합을 돌려준다") {
-            val previouslyMatched = PreviouslyMatchedTeams(mapOf(1L to setOf(100L)))
-            previouslyMatched.opponentTeamIdsOf(2L) shouldBe emptySet()
-        }
-    }
-})
+		it("INVITED 구성원은 제외한다") {
+			val mixed = Teams(
+				listOf(
+					team(1L, 1L to TeamMemberStatus.ACTIVE, 2L to TeamMemberStatus.INVITED),
+					team(2L, 3L to TeamMemberStatus.ACTIVE),
+				),
+			)
+			mixed.matchHistories().map { history: RecommendedTeamHistory -> history.userId to history.teamId } shouldContainExactlyInAnyOrder
+				listOf(1L to 2L, 3L to 1L)
+		}
+	}
 ```
 
 - [ ] **Step 2: 테스트 실패 확인**
 
-Run: `./gradlew :meeple-api:test --tests "com.org.meeple.scheduler.match.PreviouslyMatchedTeamsTest"`
-Expected: 컴파일 실패(`PreviouslyMatchedTeams` 미정의).
+Run: `./gradlew :meeple-api:test --tests "com.org.meeple.domain.match.TeamsTest"`
+Expected: 컴파일 실패(`RecommendedTeamHistory`/`matchHistories` 미정의).
 
-- [ ] **Step 3: 읽기 모델 구현**
+- [ ] **Step 3: 도메인 모델 구현**
 
-`meeple-scheduler/src/main/kotlin/com/org/meeple/scheduler/match/query/dto/PreviouslyMatchedTeams.kt`:
+`RecommendedTeamHistory.kt`:
 
 ```kotlin
-package com.org.meeple.scheduler.match.query.dto
+package com.org.meeple.core.match.command.domain
 
 /**
- * 유저별로, 그 유저가 과거(소속했던 팀 기준) MATCHED됐던 상대 team_id 집합을 보관하는 읽기 모델.
- * 추천 배치가 후보 팀에서 "이미 매칭했던 상대"를 유저 단위로 제외하는 데 쓴다.
+ * 매칭 성사 시 남기는 (유저 → 매칭한 상대 팀) 이력 한 건.
+ * 추천 배치가 "이미 매칭한 상대 팀"을 그 유저에게 다시 추천하지 않도록 거르는 데 쓴다.
  */
-class PreviouslyMatchedTeams(
-    private val opponentTeamIdsByUser: Map<Long, Set<Long>>,
-) {
-    /** [userId]가 과거 MATCHED됐던 상대 team_id. 이력이 없으면 빈 집합. */
-    fun opponentTeamIdsOf(userId: Long): Set<Long> =
-        opponentTeamIdsByUser[userId] ?: emptySet()
+data class RecommendedTeamHistory(
+    val userId: Long,
+    val teamId: Long,
+)
+```
+
+- [ ] **Step 4: `Teams.matchHistories()` 추가**
+
+`Teams.kt`의 `opponentTeamId` 함수 뒤(닫는 `}` 직전)에 추가:
+
+```kotlin
+
+	/** 성사된 두 팀의 ACTIVE 구성원마다 (그 구성원 → 상대 팀 id) 이력을 만든다. (재매칭 제외 기록용) */
+	fun matchHistories(): List<RecommendedTeamHistory> =
+		values.flatMap { team: Team ->
+			team.activeMemberIds().map { userId: Long -> RecommendedTeamHistory(userId = userId, teamId = opponentTeamId(team.id)) }
+		}
+```
+
+- [ ] **Step 5: SavePort 인터페이스 추가**
+
+`SaveRecommendedTeamHistoryPort.kt`:
+
+```kotlin
+package com.org.meeple.core.match.command.application.port.out
+
+import com.org.meeple.core.match.command.domain.RecommendedTeamHistory
+
+/**
+ * 성사 (유저 → 상대 팀) 이력 저장 out-port. infra 어댑터가 구현한다.
+ * 이미 있는 (user_id, team_id)는 건너뛴다(멱등) — 같은 상대와 재매칭해도 유니크 위반으로 롤백되지 않도록.
+ */
+interface SaveRecommendedTeamHistoryPort {
+    fun saveAll(histories: List<RecommendedTeamHistory>)
 }
 ```
 
-- [ ] **Step 4: DAO 인터페이스 구현**
+- [ ] **Step 6: 테스트 통과 확인**
 
-`meeple-scheduler/src/main/kotlin/com/org/meeple/scheduler/match/query/dao/GetUserMatchHistoryDao.kt`:
+Run: `./gradlew :meeple-api:test --tests "com.org.meeple.domain.match.TeamsTest"`
+Expected: PASS (기존 케이스 + matchHistories 2건)
 
-```kotlin
-package com.org.meeple.scheduler.match.query.dao
-
-import com.org.meeple.scheduler.match.query.dto.PreviouslyMatchedTeams
-
-/**
- * 유저의 과거 MATCHED 상대 팀 조회 dao. (조회 전용) 구현은 infra가 담당한다.
- *
- * 솔로 유저는 과거 소속 팀(team_members)·매칭(matched_teams·team_matches)이 모두 소프트 삭제 상태일 수 있으므로,
- * 구현은 deleted_at 필터 없이 조회한다. 성사 여부는 team_matches.expires_at 연장 흔적으로 판정한다.
- */
-interface GetUserMatchHistoryDao {
-
-    /**
-     * 주어진 [userIds]가 과거에 소속했던 팀 기준으로 MATCHED된 적 있는 상대 team_id를 유저별로 묶어 반환한다.
-     * [userIds]가 비면 빈 결과를 반환한다.
-     */
-    fun findPreviouslyMatchedTeamIdsByUser(userIds: Set<Long>): PreviouslyMatchedTeams
-}
-```
-
-- [ ] **Step 5: 테스트 통과 확인**
-
-Run: `./gradlew :meeple-api:test --tests "com.org.meeple.scheduler.match.PreviouslyMatchedTeamsTest"`
-Expected: PASS
-
-- [ ] **Step 6: 커밋**
+- [ ] **Step 7: 커밋**
 
 ```bash
-git add meeple-scheduler/src/main/kotlin/com/org/meeple/scheduler/match/query/dto/PreviouslyMatchedTeams.kt \
-        meeple-scheduler/src/main/kotlin/com/org/meeple/scheduler/match/query/dao/GetUserMatchHistoryDao.kt \
-        meeple-api/src/test/kotlin/com/org/meeple/scheduler/match/PreviouslyMatchedTeamsTest.kt
-git commit -m "feat(match): 유저별 과거 MATCHED 상대 팀 조회 포트·읽기 모델 추가"
+git add meeple-core/src/main/kotlin/com/org/meeple/core/match/command/domain/RecommendedTeamHistory.kt \
+        meeple-core/src/main/kotlin/com/org/meeple/core/match/command/domain/Teams.kt \
+        meeple-core/src/main/kotlin/com/org/meeple/core/match/command/application/port/out/SaveRecommendedTeamHistoryPort.kt \
+        meeple-api/src/test/kotlin/com/org/meeple/domain/match/TeamsTest.kt
+git commit -m "feat(match): 매칭 성사 이력 도메인 모델·저장 포트 추가"
 ```
 
 ---
 
-### Task 2: `GetUserMatchHistoryDaoImpl` (infra 네이티브 SQL) + E2E 검증
+### Task 2: infra 영속성 — 엔티티·리포지토리·어댑터 + 마이그레이션 + E2E
 
-소프트 삭제를 우회하는 네이티브 쿼리를 구현하고, Testcontainers E2E로 "성사 후 종료된 상대는 반환, 미성사 종료 상대는 미반환"을 검증한다. 접근 A의 핵심 취약점(우회·휴리스틱)을 실DB로 못박는다.
+이력 테이블 엔티티와 멱등 저장 어댑터(`SaveRecommendedTeamHistoryPort` 구현)를 만들고, 저장·멱등을 실DB E2E로 검증한다.
 
 **Files:**
-- Create: `meeple-infra/src/main/kotlin/com/org/meeple/infra/match/query/GetUserMatchHistoryDaoImpl.kt`
-- Test: `meeple-api/src/test/kotlin/com/org/meeple/api/match/GetUserMatchHistoryDaoE2ETest.kt`
+- Create: `docs/migration/recommended_team_histories.sql`
+- Create: `meeple-infra/src/main/kotlin/com/org/meeple/infra/match/command/entity/RecommendedTeamHistoryEntity.kt`
+- Create: `meeple-infra/src/main/kotlin/com/org/meeple/infra/match/command/repository/RecommendedTeamHistoryJpaRepository.kt`
+- Create: `meeple-infra/src/main/kotlin/com/org/meeple/infra/match/command/adapter/RecommendedTeamHistoryAdapter.kt`
+- Test: `meeple-api/src/test/kotlin/com/org/meeple/api/match/RecommendedTeamHistoryAdapterE2ETest.kt`
 
 **Interfaces:**
-- Consumes: `GetUserMatchHistoryDao`, `PreviouslyMatchedTeams` (Task 1)
-- Produces: `@Component class GetUserMatchHistoryDaoImpl(entityManager: EntityManager) : GetUserMatchHistoryDao` (Spring 빈)
+- Consumes: `SaveRecommendedTeamHistoryPort`, `RecommendedTeamHistory` (Task 1)
+- Produces:
+  - `@Component RecommendedTeamHistoryAdapter : SaveRecommendedTeamHistoryPort` (Spring 빈)
+  - `RecommendedTeamHistoryJpaRepository` with `existsByUserIdAndTeamId(userId, teamId): Boolean`, `findByUserId(userId): List<RecommendedTeamHistoryEntity>`
+  - `QRecommendedTeamHistoryEntity` (빌드 시 생성)
 
 - [ ] **Step 1: E2E 테스트 작성 (실패)**
 
-`meeple-api/src/test/kotlin/com/org/meeple/api/match/GetUserMatchHistoryDaoE2ETest.kt`:
+`RecommendedTeamHistoryAdapterE2ETest.kt`:
 
 ```kotlin
 package com.org.meeple.api.match
 
 import com.org.meeple.common.integration.AbstractIntegrationSupport
-import com.org.meeple.common.match.MatchStatus
-import com.org.meeple.common.match.MatchedTeamStatus
-import com.org.meeple.common.match.TeamMatchType
-import com.org.meeple.common.match.TeamMemberStatus
+import com.org.meeple.core.match.command.application.port.out.SaveRecommendedTeamHistoryPort
+import com.org.meeple.core.match.command.domain.RecommendedTeamHistory
 import com.org.meeple.infra.fixture.IntegrationUtil
-import com.org.meeple.infra.match.command.entity.MatchedTeamEntity
-import com.org.meeple.infra.match.command.entity.QMatchedTeamEntity
-import com.org.meeple.infra.match.command.entity.QTeamMatchEntity
-import com.org.meeple.infra.match.command.entity.QTeamMemberEntity
-import com.org.meeple.infra.match.command.entity.TeamMatchEntity
-import com.org.meeple.infra.match.command.entity.TeamMemberEntity
-import com.org.meeple.scheduler.match.query.dao.GetUserMatchHistoryDao
-import io.kotest.matchers.shouldBe
+import com.org.meeple.infra.match.command.entity.QRecommendedTeamHistoryEntity
+import io.kotest.matchers.collections.shouldContainExactlyInAnyOrder
 import org.springframework.beans.factory.annotation.Autowired
-import java.time.LocalDate
-import java.time.LocalDateTime
 
 /**
- * 유저의 과거 MATCHED 상대 팀 조회(네이티브 SQL)를 실DB로 검증한다.
- * - 소프트 삭제된 과거 팀·매칭(@SQLRestriction 우회)도 읽는다.
- * - 성사(expires_at 연장)된 매칭의 상대만 반환하고, 미성사 종료 상대는 반환하지 않는다.
+ * 매칭 성사 이력 저장 어댑터(멱등) 실DB 검증.
+ * saveAll로 (유저 → 상대 팀)을 저장하고, 재호출 시 이미 있는 (user_id, team_id)는 중복 저장하지 않는다.
  */
-class GetUserMatchHistoryDaoE2ETest : AbstractIntegrationSupport() {
+class RecommendedTeamHistoryAdapterE2ETest : AbstractIntegrationSupport() {
 
     @Autowired
-    private lateinit var dao: GetUserMatchHistoryDao
-
-    // 소프트 삭제 상태의 team_members 행을 만든다. (솔로 유저가 된 뒤 과거 팀 기록)
-    private fun persistDeletedMember(teamId: Long, userId: Long) {
-        val member = TeamMemberEntity(teamId = teamId, userId = userId, status = TeamMemberStatus.DEACTIVE)
-        member.softDelete(LocalDateTime.of(2026, 1, 10, 0, 0))
-        IntegrationUtil.persist(member)
-    }
-
-    // 두 팀을 묶은 종료(CLOSED·소프트삭제) 매칭. matched=true면 성사 흔적(expires_at +100년)을 남긴다.
-    private fun persistEndedMatch(teamA: Long, teamB: Long, matched: Boolean) {
-        val introduced = LocalDate.of(2026, 1, 1)
-        val expiresAt: LocalDateTime =
-            if (matched) LocalDateTime.of(2126, 1, 2, 0, 0) else LocalDateTime.of(2026, 1, 8, 0, 0)
-        val header = TeamMatchEntity(
-            memberKey = listOf(teamA, teamB).sorted().joinToString("-"),
-            introducedDate = introduced,
-            expiresAt = expiresAt,
-            status = MatchStatus.CLOSED,
-            matchType = TeamMatchType.RECOMMENDED,
-            dateInitAmount = 40,
-            dateAcceptAmount = 40,
-        )
-        header.softDelete(LocalDateTime.of(2026, 1, 10, 0, 0))
-        IntegrationUtil.persist(header)
-        val teamMatchId: Long = header.id!!
-        listOf(teamA, teamB).forEach { teamId: Long ->
-            val mt = MatchedTeamEntity(teamMatchId = teamMatchId, teamId = teamId, status = MatchedTeamStatus.DEACTIVE)
-            mt.softDelete(LocalDateTime.of(2026, 1, 10, 0, 0))
-            IntegrationUtil.persist(mt)
-        }
-    }
+    private lateinit var saveRecommendedTeamHistoryPort: SaveRecommendedTeamHistoryPort
 
     init {
-        describe("findPreviouslyMatchedTeamIdsByUser") {
-            it("과거 성사(MATCHED) 종료된 상대만 반환하고, 미성사 종료 상대는 제외한다") {
-                val userId = 9001L
-                val myTeamId = 9100L
-                val matchedOpponentId = 9200L
-                val notMatchedOpponentId = 9300L
-                persistDeletedMember(myTeamId, userId)
-                persistEndedMatch(myTeamId, matchedOpponentId, matched = true)
-                persistEndedMatch(myTeamId, notMatchedOpponentId, matched = false)
+        describe("saveAll") {
+            it("이력을 저장하고, 재호출 시 중복 (user_id, team_id)는 건너뛴다") {
+                saveRecommendedTeamHistoryPort.saveAll(
+                    listOf(
+                        RecommendedTeamHistory(userId = 1L, teamId = 10L),
+                        RecommendedTeamHistory(userId = 2L, teamId = 10L),
+                    ),
+                )
+                // 재호출: (1,10) 중복 + (1,20) 신규
+                saveRecommendedTeamHistoryPort.saveAll(
+                    listOf(
+                        RecommendedTeamHistory(userId = 1L, teamId = 10L),
+                        RecommendedTeamHistory(userId = 1L, teamId = 20L),
+                    ),
+                )
 
-                val result = dao.findPreviouslyMatchedTeamIdsByUser(setOf(userId))
-
-                result.opponentTeamIdsOf(userId) shouldBe setOf(matchedOpponentId)
-            }
-
-            it("userIds가 비면 빈 결과를 돌려준다") {
-                dao.findPreviouslyMatchedTeamIdsByUser(emptySet()).opponentTeamIdsOf(1L) shouldBe emptySet()
+                teamIdsOf(1L) shouldContainExactlyInAnyOrder listOf(10L, 20L)
+                teamIdsOf(2L) shouldContainExactlyInAnyOrder listOf(10L)
             }
         }
 
         afterTest {
-            IntegrationUtil.deleteAll(QMatchedTeamEntity.matchedTeamEntity)
-            IntegrationUtil.deleteAll(QTeamMatchEntity.teamMatchEntity)
-            IntegrationUtil.deleteAll(QTeamMemberEntity.teamMemberEntity)
+            IntegrationUtil.deleteAll(QRecommendedTeamHistoryEntity.recommendedTeamHistoryEntity)
         }
     }
+}
+
+private fun teamIdsOf(userId: Long): List<Long> {
+    val q = QRecommendedTeamHistoryEntity.recommendedTeamHistoryEntity
+    return IntegrationUtil.getQuery().select(q.teamId).from(q).where(q.userId.eq(userId)).fetch()
 }
 ```
 
 - [ ] **Step 2: 테스트 실패 확인**
 
-Run: `./gradlew :meeple-api:test --tests "com.org.meeple.api.match.GetUserMatchHistoryDaoE2ETest"`
-Expected: 컴파일 실패(`GetUserMatchHistoryDao` 빈 미존재 → 구현 필요).
+Run: `./gradlew :meeple-api:test --tests "com.org.meeple.api.match.RecommendedTeamHistoryAdapterE2ETest"`
+Expected: 컴파일 실패(`RecommendedTeamHistoryEntity`/`QRecommendedTeamHistoryEntity`/어댑터 빈 미존재).
 
-- [ ] **Step 3: 네이티브 쿼리 구현**
+- [ ] **Step 3: 엔티티 구현**
 
-`meeple-infra/src/main/kotlin/com/org/meeple/infra/match/query/GetUserMatchHistoryDaoImpl.kt`:
+`RecommendedTeamHistoryEntity.kt`:
 
 ```kotlin
-package com.org.meeple.infra.match.query
+package com.org.meeple.infra.match.command.entity
 
-import com.org.meeple.scheduler.match.query.dao.GetUserMatchHistoryDao
-import com.org.meeple.scheduler.match.query.dto.PreviouslyMatchedTeams
-import jakarta.persistence.EntityManager
+import com.org.meeple.infra.common.BaseEntity
+import jakarta.persistence.Column
+import jakarta.persistence.Entity
+import jakarta.persistence.Table
+import jakarta.persistence.UniqueConstraint
+
+/**
+ * 유저가 과거 매칭(MATCHED)한 상대 팀 이력. 추천 배치가 재매칭 상대를 제외하는 데 쓴다.
+ * 성사 시점에 append-only로 기록한다(소프트 삭제 없음). UNIQUE(user_id, team_id)로 멱등 + 조회 seek.
+ */
+@Entity
+@Table(
+    name = "recommended_team_histories",
+    uniqueConstraints = [
+        UniqueConstraint(name = "ux_user_id_team_id", columnNames = ["user_id", "team_id"]),
+    ],
+)
+class RecommendedTeamHistoryEntity(
+    /** 매칭한 유저. */
+    @Column(name = "user_id", nullable = false, updatable = false)
+    val userId: Long,
+
+    /** 그 유저가 매칭한 상대 팀. */
+    @Column(name = "team_id", nullable = false, updatable = false)
+    val teamId: Long,
+) : BaseEntity()
+```
+
+- [ ] **Step 4: 리포지토리 구현**
+
+`RecommendedTeamHistoryJpaRepository.kt`:
+
+```kotlin
+package com.org.meeple.infra.match.command.repository
+
+import com.org.meeple.infra.match.command.entity.RecommendedTeamHistoryEntity
+import org.springframework.data.jpa.repository.JpaRepository
+
+interface RecommendedTeamHistoryJpaRepository : JpaRepository<RecommendedTeamHistoryEntity, Long> {
+
+    /** 멱등 저장용: 이미 같은 (user_id, team_id)가 있는지. */
+    fun existsByUserIdAndTeamId(userId: Long, teamId: Long): Boolean
+
+    /** 조회용: 유저가 매칭한 상대 팀 행들. */
+    fun findByUserId(userId: Long): List<RecommendedTeamHistoryEntity>
+}
+```
+
+- [ ] **Step 5: 어댑터 구현**
+
+`RecommendedTeamHistoryAdapter.kt`:
+
+```kotlin
+package com.org.meeple.infra.match.command.adapter
+
+import com.org.meeple.core.match.command.application.port.out.SaveRecommendedTeamHistoryPort
+import com.org.meeple.core.match.command.domain.RecommendedTeamHistory
+import com.org.meeple.infra.match.command.entity.RecommendedTeamHistoryEntity
+import com.org.meeple.infra.match.command.repository.RecommendedTeamHistoryJpaRepository
 import org.springframework.stereotype.Component
 
 /**
- * scheduler [GetUserMatchHistoryDao]의 구현. 유저가 과거 소속했던 팀이 MATCHED된 적 있는 상대 team_id를 조회한다.
- *
- * team_members·matched_teams·team_matches가 모두 @SQLRestriction("deleted_at is null")로 소프트 삭제를
- * 감추므로, 종료된 과거 이력을 읽으려면 네이티브 SQL로 우회한다. (QueryDSL/JPQL로는 @SQLRestriction 우회 불가)
- *
- * 성사 판정: 성사 시 expires_at을 +100년 연장(core MATCHED_EXPIRATION_EXTENSION_YEARS)하고 종료해도
- * 되돌리지 않으므로, 'expires_at > introduced_date + 50년'이면 그 매칭은 한 번 MATCHED된 것이다.
- * (정상 만료는 소개일+며칠 수준 → 50년이 안전한 분리점이며, 매칭의 자기 introduced_date 기준이라 실행 시점과 무관하게 정확)
- *
- * 인덱스: team_members.idx_user_id(IN seek) → matched_teams.idx_team_id → team_matches PK →
- * matched_teams.ux_team_match_id_team_id. 풀스캔/filesort 없음.
+ * [RecommendedTeamHistoryEntity]의 command 영속성 어댑터. (엔티티당 어댑터 하나)
+ * 성사 이력 저장 out-port를 구현한다. 이미 있는 (user_id, team_id)는 건너뛰어 멱등을 보장한다.
+ * (같은 유저가 같은 상대와 재매칭해도 유니크 위반으로 성사 트랜잭션이 롤백되지 않게 한다)
  */
 @Component
-class GetUserMatchHistoryDaoImpl(
-    private val entityManager: EntityManager,
-) : GetUserMatchHistoryDao {
+class RecommendedTeamHistoryAdapter(
+    private val recommendedTeamHistoryJpaRepository: RecommendedTeamHistoryJpaRepository,
+) : SaveRecommendedTeamHistoryPort {
 
-    override fun findPreviouslyMatchedTeamIdsByUser(userIds: Set<Long>): PreviouslyMatchedTeams {
-        if (userIds.isEmpty()) return PreviouslyMatchedTeams(emptyMap())
-        val sql: String = """
-            SELECT tmself.user_id, mt_opp.team_id
-            FROM team_members tmself
-            JOIN matched_teams mt_self ON mt_self.team_id = tmself.team_id
-            JOIN team_matches t        ON t.id = mt_self.team_match_id
-            JOIN matched_teams mt_opp  ON mt_opp.team_match_id = t.id AND mt_opp.team_id <> tmself.team_id
-            WHERE tmself.user_id IN (:userIds)
-              AND t.expires_at > t.introduced_date + INTERVAL 50 YEAR
-        """.trimIndent()
-        @Suppress("UNCHECKED_CAST")
-        val rows: List<Array<Any>> = entityManager
-            .createNativeQuery(sql)
-            .setParameter("userIds", userIds)
-            .resultList as List<Array<Any>>
-        val opponentTeamIdsByUser: Map<Long, Set<Long>> = rows
-            .groupBy({ row: Array<Any> -> (row[0] as Number).toLong() }, { row: Array<Any> -> (row[1] as Number).toLong() })
-            .mapValues { (_: Long, teamIds: List<Long>) -> teamIds.toSet() }
-        return PreviouslyMatchedTeams(opponentTeamIdsByUser)
+    override fun saveAll(histories: List<RecommendedTeamHistory>) {
+        histories.forEach { history: RecommendedTeamHistory ->
+            if (!recommendedTeamHistoryJpaRepository.existsByUserIdAndTeamId(history.userId, history.teamId)) {
+                recommendedTeamHistoryJpaRepository.save(
+                    RecommendedTeamHistoryEntity(userId = history.userId, teamId = history.teamId),
+                )
+            }
+        }
     }
 }
 ```
 
-- [ ] **Step 4: 테스트 통과 확인**
+- [ ] **Step 6: 마이그레이션 SQL 작성**
 
-Run: `./gradlew :meeple-api:test --tests "com.org.meeple.api.match.GetUserMatchHistoryDaoE2ETest"`
-Expected: PASS (성사 상대 `9200`만 반환, 미성사 상대 `9300` 제외, 빈 입력은 빈 결과)
+`docs/migration/recommended_team_histories.sql`:
 
-- [ ] **Step 5: 커밋**
+```sql
+CREATE TABLE recommended_team_histories (
+    id          BIGINT       NOT NULL AUTO_INCREMENT,
+    user_id     BIGINT       NOT NULL,
+    team_id     BIGINT       NOT NULL,
+    created_at  DATETIME(6)  NOT NULL,
+    updated_at  DATETIME(6)  NOT NULL,
+    deleted_at  DATETIME(6)  NULL,
+    PRIMARY KEY (id),
+    CONSTRAINT ux_user_id_team_id UNIQUE (user_id, team_id)
+);
+```
+
+- [ ] **Step 7: 테스트 통과 확인**
+
+Run: `./gradlew :meeple-api:test --tests "com.org.meeple.api.match.RecommendedTeamHistoryAdapterE2ETest"`
+Expected: PASS (저장 + 멱등 재호출 후 user1→{10,20}, user2→{10})
+
+- [ ] **Step 8: 커밋**
 
 ```bash
-git add meeple-infra/src/main/kotlin/com/org/meeple/infra/match/query/GetUserMatchHistoryDaoImpl.kt \
-        meeple-api/src/test/kotlin/com/org/meeple/api/match/GetUserMatchHistoryDaoE2ETest.kt
-git commit -m "feat(match): 유저 과거 MATCHED 상대 팀 네이티브 조회 구현"
+git add docs/migration/recommended_team_histories.sql \
+        meeple-infra/src/main/kotlin/com/org/meeple/infra/match/command/entity/RecommendedTeamHistoryEntity.kt \
+        meeple-infra/src/main/kotlin/com/org/meeple/infra/match/command/repository/RecommendedTeamHistoryJpaRepository.kt \
+        meeple-infra/src/main/kotlin/com/org/meeple/infra/match/command/adapter/RecommendedTeamHistoryAdapter.kt \
+        meeple-api/src/test/kotlin/com/org/meeple/api/match/RecommendedTeamHistoryAdapterE2ETest.kt
+git commit -m "feat(match): 매칭 성사 이력 테이블·멱등 저장 어댑터 추가"
 ```
 
 ---
 
-### Task 3: `RecommendedTeamBatchService`에 유저별 제외 통합 + 유닛 테스트
+### Task 3: 성사 처리에 이력 기록 통합 + 성사 플로우 E2E
 
-배치가 대상 유저들의 과거 MATCHED 상대 팀 맵을 적재하고, 각 유저의 후보 선택에서 제외하도록 수정한다.
+`SendTeamInterestService.completeMatch()`가 성사 시 같은 트랜잭션에서 이력을 기록하도록 포트를 주입·호출하고, 성사 E2E에 이력 4행 검증을 추가한다.
 
 **Files:**
+- Modify: `meeple-core/src/main/kotlin/com/org/meeple/core/match/command/application/SendTeamInterestService.kt`
+- Test: `meeple-api/src/test/kotlin/com/org/meeple/api/match/SendTeamInterestE2ETest.kt`
+
+**Interfaces:**
+- Consumes: `SaveRecommendedTeamHistoryPort` (Task 1), `Teams.matchHistories()` (Task 1), `RecommendedTeamHistoryAdapter` 빈 (Task 2), `QRecommendedTeamHistoryEntity` (Task 2)
+
+- [ ] **Step 1: E2E에 이력 검증 추가 (실패)**
+
+`SendTeamInterestE2ETest.kt` 수정:
+
+(a) 파일 상단 import에 추가:
+```kotlin
+import com.org.meeple.infra.match.command.entity.QRecommendedTeamHistoryEntity
+import io.kotest.matchers.collections.shouldContainExactlyInAnyOrder
+```
+
+(b) MATCHED 케이스(`it("수락 비용(40)이 차감되고 MATCHED가 된다 ...")`)의 `matchedAlarms(...)` 마지막 단언 뒤에 추가:
+```kotlin
+				// 성사 이력: 4인 각자 → 상대 팀 (재매칭 제외용)
+				recommendedTeamHistoryTeamIds(myOwner) shouldContainExactlyInAnyOrder listOf(opponentTeamId)
+				recommendedTeamHistoryTeamIds(myInvited) shouldContainExactlyInAnyOrder listOf(opponentTeamId)
+				recommendedTeamHistoryTeamIds(oppOwner) shouldContainExactlyInAnyOrder listOf(myTeamId)
+				recommendedTeamHistoryTeamIds(oppInvited) shouldContainExactlyInAnyOrder listOf(myTeamId)
+```
+
+(c) `afterTest` 블록 맨 앞에 정리 추가:
+```kotlin
+		IntegrationUtil.deleteAll(QRecommendedTeamHistoryEntity.recommendedTeamHistoryEntity)
+```
+
+(d) 파일 하단 private 헬퍼들 사이에 추가:
+```kotlin
+private fun recommendedTeamHistoryTeamIds(userId: Long): List<Long> {
+	val q = QRecommendedTeamHistoryEntity.recommendedTeamHistoryEntity
+	return IntegrationUtil.getQuery().select(q.teamId).from(q).where(q.userId.eq(userId)).fetch()
+}
+```
+
+- [ ] **Step 2: 테스트 실패 확인**
+
+Run: `./gradlew :meeple-api:test --tests "com.org.meeple.api.match.SendTeamInterestE2ETest"`
+Expected: MATCHED 케이스에서 이력 행이 없어 실패(`shouldContainExactlyInAnyOrder` 불일치, 빈 리스트).
+
+- [ ] **Step 3: 서비스에 포트 주입·호출**
+
+`SendTeamInterestService.kt` 수정:
+
+(a) import 추가:
+```kotlin
+import com.org.meeple.core.match.command.application.port.out.SaveRecommendedTeamHistoryPort
+```
+
+(b) 생성자에 의존성 추가(`saveTeamMatchPort` 다음 줄):
+```kotlin
+	private val saveTeamMatchPort: SaveTeamMatchPort,
+	private val saveRecommendedTeamHistoryPort: SaveRecommendedTeamHistoryPort,
+	private val getTeamPort: GetTeamPort,
+```
+
+(c) `completeMatch`에서 `saveChatRoomUseCase.save(...)` 호출 직후, 알림 발행 `teams.values.forEach` 직전에 추가:
+```kotlin
+		// 성사 이력 기록: 양 팀 구성원 ↔ 상대 팀. 추천 배치가 이미 매칭한 상대를 다시 추천하지 않도록 한다. (성사와 같은 트랜잭션)
+		saveRecommendedTeamHistoryPort.saveAll(teams.matchHistories())
+```
+
+- [ ] **Step 4: 테스트 통과 확인**
+
+Run: `./gradlew :meeple-api:test --tests "com.org.meeple.api.match.SendTeamInterestE2ETest"`
+Expected: PASS (MATCHED 케이스에서 4행 기록 확인, 기존 케이스 전부 유지)
+
+- [ ] **Step 5: 커밋**
+
+```bash
+git add meeple-core/src/main/kotlin/com/org/meeple/core/match/command/application/SendTeamInterestService.kt \
+        meeple-api/src/test/kotlin/com/org/meeple/api/match/SendTeamInterestE2ETest.kt
+git commit -m "feat(match): 팀 매칭 성사 시 재매칭 제외 이력 기록"
+```
+
+---
+
+### Task 4: 조회 dao + 배치 통합 + 유닛 테스트
+
+배치가 유저별 매칭 이력을 단건 seek로 조회해 후보에서 제외하도록 조회 dao와 배치 통합을 추가한다.
+
+**Files:**
+- Create: `meeple-scheduler/src/main/kotlin/com/org/meeple/scheduler/match/query/dao/GetRecommendedTeamHistoryDao.kt`
+- Create: `meeple-infra/src/main/kotlin/com/org/meeple/infra/match/query/GetRecommendedTeamHistoryDaoImpl.kt`
 - Modify: `meeple-scheduler/src/main/kotlin/com/org/meeple/scheduler/match/command/application/RecommendedTeamBatchService.kt`
 - Test: `meeple-api/src/test/kotlin/com/org/meeple/scheduler/match/RecommendedTeamBatchServiceTest.kt`
 
 **Interfaces:**
-- Consumes: `GetUserMatchHistoryDao`, `PreviouslyMatchedTeams` (Task 1), `GetUserMatchHistoryDaoImpl` 빈 (Task 2)
+- Consumes: `RecommendedTeamHistoryJpaRepository` (Task 2)
+- Produces: `interface GetRecommendedTeamHistoryDao { fun findMatchedTeamIds(userId: Long): Set<Long> }` + `@Component` 구현
 
 - [ ] **Step 1: 배치 유닛 테스트 작성 (실패)**
 
-`meeple-api/src/test/kotlin/com/org/meeple/scheduler/match/RecommendedTeamBatchServiceTest.kt`:
+`RecommendedTeamBatchServiceTest.kt`:
 
 ```kotlin
 package com.org.meeple.scheduler.match
@@ -336,10 +454,9 @@ import com.org.meeple.scheduler.match.command.application.port.out.TimeGenerator
 import com.org.meeple.scheduler.match.command.domain.RecommendedTeamBatchResult
 import com.org.meeple.scheduler.match.query.dao.GetCandidateTeamDao
 import com.org.meeple.scheduler.match.query.dao.GetRecommendableSoloUserDao
+import com.org.meeple.scheduler.match.query.dao.GetRecommendedTeamHistoryDao
 import com.org.meeple.scheduler.match.query.dao.GetRecommendedTeamRecordDao
-import com.org.meeple.scheduler.match.query.dao.GetUserMatchHistoryDao
 import com.org.meeple.scheduler.match.query.dto.CandidateTeam
-import com.org.meeple.scheduler.match.query.dto.PreviouslyMatchedTeams
 import com.org.meeple.scheduler.match.query.dto.RecommendableSoloUser
 import io.kotest.core.spec.style.DescribeSpec
 import io.kotest.matchers.collections.shouldContainExactly
@@ -352,11 +469,11 @@ class RecommendedTeamBatchServiceTest : DescribeSpec({
 
     val fixedNow: LocalDateTime = LocalDateTime.of(2026, 6, 27, 9, 0)
 
-    // 단일 대상·고정 후보로 배치를 구성한다. saves에 replace 호출이 기록된다.
+    // 단일 대상·고정 후보로 배치를 구성한다. matchedTeamIds는 유저별 과거 매칭 상대. saves에 replace 호출이 기록된다.
     fun service(
         target: RecommendableSoloUser,
         candidates: List<CandidateTeam>,
-        previouslyMatched: PreviouslyMatchedTeams,
+        matchedTeamIds: Set<Long>,
         saves: MutableList<Triple<Long, Long, LocalDate>>,
     ): RecommendedTeamBatchService =
         RecommendedTeamBatchService(
@@ -369,8 +486,8 @@ class RecommendedTeamBatchServiceTest : DescribeSpec({
             getCandidateTeamDao = object : GetCandidateTeamDao {
                 override fun findCandidateTeams(): List<CandidateTeam> = candidates
             },
-            getUserMatchHistoryDao = object : GetUserMatchHistoryDao {
-                override fun findPreviouslyMatchedTeamIdsByUser(userIds: Set<Long>): PreviouslyMatchedTeams = previouslyMatched
+            getRecommendedTeamHistoryDao = object : GetRecommendedTeamHistoryDao {
+                override fun findMatchedTeamIds(userId: Long): Set<Long> = matchedTeamIds
             },
             saveRecommendedTeamPort = object : SaveRecommendedTeamPort {
                 override fun replace(userId: Long, teamId: Long, recommendedDate: LocalDate) {
@@ -391,25 +508,23 @@ class RecommendedTeamBatchServiceTest : DescribeSpec({
     describe("run - 유저별 재매칭 제외") {
         val target = RecommendableSoloUser(userId = 1L, gender = Gender.MALE, regionId = 1L)
 
-        it("과거 MATCHED된 상대 팀은 추천하지 않고 같은 권역의 다른 팀을 고른다") {
+        it("과거 매칭한 상대 팀은 추천하지 않고 같은 권역의 다른 팀을 고른다") {
             val saves: MutableList<Triple<Long, Long, LocalDate>> = mutableListOf()
             val candidates: List<CandidateTeam> = listOf(
                 CandidateTeam(teamId = 100L, gender = Gender.FEMALE, regionId = 1L),
                 CandidateTeam(teamId = 200L, gender = Gender.FEMALE, regionId = 1L),
             )
-            val previouslyMatched = PreviouslyMatchedTeams(mapOf(1L to setOf(100L)))
 
-            service(target, candidates, previouslyMatched, saves).run()
+            service(target, candidates, matchedTeamIds = setOf(100L), saves).run()
 
             saves shouldContainExactly listOf(Triple(1L, 200L, LocalDate.of(2026, 6, 27)))
         }
 
-        it("권역의 모든 후보가 과거 MATCHED 상대면 추천하지 않는다(skipped)") {
+        it("권역의 모든 후보가 과거 매칭 상대면 추천하지 않는다(skipped)") {
             val saves: MutableList<Triple<Long, Long, LocalDate>> = mutableListOf()
             val candidates: List<CandidateTeam> = listOf(CandidateTeam(teamId = 100L, gender = Gender.FEMALE, regionId = 1L))
-            val previouslyMatched = PreviouslyMatchedTeams(mapOf(1L to setOf(100L)))
 
-            val result: RecommendedTeamBatchResult = service(target, candidates, previouslyMatched, saves).run()
+            val result: RecommendedTeamBatchResult = service(target, candidates, matchedTeamIds = setOf(100L), saves).run()
 
             saves shouldBe emptyList()
             result.recommended shouldBe 0
@@ -422,42 +537,81 @@ class RecommendedTeamBatchServiceTest : DescribeSpec({
 - [ ] **Step 2: 테스트 실패 확인**
 
 Run: `./gradlew :meeple-api:test --tests "com.org.meeple.scheduler.match.RecommendedTeamBatchServiceTest"`
-Expected: 컴파일 실패(`RecommendedTeamBatchService` 생성자에 `getUserMatchHistoryDao` 인자 없음).
+Expected: 컴파일 실패(`GetRecommendedTeamHistoryDao` 미정의 + 생성자 인자 불일치).
 
-- [ ] **Step 3: 배치 서비스 수정**
+- [ ] **Step 3: 조회 dao 인터페이스**
 
-`RecommendedTeamBatchService.kt` — import 추가(파일 상단 import 영역):
+`GetRecommendedTeamHistoryDao.kt`:
 
 ```kotlin
-import com.org.meeple.scheduler.match.query.dao.GetUserMatchHistoryDao
-import com.org.meeple.scheduler.match.query.dto.PreviouslyMatchedTeams
+package com.org.meeple.scheduler.match.query.dao
+
+/**
+ * 유저가 과거 MATCHED한 상대 팀 조회 dao. (조회 전용) 구현은 infra가 담당한다.
+ * 배치가 유저별 단건 seek로 재매칭 상대를 제외하는 데 쓴다.
+ */
+interface GetRecommendedTeamHistoryDao {
+
+    /** [userId]가 과거 매칭한 상대 team_id 집합. 없으면 빈 집합. */
+    fun findMatchedTeamIds(userId: Long): Set<Long>
+}
 ```
 
-생성자에 의존성 추가(`getCandidateTeamDao` 다음 줄):
+- [ ] **Step 4: 조회 dao 구현**
+
+`GetRecommendedTeamHistoryDaoImpl.kt`:
 
 ```kotlin
+package com.org.meeple.infra.match.query
+
+import com.org.meeple.infra.match.command.entity.RecommendedTeamHistoryEntity
+import com.org.meeple.infra.match.command.repository.RecommendedTeamHistoryJpaRepository
+import com.org.meeple.scheduler.match.query.dao.GetRecommendedTeamHistoryDao
+import org.springframework.stereotype.Component
+
+/**
+ * scheduler [GetRecommendedTeamHistoryDao]의 구현. user_id로 단건 seek해 매칭한 상대 team_id를 모은다.
+ * (recommended_team_histories.ux_user_id_team_id의 선두 컬럼 user_id로 seek)
+ */
+@Component
+class GetRecommendedTeamHistoryDaoImpl(
+    private val recommendedTeamHistoryJpaRepository: RecommendedTeamHistoryJpaRepository,
+) : GetRecommendedTeamHistoryDao {
+
+    override fun findMatchedTeamIds(userId: Long): Set<Long> =
+        recommendedTeamHistoryJpaRepository.findByUserId(userId)
+            .map { entity: RecommendedTeamHistoryEntity -> entity.teamId }
+            .toSet()
+}
+```
+
+- [ ] **Step 5: 배치 서비스 통합**
+
+`RecommendedTeamBatchService.kt` 수정:
+
+(a) import 추가:
+```kotlin
+import com.org.meeple.scheduler.match.query.dao.GetRecommendedTeamHistoryDao
+```
+
+(b) 생성자에 의존성 추가(`getCandidateTeamDao` 다음 줄):
+```kotlin
     private val getCandidateTeamDao: GetCandidateTeamDao,
-    private val getUserMatchHistoryDao: GetUserMatchHistoryDao,
+    private val getRecommendedTeamHistoryDao: GetRecommendedTeamHistoryDao,
     private val saveRecommendedTeamPort: SaveRecommendedTeamPort,
 ```
 
-`run()`에서 `pool` 적재 직후, 루프 직전에 이력 맵 적재:
-
+(c) 루프 안 `findNearestRandomTeam` 호출을 제외 집합 조회와 함께 교체. 기존:
 ```kotlin
-        val pool: TeamPool = TeamPool.of(getCandidateTeamDao.findCandidateTeams())
-        // 대상 유저들이 과거 MATCHED됐던 상대 팀을 한 번에 적재한다. (유저별 재매칭 제외)
-        val previouslyMatched: PreviouslyMatchedTeams =
-            getUserMatchHistoryDao.findPreviouslyMatchedTeamIdsByUser(targets.map { user: RecommendableSoloUser -> user.userId }.toSet())
+                val teamId: Long? = findNearestRandomTeam(target, pool)
+```
+변경:
+```kotlin
+                val excludedTeamIds: Set<Long> = getRecommendedTeamHistoryDao.findMatchedTeamIds(target.userId)
+                val teamId: Long? = findNearestRandomTeam(target, pool, excludedTeamIds)
 ```
 
-루프 안에서 후보 선택 호출에 제외 집합을 전달:
-
-```kotlin
-                val teamId: Long? = findNearestRandomTeam(target, pool, previouslyMatched.opponentTeamIdsOf(target.userId))
-```
-
-`findNearestRandomTeam` 시그니처·본문 교체:
-
+(d) `findNearestRandomTeam` 시그니처·본문 교체:
 ```kotlin
     /** [target] 권역에서 가까운 순 상위 N권역을 무작위 순서로 뒤져, [excludedTeamIds]를 뺀 후보 팀이 있는 첫 권역에서 무작위 팀 1개를 고른다. (없으면 null) */
     private fun findNearestRandomTeam(target: RecommendableSoloUser, pool: TeamPool, excludedTeamIds: Set<Long>): Long? {
@@ -472,27 +626,28 @@ import com.org.meeple.scheduler.match.query.dto.PreviouslyMatchedTeams
     }
 ```
 
-클래스 KDoc의 제외 관련 문장 갱신(28번째 줄 부근):
-
+(e) 클래스 KDoc의 "이전 매칭/추천 이력은 필터링하지 않는다(과거 이력이 있어도 추천)." 문장을 교체:
 ```kotlin
- * 후보가 없으면 건너뛴다. 각 유저가 과거 소속 팀으로 MATCHED됐던 상대 팀은 그 유저에게 다시 추천하지 않는다(유저별 재매칭 제외).
+ * 후보가 없으면 건너뛴다. 각 유저가 과거 매칭(MATCHED)했던 상대 팀은 그 유저에게 다시 추천하지 않는다(유저별 재매칭 제외).
  * 한 사용자의 실패가 다른 사용자에 전파되지 않도록 격리한다.
 ```
 
-- [ ] **Step 4: 유닛 테스트 통과 확인**
+- [ ] **Step 6: 유닛 테스트 통과 확인**
 
 Run: `./gradlew :meeple-api:test --tests "com.org.meeple.scheduler.match.RecommendedTeamBatchServiceTest"`
 Expected: PASS
 
-- [ ] **Step 5: 전체 빌드·테스트 확인**
+- [ ] **Step 7: 전체 빌드 확인**
 
 Run: `./gradlew build`
-Expected: BUILD SUCCESSFUL (스프링 컨텍스트가 `GetUserMatchHistoryDaoImpl` 빈으로 배치 서비스를 주입)
+Expected: BUILD SUCCESSFUL (스프링 컨텍스트가 새 dao/adapter 빈으로 배치·성사 서비스를 주입)
 
-- [ ] **Step 6: 커밋**
+- [ ] **Step 8: 커밋**
 
 ```bash
-git add meeple-scheduler/src/main/kotlin/com/org/meeple/scheduler/match/command/application/RecommendedTeamBatchService.kt \
+git add meeple-scheduler/src/main/kotlin/com/org/meeple/scheduler/match/query/dao/GetRecommendedTeamHistoryDao.kt \
+        meeple-infra/src/main/kotlin/com/org/meeple/infra/match/query/GetRecommendedTeamHistoryDaoImpl.kt \
+        meeple-scheduler/src/main/kotlin/com/org/meeple/scheduler/match/command/application/RecommendedTeamBatchService.kt \
         meeple-api/src/test/kotlin/com/org/meeple/scheduler/match/RecommendedTeamBatchServiceTest.kt
 git commit -m "feat(match): 추천 팀 배치에 유저별 재매칭 팀 제외 적용"
 ```
@@ -501,11 +656,12 @@ git commit -m "feat(match): 추천 팀 배치에 유저별 재매칭 팀 제외 
 
 ## 범위 밖 (명시)
 
-- 배치의 **추천 기록 시점 제외**까지만. 이미 `recommended_teams`에 있던 행은 손대지 않는다(유저당 upsert라 다음 실행 때 자연 갱신).
-- 전역적 "성사된 팀은 누구에게도 추천 안 함"은 이번 범위가 아니다.
+- 백필 없음(테이블 도입 이후 매칭만 추적).
+- 기존 `recommended_teams` 행은 손대지 않음(유저당 upsert로 다음 실행 때 갱신).
+- 전역적 "성사된 팀은 누구에게도 추천 안 함"은 범위 아님.
 
 ## Self-Review
 
-- **스펙 커버리지**: 신규 조회 DAO·읽기 모델(Task 1), 네이티브 SQL 구현 + `expires_at` 휴리스틱 + soft-delete 우회(Task 2), 배치 통합 + 유닛 테스트(Task 3), infra 통합 테스트(Task 2 E2E). 스펙의 "테스트 전략"·"동작 발생 경우"·"인덱스 효율"·"범위" 모두 대응됨.
-- **Placeholder 스캔**: 모든 코드 블록은 실제 구현. TODO/TBD 없음.
-- **타입 일관성**: `findPreviouslyMatchedTeamIdsByUser(Set<Long>): PreviouslyMatchedTeams`, `opponentTeamIdsOf(Long): Set<Long>`, `findNearestRandomTeam(target, pool, Set<Long>)` 세 태스크에서 동일하게 사용. 생성자 인자 순서(`getUserMatchHistoryDao`는 `getCandidateTeamDao`와 `saveRecommendedTeamPort` 사이)가 Task 3 본문과 유닛 테스트 픽스처에서 일치.
+- **스펙 커버리지**: 테이블·엔티티·어댑터(Task 2), 도메인 캡슐화 `matchHistories`·SavePort(Task 1), 성사 시 같은 트랜잭션 기록(Task 3), 유저별 seek 조회·배치 제외(Task 4). 멱등·중복키, 테스트 4종 모두 대응.
+- **Placeholder 스캔**: 모든 코드 블록 실제 구현. TODO/TBD 없음.
+- **타입 일관성**: `RecommendedTeamHistory(userId, teamId)`, `Teams.matchHistories(): List<RecommendedTeamHistory>`, `SaveRecommendedTeamHistoryPort.saveAll(List<RecommendedTeamHistory>)`, `GetRecommendedTeamHistoryDao.findMatchedTeamIds(Long): Set<Long>`, `findNearestRandomTeam(target, pool, Set<Long>)` 전 태스크 일관. 배치 생성자 인자 순서(`getRecommendedTeamHistoryDao`는 `getCandidateTeamDao`와 `saveRecommendedTeamPort` 사이)가 Task 4 본문과 유닛 테스트 픽스처에서 일치.

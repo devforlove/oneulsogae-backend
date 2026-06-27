@@ -1,137 +1,83 @@
-# 추천 팀 배치: 유저별 재매칭 팀 제외 설계
+# 추천 팀 배치: 유저별 재매칭 팀 제외 설계 (접근 B)
 
 ## 배경 / 요구사항
 
 `RecommendedTeamBatchService`는 솔로 유저마다 근접·반대 성별 `ACTIVE` 팀 1개를 골라
 `recommended_teams`(유저당 1행 upsert)에 기록한다. 현재 후보 필터는 `team.status = ACTIVE`뿐이라
-**과거 매칭/추천 이력을 전혀 거르지 않는다.**
+과거 매칭 이력을 거르지 않는다.
 
 요구사항: **솔로 유저 U에게 상대 팀을 추천할 때, U가 과거에 (자기 팀을 꾸려) MATCHED됐던 상대 팀은 추천 후보에서 제외한다.**
 (per-user 재매칭 방지)
 
 확정된 결정:
-- 제외 기준은 **"성사(MATCHED)된 적 있음"** — 단순 소개/제안만 된 상대는 제외하지 않는다.
-- 제외 단위는 **팀 식별자(team_id) 기준** — 상대 팀의 구성원이 일부 바뀌어 새 팀(team_id)을 만들면 다른 팀으로 보고 추천 가능.
-- 접근은 **A: 기존 데이터에서 파생** (신규 스키마/마이그레이션 없음).
+- 제외 기준은 **"성사(MATCHED)된 적 있음"**. 제외 단위는 **팀 식별자(team_id) 기준**.
+- 접근은 **B: 성사 시점에 전용 이력 테이블에 기록**. (조회 최적화)
+- **백필 없음** — 테이블 도입 이후의 매칭만 추적한다.
+- 쓰기는 이벤트 핸들러(AFTER_COMMIT best-effort)가 아니라 **성사 처리와 같은 트랜잭션**에 둔다.
 
-## 데이터 현실
+## 접근 A를 버린 이유
 
-U마다 ① U의 과거 소속 팀 → ② 그 팀들이 MATCHED까지 갔던 매칭 → ③ 그 상대 팀을 구해야 한다.
-기존 데이터로 복원 가능하나 두 가지 제약이 있다.
+A는 신규 스키마 없이 소프트 삭제된 `team_members·matched_teams·team_matches`를 네이티브 SQL로 우회 조인하고,
+`expires_at` 연장 부수효과로 성사를 판정했다. 그러나:
+- 조회가 **3-테이블 소프트삭제 조인 + 전체 유저풀 IN**이라 배치 부하가 크다.
+- `expires_at > introduced_date + 50년`이라는 **암묵 휴리스틱**에 의존(core 상수 변경 시 조용히 깨짐).
+- `@SQLRestriction` 우회를 위한 **네이티브 SQL**(컨벤션 예외).
 
-1. **소프트 삭제 우회 필요** — U는 현재 솔로이므로 U의 과거 `team_members` 행은 `deleted_at`이 찍혀 있고,
-   `matched_teams`도 종료 시 soft delete된다. 두 테이블 모두 `@SQLRestriction("deleted_at is null")`이
-   엔티티에 박혀 있어, 과거 이력을 읽으려면 **네이티브 SQL로 우회**해야 한다.
-2. **"MATCHED였음"을 명시하는 컬럼이 없음** — 종료되면 `matched_teams.status`는 `DEACTIVE`로 덮어써지고
-   (미성사 해체와 구분 불가), `team_matches.status`는 `CLOSED`(미성사 만료와 구분 불가)가 된다.
-   유일한 영속 흔적은 **성사 시 `expires_at`을 +100년 연장(`MATCHED_EXPIRATION_EXTENSION_YEARS = 100`)하고
-   종료(`delete()`)해도 되돌리지 않는다**는 부수효과다.
-
-### 성사 판정 신호 (보강)
-
-`expires_at > now + 99년` 같은 "현재 시각 기준" 비교는 성사 후 약 1년이 지나면 깨진다
-(`expires_at ≈ 소개일 + 100년`이 `now + 99년`보다 작아지기 때문). 대신 **각 매칭의 자기 `introduced_date` 기준**으로
-비교하면 배치 실행 시점과 무관하게 영구히 정확하다.
-
-```
-t.expires_at > t.introduced_date + INTERVAL 50 YEAR
-```
-
-- 정상 만료는 `소개일 + 며칠` 수준, 성사는 `+100년` → 50년이 안전한 분리점.
-- 이 임계값은 core `TeamMatch.MATCHED_EXPIRATION_EXTENSION_YEARS = 100`에 묶여 있다(그 값이 바뀌면 함께 재검토).
-
-이 신호가 필요한 이유: U의 과거 팀 X는 해체되며 `matched_teams.status`가 `DEACTIVE`로 덮어써져
-상태 컬럼만으로는 "성사했었다"를 알 수 없다. 매칭 헤더의 `expires_at`만이 유일한 영속 흔적이다.
+B는 성사 시점에 명시적으로 기록해 두므로, 조회가 **단일 테이블 인덱스 seek**로 끝나고 휴리스틱·우회·네이티브가 모두 사라진다.
 
 ## 설계
 
-### 1. 신규 조회 DAO (scheduler `match/query/dao`)
+### 1. 이력 테이블 `recommended_team_histories`
 
-```kotlin
-interface GetUserMatchHistoryDao {
-    /** 주어진 유저들이 과거(소속했던 팀 기준) MATCHED됐던 상대 team_id 집합. 유저별로 묶어 반환. */
-    fun findPreviouslyMatchedTeamIdsByUser(userIds: Set<Long>): PreviouslyMatchedTeams
-}
-```
+| 컬럼 | 의미 |
+|---|---|
+| `id` | PK |
+| `user_id` | 매칭한 유저 |
+| `team_id` | 그 유저가 **매칭한 상대 팀** |
+| `created_at/updated_at/deleted_at` | BaseEntity (소프트 삭제 안 함 — 항상 null) |
 
-read model `PreviouslyMatchedTeams` (scheduler `match/query/dto`) — 일급 컬렉션:
+- `UNIQUE(user_id, team_id)` — 멱등 보장 + 조회 `WHERE user_id = ?`를 선두 컬럼으로 seek.
+- 테스트 스키마는 `ddl-auto: create-drop`이라 엔티티에서 자동 생성된다. `docs/migration/recommended_team_histories.sql`은 운영 DDL 참고용.
 
-```kotlin
-class PreviouslyMatchedTeams(private val byUser: Map<Long, Set<Long>>) {
-    fun opponentTeamIdsOf(userId: Long): Set<Long> = byUser[userId] ?: emptySet()
-}
-```
+### 2. 쓰기 (성사 시점, 같은 트랜잭션)
 
-### 2. 구현 (infra `match/query`) — `GetUserMatchHistoryDaoImpl`, 네이티브 SQL
+성사는 `SendTeamInterestService.sendInterest()` → `completeMatch()`에서 일어나며, 이 지점에 이미 양 팀(`Teams`)과
+각 팀의 ACTIVE 구성원이 로드돼 있다. 여기서 새 out-port를 호출한다.
 
-```sql
-SELECT tmself.user_id, mt_opp.team_id
-FROM team_members tmself
-JOIN matched_teams mt_self ON mt_self.team_id = tmself.team_id
-JOIN team_matches t       ON t.id = mt_self.team_match_id
-JOIN matched_teams mt_opp ON mt_opp.team_match_id = t.id AND mt_opp.team_id <> tmself.team_id
-WHERE tmself.user_id IN (:userIds)
-  AND t.expires_at > t.introduced_date + INTERVAL 50 YEAR
-```
+- core 도메인 캡슐화: `Teams.matchHistories(): List<RecommendedTeamHistory>` — 각 팀의 ACTIVE 구성원마다
+  `(userId → 상대 팀 id)`를 만든다(2:2 → 4건). 서비스는 결과만 포트에 넘긴다.
+- out-port: `SaveRecommendedTeamHistoryPort.saveAll(histories)`. 어댑터는 `existsByUserIdAndTeamId`로
+  기존 행을 건너뛴 뒤 저장(멱등).
+- **같은 트랜잭션**에 두는 이유: 이력 누락은 "매칭한 상대를 다시 추천"이라 정합성이 중요. 성사·코인·채팅방과
+  원자적으로 기록한다(이미 분산 락 `TEAM_MATCH_INTEREST`로 보호됨). AFTER_COMMIT 이벤트는 best-effort라 부적합.
 
-- **네이티브 SQL** — 세 테이블 모두 soft-delete 대상이므로 과거 이력을 읽으려면 `deleted_at` 조건을 걸지 않아야 한다.
-  `@SQLRestriction`은 QueryDSL/JPQL로는 우회 불가하므로 `EntityManager.createNativeQuery`를 주입해 구현한다.
-  (프로젝트 쿼리 우선순위 ①Spring Data→②QueryDSL→③JPQL의 예외 — soft-delete 우회가 강제하는 불가피한 선택)
-- 결과(`user_id`, `team_id`)를 `Map<Long, MutableSet<Long>>`으로 묶어 `PreviouslyMatchedTeams`로 감싼다.
-  네이티브 결과는 `Array<Any>`이므로 `(row[0] as Number).toLong()` 식으로 캐스팅한다.
-- `userIds`가 비면 쿼리를 생략하고 빈 결과를 반환한다(`IN ()` 방지).
+#### 멱등·중복 키 충돌 주의
 
-#### 인덱스 효율
+같은 유저가 같은 상대 팀과 두 번 매칭하는 경우(U가 팀 X1으로 Y와 매칭 → X1 해체 → U가 X2로 다시 Y와 매칭)
+`(user_id, team_id)`가 중복된다. 어댑터가 `exists` 체크로 건너뛰지 않으면 **두 번째 성사 트랜잭션이 유니크 위반으로 롤백**된다.
+한 유저는 동시에 한 팀에만 ACTIVE라 동시 삽입은 불가능하므로, 순차 `exists`-후-`save`로 안전하다.
 
-`team_members.idx_user_id`(IN seek) → `matched_teams.idx_team_id` → `team_matches` PK →
-`matched_teams.ux_team_match_id_team_id`(선두 `team_match_id`) 순으로 받쳐진다. 풀스캔/filesort 없음.
+### 3. 조회·제외 (배치)
 
-### 3. 배치 통합 (`RecommendedTeamBatchService`)
-
-- 생성자에 `getUserMatchHistoryDao: GetUserMatchHistoryDao` 추가.
-- `targets` 적재 직후 한 번에 이력 맵 적재:
-  ```kotlin
-  val previouslyMatched: PreviouslyMatchedTeams =
-      getUserMatchHistoryDao.findPreviouslyMatchedTeamIdsByUser(targets.map { it.userId }.toSet())
-  ```
-- `findNearestRandomTeam`에 제외 집합 인자를 추가:
-  ```kotlin
-  val teamId: Long? = findNearestRandomTeam(target, pool, previouslyMatched.opponentTeamIdsOf(target.userId))
-  ...
-  private fun findNearestRandomTeam(target: RecommendableSoloUser, pool: TeamPool, excludedTeamIds: Set<Long>): Long? {
-      val teamGender: Gender = target.gender.opposite()
-      val regionOrder: List<Long> = regionShuffler.shuffleNearest(regionProximityPort.nearbyRegionIds(target.regionId))
-      for (regionId: Long in regionOrder) {
-          val teamIds: List<Long> = pool.teamIdsOf(teamGender, regionId).filterNot { it in excludedTeamIds }
-          if (teamIds.isNotEmpty()) return teamIds.random(random)
-      }
-      return null
-  }
-  ```
-- 클래스 주석의 "이전 매칭/추천 이력은 필터링하지 않는다" 문구를 실제 동작에 맞게 갱신.
+- scheduler `GetRecommendedTeamHistoryDao.findMatchedTeamIds(userId): Set<Long>` — 유저별 단건 seek.
+  infra 구현은 `RecommendedTeamHistoryJpaRepository.findByUserId(userId)`(Spring Data 파생 쿼리)로 team_id 투영.
+- `RecommendedTeamBatchService`: 루프에서 대상마다 `findMatchedTeamIds(target.userId)`로 제외 집합을 얻어
+  `findNearestRandomTeam`의 각 권역 후보에 `filterNot`. **전체 풀 IN을 쓰지 않는다.**
 
 ## 동작이 실제로 발생하는 경우
 
-U의 팀 X가 해체되어 U는 솔로(추천 대상)가 됐지만, **상대 Y는 해체하지 않아 여전히 `ACTIVE`** →
-Y는 후보 풀에 남아 U에게 다시 추천될 수 있다 → **이 제외가 막는다.**
-(양쪽 다 해체된 상대는 `DEACTIVATED`라 후보 풀에 없어 자연 제외된다.)
-
-U가 솔로(추천 대상)라는 것은 U의 과거 팀이 종료됐음을 의미하므로, U의 과거 소속 팀 행은 항상 soft-delete 상태다 →
-네이티브 우회가 필수다.
+U의 팀 X가 해체되어 U는 솔로(추천 대상)가 됐지만 상대 Y는 해체하지 않아 여전히 `ACTIVE` → Y는 후보 풀에 남아
+U에게 다시 추천될 수 있다 → 이 제외가 막는다. (테이블에 (U, Y) 행이 성사 시점에 기록돼 있으므로)
 
 ## 테스트
 
-- **scheduler 유닛 테스트** (`RecommendedTeamBatchService`):
-  가짜 `GetUserMatchHistoryDao`가 U→{Y}를 반환할 때, U에게 Y가 추천되지 않고 같은 권역의 다른 후보가 선택됨을 검증.
-  제외 후 후보가 없으면 `skipped` 처리됨을 검증. 기존 테스트가 있으면 새 의존성 추가에 맞춰 갱신.
-- **infra 통합 테스트** (네이티브 쿼리 — 접근 A의 취약점이라 실DB 검증 필수):
-  - soft-delete된 과거 팀 X(MATCHED→CLOSED, `expires_at` 연장됨)의 상대 Y가 반환됨.
-  - **미성사로 CLOSED된 매칭(`expires_at` 미연장)의 상대는 반환되지 않음.**
-  - 현재 진행 중인 MATCHED(상대 Y가 여전히 ACTIVE)의 상대 Y가 반환됨.
-  - ※ infra 모듈에 DAO 통합 테스트 골격(Testcontainers 등)이 있는지는 플랜 단계에서 확인한다.
+- **core 유닛**(`TeamsTest`): `matchHistories()`가 각 구성원→상대 팀을 만들고 INVITED를 제외함.
+- **infra E2E**(`RecommendedTeamHistoryAdapterE2ETest`): `saveAll` 저장 + 재호출 시 중복 `(user_id, team_id)` 건너뜀(멱등).
+- **성사 플로우 E2E**(`SendTeamInterestE2ETest` MATCHED 케이스 확장): 성사 후 4인 각자 → 상대 팀 이력 4행 기록 확인.
+- **배치 유닛**(`RecommendedTeamBatchServiceTest`): 가짜 dao가 U→{Y} 반환 시 U에게 Y 미추천·다른 후보 선택, 전부 제외 시 skipped.
 
-## 범위 밖 (명시)
+## 범위 밖
 
-- 배치의 **추천 기록 시점 제외**까지만 한다. 이미 `recommended_teams`에 있던 행은 손대지 않는다
-  (유저당 upsert라 다음 실행 때 자연 갱신).
-- 전역적 "성사된 팀은 누구에게도 추천 안 함"은 이번 범위가 아니다(별도 요구사항).
+- 백필(기존 성사 데이터) 없음.
+- 기존 `recommended_teams` 행 정리 없음(유저당 upsert라 다음 실행 때 갱신).
+- 전역적 "성사된 팀은 누구에게도 추천 안 함"은 범위 아님.
