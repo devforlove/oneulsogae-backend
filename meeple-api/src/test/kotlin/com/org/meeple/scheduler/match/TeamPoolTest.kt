@@ -38,4 +38,23 @@ class TeamPoolTest : DescribeSpec({
             pool.teamIdsOf(Gender.MALE, 9L).shouldBeEmpty()
         }
     }
+
+    describe("regionsWith") {
+
+        it("그 성별 후보 팀이 있는 권역만 돌려준다 (다른 성별·없는 권역은 제외)") {
+            val femaleRegion1: CandidateTeam = team(100L, Gender.FEMALE, 1L)
+            val femaleRegion2: CandidateTeam = team(101L, Gender.FEMALE, 2L)
+            val maleRegion3: CandidateTeam = team(102L, Gender.MALE, 3L)
+            val pool: TeamPool = TeamPool.of(listOf(femaleRegion1, femaleRegion2, maleRegion3))
+
+            pool.regionsWith(Gender.FEMALE) shouldContainExactlyInAnyOrder setOf(1L, 2L)
+            pool.regionsWith(Gender.MALE) shouldContainExactlyInAnyOrder setOf(3L)
+        }
+
+        it("그 성별 후보 팀이 없으면 빈 집합") {
+            val pool: TeamPool = TeamPool.of(listOf(team(100L, Gender.FEMALE, 1L)))
+
+            pool.regionsWith(Gender.MALE).shouldBeEmpty()
+        }
+    }
 })

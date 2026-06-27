@@ -9,11 +9,16 @@ import com.org.meeple.scheduler.match.query.dto.CandidateTeam
  */
 class TeamPool private constructor(
     private val teamIdsByKey: Map<BucketKey, List<Long>>,
+    private val regionsByGender: Map<Gender, Set<Long>>,
 ) {
 
     /** [gender]·[regionId] 버킷의 후보 teamId 목록. (없으면 빈 리스트) */
     fun teamIdsOf(gender: Gender, regionId: Long): List<Long> =
         teamIdsByKey[BucketKey(gender, regionId)] ?: emptyList()
+
+    /** [gender] 후보 팀이 (하나라도) 존재하는 권역 집합. (후보 팀 없는 권역의 헛순회를 건너뛰는 데 쓴다) */
+    fun regionsWith(gender: Gender): Set<Long> =
+        regionsByGender[gender] ?: emptySet()
 
     private data class BucketKey(val gender: Gender, val regionId: Long)
 
@@ -23,7 +28,11 @@ class TeamPool private constructor(
         fun of(teams: List<CandidateTeam>): TeamPool {
             val teamIdsByKey: Map<BucketKey, List<Long>> = teams
                 .groupBy({ team: CandidateTeam -> BucketKey(team.gender, team.regionId) }, { team: CandidateTeam -> team.teamId })
-            return TeamPool(teamIdsByKey)
+            // 성별별 "후보 팀이 있는 권역" 집합을 미리 만들어, 후보 팀 없는 권역의 헛순회를 O(1)로 건너뛴다.
+            val regionsByGender: Map<Gender, Set<Long>> = teamIdsByKey.keys
+                .groupBy { key: BucketKey -> key.gender }
+                .mapValues { (_, keys: List<BucketKey>) -> keys.mapTo(mutableSetOf()) { key: BucketKey -> key.regionId } }
+            return TeamPool(teamIdsByKey, regionsByGender)
         }
     }
 }

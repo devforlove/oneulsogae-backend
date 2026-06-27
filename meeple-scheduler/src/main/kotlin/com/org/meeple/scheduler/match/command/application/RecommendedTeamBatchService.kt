@@ -86,7 +86,11 @@ class RecommendedTeamBatchService(
     private fun findNearestRandomTeam(target: RecommendableSoloUser, pool: TeamPool, excludedTeamIds: Set<Long>): Long? {
         // 팀은 동성 구성이므로, 요청자의 반대 성별 = 추천 팀의 성별.
         val teamGender: Gender = target.gender.opposite()
-        val regionOrder: List<Long> = regionShuffler.shuffleNearest(regionProximityPort.nearbyRegionIds(target.regionId))
+        // 후보 팀이 있는 권역만 추려 셔플·순회한다. (풀에 그 성별 후보 팀이 없는 권역은 헛순회라 건너뛴다)
+        val populatedRegions: Set<Long> = pool.regionsWith(teamGender)
+        val nearbyPopulated: List<Long> = regionProximityPort.nearbyRegionIds(target.regionId)
+            .filter { regionId: Long -> regionId in populatedRegions }
+        val regionOrder: List<Long> = regionShuffler.shuffleNearest(nearbyPopulated)
         for (regionId: Long in regionOrder) {
             val teamIds: List<Long> = pool.teamIdsOf(teamGender, regionId).filterNot { teamId: Long -> teamId in excludedTeamIds }
             if (teamIds.isNotEmpty()) return teamIds.random(random)
