@@ -24,13 +24,13 @@ import com.org.meeple.infra.match.command.entity.QTeamEntity
 import com.org.meeple.infra.match.command.entity.QTeamMemberEntity
 import com.org.meeple.infra.match.command.entity.TeamEntity
 import com.org.meeple.infra.match.command.entity.TeamMemberEntity
-import com.org.meeple.infra.region.RegionProximityRegistry
 import com.org.meeple.infra.region.entity.QRegionEntity
 import com.org.meeple.infra.user.command.entity.QCompanyEmailVerificationEntity
 import com.org.meeple.infra.user.command.entity.QUserCompanyEntity
 import com.org.meeple.infra.user.command.entity.QUserDetailEntity
 import com.org.meeple.infra.user.command.entity.QUserEntity
 import com.org.meeple.infra.user.command.entity.UserDetailEntity
+import com.org.meeple.scheduler.match.command.application.port.out.RegionProximityPort
 import io.kotest.matchers.nulls.shouldBeNull
 import io.kotest.matchers.shouldBe
 import org.hamcrest.Matchers.hasSize
@@ -43,12 +43,12 @@ import java.time.LocalDateTime
  * 회사 이메일 인증으로 온보딩이 완료될 때 가까운 추천 팀을 적재하는 E2E 테스트.
  * (예전엔 미팅탭 조회가 추천이 비었을 때 그 자리에서 적재했으나, CQS를 위해 인증 완료 시점으로 옮겼다 — 조회는 순수 읽기)
  * 인증이 완료되면 match_user가 적재·커밋된 뒤(AFTER_COMMIT), 유저와 가장 가까운 반대 성별 ACTIVE 팀을 추천(recommended_teams)으로 적재한다.
- * 근접 스냅샷([RegionProximityRegistry])은 기동 시 1회 적재되므로, 테스트에서 지역을 넣은 뒤 refresh로 갱신한다.
+ * 지역 매칭 스냅샷(근접·유저 분포·팀 분포)은 기동 시 1회 적재되므로, 테스트에서 지역·팀을 넣은 뒤 [RegionProximityPort.refresh]로 함께 갱신한다.
  */
 class MeetingTabNearestRecommendationE2ETest : AbstractIntegrationSupport() {
 
 	@Autowired
-	private lateinit var regionProximityRegistry: RegionProximityRegistry
+	private lateinit var regionProximityPort: RegionProximityPort
 
 	init {
 		// 온보딩 중(ONBOARDING) + 매칭 필수 필드를 갖춘 완성 프로필 + 회사 도메인 매핑 + 대기 중 인증번호를 갖춘 요청자를 만들고 생성된 userId를 반환한다.
@@ -130,8 +130,8 @@ class MeetingTabNearestRecommendationE2ETest : AbstractIntegrationSupport() {
 					persistActiveMemberWithProfile(farTeamId, 7201L, Gender.FEMALE, farRegionId)
 					persistActiveMemberWithProfile(farTeamId, 7202L, Gender.FEMALE, farRegionId)
 
-					// 후보 팀 적재 후 지역 근접 스냅샷을 갱신한다. (요청자 match_user는 인증 완료 시점에 적재된다)
-					regionProximityRegistry.refresh()
+					// 후보 팀 적재 후 지역 매칭 스냅샷(근접·팀 분포)을 갱신한다. (팀 분포 스냅샷이 강남에 FEMALE 팀이 있음을 알아야 그 지역을 건너뛰지 않는다)
+					regionProximityPort.refresh()
 
 					verifyCompanyEmail(me)
 
@@ -160,7 +160,7 @@ class MeetingTabNearestRecommendationE2ETest : AbstractIntegrationSupport() {
 					).id!!
 					val me: Long = persistVerifiableSoloUser(providerId = "verify-me-2", regionId = regionId)
 
-					regionProximityRegistry.refresh()
+					regionProximityPort.refresh()
 
 					verifyCompanyEmail(me)
 
@@ -189,7 +189,7 @@ class MeetingTabNearestRecommendationE2ETest : AbstractIntegrationSupport() {
 			IntegrationUtil.deleteAll(QUserEntity.userEntity)
 			IntegrationUtil.deleteAll(QRegionEntity.regionEntity)
 			// 다른 테스트에 스냅샷이 새지 않도록 비운 상태로 되돌린다.
-			regionProximityRegistry.refresh()
+			regionProximityPort.refresh()
 		}
 	}
 }
