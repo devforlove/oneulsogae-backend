@@ -35,6 +35,28 @@ class GetUserMatchHistoryDaoE2ETest : AbstractIntegrationSupport() {
         IntegrationUtil.persist(member)
     }
 
+    // 두 팀을 묶은 진행 중(MATCHED) 매칭. 헤더·matched_teams 소프트삭제 없음. expires_at +100년(성사 흔적).
+    private fun persistLiveMatch(
+        teamA: Long,
+        teamAStatus: MatchedTeamStatus,
+        teamB: Long,
+        teamBStatus: MatchedTeamStatus,
+    ) {
+        val header = TeamMatchEntity(
+            memberKey = listOf(teamA, teamB).sorted().joinToString("-"),
+            introducedDate = LocalDate.of(2026, 1, 1),
+            expiresAt = LocalDateTime.of(2126, 1, 2, 0, 0),
+            status = MatchStatus.MATCHED,
+            matchType = TeamMatchType.RECOMMENDED,
+            dateInitAmount = 40,
+            dateAcceptAmount = 40,
+        )
+        IntegrationUtil.persist(header)
+        val teamMatchId: Long = header.id!!
+        IntegrationUtil.persist(MatchedTeamEntity(teamMatchId = teamMatchId, teamId = teamA, status = teamAStatus))
+        IntegrationUtil.persist(MatchedTeamEntity(teamMatchId = teamMatchId, teamId = teamB, status = teamBStatus))
+    }
+
     // 두 팀을 묶은 종료(CLOSED·소프트삭제) 매칭. matched=true면 성사 흔적(expires_at +100년)을 남긴다.
     private fun persistEndedMatch(teamA: Long, teamB: Long, matched: Boolean) {
         val introduced = LocalDate.of(2026, 1, 1)
@@ -73,6 +95,20 @@ class GetUserMatchHistoryDaoE2ETest : AbstractIntegrationSupport() {
                 val result = dao.findPreviouslyMatchedTeamIdsByUser(setOf(userId))
 
                 result.opponentTeamIdsOf(userId) shouldBe setOf(matchedOpponentId)
+            }
+
+            it("내 팀이 해체(솔로)되고 상대 팀이 ACTIVE인 진행 중 MATCHED 매칭에서도 상대 팀을 반환한다") {
+                val userId = 9401L
+                val myTeamId = 9410L
+                val opponentId = 9420L
+                // 솔로가 된 유저의 소프트삭제된 팀 멤버십
+                persistDeletedMember(myTeamId, userId)
+                // 헤더·matched_teams 소프트삭제 없음. 내 팀 DEACTIVE, 상대 팀 ACTIVE.
+                persistLiveMatch(myTeamId, MatchedTeamStatus.DEACTIVE, opponentId, MatchedTeamStatus.ACTIVE)
+
+                val result = dao.findPreviouslyMatchedTeamIdsByUser(setOf(userId))
+
+                result.opponentTeamIdsOf(userId) shouldBe setOf(opponentId)
             }
 
             it("userIds가 비면 빈 결과를 돌려준다") {
