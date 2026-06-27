@@ -17,14 +17,15 @@ data class MeetingTab(
 )
 
 /**
- * 내 가장 최근 팀(결성(ACTIVE) 또는 초대중(INVITING))의 표시 데이터. 내 프로필 이미지와 같은 팀 상대(친구 또는 초대 대상)의 프로필 이미지를 담는다.
+ * 내 가장 최근 팀(결성(ACTIVE)·초대중(INVITING)·해체중(DISBANDED))의 표시 데이터. 내 프로필 이미지와 같은 팀 상대(친구 또는 초대 대상)의 프로필 이미지를 담는다.
  * (profileImageCode는 match_user에서 온다)
  */
 data class MyTeam(
 	val teamId: Long,
-	/** 팀 상태. 결성됨(ACTIVE) 또는 내가 만든 초대중(INVITING). */
+	/** 팀 상태. 결성됨(ACTIVE)·내가 만든 초대중(INVITING)·해체중(DISBANDED). */
 	val status: TeamStatus,
 	val gender: Gender,
 	val myProfileImageCode: String,
-	val partnerProfileImageCode: String,
+	/** 같은 팀 상대(친구 또는 초대 대상)의 프로필 이미지. 해체중(DISBANDED)이라 상대가 이미 나갔으면 null. */
+	val partnerProfileImageCode: String?,
 )

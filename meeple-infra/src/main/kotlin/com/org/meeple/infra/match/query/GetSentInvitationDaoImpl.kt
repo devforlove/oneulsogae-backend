@@ -61,7 +61,8 @@ class GetSentInvitationDaoImpl(
 			.where(
 				teamMember.userId.eq(userId),
 				teamMember.status.eq(TeamMemberStatus.ACTIVE),
-				team.status.`in`(TeamStatus.INVITING, TeamStatus.ACTIVE),
+				// 초대중(INVITING)·결성(ACTIVE)뿐 아니라 해체중(DISBANDED, 남은 구성원) 팀도 내 팀으로 본다. (구성원은 ②에서 @SQLRestriction이 나간 구성원을 제외해 남은 인원만 채운다)
+				team.status.`in`(TeamStatus.INVITING, TeamStatus.ACTIVE, TeamStatus.DISBANDED),
 			)
 			.orderBy(team.id.desc())
 			.limit(1)

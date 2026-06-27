@@ -82,7 +82,8 @@ class GetMatchedTeamDaoImpl(
 				mine.teamId.eq(myTeamId),
 				// 내 팀이 나간(DEACTIVE) 매칭만 내 목록에서 제외한다. (대기·신청·활성 매칭은 노출)
 				mine.status.ne(MatchedTeamStatus.DEACTIVE),
-				team.status.eq(TeamStatus.ACTIVE),
+				// 상대 팀이 결성(ACTIVE)뿐 아니라 해체중(DISBANDED, 한 명이 나갔지만 매칭은 유지)이어도 카드를 보여준다. (구성원은 남은 ACTIVE만 로드)
+				team.status.`in`(TeamStatus.ACTIVE, TeamStatus.DISBANDED),
 				teamMatch.status.ne(MatchStatus.CLOSED),
 				teamMatch.expiresAt.gt(now),
 			)

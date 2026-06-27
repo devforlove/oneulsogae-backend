@@ -18,14 +18,15 @@ data class MeetingTabResponse(
 	val myTeam: MyTeamResponse?,
 ) {
 
-	/** 내 팀(결성(ACTIVE) 또는 초대중(INVITING))의 표시 데이터. 팀 상태·성별과 내/상대(친구 또는 초대 대상) 프로필 이미지 코드. */
+	/** 내 팀(결성(ACTIVE)·초대중(INVITING)·해체중(DISBANDED))의 표시 데이터. 팀 상태·성별과 내/상대(친구 또는 초대 대상) 프로필 이미지 코드. */
 	data class MyTeamResponse(
 		val teamId: Long,
-		/** 팀 상태(백엔드 TeamStatus enum name: ACTIVE=결성됨 / INVITING=초대중). */
+		/** 팀 상태(백엔드 TeamStatus enum name: ACTIVE=결성됨 / INVITING=초대중 / DISBANDED=해체중). */
 		val status: TeamStatus,
 		val gender: Gender,
 		val myProfileImageCode: String,
-		val partnerProfileImageCode: String,
+		/** 같은 팀 상대의 프로필 이미지 코드. 해체중(DISBANDED)이라 상대가 이미 나갔으면 null. */
+		val partnerProfileImageCode: String?,
 	)
 
 	companion object {

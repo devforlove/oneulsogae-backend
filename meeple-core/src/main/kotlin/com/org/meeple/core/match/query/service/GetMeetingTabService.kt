@@ -43,9 +43,9 @@ class GetMeetingTabService(
 		)
 	}
 
-	// 결성(ACTIVE) 팀이 있을 때만 그 팀과 진행 중으로 매칭된 상대 팀을 보여준다. 팀이 없거나 초대중(INVITING)이면 매칭 전이라 추천 팀을 보여준다.
+	// 결성(ACTIVE)/해체중(DISBANDED) 팀이 있을 때만 그 팀과 진행 중으로 매칭된 상대 팀을 보여준다. (DISBANDED는 한 명이 나갔어도 매칭이 유지되므로 매칭 경로) 팀이 없거나 초대중(INVITING)이면 매칭 전이라 추천 팀을 보여준다.
 	private fun teamCardsFor(userId: Long, myTeam: MyTeam?): List<RecommendedTeam> =
-		if (myTeam?.status == TeamStatus.ACTIVE) {
+		if (myTeam?.status == TeamStatus.ACTIVE || myTeam?.status == TeamStatus.DISBANDED) {
 			getMatchedTeamDao.findInProgressByTeamId(myTeam.teamId, timeGenerator.now())
 		} else {
 			// 추천이 없으면 유저와 가장 가까운 팀을 새 추천으로 적재하고, 적재한 그 카드를 그대로 내려준다. (재조회 없음)
