@@ -4,6 +4,7 @@ import com.org.meeple.core.common.response.ApiResponse
 import jakarta.validation.ConstraintViolationException
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
+import org.springframework.dao.OptimisticLockingFailureException
 import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
 import org.springframework.http.converter.HttpMessageNotReadableException
@@ -79,6 +80,19 @@ class GlobalExceptionHandler {
 		return ResponseEntity
 			.status(HttpStatus.BAD_REQUEST)
 			.body(ApiResponse.error(ErrorResponse("INVALID_REQUEST", message)))
+	}
+
+	/**
+	 * 낙관적 락 충돌 처리. 같은 애그리거트를 동시에 수정해 버전이 어긋나면(예: 팀 탈퇴 ↔ 관심/수락 경합)
+	 * 트랜잭션이 롤백되며 이 예외가 오른다. 분산 락 충돌([LockErrorCode.LOCK_ACQUISITION_FAILED])과 같은 의미라 409로 내린다.
+	 */
+	@ExceptionHandler(OptimisticLockingFailureException::class)
+	fun handleOptimisticLock(e: OptimisticLockingFailureException): ResponseEntity<ApiResponse<Nothing>> {
+		// 처리된(예상된) 동시성 충돌이므로 info로 남긴다. (스택 트레이스 불필요)
+		log.info("OptimisticLockingFailureException: {}", e.message)
+		return ResponseEntity
+			.status(HttpStatus.CONFLICT)
+			.body(ApiResponse.error(ErrorResponse("CONFLICT", "처리 중인 요청이 있습니다. 잠시 후 다시 시도해 주세요.")))
 	}
 
 	@ExceptionHandler(HttpMessageNotReadableException::class)

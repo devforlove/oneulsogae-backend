@@ -29,6 +29,7 @@ import com.org.meeple.infra.match.command.entity.QTeamEntity
 import com.org.meeple.infra.match.command.entity.QTeamMatchEntity
 import com.org.meeple.infra.match.command.entity.QTeamMemberEntity
 import com.org.meeple.infra.match.command.entity.TeamMatchEntity
+import io.kotest.matchers.longs.shouldBeGreaterThan
 import io.kotest.matchers.shouldBe
 import java.time.LocalDate
 import java.time.LocalDateTime
@@ -162,6 +163,9 @@ class DisbandTeamMatchTeardownE2ETest : AbstractIntegrationSupport({
 				teamMatchStatus(teamMatchId) shouldBe MatchStatus.PROPOSED
 				matchedTeamStatus(teamMatchId, myTeamId) shouldBe MatchedTeamStatus.DEACTIVE
 				matchedTeamStatus(teamMatchId, opponentTeamId) shouldBe MatchedTeamStatus.ACTIVE
+				// 헤더(status)는 PROPOSED 그대로지만, 참가 팀만 바뀐 leave에서도 낙관적 락 버전이 전진한다(force-increment 없으면 0에 머묾).
+				// → 같은 매칭에 동시에 들어온 관심/수락이 버전 충돌로 직렬화됨을 보장한다. (정확한 증가 횟수는 무관)
+				teamMatchVersion(teamMatchId) shouldBeGreaterThan 0L
 				// 상대 팀 구성원에게 '매칭 종료' 알림
 				matchEndedAlarms(oppOwnerId).size shouldBe 1
 				matchEndedAlarms(oppInvitedUserId).size shouldBe 1
@@ -185,6 +189,11 @@ class DisbandTeamMatchTeardownE2ETest : AbstractIntegrationSupport({
 private fun teamMatchStatus(teamMatchId: Long): MatchStatus {
 	val q = QTeamMatchEntity.teamMatchEntity
 	return IntegrationUtil.getQuery().select(q.status).from(q).where(q.id.eq(teamMatchId)).fetchOne()!!
+}
+
+private fun teamMatchVersion(teamMatchId: Long): Long {
+	val q = QTeamMatchEntity.teamMatchEntity
+	return IntegrationUtil.getQuery().select(q.version).from(q).where(q.id.eq(teamMatchId)).fetchOne()!!
 }
 
 private fun matchedTeamStatus(teamMatchId: Long, teamId: Long): MatchedTeamStatus {

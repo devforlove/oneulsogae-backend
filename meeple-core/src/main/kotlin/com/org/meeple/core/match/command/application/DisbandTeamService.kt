@@ -30,7 +30,7 @@ import java.time.LocalDateTime
  *   (상대 팀이 남아 있으면 헤더는 유지, 상대도 나갔으면 헤더까지 CLOSED) 떠나는 본인을 채팅방에서 비활성화하며 방에 남는 상대 팀에 종료 안내를 남기고,
  *   상대 팀 활성 구성원에게 [TeamMatchEnded] 알림을 발행한다.
  * 모두 같은 트랜잭션에서 처리해 함께 성공/롤백된다(알림만 커밋 이후 best-effort). teamId 분산 락으로 동시 상태 변경과 직렬화한다.
- * (팀 매칭별 락은 잡지 않아 관심/수락과의 경합 여지는 알려진 한계로 남긴다)
+ * (팀 매칭별 락은 잡지 않지만, 팀 매칭은 낙관적 락([TeamMatch.version])으로 보호되어 관심/수락과 경합하면 한쪽이 충돌(409)로 롤백된다)
  * 시각은 [TimeGenerator]로 얻어 도메인에 주입한다. (LocalDateTime.now() 직접 호출 금지)
  */
 @Service
@@ -44,7 +44,7 @@ class DisbandTeamService(
 	private val timeGenerator: TimeGenerator,
 ) : DisbandTeamUseCase {
 
-	// 락은 해체 대상 팀에만 건다. (팀 매칭별 락을 함께 잡지 않아 관심/수락과의 경합은 알려진 한계)
+	// 락은 해체 대상 팀에만 건다. 팀 매칭과의 경합은 팀 매칭 헤더의 낙관적 락([TeamMatch.version])이 감지해 한쪽이 충돌로 롤백된다.
 	@DistributedLock(prefix = LockKeyConstraints.TEAM_LIFECYCLE, keys = ["#teamId"], waitTime = 0)
 	@Transactional
 	override fun disband(userId: Long, teamId: Long): Team {

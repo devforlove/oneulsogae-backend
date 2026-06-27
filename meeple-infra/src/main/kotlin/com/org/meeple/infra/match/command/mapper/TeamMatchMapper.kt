@@ -9,6 +9,7 @@ import java.time.LocalDateTime
 fun TeamMatchEntity.toDomain(matchedTeams: MatchedTeams): TeamMatch =
 	TeamMatch(
 		id = id ?: 0,
+		version = version,
 		matchedTeams = matchedTeams,
 		introducedDate = introducedDate,
 		expiresAt = expiresAt,
@@ -35,5 +36,7 @@ fun TeamMatch.toEntity(): TeamMatchEntity =
 		dateAcceptAmount = dateAcceptAmount,
 	).also {
 		if (id != 0L) it.id = id
+		// 읽은 시점의 버전을 그대로 실어, merge 시 낙관적 락이 그 버전 기준으로 충돌을 검사하도록 한다.
+		it.version = version
 		deletedAt?.let { at: LocalDateTime -> it.softDelete(at) }
 	}

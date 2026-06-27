@@ -16,6 +16,8 @@ import java.time.LocalDateTime
  */
 data class TeamMatch(
 	val id: Long = 0,
+	/** 낙관적 락 버전. 영속성에서 읽어 저장까지 실어 보내, 애그리거트 동시 변경을 감지하는 데 쓴다. (DB가 증가시킨다) */
+	val version: Long = 0,
 	val matchedTeams: MatchedTeams,
 	val introducedDate: LocalDate,
 	val expiresAt: LocalDateTime,
