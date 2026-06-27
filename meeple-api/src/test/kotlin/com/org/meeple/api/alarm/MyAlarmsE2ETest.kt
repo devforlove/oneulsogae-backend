@@ -103,6 +103,32 @@ class MyAlarmsE2ETest : AbstractIntegrationSupport({
 			}
 		}
 
+		context("발신 팀이 해체되어 구성원이 소프트 삭제됐어도") {
+			it("소프트 삭제된 구성원 프로필까지 froms에 담아 반환한다") {
+				val userId = 7105L
+				val teamId = 8810L
+				// 해체로 소프트 삭제된 발신 팀 구성원 2인 + 프로필. team_members가 deleted_at으로 가려져도 froms에 채워져야 한다.
+				persistDeletedTeamMember(teamId = teamId, userId = 8811L)
+				persistDeletedTeamMember(teamId = teamId, userId = 8812L)
+				persistUserDetail(userId = 8811L, profileImageCode = "M04", gender = Gender.MALE)
+				persistUserDetail(userId = 8812L, profileImageCode = "M05", gender = Gender.MALE)
+
+				persistAlarmAt(userId, "팀 매칭 종료 알람", fromTeamId = teamId, createdAt = LocalDateTime.now().minusDays(1))
+
+				get("/alarms/v1") {
+					bearer(accessTokenFor(userId))
+				} expect {
+					status(200)
+					body("success", true)
+					body("data.size()", 1)
+					body("data[0].fromTeamId", teamId.toInt())
+					// 소프트 삭제된 구성원 2인의 프로필이 그대로 채워진다.
+					body("data[0].froms.size()", 2)
+					body("data[0].froms.userId", containsInAnyOrder(8811, 8812))
+				}
+			}
+		}
+
 		context("발신자(fromUserId)가 없는 알람이면") {
 			it("froms가 빈 배열로 반환된다") {
 				val userId = 7103L
@@ -160,6 +186,13 @@ private fun persistTeamMember(teamId: Long, userId: Long) {
 	IntegrationUtil.persist(
 		TeamMemberEntity(teamId = teamId, userId = userId, status = TeamMemberStatus.ACTIVE),
 	)
+}
+
+// 해체로 소프트 삭제된 팀 구성원 행을 저장한다. (종료된 팀의 발신 알람 froms 조회 검증용 — @SQLRestriction에 가려지는 행)
+private fun persistDeletedTeamMember(teamId: Long, userId: Long) {
+	val member = TeamMemberEntity(teamId = teamId, userId = userId, status = TeamMemberStatus.DEACTIVE)
+	member.softDelete(LocalDateTime.of(2026, 1, 1, 0, 0))
+	IntegrationUtil.persist(member)
 }
 
 // 알람을 저장한 뒤 생성 시각(created_at)을 원하는 값으로 백데이트하고 id를 반환한다.
