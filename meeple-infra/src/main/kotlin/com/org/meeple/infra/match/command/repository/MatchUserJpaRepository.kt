@@ -17,9 +17,13 @@ interface MatchUserJpaRepository : JpaRepository<MatchUserEntity, Long> {
 	/** 비즈니스 키(user_id)로 단건 조회한다. (upsert 분기·매칭 가능 판정에 쓴다) */
 	fun findByUserId(userId: Long): MatchUserEntity?
 
-	/** 주어진 성별([gender]) 매칭 유저가 한 명이라도 있는 region_id 목록. ([com.org.meeple.infra.match.command.adapter.PopulatedRegionRegistry]가 성별별 스냅샷으로 캐시해 빈 region 건너뛰기에 쓴다) */
-	@Query("select distinct m.regionId from MatchUserEntity m where m.gender = :gender")
-	fun findDistinctRegionIdsByGender(@Param("gender") gender: Gender): List<Long>
+	/**
+	 * 주어진 성별([gender])이면서 [loginAfter] 이후 로그인한 매칭 유저가 한 명이라도 있는 region_id 목록.
+	 * ([com.org.meeple.infra.match.command.adapter.PopulatedRegionRegistry]가 성별별 스냅샷으로 캐시해 빈 region 건너뛰기에 쓴다)
+	 * (gender 동등 + last_login_at 범위 + region_id 투영이 인덱스 `idx_gender_region_id_last_login_at`로 커버된다)
+	 */
+	@Query("select distinct m.regionId from MatchUserEntity m where m.gender = :gender and m.lastLoginAt >= :loginAfter")
+	fun findDistinctRegionIdsByGender(@Param("gender") gender: Gender, @Param("loginAfter") loginAfter: LocalDateTime): List<Long>
 
 	/** 이미 적재된 사용자의 마지막 로그인 시각만 갱신한다. 영향 행 수를 반환한다(행이 없으면 0 = no-op). */
 	@Modifying
