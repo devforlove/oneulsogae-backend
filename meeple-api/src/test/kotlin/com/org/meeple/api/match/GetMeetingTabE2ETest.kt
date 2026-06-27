@@ -28,6 +28,7 @@ import com.org.meeple.infra.region.entity.QRegionEntity
 import com.org.meeple.infra.user.command.entity.QUserDetailEntity
 import org.hamcrest.Matchers.hasSize
 import org.hamcrest.Matchers.nullValue
+import org.hamcrest.Matchers.startsWith
 import java.time.LocalDate
 import java.time.LocalDateTime
 
@@ -128,6 +129,7 @@ class GetMeetingTabE2ETest : AbstractIntegrationSupport({
 					// 순수 추천 팀은 아직 매칭이 없어 teamMatchId도 null이다.
 					body("data.recommendedTeams[0].teamMatchId", nullValue())
 					body("data.recommendedTeams[0].teamMatchStatus", nullValue())
+					body("data.recommendedTeams[0].teamMatchExpiresAt", nullValue())
 					body("data.recommendedTeams[0].hasUserInterest", false)
 					body("data.recommendedTeams[0].hasPartnerInterest", false)
 					body("data.receivedInvitationCount", 0)
@@ -272,6 +274,8 @@ class GetMeetingTabE2ETest : AbstractIntegrationSupport({
 					body("data.recommendedTeams[0].teamMatchId", liveMatch.toInt())
 					// 헤더 상태 + 양 팀 관심 여부(상대만 APPLY → 내 팀 false, 상대 true)
 					body("data.recommendedTeams[0].teamMatchStatus", MatchStatus.PARTIALLY_ACCEPTED.name)
+					// 만료 시각도 team_matches(DB)에서 그대로 내려온다. (2999-01-01T00:00…)
+					body("data.recommendedTeams[0].teamMatchExpiresAt", startsWith("2999-01-01T00:00"))
 					body("data.recommendedTeams[0].hasUserInterest", false)
 					body("data.recommendedTeams[0].hasPartnerInterest", true)
 					body("data.myTeam.teamId", myTeamId.toInt())

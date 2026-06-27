@@ -22,14 +22,21 @@ class GetMatchRecordDaoImpl(
 	private val entityManager: EntityManager,
 ) : GetMatchRecordDao {
 
-	// 참가자 조합 키(정렬된 userId)로 소개 이력 존재 여부만 확인한다. (ux_member_key)
+	// 참가자 조합 키(정렬된 userId)로 소개 이력 존재 여부를 확인한다. (ux_member_key)
+	// 취소·종료로 소프트 삭제된 과거 소개도 member_key를 그대로 점유하므로(ux_member_key는 deleted_at 미포함), 재소개 영구 방지를 위해
+	// 삭제 행까지 봐야 한다. @SQLRestriction("deleted_at is null")을 우회하려고 네이티브 쿼리로 조회한다. (QueryDSL·JPQL로는 우회 불가)
 	override fun existsByPair(userIdA: Long, userIdB: Long): Boolean {
-		val soloMatch: QSoloMatchEntity = QSoloMatchEntity.soloMatchEntity
-		return queryFactory
-			.selectOne()
-			.from(soloMatch)
-			.where(soloMatch.memberKey.eq(MatchMembers.memberKeyOf(listOf(userIdA, userIdB))))
-			.fetchFirst() != null
+		val sql: String = """
+			SELECT 1
+			FROM solo_matches
+			WHERE member_key = :memberKey
+			LIMIT 1
+		""".trimIndent()
+		return entityManager
+			.createNativeQuery(sql)
+			.setParameter("memberKey", MatchMembers.memberKeyOf(listOf(userIdA, userIdB)))
+			.resultList
+			.isNotEmpty()
 	}
 
 	// 성사(MATCHED) 매칭에 '활성(ACTIVE) 참가자로' 속한 사용자 ID 전체를 Set으로 정리해 일급 컬렉션으로 감싼다.

@@ -3,6 +3,7 @@ package com.org.meeple.core.match.query.dto
 import com.org.meeple.common.match.MatchStatus
 import com.org.meeple.common.user.Gender
 import java.time.LocalDate
+import java.time.LocalDateTime
 
 /**
  * 솔로 유저에게 추천된 팀 한 건(read model). 팀 메타와 그 팀의 ACTIVE 구성원 프로필을 담는다.
@@ -23,6 +24,8 @@ data class RecommendedTeam(
 	val teamMatchId: Long?,
 	/** 이 팀과의 팀 매칭 상태. 매칭된 상대 팀이면 team_matches.status, 아직 매칭이 없는 순수 추천이면 null. */
 	val teamMatchStatus: MatchStatus?,
+	/** 이 팀과의 팀 매칭 만료 시각. 매칭된 상대 팀이면 team_matches.expires_at, 아직 매칭이 없는 순수 추천이면 null. */
+	val teamMatchExpiresAt: LocalDateTime?,
 	/** 내 팀이 이 매칭에 관심(신청)을 보냈는지 여부. 매칭이 없으면 false. */
 	val hasUserInterest: Boolean,
 	/** 상대 팀이 이 매칭에 관심(신청)을 보냈는지 여부. 매칭이 없으면 false. */

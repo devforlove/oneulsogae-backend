@@ -3,6 +3,7 @@ package com.org.meeple.domain.match
 import com.org.meeple.common.match.TeamMemberStatus
 import com.org.meeple.common.match.TeamStatus
 import com.org.meeple.common.user.Gender
+import com.org.meeple.core.match.command.domain.RecommendedTeamHistory
 import com.org.meeple.core.match.command.domain.Team
 import com.org.meeple.core.match.command.domain.TeamMember
 import com.org.meeple.core.match.command.domain.TeamMembers
@@ -72,6 +73,24 @@ class TeamsTest : DescribeSpec({
 		it("행위자 팀을 제외한 상대 팀의 ACTIVE 구성원 userId만 돌려준다") {
 			teams.opponentActiveMemberIds(1L) shouldContainExactlyInAnyOrder listOf(3L, 4L)
 			teams.opponentActiveMemberIds(2L) shouldContainExactlyInAnyOrder listOf(1L, 2L)
+		}
+	}
+
+	describe("matchHistories") {
+		it("각 팀의 ACTIVE 구성원마다 (구성원 → 상대 팀 id) 이력을 만든다") {
+			teams.matchHistories().map { history: RecommendedTeamHistory -> history.userId to history.teamId } shouldContainExactlyInAnyOrder
+				listOf(1L to 2L, 2L to 2L, 3L to 1L, 4L to 1L)
+		}
+
+		it("INVITED 구성원은 제외한다") {
+			val mixed = Teams(
+				listOf(
+					team(1L, 1L to TeamMemberStatus.ACTIVE, 2L to TeamMemberStatus.INVITED),
+					team(2L, 3L to TeamMemberStatus.ACTIVE),
+				),
+			)
+			mixed.matchHistories().map { history: RecommendedTeamHistory -> history.userId to history.teamId } shouldContainExactlyInAnyOrder
+				listOf(1L to 2L, 3L to 1L)
 		}
 	}
 })

@@ -92,4 +92,31 @@ class TeamMembersTest : DescribeSpec({
             }
         }
     }
+
+    describe("deactivate(userId)") {
+        it("해당 구성원만 DEACTIVE + deletedAt으로 표시하고 나머지는 그대로 둔다") {
+            val now: LocalDateTime = LocalDateTime.of(2026, 6, 20, 12, 0)
+            val formed: TeamMembers = invitingMembers().accept(invitedId) // 전원 ACTIVE
+
+            val deactivated: TeamMembers = formed.deactivate(invitedId, now)
+
+            val left: TeamMember = deactivated.find(invitedId)!!
+            left.status shouldBe TeamMemberStatus.DEACTIVE
+            left.deletedAt shouldBe now
+            val remaining: TeamMember = deactivated.find(ownerId)!!
+            remaining.status shouldBe TeamMemberStatus.ACTIVE
+            remaining.deletedAt shouldBe null
+        }
+    }
+
+    describe("hasActiveMemberExcept") {
+        it("해당 구성원을 제외하고 활성 구성원이 남으면 true, 없으면 false다") {
+            val formed: TeamMembers = invitingMembers().accept(invitedId) // 전원 ACTIVE
+
+            // 전원 ACTIVE → 한 명을 빼도 다른 한 명이 남는다.
+            formed.hasActiveMemberExcept(invitedId) shouldBe true
+            // owner만 ACTIVE(invited는 INVITED) → owner를 빼면 활성 구성원이 없다.
+            invitingMembers().hasActiveMemberExcept(ownerId) shouldBe false
+        }
+    }
 })

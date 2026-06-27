@@ -150,6 +150,23 @@ class RunTeamMatchBatchIntegrationTest(
 				proposedTeamMatchBetween(maleTeamId, femaleTeamId).shouldBeNull()
 			}
 		}
+
+		context("과거 소개됐다가 취소(소프트 삭제)된 팀 쌍은") {
+			it("member_key가 남아 재소개 시 충돌하므로, 우회 조회로 이력으로 인정해 다시 소개하지 않는다") {
+				val regionId: Long = persistRegion("서울특별시", "강남구", 37.50, 127.00)
+				val maleTeamId: Long = persistActiveTeam(gender = Gender.MALE, regionId = regionId, memberUserId = 7001L)
+				val femaleTeamId: Long = persistActiveTeam(gender = Gender.FEMALE, regionId = regionId, memberUserId = 7002L)
+				// 7001팀-7002팀은 과거 소개됐다가 취소돼 소프트 삭제됨. ux_member_key는 deleted_at 미포함이라 member_key가 그대로 남는다.
+				persistCancelledPastTeamMatch(maleTeamId, femaleTeamId)
+
+				val result: TeamMatchBatchResult = runTeamMatchBatchUseCase.run()
+
+				// 우회 조회로 이력을 인정해 재소개를 막으면 유니크 충돌 없음(우회 안 하면 INSERT가 member_key 충돌로 failed).
+				result.recommended shouldBe 0
+				result.failed shouldBe 0
+				proposedTeamMatchBetween(maleTeamId, femaleTeamId).shouldBeNull()
+			}
+		}
 	}
 
 	afterTest {
@@ -198,6 +215,24 @@ private fun persistTeamMatch(teamAId: Long, teamBId: Long, status: MatchStatus, 
 	val memberStatus: MatchedTeamStatus = if (status == MatchStatus.MATCHED) MatchedTeamStatus.ACTIVE else MatchedTeamStatus.WAITING
 	IntegrationUtil.persist(MatchedTeamEntity(teamMatchId = header.id!!, teamId = teamAId, status = memberStatus))
 	IntegrationUtil.persist(MatchedTeamEntity(teamMatchId = header.id!!, teamId = teamBId, status = memberStatus))
+}
+
+// [teamAId]가 과거 [teamBId]와 소개됐다가 취소해 헤더·참가 팀이 소프트 삭제된 상태를 만든다(과거 일자).
+// ux_member_key는 deleted_at을 포함하지 않아 member_key가 그대로 남으므로, 재소개 시 충돌한다 → existsByPair가 이 삭제 행을 봐야 한다.
+private fun persistCancelledPastTeamMatch(teamAId: Long, teamBId: Long) {
+	val header: TeamMatchEntity = IntegrationUtil.persist(
+		TeamMatchEntity(
+			memberKey = MatchedTeams.of(listOf(teamAId, teamBId)).memberKey(),
+			introducedDate = LocalDate.now().minusDays(3),
+			expiresAt = LocalDateTime.now().plusDays(1),
+			status = MatchStatus.CLOSED,
+			matchType = TeamMatchType.DAILY,
+			dateInitAmount = 0,
+			dateAcceptAmount = 0,
+		).apply { softDelete() },
+	)
+	IntegrationUtil.persist(MatchedTeamEntity(teamMatchId = header.id!!, teamId = teamAId, status = MatchedTeamStatus.DEACTIVE).apply { softDelete() })
+	IntegrationUtil.persist(MatchedTeamEntity(teamMatchId = header.id!!, teamId = teamBId, status = MatchedTeamStatus.DEACTIVE).apply { softDelete() })
 }
 
 private fun proposedTeamMatchBetween(teamAId: Long, teamBId: Long): TeamMatchEntity? {

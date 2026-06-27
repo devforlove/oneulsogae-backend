@@ -4,6 +4,7 @@ import com.org.meeple.common.match.MatchedTeamStatus
 import com.org.meeple.core.match.command.domain.MatchedTeam
 import io.kotest.core.spec.style.DescribeSpec
 import io.kotest.matchers.shouldBe
+import java.time.LocalDateTime
 
 /**
  * [MatchedTeam] 도메인 유닛 테스트.
@@ -33,8 +34,29 @@ class MatchedTeamTest : DescribeSpec({
 	}
 
 	describe("deactivate") {
-		it("이 팀을 비활성(DEACTIVE) 상태로 전이한다") {
-			waitingTeam().deactivate().status shouldBe MatchedTeamStatus.DEACTIVE
+		it("이 팀을 비활성(DEACTIVE) 상태로 전이하되 소프트 삭제는 하지 않는다") {
+			val deactivated: MatchedTeam = waitingTeam().deactivate()
+
+			deactivated.status shouldBe MatchedTeamStatus.DEACTIVE
+			deactivated.deletedAt shouldBe null
+		}
+	}
+
+	describe("delete") {
+		it("이 팀을 비활성(DEACTIVE) + 소프트 삭제(deletedAt)한다") {
+			val now: LocalDateTime = LocalDateTime.of(2026, 6, 27, 12, 0)
+
+			val deleted: MatchedTeam = waitingTeam().delete(now)
+
+			deleted.status shouldBe MatchedTeamStatus.DEACTIVE
+			deleted.deletedAt shouldBe now
+		}
+	}
+
+	describe("isDeactivated") {
+		it("status가 DEACTIVE일 때만 true다") {
+			waitingTeam().isDeactivated shouldBe false
+			waitingTeam().deactivate().isDeactivated shouldBe true
 		}
 	}
 })

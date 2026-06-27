@@ -62,6 +62,17 @@ class TeamMatchTest : DescribeSpec({
 
 			teamMatch.memberKey() shouldBe "10-20"
 		}
+
+		it("teamIds는 참가 팀 id 목록을 돌려준다") {
+			val teamMatch: TeamMatch = TeamMatch.propose(
+				teamAId = 10L,
+				teamBId = 20L,
+				matchType = TeamMatchType.RECOMMENDED,
+				now = now,
+			)
+
+			teamMatch.teamIds() shouldBe listOf(10L, 20L)
+		}
 	}
 
 	describe("close - 미성사 매칭 종료") {
@@ -126,6 +137,77 @@ class TeamMatchTest : DescribeSpec({
 
 			val ex: BusinessException = shouldThrow { closed.validateRespondable(10L) }
 			ex.errorCode shouldBe TeamMatchErrorCode.TEAM_MATCH_ALREADY_CLOSED
+		}
+	}
+
+	describe("validateTerminable - 팀 매칭 종료 검증") {
+		// 양 팀 신청으로 성사(MATCHED)된 팀 매칭
+		fun matched(): TeamMatch =
+			TeamMatch.propose(10L, 20L, TeamMatchType.RECOMMENDED, now).respond(10L).respond(20L)
+
+		it("참가 팀이 아니면 NOT_TEAM_MATCH_PARTICIPANT를 던진다") {
+			val ex: BusinessException = shouldThrow { matched().validateTerminable(99L) }
+			ex.errorCode shouldBe TeamMatchErrorCode.NOT_TEAM_MATCH_PARTICIPANT
+		}
+
+		it("이미 종료(CLOSED)된 매칭이면 TEAM_MATCH_ALREADY_CLOSED를 던진다") {
+			val closed: TeamMatch = matched().copy(status = MatchStatus.CLOSED)
+			val ex: BusinessException = shouldThrow { closed.validateTerminable(10L) }
+			ex.errorCode shouldBe TeamMatchErrorCode.TEAM_MATCH_ALREADY_CLOSED
+		}
+
+		it("성사(MATCHED) 전이면 TEAM_MATCH_NOT_MATCHED를 던진다") {
+			val partiallyAccepted: TeamMatch = TeamMatch.propose(10L, 20L, TeamMatchType.RECOMMENDED, now).respond(10L)
+			val ex: BusinessException = shouldThrow { partiallyAccepted.validateTerminable(10L) }
+			ex.errorCode shouldBe TeamMatchErrorCode.TEAM_MATCH_NOT_MATCHED
+		}
+
+		it("성사된 매칭의 참가 팀이면 예외 없이 통과한다") {
+			matched().validateTerminable(10L)
+		}
+
+		it("이미 나간(비활성) 팀이 다시 종료하려 하면 TEAM_MATCH_ALREADY_CLOSED를 던진다") {
+			// 10번 팀이 먼저 나가 헤더는 MATCHED로 남고 10번만 DEACTIVE인 상태
+			val afterTenLeft: TeamMatch = matched().leave(10L, now)
+
+			val ex: BusinessException = shouldThrow { afterTenLeft.validateTerminable(10L) }
+			ex.errorCode shouldBe TeamMatchErrorCode.TEAM_MATCH_ALREADY_CLOSED
+		}
+	}
+
+	describe("isLastActiveTeam") {
+		fun matched(): TeamMatch =
+			TeamMatch.propose(10L, 20L, TeamMatchType.RECOMMENDED, now).respond(10L).respond(20L)
+
+		it("상대 팀이 활성이면 false다") {
+			matched().isLastActiveTeam(10L) shouldBe false
+		}
+	}
+
+	describe("leave - 팀 매칭 종료") {
+		fun matched(): TeamMatch =
+			TeamMatch.propose(10L, 20L, TeamMatchType.RECOMMENDED, now).respond(10L).respond(20L)
+
+		it("상대 팀이 활성이면 내 팀만 DEACTIVE로 전이되고(소프트 삭제 안 함) 헤더는 MATCHED로 유지된다") {
+			val left: TeamMatch = matched().leave(10L, now)
+
+			left.status shouldBe MatchStatus.MATCHED
+			val ten: com.org.meeple.core.match.command.domain.MatchedTeam = left.matchedTeams.values.first { it.teamId == 10L }
+			ten.status shouldBe MatchedTeamStatus.DEACTIVE
+			ten.deletedAt shouldBe null
+			left.matchedTeams.values.first { it.teamId == 20L }.status shouldBe MatchedTeamStatus.ACTIVE
+			left.deletedAt shouldBe null
+		}
+
+		it("상대 팀이 이미 나간 마지막 종료면 헤더와 참가 팀 전원이 CLOSED+deletedAt이 된다") {
+			val onlyTenActive: TeamMatch = matched().leave(20L, now)
+
+			val closed: TeamMatch = onlyTenActive.leave(10L, now)
+
+			closed.status shouldBe MatchStatus.CLOSED
+			closed.deletedAt shouldBe now
+			closed.matchedTeams.values.all { it.status == MatchedTeamStatus.DEACTIVE } shouldBe true
+			closed.matchedTeams.values.all { it.deletedAt == now } shouldBe true
 		}
 	}
 })

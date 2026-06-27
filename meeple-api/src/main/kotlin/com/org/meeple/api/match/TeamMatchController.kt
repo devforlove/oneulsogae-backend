@@ -6,10 +6,12 @@ import com.org.meeple.auth.AuthUser
 import com.org.meeple.auth.LoginUser
 import com.org.meeple.core.common.response.ApiResponse
 import com.org.meeple.core.common.time.TimeGenerator
+import com.org.meeple.core.match.command.application.port.`in`.EndTeamMatchUseCase
 import com.org.meeple.core.match.command.application.port.`in`.SendTeamInterestUseCase
 import com.org.meeple.core.match.query.service.port.`in`.GetMeetingTabUseCase
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.tags.Tag
+import org.springframework.web.bind.annotation.DeleteMapping
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.PostMapping
@@ -27,6 +29,7 @@ import org.springframework.web.bind.annotation.RestController
 @RequestMapping("/team-matches/v1")
 class TeamMatchController(
 	private val sendTeamInterestUseCase: SendTeamInterestUseCase,
+	private val endTeamMatchUseCase: EndTeamMatchUseCase,
 	private val getMeetingTabUseCase: GetMeetingTabUseCase,
 	private val timeGenerator: TimeGenerator,
 ) {
@@ -41,6 +44,19 @@ class TeamMatchController(
 		@PathVariable teamMatchId: Long,
 	): ApiResponse<TeamMatchResponse> =
 		ApiResponse.success(TeamMatchResponse.of(sendTeamInterestUseCase.sendInterest(user.id, teamMatchId)))
+
+	@Operation(
+		summary = "팀 매칭 종료",
+		description = "성사된 팀 매칭을 종료한다. 종료한 팀의 참가만 비활성화하고, 우리 팀원 전원을 채팅방에서 내보낸 뒤 방에 남는 상대 팀에 종료 알림을 보낸다.",
+	)
+	@DeleteMapping("/{teamMatchId}")
+	fun endTeamMatch(
+		@LoginUser user: AuthUser,
+		@PathVariable teamMatchId: Long,
+	): ApiResponse<Unit> {
+		endTeamMatchUseCase.endTeamMatch(user.id, teamMatchId)
+		return ApiResponse.success()
+	}
 
 	/**
 	 * 미팅탭 화면 데이터를 한 번에 조회한다.

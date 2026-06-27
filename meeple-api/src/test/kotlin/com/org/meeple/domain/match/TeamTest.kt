@@ -214,10 +214,10 @@ class TeamTest : DescribeSpec({
 		}
 	}
 
-	describe("disband - 해체·떠나기") {
+	describe("disband - 해체·떠나기 (구성원 단위)") {
 		val now: LocalDateTime = LocalDateTime.of(2026, 6, 20, 12, 0)
 
-		fun formedTeam(): Team =
+		fun formedTeam(status: TeamStatus = TeamStatus.ACTIVE): Team =
 			Team(
 				name = "우리팀",
 				gender = Gender.MALE,
@@ -228,21 +228,52 @@ class TeamTest : DescribeSpec({
 						TeamMember(teamId = 0, userId = invitedUserId, status = TeamMemberStatus.ACTIVE),
 					),
 				),
-				status = TeamStatus.ACTIVE,
+				status = status,
 			)
 
-		it("ACTIVE 팀의 구성원이 해체하면 DEACTIVATED + soft delete가 된다") {
-			val deactivated: Team = formedTeam().disband(invitedUserId, now)
+		it("ACTIVE 팀의 한 구성원이 떠나면 DISBANDED가 되고, 떠난 구성원만 비활성·soft delete된다 (팀 헤더는 유지)") {
+			val disbanded: Team = formedTeam().disband(invitedUserId, now)
+
+			// 남은 활성 구성원(owner)이 있어 팀은 DISBANDED, 헤더는 소프트 삭제하지 않는다.
+			disbanded.status shouldBe TeamStatus.DISBANDED
+			disbanded.deletedAt shouldBe null
+			// 떠난 구성원만 DEACTIVE + deletedAt, 남은 구성원은 ACTIVE 유지.
+			val left: TeamMember = disbanded.members.find(invitedUserId)!!
+			left.status shouldBe TeamMemberStatus.DEACTIVE
+			left.deletedAt shouldBe now
+			disbanded.members.find(ownerId)!!.status shouldBe TeamMemberStatus.ACTIVE
+			disbanded.activeMemberIds() shouldBe listOf(ownerId)
+		}
+
+		it("DISBANDED 팀의 마지막 구성원이 떠나면 DEACTIVATED + 팀 헤더까지 soft delete된다") {
+			// owner가 먼저 떠나 DISBANDED가 된 팀에서, 남은 invited가 마저 떠난다.
+			val afterFirst: Team = formedTeam().disband(ownerId, now)
+			afterFirst.status shouldBe TeamStatus.DISBANDED
+
+			val deactivated: Team = afterFirst.disband(invitedUserId, now)
 
 			deactivated.status shouldBe TeamStatus.DEACTIVATED
 			deactivated.deletedAt shouldBe now
+			deactivated.activeMemberIds() shouldBe emptyList()
 		}
 
-		it("ACTIVE가 아니면 INVALID_TEAM_STATUS를 던진다") {
+		it("ACTIVE/DISBANDED가 아니면 INVALID_TEAM_STATUS를 던진다") {
 			val ex: BusinessException = shouldThrow {
-				formedTeam().copy(status = TeamStatus.INVITING).disband(ownerId, now)
+				formedTeam(TeamStatus.INVITING).disband(ownerId, now)
 			}
 			ex.errorCode shouldBe TeamErrorCode.INVALID_TEAM_STATUS
+		}
+
+		it("구성원이 아니면 NOT_TEAM_MEMBER를 던진다") {
+			val ex: BusinessException = shouldThrow { formedTeam().disband(999L, now) }
+			ex.errorCode shouldBe TeamErrorCode.NOT_TEAM_MEMBER
+		}
+
+		it("이미 떠난(DEACTIVE) 구성원이 다시 떠나면 NOT_TEAM_MEMBER를 던진다") {
+			val afterFirst: Team = formedTeam().disband(ownerId, now)
+
+			val ex: BusinessException = shouldThrow { afterFirst.disband(ownerId, now) }
+			ex.errorCode shouldBe TeamErrorCode.NOT_TEAM_MEMBER
 		}
 	}
 })

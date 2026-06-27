@@ -15,7 +15,6 @@ import com.org.meeple.common.integration.post
 import com.org.meeple.infra.alarm.command.entity.AlarmEntity
 import com.org.meeple.infra.alarm.command.entity.QAlarmEntity
 import com.org.meeple.infra.chat.command.entity.ChatMessageEntity
-import com.org.meeple.infra.chat.command.entity.ChatRoomMemberEntity
 import com.org.meeple.infra.chat.command.entity.QChatMessageEntity
 import com.org.meeple.infra.chat.command.entity.QChatRoomEntity
 import com.org.meeple.infra.chat.command.entity.QChatRoomMemberEntity
@@ -30,15 +29,16 @@ import com.org.meeple.infra.match.command.entity.QTeamEntity
 import com.org.meeple.infra.match.command.entity.QTeamMatchEntity
 import com.org.meeple.infra.match.command.entity.QTeamMemberEntity
 import com.org.meeple.infra.match.command.entity.TeamMatchEntity
+import io.kotest.matchers.longs.shouldBeGreaterThan
 import io.kotest.matchers.shouldBe
 import java.time.LocalDate
 import java.time.LocalDateTime
 
 /**
- * 팀 해체 시 매칭 정리·채팅 차단·팀원 알림 E2E.
- * - 성사(MATCHED) 매칭: 그대로 유지, 나간 팀원의 chatroom_member만 DEACTIVE
- * - 미성사(PROPOSED) 매칭: CLOSED + matched_teams DEACTIVE
- * 알림 수신자는 해체 실행자를 제외한 같은 팀의 남은 구성원이며, 상대 팀은 받지 않는다.
+ * 팀 해체(구성원 단위) 시 매칭 정리·채팅 차단·알림 E2E. (두 단계)
+ * - 1단계(첫 구성원 탈퇴): 매칭/matched_team은 그대로 유지, 떠난 본인의 chatroom_member만 DEACTIVE(안내 메세지 없음), 남은 팀원에게 '팀 해체' 알림.
+ * - 2단계(마지막 구성원 탈퇴): 우리 팀이 매칭에서 빠짐(matched_team DEACTIVE, 상대 팀은 유지). 떠난 본인 chatroom_member DEACTIVE,
+ *   방에 남는 상대 팀에 "상대 팀이 매칭을 종료했어요" 안내 + '매칭 종료' 알림.
  */
 class DisbandTeamMatchTeardownE2ETest : AbstractIntegrationSupport({
 
@@ -58,13 +58,13 @@ class DisbandTeamMatchTeardownE2ETest : AbstractIntegrationSupport({
 		return teamId
 	}
 
-	// 두 팀을 status로 묶은 팀 매칭을 만들고 teamMatchId를 돌려준다.
+	// 두 팀을 status로 묶은 팀 매칭을 만들고 teamMatchId를 돌려준다. (양 팀 matched_team은 ACTIVE)
 	fun persistTeamMatch(myTeamId: Long, opponentTeamId: Long, status: MatchStatus): Long {
 		val header: TeamMatchEntity = IntegrationUtil.persist(
 			TeamMatchEntity(
 				memberKey = listOf(myTeamId, opponentTeamId).sorted().joinToString("-"),
 				introducedDate = LocalDate.of(2026, 6, 24),
-				expiresAt = LocalDateTime.of(2026, 6, 25, 12, 0),
+				expiresAt = LocalDateTime.of(2999, 1, 1, 0, 0),
 				status = status,
 				matchType = TeamMatchType.RECOMMENDED,
 				dateInitAmount = 40,
@@ -77,10 +77,10 @@ class DisbandTeamMatchTeardownE2ETest : AbstractIntegrationSupport({
 		return teamMatchId
 	}
 
-	describe("DELETE /teams/v1/{teamId} — 매칭 정리") {
+	describe("DELETE /teams/v1/{teamId} — 매칭 정리 (두 단계)") {
 
-		context("성사(MATCHED) 매칭이 있는 팀을 해체하면") {
-			it("매칭은 유지되고, 나간 팀원의 채팅 참가만 비활성화되며, 남은 팀원에게 알림이 간다") {
+		context("성사(MATCHED) 매칭이 있는 팀") {
+			it("1단계는 매칭 유지+본인만 채팅 비활성(안내 없음), 2단계에 우리 팀이 매칭에서 빠지고 상대 팀에 종료 안내·알림이 간다") {
 				val ownerId = 5001L
 				val invitedUserId = 5002L
 				val oppOwnerId = 5003L
@@ -95,37 +95,54 @@ class DisbandTeamMatchTeardownE2ETest : AbstractIntegrationSupport({
 				listOf(ownerId, invitedUserId, oppOwnerId, oppInvitedUserId).forEach { uid: Long ->
 					IntegrationUtil.persist(ChatRoomMemberEntityFixture.create(chatRoomId = roomId, userId = uid))
 				}
+				IntegrationUtil.deleteAll(QAlarmEntity.alarmEntity)
 
-				delete("/teams/v1/$myTeamId") { bearer(accessTokenFor(invitedUserId)) } expect {
-					status(200)
-					body("success", true)
-				}
+				// === 1단계: invitedUserId가 떠난다 ===
+				delete("/teams/v1/$myTeamId") { bearer(accessTokenFor(invitedUserId)) } expect { status(200) }
 
-				// 매칭은 그대로 MATCHED
+				// 매칭/matched_team 그대로 유지
 				teamMatchStatus(teamMatchId) shouldBe MatchStatus.MATCHED
-				// 나간 팀원(내 팀)만 DEACTIVE, 상대 팀원은 ACTIVE 유지
-				memberStatus(roomId, ownerId) shouldBe ChatRoomMemberStatus.DEACTIVE
+				matchedTeamStatus(teamMatchId, myTeamId) shouldBe MatchedTeamStatus.ACTIVE
+				matchedTeamStatus(teamMatchId, opponentTeamId) shouldBe MatchedTeamStatus.ACTIVE
+				// 떠난 본인만 DEACTIVE, 남은 우리 팀원·상대 팀원은 ACTIVE
 				memberStatus(roomId, invitedUserId) shouldBe ChatRoomMemberStatus.DEACTIVE
+				memberStatus(roomId, ownerId) shouldBe ChatRoomMemberStatus.ACTIVE
 				memberStatus(roomId, oppOwnerId) shouldBe ChatRoomMemberStatus.ACTIVE
-				memberStatus(roomId, oppInvitedUserId) shouldBe ChatRoomMemberStatus.ACTIVE
-				// 해체 실행자(invitedUserId) 제외, 남은 팀원(ownerId)에게만 알림. 상대 팀은 받지 않는다
+				// 안내 메세지 없음(notifyRemaining=false), 상대 안 읽음 변화 없음
+				chatMessages(roomId).filter { it.type == ChatMessageType.SYSTEM }.size shouldBe 0
+				memberUnread(roomId, oppOwnerId) shouldBe 0
+				// 남은 팀원(owner)에게만 '팀 해체' 알림, 상대 팀은 받지 않음
 				disbandAlarms(ownerId).size shouldBe 1
 				disbandAlarms(invitedUserId).size shouldBe 0
-				disbandAlarms(oppOwnerId).size shouldBe 0
-				disbandAlarms(oppInvitedUserId).size shouldBe 0
-				// 채팅방에 "상대 팀이 채팅방을 나갔어요" 시스템 메세지가 남고, 남은 상대 팀원의 안 읽음이 오른다
-				val systemMessages: List<ChatMessageEntity> =
-					chatMessages(roomId).filter { it.type == ChatMessageType.SYSTEM }
+				matchEndedAlarms(oppOwnerId).size shouldBe 0
+
+				// === 2단계: 남은 ownerId가 마저 떠난다 ===
+				delete("/teams/v1/$myTeamId") { bearer(accessTokenFor(ownerId)) } expect { status(200) }
+
+				// 우리 팀만 매칭에서 빠짐(상대 팀 유지) → 헤더는 MATCHED 유지
+				teamMatchStatus(teamMatchId) shouldBe MatchStatus.MATCHED
+				matchedTeamStatus(teamMatchId, myTeamId) shouldBe MatchedTeamStatus.DEACTIVE
+				matchedTeamStatus(teamMatchId, opponentTeamId) shouldBe MatchedTeamStatus.ACTIVE
+				// 우리 팀원 둘 다 DEACTIVE, 상대 팀원은 ACTIVE 유지
+				memberStatus(roomId, ownerId) shouldBe ChatRoomMemberStatus.DEACTIVE
+				memberStatus(roomId, oppOwnerId) shouldBe ChatRoomMemberStatus.ACTIVE
+				memberStatus(roomId, oppInvitedUserId) shouldBe ChatRoomMemberStatus.ACTIVE
+				// 방에 "상대 팀이 매칭을 종료했어요" 안내가 남고, 남는 상대 팀원의 안 읽음이 오른다
+				val systemMessages: List<ChatMessageEntity> = chatMessages(roomId).filter { it.type == ChatMessageType.SYSTEM }
 				systemMessages.size shouldBe 1
-				systemMessages.first().content shouldBe "상대 팀이 채팅방을 나갔어요"
+				systemMessages.first().content shouldBe "상대 팀이 매칭을 종료했어요"
 				systemMessages.first().senderId shouldBe null
 				memberUnread(roomId, oppOwnerId) shouldBe 1
 				memberUnread(roomId, oppInvitedUserId) shouldBe 1
+				// 상대 팀 구성원에게 '매칭 종료' 알림, fromTeamId는 떠난 우리 팀
+				matchEndedAlarms(oppOwnerId).size shouldBe 1
+				matchEndedAlarms(oppOwnerId).first().fromTeamId shouldBe myTeamId
+				matchEndedAlarms(oppInvitedUserId).size shouldBe 1
 			}
 		}
 
-		context("미성사(PROPOSED) 매칭이 있는 팀을 해체하면") {
-			it("매칭이 CLOSED로 종료되고, 남은 팀원에게 알림이 간다") {
+		context("미성사(PROPOSED) 매칭이 있는 팀") {
+			it("2단계에 우리 팀만 matched_team DEACTIVE로 빠지고(상대·헤더 유지), 상대 팀에 종료 알림이 간다") {
 				val ownerId = 5101L
 				val invitedUserId = 5102L
 				val oppOwnerId = 5103L
@@ -133,20 +150,25 @@ class DisbandTeamMatchTeardownE2ETest : AbstractIntegrationSupport({
 				val myTeamId: Long = formedTeam(ownerId, invitedUserId)
 				val opponentTeamId: Long = formedTeam(oppOwnerId, oppInvitedUserId)
 				val teamMatchId: Long = persistTeamMatch(myTeamId, opponentTeamId, MatchStatus.PROPOSED)
+				IntegrationUtil.deleteAll(QAlarmEntity.alarmEntity)
 
-				delete("/teams/v1/$myTeamId") { bearer(accessTokenFor(invitedUserId)) } expect {
-					status(200)
-					body("success", true)
-				}
+				// 1단계: invited가 떠난다 (매칭은 그대로)
+				delete("/teams/v1/$myTeamId") { bearer(accessTokenFor(invitedUserId)) } expect { status(200) }
+				teamMatchStatus(teamMatchId) shouldBe MatchStatus.PROPOSED
+				matchedTeamStatus(teamMatchId, myTeamId) shouldBe MatchedTeamStatus.ACTIVE
 
-				teamMatchStatus(teamMatchId) shouldBe MatchStatus.CLOSED
+				// 2단계: 남은 owner가 마저 떠난다 → 우리 팀만 빠짐
+				delete("/teams/v1/$myTeamId") { bearer(accessTokenFor(ownerId)) } expect { status(200) }
+
+				teamMatchStatus(teamMatchId) shouldBe MatchStatus.PROPOSED
 				matchedTeamStatus(teamMatchId, myTeamId) shouldBe MatchedTeamStatus.DEACTIVE
-				matchedTeamStatus(teamMatchId, opponentTeamId) shouldBe MatchedTeamStatus.DEACTIVE
-				// 해체 실행자(invitedUserId) 제외, 남은 팀원(ownerId)에게만 알림
-				disbandAlarms(ownerId).size shouldBe 1
-				disbandAlarms(invitedUserId).size shouldBe 0
-				disbandAlarms(oppOwnerId).size shouldBe 0
-				disbandAlarms(oppInvitedUserId).size shouldBe 0
+				matchedTeamStatus(teamMatchId, opponentTeamId) shouldBe MatchedTeamStatus.ACTIVE
+				// 헤더(status)는 PROPOSED 그대로지만, 참가 팀만 바뀐 leave에서도 낙관적 락 버전이 전진한다(force-increment 없으면 0에 머묾).
+				// → 같은 매칭에 동시에 들어온 관심/수락이 버전 충돌로 직렬화됨을 보장한다. (정확한 증가 횟수는 무관)
+				teamMatchVersion(teamMatchId) shouldBeGreaterThan 0L
+				// 상대 팀 구성원에게 '매칭 종료' 알림
+				matchEndedAlarms(oppOwnerId).size shouldBe 1
+				matchEndedAlarms(oppInvitedUserId).size shouldBe 1
 			}
 		}
 	}
@@ -165,8 +187,13 @@ class DisbandTeamMatchTeardownE2ETest : AbstractIntegrationSupport({
 })
 
 private fun teamMatchStatus(teamMatchId: Long): MatchStatus {
-	val q = com.org.meeple.infra.match.command.entity.QTeamMatchEntity.teamMatchEntity
+	val q = QTeamMatchEntity.teamMatchEntity
 	return IntegrationUtil.getQuery().select(q.status).from(q).where(q.id.eq(teamMatchId)).fetchOne()!!
+}
+
+private fun teamMatchVersion(teamMatchId: Long): Long {
+	val q = QTeamMatchEntity.teamMatchEntity
+	return IntegrationUtil.getQuery().select(q.version).from(q).where(q.id.eq(teamMatchId)).fetchOne()!!
 }
 
 private fun matchedTeamStatus(teamMatchId: Long, teamId: Long): MatchedTeamStatus {
@@ -196,4 +223,10 @@ private fun disbandAlarms(userId: Long): List<AlarmEntity> {
 	val q = QAlarmEntity.alarmEntity
 	return IntegrationUtil.getQuery().selectFrom(q)
 		.where(q.userId.eq(userId).and(q.type.eq(AlarmType.TEAM_DISBANDED))).fetch()
+}
+
+private fun matchEndedAlarms(userId: Long): List<AlarmEntity> {
+	val q = QAlarmEntity.alarmEntity
+	return IntegrationUtil.getQuery().selectFrom(q)
+		.where(q.userId.eq(userId).and(q.type.eq(AlarmType.MANY_TO_MANY_MATCH_ENDED))).fetch()
 }

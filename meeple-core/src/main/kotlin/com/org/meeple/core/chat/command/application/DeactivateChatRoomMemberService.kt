@@ -70,10 +70,10 @@ class DeactivateChatRoomMemberService(
 
 	companion object {
 
-		/** 팀 해체로 한 팀이 채팅방을 떠났음을 남는 상대 팀원에게 알리는 안내 문구. */
-		private const val TEAM_LEFT_MESSAGE: String = "상대 팀이 채팅방을 나갔어요"
+		/** 한 팀이 매칭을 종료(또는 팀 해체로 이탈)했음을 남는 상대 팀원에게 알리는 안내 문구. */
+		private const val TEAM_LEFT_MESSAGE: String = "상대 팀이 매칭을 종료했어요"
 
-		/** 1:1 매칭 종료로 상대가 채팅방을 떠났음을 남는 상대에게 알리는 안내 문구. */
-		private const val SOLO_LEFT_MESSAGE: String = "상대방이 채팅방을 나갔어요"
+		/** 1:1 매칭에서 상대가 매칭을 종료했음을 남는 상대에게 알리는 안내 문구. */
+		private const val SOLO_LEFT_MESSAGE: String = "상대방이 매칭을 종료했어요"
 	}
 }

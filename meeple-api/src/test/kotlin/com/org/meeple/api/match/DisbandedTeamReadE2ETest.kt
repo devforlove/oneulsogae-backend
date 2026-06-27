@@ -19,6 +19,7 @@ import com.org.meeple.infra.fixture.ChatRoomEntityFixture
 import com.org.meeple.infra.fixture.ChatRoomMemberEntityFixture
 import com.org.meeple.infra.fixture.IntegrationUtil
 import com.org.meeple.infra.fixture.MatchUserEntityFixture
+import com.org.meeple.infra.fixture.UserDetailEntityFixture
 import com.org.meeple.infra.match.command.entity.MatchedTeamEntity
 import com.org.meeple.infra.match.command.entity.QMatchUserEntity
 import com.org.meeple.infra.match.command.entity.QMatchedTeamEntity
@@ -26,6 +27,7 @@ import com.org.meeple.infra.match.command.entity.QTeamEntity
 import com.org.meeple.infra.match.command.entity.QTeamMatchEntity
 import com.org.meeple.infra.match.command.entity.QTeamMemberEntity
 import com.org.meeple.infra.match.command.entity.TeamEntity
+import com.org.meeple.infra.user.command.entity.QUserDetailEntity
 import com.org.meeple.infra.match.command.entity.TeamMatchEntity
 import com.org.meeple.infra.match.command.entity.TeamMemberEntity
 import org.hamcrest.Matchers.hasSize
@@ -36,10 +38,10 @@ import java.time.LocalDateTime
 /**
  * 팀 해체(=구성원 탈퇴) 이후의 조회 동작 E2E.
  *
- * 2:2 팀은 한 명이 나가면 유지될 수 없어 팀 전체가 비활성화된다(`DELETE /teams/v1/{teamId}`).
+ * 팀은 구성원 단위로 떠난다(`DELETE /teams/v1/{teamId}`). 떠난 본인은 더는 ACTIVE 구성원이 아니다.
  * 해체 뒤 조회 경로가 의도대로 바뀌는지 검증한다.
- * - 미팅탭: 내 결성 팀이 사라지므로 `myTeam=null`, 추천 슬롯이 "매칭된 상대 팀"에서 추천 팀 경로(시드 없으면 빈 리스트)로 되돌아간다.
- * - 채팅방 목록: 성사(MATCHED) 매칭이던 방의 나간 팀원 참가가 비활성화돼 그들의 목록에서 사라지고, 상대 팀에는 그대로 남는다.
+ * - 미팅탭: 떠난 본인은 ACTIVE 구성원이 아니라 `myTeam=null`, 추천 슬롯이 "매칭된 상대 팀"에서 추천 팀 경로(시드 없으면 빈 리스트)로 되돌아간다.
+ * - 채팅방 목록: 성사(MATCHED) 매칭이던 방에서 떠난 본인의 참가만 비활성화돼 본인 목록에서 사라지고, 남은 팀원·상대 팀에는 그대로 남는다.
  */
 class DisbandedTeamReadE2ETest : AbstractIntegrationSupport({
 
@@ -118,8 +120,8 @@ class DisbandedTeamReadE2ETest : AbstractIntegrationSupport({
 			}
 		}
 
-		context("성사(MATCHED) 매칭의 채팅방이 있는 팀을 해체하면, 채팅방 목록은") {
-			it("나간 팀원에게는 매칭됐던 방이 더는 조회되지 않고, 상대 팀에는 그대로 남는다") {
+		context("성사(MATCHED) 매칭의 채팅방이 있는 팀에서 구성원이 떠나면, 채팅방 목록은") {
+			it("떠난 본인에게만 방이 사라지고, 남은 팀원·상대 팀에는 그대로 남는다 (마지막 구성원까지 떠나면 본인도 사라짐)") {
 				val me = 6101L
 				val friend = 6102L
 				val opponentOwner = 6103L
@@ -147,17 +149,37 @@ class DisbandedTeamReadE2ETest : AbstractIntegrationSupport({
 					body("data.size()", 1)
 				}
 
+				// 1단계: me가 떠난다.
 				delete("/teams/v1/$myTeamId") { bearer(accessTokenFor(me)) } expect {
 					status(200)
 					body("success", true)
 				}
 
-				// 해체 후: 나간 팀(나·친구) 목록에서는 방이 사라진다.
+				// 떠난 본인(me) 목록에서만 방이 사라진다.
 				get("/chat/v1/rooms") {
 					bearer(accessTokenFor(me))
 				} expect {
 					status(200)
 					body("data.size()", 0)
+				}
+				// 남은 팀원(friend)과 상대 팀 목록에는 방이 그대로 남는다.
+				get("/chat/v1/rooms") {
+					bearer(accessTokenFor(friend))
+				} expect {
+					status(200)
+					body("data.size()", 1)
+				}
+				get("/chat/v1/rooms") {
+					bearer(accessTokenFor(opponentOwner))
+				} expect {
+					status(200)
+					body("data.size()", 1)
+				}
+
+				// 2단계: 남은 friend가 마저 떠나면 friend 목록에서도 방이 사라진다. (상대 팀은 여전히 유지)
+				delete("/teams/v1/$myTeamId") { bearer(accessTokenFor(friend)) } expect {
+					status(200)
+					body("success", true)
 				}
 				get("/chat/v1/rooms") {
 					bearer(accessTokenFor(friend))
@@ -165,7 +187,6 @@ class DisbandedTeamReadE2ETest : AbstractIntegrationSupport({
 					status(200)
 					body("data.size()", 0)
 				}
-				// 상대 팀 목록에는 방이 그대로 남는다.
 				get("/chat/v1/rooms") {
 					bearer(accessTokenFor(opponentOwner))
 				} expect {
@@ -174,9 +195,61 @@ class DisbandedTeamReadE2ETest : AbstractIntegrationSupport({
 				}
 			}
 		}
+
+		context("1단계로 DISBANDED가 된(매칭 유지) 팀은 미팅탭 조회에 그대로 노출된다") {
+			it("남은 본인은 내 팀(DISBANDED·partner null)과 매칭된 상대 카드를 보고, 상대 팀도 내 DISBANDED 팀 카드를 본다") {
+				val me = 6201L
+				val friend = 6202L
+				val opponentOwner = 6203L
+				val opponentFriend = 6204L
+				persistMatchUser(me)
+				persistMatchUser(friend)
+				persistMatchUser(opponentOwner, Gender.FEMALE)
+				persistMatchUser(opponentFriend, Gender.FEMALE)
+				// 카드 구성원 로딩(match_user ⋈ user_details inner join)을 위해 표시될 구성원의 상세를 넣는다.
+				IntegrationUtil.persist(UserDetailEntityFixture.create(userId = friend))
+				IntegrationUtil.persist(UserDetailEntityFixture.create(userId = opponentOwner, gender = Gender.FEMALE))
+				IntegrationUtil.persist(UserDetailEntityFixture.create(userId = opponentFriend, gender = Gender.FEMALE))
+
+				val myTeamId: Long = persistTeam(Gender.MALE)
+				persistMember(myTeamId, me)
+				persistMember(myTeamId, friend)
+				val opponentTeamId: Long = persistTeam(Gender.FEMALE)
+				persistMember(opponentTeamId, opponentOwner)
+				persistMember(opponentTeamId, opponentFriend)
+				persistMatchedMatch(myTeamId, opponentTeamId)
+
+				// 1단계: me가 떠나 팀은 DISBANDED(매칭은 유지).
+				delete("/teams/v1/$myTeamId") { bearer(accessTokenFor(me)) } expect { status(200) }
+
+				// 남은 본인(friend)의 미팅탭: 내 팀은 DISBANDED로 보이고 상대(나간 me)는 null, 매칭된 상대 팀 카드가 그대로 보인다.
+				get("/team-matches/v1/meeting-tab") {
+					bearer(accessTokenFor(friend))
+				} expect {
+					status(200)
+					body("data.myTeam.teamId", myTeamId.toInt())
+					body("data.myTeam.status", "DISBANDED")
+					body("data.myTeam.partnerProfileImageCode", nullValue())
+					body("data.recommendedTeams", hasSize<Any>(1))
+					body("data.recommendedTeams[0].teamId", opponentTeamId.toInt())
+				}
+
+				// 상대 팀(opponentOwner)의 미팅탭: 내 DISBANDED 팀이 카드로 그대로 보이고, 남은 구성원(friend 1명)만 노출된다.
+				get("/team-matches/v1/meeting-tab") {
+					bearer(accessTokenFor(opponentOwner))
+				} expect {
+					status(200)
+					body("data.recommendedTeams", hasSize<Any>(1))
+					body("data.recommendedTeams[0].teamId", myTeamId.toInt())
+					body("data.recommendedTeams[0].members", hasSize<Any>(1))
+					body("data.recommendedTeams[0].members[0].userId", friend.toInt())
+				}
+			}
+		}
 	}
 
 	afterTest {
+		IntegrationUtil.deleteAll(QUserDetailEntity.userDetailEntity)
 		IntegrationUtil.deleteAll(QAlarmEntity.alarmEntity)
 		IntegrationUtil.deleteAll(QChatMessageEntity.chatMessageEntity)
 		IntegrationUtil.deleteAll(QChatRoomMemberEntity.chatRoomMemberEntity)

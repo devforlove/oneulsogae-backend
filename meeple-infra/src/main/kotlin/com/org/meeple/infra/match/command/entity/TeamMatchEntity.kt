@@ -10,6 +10,7 @@ import jakarta.persistence.Enumerated
 import jakarta.persistence.Index
 import jakarta.persistence.Table
 import jakarta.persistence.UniqueConstraint
+import jakarta.persistence.Version
 import org.hibernate.annotations.SQLRestriction
 import java.time.LocalDate
 import java.time.LocalDateTime
@@ -63,4 +64,13 @@ class TeamMatchEntity(
 	/** 팀 매칭 수락에 드는 코인 비용. */
 	@Column(name = "date_accept_amount", nullable = false)
 	val dateAcceptAmount: Int,
-) : BaseEntity()
+) : BaseEntity() {
+
+	/**
+	 * 낙관적 락 버전. 팀 매칭 애그리거트(헤더 + 참가 팀 matched_teams)에 대한 동시 변경을 직렬화한다.
+	 * 참가 팀만 바뀌어 헤더가 dirty하지 않은 변경(예: 팀 탈퇴)도 어댑터가 강제 증가시켜 경합을 감지한다. ([com.org.meeple.infra.match.command.adapter.TeamMatchAdapter.save])
+	 */
+	@Version
+	@Column(name = "version", nullable = false)
+	var version: Long = 0
+}

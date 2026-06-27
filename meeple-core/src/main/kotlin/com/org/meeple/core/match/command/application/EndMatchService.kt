@@ -21,7 +21,7 @@ import java.time.LocalDateTime
  * [EndMatchUseCase] 구현. 성사된 1:1 매칭을 참가자 한쪽이 나간다(종료).
  * 참가자·성사 여부를 검증한 뒤 종료자 본인의 참가만 비활성화([MatchMemberStatus.DEACTIVE])하고([Match.leave]), 상대도 이미 나간 상태였다면
  * (마지막 한 명이 나가면) 그때 매칭 헤더까지 종료(CLOSED)·소프트 삭제한다. 동시에 연결된 채팅방에서 종료자 본인의 참가만 비활성화하면서
- * 상대에게 "상대방이 채팅방을 나갔어요" 안내를 남긴다([DeactivateChatRoomMemberUseCase]). 채팅방은 닫지 않아 상대는 그대로 방을 유지한다.
+ * 상대에게 "상대방이 매칭을 종료했어요" 안내를 남긴다([DeactivateChatRoomMemberUseCase]). 채팅방은 닫지 않아 상대는 그대로 방을 유지한다.
  * 또한 방에 남는 상대가 있으면([Match.isLastActiveMember]가 false) "상대가 매칭을 나갔다"는 알람을 보내도록 [MatchEnded] 이벤트를 발행한다.
  * (마지막 종료자면 알릴 상대가 없어 발행하지 않는다) 다른 도메인(chat)은 자기 out-port가 아니라 in-port로 참조한다.
  *

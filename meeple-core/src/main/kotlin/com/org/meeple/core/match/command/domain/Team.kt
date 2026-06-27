@@ -65,12 +65,20 @@ data class Team(
 	}
 
 	/**
-	 * 결성([TeamStatus.ACTIVE])된 팀을 해체한다. (구성원이 떠나면 2인 팀이 유지될 수 없어 팀 전체를 비활성화)
-	 * 팀을 [TeamStatus.DEACTIVATED]로 전이하고 팀·구성원을 [now]로 소프트 삭제한 새 모델을 반환한다.
+	 * 결성([TeamStatus.ACTIVE]) 또는 해체중([TeamStatus.DISBANDED]) 팀에서 구성원([userId]) 한 명이 떠난다.
+	 * 떠나는 구성원만 비활성(DEACTIVE)·소프트 삭제하고, 팀 상태는 남는 활성 구성원 유무로 갈린다:
+	 * - 남은 활성 구성원이 있으면 팀을 [TeamStatus.DISBANDED]로 전이한다. (헤더는 소프트 삭제하지 않아 남은 구성원이 마저 떠날 수 있다)
+	 * - 마지막 구성원이면 팀을 [TeamStatus.DEACTIVATED]로 전이하고 팀 헤더까지 [now]로 소프트 삭제한다.
+	 * 상태·구성원 자격은 [validateDisbandable]로 검증한다.
 	 */
 	fun disband(userId: Long, now: LocalDateTime): Team {
 		validateDisbandable(userId)
-		return deactivate(now)
+		val remaining: TeamMembers = members.deactivate(userId, now)
+		return if (members.hasActiveMemberExcept(userId)) {
+			copy(status = TeamStatus.DISBANDED, members = remaining)
+		} else {
+			copy(status = TeamStatus.DEACTIVATED, deletedAt = now, members = remaining)
+		}
 	}
 
 	/**
@@ -103,12 +111,14 @@ data class Team(
 		}
 	}
 
-	// ACTIVE 상태가 아니면 INVALID_TEAM_STATUS, 구성원이 아니면 NOT_TEAM_MEMBER.
+	// ACTIVE/DISBANDED 상태가 아니면 INVALID_TEAM_STATUS, 활성(ACTIVE) 구성원이 아니면 NOT_TEAM_MEMBER. (이미 떠난 구성원의 재호출 차단)
 	private fun validateDisbandable(userId: Long) {
-		if (status != TeamStatus.ACTIVE) {
+		if (status != TeamStatus.ACTIVE && status != TeamStatus.DISBANDED) {
 			throw BusinessException(TeamErrorCode.INVALID_TEAM_STATUS)
 		}
-		if (!members.isMember(userId)) {
+		val member: TeamMember = members.find(userId)
+			?: throw BusinessException(TeamErrorCode.NOT_TEAM_MEMBER)
+		if (member.status != TeamMemberStatus.ACTIVE) {
 			throw BusinessException(TeamErrorCode.NOT_TEAM_MEMBER)
 		}
 	}

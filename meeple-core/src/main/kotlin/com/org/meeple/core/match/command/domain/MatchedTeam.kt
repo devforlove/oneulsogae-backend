@@ -23,9 +23,17 @@ data class MatchedTeam(
 	fun activate(): MatchedTeam =
 		copy(status = MatchedTeamStatus.ACTIVE)
 
-	/** 이 팀을 비활성(DEACTIVE)으로 전이한 새 모델을 반환한다. (팀의 모든 구성원 탈퇴로 팀 해체 시) */
+	/** 이 팀을 비활성(DEACTIVE)으로 전이한 새 모델을 반환한다. (한 팀이 매칭을 나갔지만 매칭은 유지될 때) */
 	fun deactivate(): MatchedTeam =
 		copy(status = MatchedTeamStatus.DEACTIVE)
+
+	/** 이 팀을 [now]에 비활성(DEACTIVE) + 소프트 삭제([deletedAt])한 새 모델을 반환한다. (마지막 종료로 매칭이 제거될 때) */
+	fun delete(now: LocalDateTime): MatchedTeam =
+		copy(status = MatchedTeamStatus.DEACTIVE, deletedAt = now)
+
+	/** 이 팀이 비활성(DEACTIVE) 상태인지 여부. (매칭을 나간 팀) */
+	val isDeactivated: Boolean
+		get() = status == MatchedTeamStatus.DEACTIVE
 
 	/** 이 팀이 신청(또는 성사로 활성)했는지 여부. (APPLY/ACTIVE) */
 	val hasApplied: Boolean

@@ -14,6 +14,8 @@ import com.org.meeple.infra.match.command.mapper.toEntity
 import com.org.meeple.infra.match.command.repository.MatchedTeamJpaRepository
 import com.org.meeple.infra.match.command.repository.TeamMatchJpaRepository
 import com.org.meeple.scheduler.match.command.application.port.out.SaveTeamMatchRecordPort
+import jakarta.persistence.EntityManager
+import jakarta.persistence.LockModeType
 import org.springframework.stereotype.Component
 import java.time.LocalDateTime
 
@@ -27,6 +29,7 @@ import java.time.LocalDateTime
 class TeamMatchAdapter(
 	private val teamMatchJpaRepository: TeamMatchJpaRepository,
 	private val matchedTeamJpaRepository: MatchedTeamJpaRepository,
+	private val entityManager: EntityManager,
 ) : SaveTeamMatchPort, GetTeamMatchPort, SaveTeamMatchRecordPort {
 
 	// 일일 팀 매칭 배치가 호출하는 경로 — DAILY 타입의 신규 소개(PROPOSED)로 기록한다.
@@ -36,6 +39,11 @@ class TeamMatchAdapter(
 
 	override fun save(teamMatch: TeamMatch): TeamMatch {
 		val savedEntity: TeamMatchEntity = teamMatchJpaRepository.save(teamMatch.toEntity())
+		// 기존 애그리거트 변경은 참가 팀(matched_teams)만 바뀌어 헤더가 dirty하지 않아도 헤더 버전을 강제로 올린다.
+		// → 헤더+참가 팀(=팀 매칭 애그리거트 전체)에 대한 동시 변경을 헤더 한 행의 낙관적 락으로 직렬화한다. (예: 팀 탈퇴 ↔ 관심/수락)
+		if (teamMatch.id != 0L) {
+			entityManager.lock(savedEntity, LockModeType.OPTIMISTIC_FORCE_INCREMENT)
+		}
 		val teamMatchId: Long = savedEntity.id!!
 		val savedMatchedTeams: MatchedTeams = MatchedTeams(
 			matchedTeamJpaRepository

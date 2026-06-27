@@ -38,7 +38,7 @@ import org.springframework.web.bind.annotation.RestController
  * - PUT /{teamId}: 진행 중(INVITING)이거나 결성(ACTIVE)된 팀의 구성원이 팀 이름·소개·활동지역을 수정한다.
  * - POST /{teamId}/acceptance: 초대받은 사용자가 팀 초대를 수락한다. 전원 수락 시 팀이 결성(ACTIVE)된다.
  * - DELETE /{teamId}/invitation: 초대 단계(INVITING) 팀의 초대를 철회한다. (초대받은 사람의 거절 / 초대자의 취소)
- * - DELETE /{teamId}: 결성(ACTIVE)된 팀을 구성원이 해체한다. (떠나면 2인 팀이 유지될 수 없어 팀 전체 비활성화)
+ * - DELETE /{teamId}: 결성(ACTIVE)/해체중(DISBANDED) 팀에서 구성원이 떠난다. (남은 팀원이 있으면 DISBANDED, 마지막이면 DEACTIVATED·매칭 종료)
  */
 @Tag(name = "팀 매칭", description = "2:2(팀) 매칭의 팀 엔드포인트. 팀 초대·수락·철회·해체 및 초대 가능 유저 검색을 제공한다.")
 @RestController
@@ -100,8 +100,8 @@ class TeamController(
 		return ApiResponse.success()
 	}
 
-	/** 결성(ACTIVE)된 팀을 구성원이 해체한다. (떠나면 2인 팀이 유지될 수 없어 팀 전체 비활성화) */
-	@Operation(summary = "팀 해체", description = "결성(ACTIVE)된 팀을 구성원이 해체한다. 구성원이 떠나면 2인 팀이 유지될 수 없어 팀 전체가 비활성화된다.")
+	/** 결성(ACTIVE)/해체중(DISBANDED) 팀에서 구성원이 떠난다. (남은 팀원이 있으면 DISBANDED, 마지막이면 DEACTIVATED·매칭 종료) */
+	@Operation(summary = "팀 해체", description = "결성(ACTIVE)/해체중(DISBANDED) 팀에서 구성원이 떠난다. 남은 팀원이 있으면 팀은 해체중(DISBANDED)이 되고 매칭은 유지되며 본인만 채팅방을 나간다. 마지막 구성원이 떠나면 팀이 비활성화(DEACTIVATED)되고 매칭에서도 빠진다.")
 	@DeleteMapping("/{teamId}")
 	fun disband(
 		@LoginUser user: AuthUser,

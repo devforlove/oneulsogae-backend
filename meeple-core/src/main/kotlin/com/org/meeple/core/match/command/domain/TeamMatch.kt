@@ -16,6 +16,8 @@ import java.time.LocalDateTime
  */
 data class TeamMatch(
 	val id: Long = 0,
+	/** 낙관적 락 버전. 영속성에서 읽어 저장까지 실어 보내, 애그리거트 동시 변경을 감지하는 데 쓴다. (DB가 증가시킨다) */
+	val version: Long = 0,
 	val matchedTeams: MatchedTeams,
 	val introducedDate: LocalDate,
 	val expiresAt: LocalDateTime,
@@ -46,6 +48,10 @@ data class TeamMatch(
 	fun isParticipant(teamId: Long): Boolean =
 		matchedTeams.isParticipant(teamId)
 
+	/** 참가 팀 id 목록. (참가 두 팀을 로드할 때) */
+	fun teamIds(): List<Long> =
+		matchedTeams.teamIds()
+
 	/**
 	 * 해당 팀이 이 팀 매칭에 관심(신청)을 보낼 수 있는 상태인지 검증한다.
 	 * 참가 팀이 아니면 [TeamMatchErrorCode.NOT_TEAM_MATCH_PARTICIPANT], 이미 종료된 매칭이면 [TeamMatchErrorCode.TEAM_MATCH_ALREADY_CLOSED]를 던진다.
@@ -57,6 +63,49 @@ data class TeamMatch(
 		if (status.isClosed()) {
 			throw BusinessException(TeamMatchErrorCode.TEAM_MATCH_ALREADY_CLOSED)
 		}
+	}
+
+	/**
+	 * [teamId] 팀이 이 팀 매칭을 종료할 수 있는 상태인지 검증한다.
+	 * 참가 팀이 아니면 [TeamMatchErrorCode.NOT_TEAM_MATCH_PARTICIPANT], 이미 종료(CLOSED)면 [TeamMatchErrorCode.TEAM_MATCH_ALREADY_CLOSED],
+	 * 아직 성사(MATCHED)되지 않았으면 [TeamMatchErrorCode.TEAM_MATCH_NOT_MATCHED]를 던진다. (성사된 매칭만 종료 가능)
+	 */
+	fun validateTerminable(teamId: Long) {
+		if (!isParticipant(teamId)) {
+			throw BusinessException(TeamMatchErrorCode.NOT_TEAM_MATCH_PARTICIPANT)
+		}
+		// MATCHED도 isClosed()=true(더 이상 응답을 안 받음)라, 여기선 종료(CLOSED)만 따로 거른다.
+		if (status == MatchStatus.CLOSED) {
+			throw BusinessException(TeamMatchErrorCode.TEAM_MATCH_ALREADY_CLOSED)
+		}
+		if (status != MatchStatus.MATCHED) {
+			throw BusinessException(TeamMatchErrorCode.TEAM_MATCH_NOT_MATCHED)
+		}
+		// 헤더가 MATCHED로 남아 있어도, 이미 나간(비활성) 팀이 다시 종료를 호출하면 막는다. (중복 나감 처리 방지)
+		if (matchedTeams.find(teamId)?.isDeactivated == true) {
+			throw BusinessException(TeamMatchErrorCode.TEAM_MATCH_ALREADY_CLOSED)
+		}
+	}
+
+	/** [teamId]의 상대 팀이 모두 비활성인지 여부. (이 팀이 나가면 방에 남아 알림을 받을 상대 팀이 없는 마지막 종료) */
+	fun isLastActiveTeam(teamId: Long): Boolean =
+		matchedTeams.isLastActiveTeam(teamId)
+
+	/**
+	 * 이 매칭(헤더+참가 팀)을 [now]에 종료([MatchStatus.CLOSED])하고 소프트 삭제(제거)한 새 모델을 반환한다.
+	 * 마지막 팀이 나가 남는 팀이 없을 때 호출한다. 저장하면 status가 CLOSED가 되고 deletedAt이 채워져 이후 조회에서 제외된다.
+	 */
+	fun delete(now: LocalDateTime): TeamMatch =
+		copy(status = MatchStatus.CLOSED, deletedAt = now, matchedTeams = matchedTeams.delete(now))
+
+	/**
+	 * [teamId] 팀이 이 매칭을 나간 새 모델을 반환한다.
+	 * 본인 팀 참가([MatchedTeam])만 비활성([MatchedTeamStatus.DEACTIVE])으로 전이하되, 상대 팀도 모두 비활성이면(마지막 활성 팀이 나가면)
+	 * 매칭 헤더까지 종료([MatchStatus.CLOSED])·소프트 삭제([delete])한다. (혼자 나가면 헤더는 MATCHED로 유지되고 상대 팀은 그대로 남는다)
+	 */
+	fun leave(teamId: Long, now: LocalDateTime): TeamMatch {
+		val left: TeamMatch = copy(matchedTeams = matchedTeams.deactivate(teamId))
+		return if (left.matchedTeams.allDeactivated()) left.delete(now) else left
 	}
 
 	/**

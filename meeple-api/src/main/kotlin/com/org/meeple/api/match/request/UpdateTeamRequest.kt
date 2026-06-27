@@ -8,7 +8,7 @@ import jakarta.validation.constraints.Size
 
 /**
  * 팀 정보 수정 요청. 팀의 표시 정보인 이름·소개·활동지역을 전체 교체한다.
- * 이름은 필수(@NotBlank, 50자 이하), 소개는 필수(@NotBlank, 10자 이상 100자 미만), 활동지역 id는 필수(@NotNull)다.
+ * 이름은 필수(@NotBlank, 50자 이하), 소개는 필수(@NotBlank, 10자 이상 500자 이하), 활동지역 id는 필수(@NotNull)다.
  */
 data class UpdateTeamRequest(
 	@field:NotBlank(message = "팀 이름은 필수입니다.")
@@ -16,7 +16,7 @@ data class UpdateTeamRequest(
 	val name: String? = null,
 
 	@field:NotBlank(message = "팀 소개는 필수입니다.")
-	@field:Size(min = 10, max = 99, message = "팀 소개는 10자 이상 100자 미만이어야 합니다.")
+	@field:Size(min = 10, max = 500, message = "팀 소개는 10자 이상 500자 이하여야 합니다.")
 	val introduction: String? = null,
 
 	@field:NotNull(message = "활동지역은 필수입니다.")

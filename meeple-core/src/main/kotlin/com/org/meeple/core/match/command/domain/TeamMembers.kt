@@ -65,6 +65,18 @@ data class TeamMembers(
 			values.map { member: TeamMember -> member.copy(status = TeamMemberStatus.DEACTIVE, deletedAt = now) },
 		)
 
+	/** [userId] 구성원만 비활성(DEACTIVE) + 소프트 삭제([now]) 표시한 새 컬렉션. (나머지는 그대로 — 팀원 한 명이 떠날 때) */
+	fun deactivate(userId: Long, now: LocalDateTime): TeamMembers =
+		TeamMembers(
+			values.map { member: TeamMember ->
+				if (member.userId == userId) member.copy(status = TeamMemberStatus.DEACTIVE, deletedAt = now) else member
+			},
+		)
+
+	/** [userId]를 제외하고 활성(ACTIVE) 구성원이 남아 있는지 여부. (그 구성원이 떠난 뒤에도 팀이 유지되는지 판정) */
+	fun hasActiveMemberExcept(userId: Long): Boolean =
+		values.any { member: TeamMember -> member.userId != userId && member.status == TeamMemberStatus.ACTIVE }
+
 	companion object {
 
 		/** (userId, status) 묶음들로 구성원 목록을 만든다. (teamId는 저장 시 채워진다. 성별은 [Team.gender]가 보관) */
