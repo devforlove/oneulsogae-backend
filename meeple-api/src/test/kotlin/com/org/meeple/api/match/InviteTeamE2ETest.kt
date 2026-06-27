@@ -36,7 +36,7 @@ class InviteTeamE2ETest : AbstractIntegrationSupport({
 		)
 	}
 
-	// 유효한 팀 소개. (10자 이상 100자 미만)
+	// 유효한 팀 소개. (10자 이상 500자 이하)
 	val validIntroduction = "함께 즐겁게 활동할 팀이에요"
 
 	describe("POST /teams/v1/invitation") {
