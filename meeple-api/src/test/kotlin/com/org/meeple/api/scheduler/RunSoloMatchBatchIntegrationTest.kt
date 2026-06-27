@@ -141,6 +141,23 @@ class RunSoloMatchBatchIntegrationTest(
 			}
 		}
 
+		context("과거 소개됐다가 취소(소프트 삭제)된 쌍은") {
+			it("member_key가 남아 재소개 시 충돌하므로, 우회 조회로 이력으로 인정해 다시 소개하지 않는다") {
+				val regionId: Long = persistRegion("서울특별시", "강남구", 37.50, 127.00)
+				val maleId: Long = persistMatchableUser(userId = 1001L, gender = Gender.MALE, regionId = regionId)
+				val femaleId: Long = persistMatchableUser(userId = 1002L, gender = Gender.FEMALE, regionId = regionId)
+				// 1001-1002는 과거 소개됐다가 취소돼 소프트 삭제됨(과거 일자라 '오늘 소개' 제외엔 안 걸림). ux_member_key는 deleted_at 미포함이라 그대로 남는다.
+				persistCancelledPastMatch(userIdA = 1001L, userIdB = 1002L)
+
+				val result: SoloMatchBatchResult = runSoloMatchBatchUseCase.run()
+
+				// 우회 조회로 이력을 인정해 재소개를 막으면 유니크 충돌 없음(우회 안 하면 INSERT가 member_key 충돌로 failed).
+				result.recommended shouldBe 0
+				result.failed shouldBe 0
+				proposedMatchBetween(maleId, femaleId).shouldBeNull()
+			}
+		}
+
 		context("같은 실행 안에서") {
 			it("한 사람이 두 번 소개되지 않는다") {
 				val regionId: Long = persistRegion("서울특별시", "강남구", 37.50, 127.00)
@@ -239,6 +256,24 @@ private fun persistMatchedMatchWithLeaver(leaverId: Long, stayerId: Long) {
 	)
 	IntegrationUtil.persist(SoloMatchMemberEntityFixture.create(matchId = match.id!!, userId = leaverId, gender = Gender.MALE, status = MatchMemberStatus.DEACTIVE))
 	IntegrationUtil.persist(SoloMatchMemberEntityFixture.create(matchId = match.id!!, userId = stayerId, gender = Gender.FEMALE, status = MatchMemberStatus.ACTIVE))
+}
+
+// [userIdA]가 과거 [userIdB]와 소개됐다가 취소해 헤더·참가자가 소프트 삭제된 상태를 만든다(과거 일자).
+// ux_member_key는 deleted_at을 포함하지 않아 member_key가 그대로 남으므로, 재소개 시 충돌한다 → existsByPair가 이 삭제 행을 봐야 한다.
+private fun persistCancelledPastMatch(userIdA: Long, userIdB: Long) {
+	val match: SoloMatchEntity = IntegrationUtil.persist(
+		SoloMatchEntityFixture.create(
+			memberKey = MatchMembers.memberKeyOf(listOf(userIdA, userIdB)),
+			status = MatchStatus.CLOSED,
+			introducedDate = LocalDate.now().minusDays(3),
+		).apply { softDelete() },
+	)
+	IntegrationUtil.persist(
+		SoloMatchMemberEntityFixture.create(matchId = match.id!!, userId = userIdA, gender = Gender.MALE, status = MatchMemberStatus.DEACTIVE).apply { softDelete() },
+	)
+	IntegrationUtil.persist(
+		SoloMatchMemberEntityFixture.create(matchId = match.id!!, userId = userIdB, gender = Gender.FEMALE, status = MatchMemberStatus.DEACTIVE).apply { softDelete() },
+	)
 }
 
 private fun proposedMatchBetween(userIdA: Long, userIdB: Long): SoloMatchEntity? {

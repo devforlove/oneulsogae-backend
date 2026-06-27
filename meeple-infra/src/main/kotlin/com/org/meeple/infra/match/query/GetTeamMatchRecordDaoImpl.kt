@@ -8,6 +8,7 @@ import com.org.meeple.infra.match.command.entity.QTeamMatchEntity
 import com.org.meeple.scheduler.match.query.dao.GetTeamMatchRecordDao
 import com.org.meeple.scheduler.match.query.dto.MatchedTeamIds
 import com.querydsl.jpa.impl.JPAQueryFactory
+import jakarta.persistence.EntityManager
 import org.springframework.stereotype.Component
 import java.time.LocalDate
 
@@ -18,16 +19,24 @@ import java.time.LocalDate
 @Component
 class GetTeamMatchRecordDaoImpl(
 	private val queryFactory: JPAQueryFactory,
+	private val entityManager: EntityManager,
 ) : GetTeamMatchRecordDao {
 
-	// 두 팀 조합 키(정렬된 team-id 결합)로 소개 이력 존재 여부만 확인한다. (ux_member_key)
+	// 두 팀 조합 키(정렬된 team-id 결합)로 소개 이력 존재 여부를 확인한다. (ux_member_key)
+	// 취소·종료로 소프트 삭제된 과거 소개도 member_key를 그대로 점유하므로(ux_member_key는 deleted_at 미포함), 재소개 영구 방지를 위해
+	// 삭제 행까지 봐야 한다. @SQLRestriction("deleted_at is null")을 우회하려고 네이티브 쿼리로 조회한다. (QueryDSL·JPQL로는 우회 불가)
 	override fun existsByPair(teamIdA: Long, teamIdB: Long): Boolean {
-		val teamMatch: QTeamMatchEntity = QTeamMatchEntity.teamMatchEntity
-		return queryFactory
-			.selectOne()
-			.from(teamMatch)
-			.where(teamMatch.memberKey.eq(MatchedTeams.of(listOf(teamIdA, teamIdB)).memberKey()))
-			.fetchFirst() != null
+		val sql: String = """
+			SELECT 1
+			FROM team_matches
+			WHERE member_key = :memberKey
+			LIMIT 1
+		""".trimIndent()
+		return entityManager
+			.createNativeQuery(sql)
+			.setParameter("memberKey", MatchedTeams.of(listOf(teamIdA, teamIdB)).memberKey())
+			.resultList
+			.isNotEmpty()
 	}
 
 	// 성사(MATCHED) 팀 매칭에 '활성(ACTIVE) 참가 팀으로' 속한 팀 ID 전체를 Set으로 정리해 일급 컬렉션으로 감싼다.
