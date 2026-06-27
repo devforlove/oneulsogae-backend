@@ -11,9 +11,11 @@ import com.org.meeple.infra.alarm.command.entity.AlarmEntity
 import com.org.meeple.infra.alarm.command.entity.QAlarmEntity
 import com.org.meeple.infra.fixture.IntegrationUtil
 import com.org.meeple.infra.fixture.MatchUserEntityFixture
+import com.org.meeple.infra.fixture.UserDetailEntityFixture
 import com.org.meeple.infra.match.command.entity.QMatchUserEntity
 import com.org.meeple.infra.match.command.entity.QTeamEntity
 import com.org.meeple.infra.match.command.entity.QTeamMemberEntity
+import com.org.meeple.infra.user.command.entity.QUserDetailEntity
 import io.kotest.matchers.shouldBe
 
 /**
@@ -46,6 +48,8 @@ class DisbandTeamE2ETest : AbstractIntegrationSupport({
 				val ownerId = 4001L
 				val invitedUserId = 4002L
 				val teamId: Long = formedTeam(ownerId, invitedUserId)
+				// 알람 문구에 들어갈 탈퇴 구성원(invited)의 닉네임을 위해 UserDetail을 채운다.
+				IntegrationUtil.persist(UserDetailEntityFixture.create(userId = invitedUserId, nickname = "철수"))
 				// 결성 과정(초대 받음/수락)에서 생긴 알람은 이 테스트의 관심사가 아니므로 초기화한다.
 				IntegrationUtil.deleteAll(QAlarmEntity.alarmEntity)
 
@@ -63,7 +67,7 @@ class DisbandTeamE2ETest : AbstractIntegrationSupport({
 				alarms.size shouldBe 1
 				alarms[0].fromUserId shouldBe invitedUserId
 				alarms[0].fromTeamId shouldBe null
-				alarms[0].description shouldBe "함께하던 팀이 해체되었어요."
+				alarms[0].description shouldBe "철수님이 팀을 탈퇴했어요."
 				disbandAlarmsOf(invitedUserId).size shouldBe 0
 			}
 		}
@@ -114,6 +118,7 @@ class DisbandTeamE2ETest : AbstractIntegrationSupport({
 
 	afterTest {
 		IntegrationUtil.deleteAll(QAlarmEntity.alarmEntity)
+		IntegrationUtil.deleteAll(QUserDetailEntity.userDetailEntity)
 		IntegrationUtil.deleteAll(QTeamMemberEntity.teamMemberEntity)
 		IntegrationUtil.deleteAll(QTeamEntity.teamEntity)
 		IntegrationUtil.deleteAll(QMatchUserEntity.matchUserEntity)

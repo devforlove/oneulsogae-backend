@@ -112,17 +112,22 @@ class TeamEventHandler(
 		)
 	}
 
-	/** 팀 해체 → 해체 실행자를 제외한 같은 팀의 남은 구성원 각자에게 "팀 해체됨" 알람. (발신 유저는 해체를 실행한 구성원, 수신자 목록만큼 개별 저장) */
+	/** 팀 해체 → 해체 실행자를 제외한 같은 팀의 남은 구성원 각자에게 "팀 해체됨" 알람. (발신 유저는 해체를 실행한 구성원, 수신자 목록만큼 개별 저장. 문구엔 탈퇴한 구성원 닉네임) */
 	@TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
 	@Transactional(propagation = Propagation.REQUIRES_NEW)
 	fun onTeamDisbanded(event: TeamDisbanded) {
+		// 탈퇴한 구성원은 수신자 전원에게 동일하므로 닉네임은 루프 밖에서 한 번만 조회한다.
+		val disbandedByNickname: String? = getUserDetailUseCase.findByUserId(event.disbandedByUserId)?.nickname
+
 		event.recipientUserIds.forEach { recipientUserId: Long ->
 			saveAlarmUseCase.save(
 				SaveAlarmCommand(
 					userId = recipientUserId,
 					type = AlarmType.TEAM_DISBANDED,
 					title = "팀 해체",
-					description = "함께하던 팀이 해체되었어요.",
+					description = disbandedByNickname
+						?.let { "${it}님이 팀을 탈퇴했어요." }
+						?: "함께하던 팀원이 팀을 탈퇴했어요.",
 					link = "",
 					fromUserId = event.disbandedByUserId,
 				),
