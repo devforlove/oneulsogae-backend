@@ -21,7 +21,7 @@ class ReportController(
 	private val createReportUseCase: CreateReportUseCase,
 ) {
 
-	@Operation(summary = "신고 생성", description = "신고자가 대상(팀 또는 유저)을 사유와 함께 신고한다.")
+	@Operation(summary = "신고 생성", description = "신고자가 채팅방(chatRoomId)에서 사유와 함께 신고한다. 신고 대상(상대 유저/팀)은 채팅방의 매칭 정보로 서버가 정한다.")
 	@PostMapping
 	fun create(
 		@LoginUser user: AuthUser,

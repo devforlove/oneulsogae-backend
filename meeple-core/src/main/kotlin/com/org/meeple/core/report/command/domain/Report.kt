@@ -1,5 +1,6 @@
 package com.org.meeple.core.report.command.domain
 
+import com.org.meeple.common.chat.ChatRoomMatchType
 import com.org.meeple.common.report.ReportType
 
 /**
@@ -16,20 +17,24 @@ data class Report(
 	val description: String? = null,
 ) {
 	companion object {
+		/**
+		 * 매칭 종류([matchType])에 따라 신고 대상 id([targetId])를 알맞은 자리에 채워 신고를 만든다.
+		 * SOLO면 상대 유저([toUserId]), TEAM이면 상대 팀([toTeamId])에 [targetId]를 넣는다.
+		 */
 		fun create(
 			type: ReportType,
 			fromUserId: Long,
+			matchType: ChatRoomMatchType,
+			targetId: Long,
 			chatRoomId: Long? = null,
-			toTeamId: Long? = null,
-			toUserId: Long? = null,
 			description: String? = null,
 		): Report =
 			Report(
 				type = type,
 				fromUserId = fromUserId,
 				chatRoomId = chatRoomId,
-				toTeamId = toTeamId,
-				toUserId = toUserId,
+				toUserId = if (matchType == ChatRoomMatchType.SOLO) targetId else null,
+				toTeamId = if (matchType == ChatRoomMatchType.TEAM) targetId else null,
 				description = description,
 			)
 	}
