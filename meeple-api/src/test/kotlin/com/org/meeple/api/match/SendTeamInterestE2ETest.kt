@@ -10,6 +10,8 @@ import com.org.meeple.common.match.TeamMatchType
 import com.org.meeple.common.user.Gender
 import com.org.meeple.infra.alarm.command.entity.AlarmEntity
 import com.org.meeple.infra.alarm.command.entity.QAlarmEntity
+import com.org.meeple.infra.match.command.entity.QRecommendedTeamHistoryEntity
+import io.kotest.matchers.collections.shouldContainExactlyInAnyOrder
 import com.org.meeple.infra.chat.command.entity.QChatRoomEntity
 import com.org.meeple.infra.chat.command.entity.QChatRoomMemberEntity
 import com.org.meeple.infra.coin.command.entity.QCoinBalanceEntity
@@ -148,6 +150,11 @@ class SendTeamInterestE2ETest : AbstractIntegrationSupport({
 				matchedAlarms(myInvited).first().fromTeamId shouldBe opponentTeamId
 				matchedAlarms(oppOwner).first().fromTeamId shouldBe myTeamId
 				matchedAlarms(oppInvited).first().fromTeamId shouldBe myTeamId
+				// 성사 이력: 4인 각자 → 상대 팀 (재매칭 제외용)
+				recommendedTeamHistoryTeamIds(myOwner) shouldContainExactlyInAnyOrder listOf(opponentTeamId)
+				recommendedTeamHistoryTeamIds(myInvited) shouldContainExactlyInAnyOrder listOf(opponentTeamId)
+				recommendedTeamHistoryTeamIds(oppOwner) shouldContainExactlyInAnyOrder listOf(myTeamId)
+				recommendedTeamHistoryTeamIds(oppInvited) shouldContainExactlyInAnyOrder listOf(myTeamId)
 			}
 		}
 
@@ -209,6 +216,7 @@ class SendTeamInterestE2ETest : AbstractIntegrationSupport({
 	}
 
 	afterTest {
+		IntegrationUtil.deleteAll(QRecommendedTeamHistoryEntity.recommendedTeamHistoryEntity)
 		IntegrationUtil.deleteAll(QAlarmEntity.alarmEntity)
 		IntegrationUtil.deleteAll(QChatRoomMemberEntity.chatRoomMemberEntity)
 		IntegrationUtil.deleteAll(QChatRoomEntity.chatRoomEntity)
@@ -254,4 +262,9 @@ private fun matchedAlarms(userId: Long): List<AlarmEntity> {
 	val q = QAlarmEntity.alarmEntity
 	return IntegrationUtil.getQuery().selectFrom(q)
 		.where(q.userId.eq(userId).and(q.type.eq(AlarmType.MANY_TO_MANY_MATCHED))).fetch()
+}
+
+private fun recommendedTeamHistoryTeamIds(userId: Long): List<Long> {
+	val q = QRecommendedTeamHistoryEntity.recommendedTeamHistoryEntity
+	return IntegrationUtil.getQuery().select(q.teamId).from(q).where(q.userId.eq(userId)).fetch()
 }

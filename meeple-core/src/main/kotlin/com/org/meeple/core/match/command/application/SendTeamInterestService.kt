@@ -16,6 +16,7 @@ import com.org.meeple.core.match.TeamMatchErrorCode
 import com.org.meeple.core.match.command.application.port.`in`.SendTeamInterestUseCase
 import com.org.meeple.core.match.command.application.port.out.GetTeamMatchPort
 import com.org.meeple.core.match.command.application.port.out.GetTeamPort
+import com.org.meeple.core.match.command.application.port.out.SaveRecommendedTeamHistoryPort
 import com.org.meeple.core.match.command.application.port.out.SaveTeamMatchPort
 import com.org.meeple.core.match.command.domain.Team
 import com.org.meeple.core.match.command.domain.TeamMatch
@@ -44,6 +45,7 @@ import org.springframework.transaction.annotation.Transactional
 class SendTeamInterestService(
 	private val getTeamMatchPort: GetTeamMatchPort,
 	private val saveTeamMatchPort: SaveTeamMatchPort,
+	private val saveRecommendedTeamHistoryPort: SaveRecommendedTeamHistoryPort,
 	private val getTeamPort: GetTeamPort,
 	private val spendCoinUseCase: SpendCoinUseCase,
 	private val saveChatRoomUseCase: SaveChatRoomUseCase,
@@ -80,6 +82,8 @@ class SendTeamInterestService(
 		saveChatRoomUseCase.save(
 			SaveChatRoomCommand(matchType = ChatRoomMatchType.TEAM, matchId = teamMatch.id, participants = participants),
 		)
+		// 성사 이력 기록: 양 팀 구성원 ↔ 상대 팀. 추천 배치가 이미 매칭한 상대를 다시 추천하지 않도록 한다. (성사와 같은 트랜잭션)
+		saveRecommendedTeamHistoryPort.saveAll(teams.matchHistories())
 		// 성사 알림은 양 팀에 각각 발행한다. 각 팀 수신자(행위자 제외)에게 그들의 상대 팀을 fromTeamId로 담아, 알림에서 상대 팀이 보이도록 한다.
 		teams.values.forEach { team: Team ->
 			val recipientUserIds: List<Long> = team.activeMemberIds().filter { memberId: Long -> memberId != userId }
