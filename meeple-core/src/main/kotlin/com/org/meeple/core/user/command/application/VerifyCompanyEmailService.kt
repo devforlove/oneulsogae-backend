@@ -4,6 +4,7 @@ import com.org.meeple.core.common.error.BusinessException
 import com.org.meeple.core.common.event.DomainEventPublisher
 import com.org.meeple.core.user.UserErrorCode
 import com.org.meeple.core.common.time.TimeGenerator
+import com.org.meeple.core.user.command.domain.event.CompanyEmailVerified
 import com.org.meeple.core.user.command.domain.event.UserProfileChanged
 import com.org.meeple.core.user.query.service.port.`in`.GetUserCompanyUseCase
 import com.org.meeple.core.user.command.application.port.`in`.VerifyCompanyEmailUseCase
@@ -57,11 +58,16 @@ class VerifyCompanyEmailService(
 		val companyName: String? = getUserCompanyUseCase.findCompanyNameByEmail(verification.companyEmail)
 		confirmCompanyOnProfile(verification.userId, verification.companyEmail, companyName)
 
-		// 회사명 조회 결과에 따라 사용자 가입 상태(ACTIVE / COMPANY_NOT_RESOLVED)를 확정한다.
-		finalizeStatus(verification.userId, companyName)
+		// 회사명 조회 결과에 따라 사용자 가입 상태(ACTIVE / COMPANY_NOT_RESOLVED)를 확정한다. (이번 호출로 온보딩이 막 완료됐는지 반환)
+		val justOnboarded: Boolean = finalizeStatus(verification.userId, companyName)
 
-		// 가입 상태가 바뀌었음을 알린다. (UserEventHandler가 매칭 읽기 모델 동기화로 이어간다)
+		// 가입 상태가 바뀌었음을 알린다. (UserEventHandler가 매칭 읽기 모델 동기화로 이어간다 — BEFORE_COMMIT, 같은 트랜잭션)
 		domainEventPublisher.publish(UserProfileChanged(verification.userId))
+
+		// 온보딩이 막 완료됐다면 첫 매칭을 자동 소개한다. (UserEventHandler가 AFTER_COMMIT — match_user 동기화·커밋 이후 소개)
+		if (justOnboarded) {
+			domainEventPublisher.publish(CompanyEmailVerified(verification.userId))
+		}
 
 		return VerifyCompanyEmailResult(companyName)
 	}
@@ -73,13 +79,15 @@ class VerifyCompanyEmailService(
 		saveUserDetailPort.save(detail.copy(companyEmail = companyEmail, companyName = companyName))
 	}
 
-	private fun finalizeStatus(userId: Long, companyName: String?) {
+	/** 가입 상태를 확정하고, 이번 호출로 온보딩(정식 가입)이 막 완료됐는지 반환한다. (이미 가입된 사용자면 false) */
+	private fun finalizeStatus(userId: Long, companyName: String?): Boolean {
 		val user: User = getUserPort.findById(userId)
 			?: throw BusinessException(UserErrorCode.USER_NOT_FOUND, "사용자를 찾을 수 없습니다: $userId")
 
-		if (user.isRegistered) return
+		if (user.isRegistered) return false
 
 		val updated: User = if (companyName != null) user.completeSignUp() else user.markCompanyNotResolved()
 		saveUserPort.save(updated)
+		return true
 	}
 }

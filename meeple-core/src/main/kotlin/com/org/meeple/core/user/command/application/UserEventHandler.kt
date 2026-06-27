@@ -2,13 +2,17 @@ package com.org.meeple.core.user.command.application
 
 import com.org.meeple.core.common.event.MatchProfileSnapshot
 import com.org.meeple.core.common.event.UserLoggedIn
+import com.org.meeple.core.match.command.application.port.`in`.RecommendMatchUseCase
 import com.org.meeple.core.match.command.application.port.`in`.SyncMatchUserUseCase
 import com.org.meeple.core.user.command.application.port.out.GetUserDetailPort
 import com.org.meeple.core.user.command.application.port.out.GetUserPort
 import com.org.meeple.core.user.command.domain.User
 import com.org.meeple.core.user.command.domain.UserDetail
+import com.org.meeple.core.user.command.domain.event.CompanyEmailVerified
 import com.org.meeple.core.user.command.domain.event.UserProfileChanged
 import org.springframework.stereotype.Component
+import org.springframework.transaction.annotation.Propagation
+import org.springframework.transaction.annotation.Transactional
 import org.springframework.transaction.event.TransactionPhase
 import org.springframework.transaction.event.TransactionalEventListener
 
@@ -26,6 +30,7 @@ class UserEventHandler(
 	private val getUserPort: GetUserPort,
 	private val getUserDetailPort: GetUserDetailPort,
 	private val syncMatchUserUseCase: SyncMatchUserUseCase,
+	private val recommendMatchUseCase: RecommendMatchUseCase,
 ) {
 
 	/** 프로필/가입 상태 변경 → 매칭 가능 스냅샷을 만들어 match 읽기 모델 동기화에 위임한다. */
@@ -38,6 +43,17 @@ class UserEventHandler(
 	@TransactionalEventListener(phase = TransactionPhase.BEFORE_COMMIT)
 	fun onUserLoggedIn(event: UserLoggedIn) {
 		syncMatchUserUseCase.updateLastLogin(event.userId, event.lastLoginAt)
+	}
+
+	/**
+	 * 회사 이메일 인증으로 온보딩이 막 완료됨 → 첫 매칭을 1건 자동 소개한다. (CQS: 조회 경로가 아니라 인증 완료 시점에 처리)
+	 * 매칭 읽기 모델(match_user)이 같은 트랜잭션의 BEFORE_COMMIT 동기화로 적재·커밋된 뒤라야 후보를 고를 수 있으므로
+	 * 커밋 이후(AFTER_COMMIT)에 새 트랜잭션(REQUIRES_NEW)으로 소개한다. (소개 실패가 인증을 롤백시키지 않음 — best-effort)
+	 */
+	@TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
+	@Transactional(propagation = Propagation.REQUIRES_NEW)
+	fun onCompanyEmailVerified(event: CompanyEmailVerified) {
+		recommendMatchUseCase.recommend(event.userId)
 	}
 
 	/** 해당 사용자의 현재 상태로 매칭 가능 스냅샷을 만든다. (사용자가 없거나 매칭 불가면 null) */
