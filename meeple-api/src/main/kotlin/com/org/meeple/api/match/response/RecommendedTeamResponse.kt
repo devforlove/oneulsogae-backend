@@ -6,6 +6,7 @@ import com.org.meeple.core.common.time.ageAt
 import com.org.meeple.core.match.query.dto.RecommendedTeam
 import com.org.meeple.core.match.query.dto.RecommendedTeamMember
 import java.time.LocalDate
+import java.time.LocalDateTime
 
 /**
  * 미팅탭에 노출할 추천 팀 응답. 팀 메타와 팀원 표시 프로필(나이는 생일+오늘로 산출),
@@ -24,6 +25,8 @@ data class RecommendedTeamResponse(
 	val teamMatchId: Long?,
 	/** 이 팀과의 팀 매칭 상태. 아직 매칭이 없는 순수 추천 팀이면 null. */
 	val teamMatchStatus: MatchStatus?,
+	/** 이 팀과의 팀 매칭 만료 시각. 아직 매칭이 없는 순수 추천 팀이면 null. */
+	val teamMatchExpiresAt: LocalDateTime?,
 	/** 내 팀이 이 매칭에 관심(신청)을 보냈는지 여부. */
 	val hasUserInterest: Boolean,
 	/** 상대 팀이 이 매칭에 관심(신청)을 보냈는지 여부. */
@@ -78,6 +81,7 @@ data class RecommendedTeamResponse(
 					datingAcceptAmount = recommendedTeam.datingAcceptAmount,
 					teamMatchId = recommendedTeam.teamMatchId,
 					teamMatchStatus = recommendedTeam.teamMatchStatus,
+					teamMatchExpiresAt = recommendedTeam.teamMatchExpiresAt,
 					hasUserInterest = recommendedTeam.hasUserInterest,
 					hasPartnerInterest = recommendedTeam.hasPartnerInterest,
 				)

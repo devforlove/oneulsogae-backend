@@ -64,6 +64,7 @@ class GetMatchedTeamDaoImpl(
 					teamMatch.dateAcceptAmount,
 					teamMatch.id,
 					teamMatch.status,
+					teamMatch.expiresAt,
 					mine.status.`in`(MatchedTeamStatus.APPLY, MatchedTeamStatus.ACTIVE),
 					opp.status.`in`(MatchedTeamStatus.APPLY, MatchedTeamStatus.ACTIVE),
 				),

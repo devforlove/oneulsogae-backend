@@ -66,6 +66,7 @@ class GetRecommendedTeamDaoImpl(
 				// 아직 매칭이 없으므로 팀 매칭 id/상태/관심 여부는 비어 있다.
 				teamMatchId = null,
 				teamMatchStatus = null,
+				teamMatchExpiresAt = null,
 				hasUserInterest = false,
 				hasPartnerInterest = false,
 			)
