@@ -24,4 +24,10 @@ data class Teams(
 	/** [teamId] 팀의 상대 팀 id. (2:2 매칭이라 상대는 정확히 한 팀) */
 	fun opponentTeamId(teamId: Long): Long =
 		values.first { team: Team -> team.id != teamId }.id
+
+	/** 성사된 두 팀의 ACTIVE 구성원마다 (그 구성원 → 상대 팀 id) 이력을 만든다. (재매칭 제외 기록용) */
+	fun matchHistories(): List<RecommendedTeamHistory> =
+		values.flatMap { team: Team ->
+			team.activeMemberIds().map { userId: Long -> RecommendedTeamHistory(userId = userId, teamId = opponentTeamId(team.id)) }
+		}
 }
