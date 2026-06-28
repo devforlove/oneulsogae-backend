@@ -1,5 +1,6 @@
 package com.org.meeple.core.user.command.application
 
+import com.org.meeple.common.coin.CoinPolicy
 import com.org.meeple.core.common.error.BusinessException
 import com.org.meeple.core.common.event.DomainEventPublisher
 import com.org.meeple.core.user.UserErrorCode
@@ -64,12 +65,14 @@ class VerifyCompanyEmailService(
 		// 가입 상태가 바뀌었음을 알린다. (UserEventHandler가 매칭 읽기 모델 동기화로 이어간다 — BEFORE_COMMIT, 같은 트랜잭션)
 		domainEventPublisher.publish(UserProfileChanged(verification.userId))
 
-		// 온보딩이 막 완료됐다면 첫 매칭을 자동 소개한다. (UserEventHandler가 AFTER_COMMIT — match_user 동기화·커밋 이후 소개)
+		// 온보딩이 막 완료됐다면 첫 매칭을 자동 소개한다. (UserEventHandler가 AFTER_COMMIT — match_user 동기화·커밋 이후 소개·코인 지급)
 		if (justOnboarded) {
 			domainEventPublisher.publish(CompanyEmailVerified(verification.userId))
 		}
 
-		return VerifyCompanyEmailResult(companyName)
+		// 막 온보딩됐다면 프론트가 가입 축하 팝업을 띄울 수 있도록 지급 코인 수량을 신호로 함께 내려준다.
+		val rewardCoin: Int = if (justOnboarded) CoinPolicy.SIGNUP_REWARD_COIN_AMOUNT else 0
+		return VerifyCompanyEmailResult(companyName, justOnboarded, rewardCoin)
 	}
 
 	// 검증을 마친 회사 이메일과 (조회한) 회사명을 프로필에 확정 반영한다. (회사명을 못 찾았으면 null)
