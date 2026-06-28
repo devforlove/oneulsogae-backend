@@ -1,5 +1,9 @@
 package com.org.meeple.core.user.command.application
 
+import com.org.meeple.common.coin.CoinGetType
+import com.org.meeple.common.coin.CoinPolicy
+import com.org.meeple.core.coin.command.application.port.`in`.AcquireCoinUseCase
+import com.org.meeple.core.coin.command.application.port.`in`.command.AcquireCoinCommand
 import com.org.meeple.core.common.event.MatchProfileSnapshot
 import com.org.meeple.core.common.event.UserLoggedIn
 import com.org.meeple.core.match.command.application.port.`in`.RecommendMatchUseCase
@@ -33,6 +37,7 @@ class UserEventHandler(
 	private val syncMatchUserUseCase: SyncMatchUserUseCase,
 	private val recommendMatchUseCase: RecommendMatchUseCase,
 	private val recommendTeamUseCase: RecommendTeamUseCase,
+	private val acquireCoinUseCase: AcquireCoinUseCase,
 ) {
 
 	/** 프로필/가입 상태 변경 → 매칭 가능 스냅샷을 만들어 match 읽기 모델 동기화에 위임한다. */
@@ -48,13 +53,18 @@ class UserEventHandler(
 	}
 
 	/**
-	 * 회사 이메일 인증으로 온보딩이 막 완료됨 → 첫 1:1 매칭 소개와 첫 팀 추천 적재를 함께 처리한다. (CQS: 조회 경로가 아니라 인증 완료 시점에 처리)
+	 * 회사 이메일 인증으로 온보딩이 막 완료됨 → 가입 축하 코인을 지급하고, 첫 1:1 매칭 소개와 첫 팀 추천 적재를 함께 처리한다. (CQS: 조회 경로가 아니라 인증 완료 시점에 처리)
 	 * 매칭 읽기 모델(match_user)이 같은 트랜잭션의 BEFORE_COMMIT 동기화로 적재·커밋된 뒤라야 후보를 고를 수 있으므로
-	 * 커밋 이후(AFTER_COMMIT)에 새 트랜잭션(REQUIRES_NEW)으로 처리한다. (소개·적재 실패가 인증을 롤백시키지 않음 — best-effort)
+	 * 커밋 이후(AFTER_COMMIT)에 새 트랜잭션(REQUIRES_NEW)으로 처리한다. (지급·소개·적재 실패가 인증을 롤백시키지 않음 — best-effort)
+	 * 중복 지급은 이 리스너가 사용자당 1회(justOnboarded)만 발행되는 것에 의존한다.
 	 */
 	@TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
 	@Transactional(propagation = Propagation.REQUIRES_NEW)
 	fun onCompanyEmailVerified(event: CompanyEmailVerified) {
+		acquireCoinUseCase.acquire(
+			event.userId,
+			AcquireCoinCommand(CoinPolicy.SIGNUP_REWARD_COIN_AMOUNT, CoinGetType.SIGNUP),
+		)
 		recommendMatchUseCase.recommend(event.userId)
 		recommendTeamUseCase.recommend(event.userId)
 	}

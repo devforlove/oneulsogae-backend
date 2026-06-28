@@ -4,6 +4,7 @@ import com.org.meeple.common.integration.AbstractIntegrationSupport
 import com.org.meeple.common.integration.expect
 import com.org.meeple.common.integration.post
 import com.org.meeple.common.user.UserStatus
+import com.org.meeple.infra.fixture.CoinBalanceEntityFixture
 import com.org.meeple.infra.fixture.IntegrationUtil
 import com.org.meeple.infra.fixture.UserDetailEntityFixture
 import com.org.meeple.infra.fixture.UserEntityFixture
@@ -25,6 +26,7 @@ class ResolveCompanyNameE2ETest : AbstractIntegrationSupport({
 					UserEntityFixture.create(status = UserStatus.COMPANY_NOT_RESOLVED),
 				).id!!
 				IntegrationUtil.persist(UserDetailEntityFixture.create(userId = userId))
+				IntegrationUtil.persist(CoinBalanceEntityFixture.create(userId = userId, balance = 100))
 
 				post("/users/v1/onboarding/company-name") {
 					bearer(accessTokenFor(userId))
@@ -36,6 +38,7 @@ class ResolveCompanyNameE2ETest : AbstractIntegrationSupport({
 
 				userStatusOf(userId) shouldBe UserStatus.ACTIVE
 				userDetailOf(userId).companyName shouldBe "미플"
+				coinBalanceOf(userId) shouldBe 100
 			}
 		}
 

@@ -51,6 +51,7 @@ class ConfirmCompanyEmailVerificationE2ETest : AbstractIntegrationSupport({
 
 				userStatusOf(userId) shouldBe UserStatus.ACTIVE
 				userDetailOf(userId).companyName shouldBe "미플"
+				coinBalanceOf(userId) shouldBe 100
 			}
 		}
 
@@ -81,6 +82,7 @@ class ConfirmCompanyEmailVerificationE2ETest : AbstractIntegrationSupport({
 				}
 
 				userStatusOf(userId) shouldBe UserStatus.COMPANY_NOT_RESOLVED
+				coinBalanceOf(userId) shouldBe 100
 			}
 		}
 
