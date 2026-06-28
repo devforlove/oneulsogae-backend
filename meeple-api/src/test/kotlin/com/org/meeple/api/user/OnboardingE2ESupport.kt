@@ -2,6 +2,7 @@ package com.org.meeple.api.user
 
 import com.org.meeple.common.user.UserStatus
 import com.org.meeple.infra.coin.command.entity.QCoinBalanceEntity
+import com.org.meeple.infra.coin.command.entity.QCoinHistoryEntity
 import com.org.meeple.infra.fixture.IntegrationUtil
 import com.org.meeple.infra.match.command.entity.QMatchUserEntity
 import com.org.meeple.infra.region.entity.QRegionEntity
@@ -23,6 +24,7 @@ internal fun cleanupOnboarding() {
 	IntegrationUtil.deleteAll(QCompanyEmailVerificationEntity.companyEmailVerificationEntity)
 	IntegrationUtil.deleteAll(QUserCompanyEntity.userCompanyEntity)
 	IntegrationUtil.deleteAll(QCoinBalanceEntity.coinBalanceEntity)
+	IntegrationUtil.deleteAll(QCoinHistoryEntity.coinHistoryEntity)
 	// 정식 가입(ACTIVE) 전이 시 매칭 읽기 모델에 적재되므로 함께 정리한다.
 	IntegrationUtil.deleteAll(QMatchUserEntity.matchUserEntity)
 	IntegrationUtil.deleteAll(QUserDetailEntity.userDetailEntity)
@@ -30,6 +32,14 @@ internal fun cleanupOnboarding() {
 	// 온보딩 입력의 활동지역은 regionId로 받으므로 지역 참조 데이터도 함께 정리한다.
 	IntegrationUtil.deleteAll(QRegionEntity.regionEntity)
 }
+
+/** 해당 사용자의 코인 잔액 값. 잔액 행이 없으면 0. (가입 축하 지급 검증용) */
+internal fun coinBalanceOf(userId: Long): Int =
+	IntegrationUtil.getQuery()
+		.select(QCoinBalanceEntity.coinBalanceEntity.balance)
+		.from(QCoinBalanceEntity.coinBalanceEntity)
+		.where(QCoinBalanceEntity.coinBalanceEntity.userId.eq(userId))
+		.fetchOne() ?: 0
 
 /** 해당 사용자의 코인 잔액 행 개수. (온보딩 시 잔액 행이 준비되는지 확인용) */
 internal fun coinBalanceCountOf(userId: Long): Int =

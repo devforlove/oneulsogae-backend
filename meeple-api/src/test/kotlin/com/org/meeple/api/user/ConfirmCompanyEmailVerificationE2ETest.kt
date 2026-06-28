@@ -45,10 +45,13 @@ class ConfirmCompanyEmailVerificationE2ETest : AbstractIntegrationSupport({
 					body("success", true)
 					body("data.isCompanyResolved", true)
 					body("data.companyName", "미플")
+					body("data.justOnboarded", true)
+					body("data.rewardCoin", 100)
 				}
 
 				userStatusOf(userId) shouldBe UserStatus.ACTIVE
 				userDetailOf(userId).companyName shouldBe "미플"
+				coinBalanceOf(userId) shouldBe 100
 			}
 		}
 
@@ -74,9 +77,12 @@ class ConfirmCompanyEmailVerificationE2ETest : AbstractIntegrationSupport({
 					body("success", true)
 					body("data.isCompanyResolved", false)
 					body("data.companyName", nullValue())
+					body("data.justOnboarded", true)
+					body("data.rewardCoin", 100)
 				}
 
 				userStatusOf(userId) shouldBe UserStatus.COMPANY_NOT_RESOLVED
+				coinBalanceOf(userId) shouldBe 100
 			}
 		}
 
