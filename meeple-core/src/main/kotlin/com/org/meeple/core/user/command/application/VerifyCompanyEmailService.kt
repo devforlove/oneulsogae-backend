@@ -1,12 +1,16 @@
 package com.org.meeple.core.user.command.application
 
+import com.org.meeple.common.coin.CoinGetType
 import com.org.meeple.common.coin.CoinPolicy
+import com.org.meeple.core.coin.command.application.port.`in`.AcquireCoinUseCase
+import com.org.meeple.core.coin.command.application.port.`in`.command.AcquireCoinCommand
 import com.org.meeple.core.common.error.BusinessException
-import com.org.meeple.core.common.event.DomainEventPublisher
+import com.org.meeple.core.common.event.MatchProfileSnapshot
+import com.org.meeple.core.match.command.application.port.`in`.RecommendMatchUseCase
+import com.org.meeple.core.match.command.application.port.`in`.RecommendTeamUseCase
+import com.org.meeple.core.match.command.application.port.`in`.SyncMatchUserUseCase
 import com.org.meeple.core.user.UserErrorCode
 import com.org.meeple.core.common.time.TimeGenerator
-import com.org.meeple.core.user.command.domain.event.CompanyEmailVerified
-import com.org.meeple.core.user.command.domain.event.UserProfileChanged
 import com.org.meeple.core.user.query.service.port.`in`.GetUserCompanyUseCase
 import com.org.meeple.core.user.command.application.port.`in`.VerifyCompanyEmailUseCase
 import com.org.meeple.core.user.command.application.port.`in`.result.VerifyCompanyEmailResult
@@ -40,7 +44,10 @@ class VerifyCompanyEmailService(
 	private val getUserPort: GetUserPort,
 	private val saveUserPort: SaveUserPort,
 	private val timeGenerator: TimeGenerator,
-	private val domainEventPublisher: DomainEventPublisher,
+	private val syncMatchUserUseCase: SyncMatchUserUseCase,
+	private val acquireCoinUseCase: AcquireCoinUseCase,
+	private val recommendMatchUseCase: RecommendMatchUseCase,
+	private val recommendTeamUseCase: RecommendTeamUseCase,
 ) : VerifyCompanyEmailUseCase {
 
 	@Transactional
@@ -62,12 +69,17 @@ class VerifyCompanyEmailService(
 		// 회사명 조회 결과에 따라 사용자 가입 상태(ACTIVE / COMPANY_NOT_RESOLVED)를 확정한다. (이번 호출로 온보딩이 막 완료됐는지 반환)
 		val justOnboarded: Boolean = finalizeStatus(verification.userId, companyName)
 
-		// 가입 상태가 바뀌었음을 알린다. (UserEventHandler가 매칭 읽기 모델 동기화로 이어간다 — BEFORE_COMMIT, 같은 트랜잭션)
-		domainEventPublisher.publish(UserProfileChanged(verification.userId))
+		// 변경된 프로필/가입 상태로 매칭 읽기 모델(match_user)을 동기로 적재한다. (아래 추천이 이 모델을 읽으므로 추천보다 먼저 끝나 있어야 한다)
+		syncMatchUser(verification.userId)
 
-		// 온보딩이 막 완료됐다면 첫 매칭을 자동 소개한다. (UserEventHandler가 AFTER_COMMIT — match_user 동기화·커밋 이후 소개·코인 지급)
+		// 온보딩이 막 완료됐다면 가입 축하 코인 지급·첫 1:1 매칭 소개·첫 팀 추천 적재를 같은 트랜잭션에서 동기로 처리한다.
 		if (justOnboarded) {
-			domainEventPublisher.publish(CompanyEmailVerified(verification.userId))
+			acquireCoinUseCase.acquire(
+				verification.userId,
+				AcquireCoinCommand(CoinPolicy.SIGNUP_REWARD_COIN_AMOUNT, CoinGetType.SIGNUP),
+			)
+			recommendMatchUseCase.recommend(verification.userId)
+			recommendTeamUseCase.recommend(verification.userId)
 		}
 
 		// 막 온보딩됐다면 프론트가 가입 축하 팝업을 띄울 수 있도록 지급 코인 수량을 신호로 함께 내려준다.
@@ -92,5 +104,15 @@ class VerifyCompanyEmailService(
 		val updated: User = if (companyName != null) user.completeSignUp() else user.markCompanyNotResolved()
 		saveUserPort.save(updated)
 		return true
+	}
+
+	/** 변경된 프로필/가입 상태로 매칭 가능 스냅샷을 만들어 match 읽기 모델(match_user)을 동기화한다. (매칭 불가 상태면 스냅샷이 null이라 읽기 모델에서 제거된다) */
+	private fun syncMatchUser(userId: Long) {
+		val user: User = getUserPort.findById(userId)
+			?: throw BusinessException(UserErrorCode.USER_NOT_FOUND, "사용자를 찾을 수 없습니다: $userId")
+		val detail: UserDetail = getUserDetailPort.findByUserId(userId)
+			?: throw BusinessException(UserErrorCode.USER_DETAIL_NOT_FOUND, "사용자 프로필을 찾을 수 없습니다: $userId")
+		val snapshot: MatchProfileSnapshot? = detail.matchProfileSnapshotOrNull(user.status, user.lastLoginAt)
+		syncMatchUserUseCase.sync(userId, snapshot)
 	}
 }
