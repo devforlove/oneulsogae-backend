@@ -19,4 +19,10 @@ enum class UserStatus {
 
 	/** 정식 가입을 마친 상태인지 여부. */
 	fun isRegistered(): Boolean = this == ACTIVE
+
+	/**
+	 * 매칭(1:1 소개·팀 추천) 대상이 되는 상태인지 여부.
+	 * 회사 이메일 인증을 마친 사용자(ACTIVE·COMPANY_NOT_RESOLVED)는 회사명 확정 여부와 무관하게 매칭에 참여한다.
+	 */
+	fun isMatchable(): Boolean = this == ACTIVE || this == COMPANY_NOT_RESOLVED
 }

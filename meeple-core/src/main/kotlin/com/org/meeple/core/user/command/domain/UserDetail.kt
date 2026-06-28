@@ -175,11 +175,11 @@ data class UserDetail(
 
 	/**
 	 * 매칭에 필요한 기준 필드가 모두 채워졌으면 [MatchProfileSnapshot]을, 하나라도 비어 있으면 null을 반환한다.
-	 * 정식 가입([status].isRegistered)이 아니거나 [lastLoginAt]이 없으면 매칭 불가로 보고 null을 반환한다.
+	 * 매칭 대상 상태([status].isMatchable)가 아니거나 [lastLoginAt]이 없으면 매칭 불가로 보고 null을 반환한다.
 	 * 매칭 가능 여부 판단(완성도 규칙)을 한곳에 캡슐화해, user 도메인이 match 읽기 모델 동기화용 스냅샷을 만들 때 쓴다.
 	 */
 	fun matchProfileSnapshotOrNull(status: UserStatus, lastLoginAt: LocalDateTime?): MatchProfileSnapshot? {
-		if (!status.isRegistered()) return null
+		if (!status.isMatchable()) return null
 		return MatchProfileSnapshot(
 			gender = gender ?: return null,
 			birthday = birthday ?: return null,

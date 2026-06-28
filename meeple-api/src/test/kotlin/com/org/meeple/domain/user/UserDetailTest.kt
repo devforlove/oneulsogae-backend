@@ -15,6 +15,7 @@ import com.org.meeple.core.user.command.domain.UserDetail
 import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.core.spec.style.DescribeSpec
 import io.kotest.matchers.nulls.shouldBeNull
+import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
 import java.time.LocalDate
 import java.time.LocalDateTime
@@ -346,7 +347,18 @@ class UserDetailTest : DescribeSpec({
 			)
 		}
 
-		it("정식 가입이 아니면(미완성 단계) null을 반환한다") {
+		it("회사명 미확정(COMPANY_NOT_RESOLVED)이어도 회사 이메일 인증을 마쳤으므로 매칭 스냅샷을 만든다") {
+			val complete: UserDetail = UserDetailFixture.create(
+				userId = 7L,
+				gender = Gender.FEMALE,
+				birthday = LocalDate.of(1999, 3, 15),
+				regionId = 1L,
+			)
+
+			complete.matchProfileSnapshotOrNull(UserStatus.COMPANY_NOT_RESOLVED, loginAt).shouldNotBeNull()
+		}
+
+		it("아직 회사 이메일 인증 전(미완성 단계)이면 null을 반환한다") {
 			val complete: UserDetail = UserDetailFixture.create()
 
 			complete.matchProfileSnapshotOrNull(UserStatus.EMAIL_VERIFICATION_PENDING, loginAt).shouldBeNull()
