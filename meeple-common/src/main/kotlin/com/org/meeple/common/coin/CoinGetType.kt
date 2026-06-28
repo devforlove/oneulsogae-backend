@@ -14,4 +14,7 @@ enum class CoinGetType(val description: String) {
 
 	/** 소개팅 매칭 실패 등으로 사용한 코인의 일부를 되돌려준(환불) 코인. */
 	REFUND("환불"),
+
+	/** 신규 가입(온보딩 완료) 축하로 1회 지급하는 코인. */
+	SIGNUP("가입 축하"),
 }
