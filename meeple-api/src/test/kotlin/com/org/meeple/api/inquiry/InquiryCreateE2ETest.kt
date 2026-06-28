@@ -19,20 +19,23 @@ class InquiryCreateE2ETest : AbstractIntegrationSupport({
 			it("PENDING 상태로 저장되고 inquiryId를 반환한다 (200)") {
 				val userId = 1001L
 
-				post("/inquiries/v1") {
+				val response = post("/inquiries/v1") {
 					bearer(accessTokenFor(userId))
 					jsonBody("""{"category": "ACCOUNT", "email": "user@test.com", "message": "로그인이 안 됩니다. 도와주세요."}""")
-				} expect {
+				}
+				response expect {
 					status(200)
 					body("success", true)
 					body("data.inquiryId", notNullValue())
 				}
+				val inquiryId: Long = response.extract().path<Int>("data.inquiryId").toLong()
 
 				val inquiry: QInquiryEntity = QInquiryEntity.inquiryEntity
 				val saved: InquiryEntity = IntegrationUtil.getQuery()
 					.selectFrom(inquiry)
 					.where(inquiry.userId.eq(userId))
 					.fetchOne()!!
+				saved.id shouldBe inquiryId
 				saved.status shouldBe InquiryStatus.PENDING
 				saved.category shouldBe InquiryCategory.ACCOUNT
 				saved.email shouldBe "user@test.com"
