@@ -104,6 +104,10 @@ class MatchUserAdapter(
 		matchUserJpaRepository.updateLastLoginAt(userId, lastLoginAt)
 	}
 
+	override fun updateUniversityName(userId: Long, universityName: String?) {
+		matchUserJpaRepository.updateUniversityName(userId, universityName)
+	}
+
 	override fun findByUserId(userId: Long): MatchUser? =
 		matchUserJpaRepository.findByUserId(userId)?.toDomain()
 

@@ -38,6 +38,10 @@ data class UserDetail(
 	val interests: List<String> = emptyList(),
 	val companyEmail: String? = null,
 	val companyName: String? = null,
+	/** 학교 이메일. 선택적 학교 인증을 완료한 사용자만 채워진다. */
+	val universityEmail: String? = null,
+	/** 학교명. 학교 이메일 인증 완료 시 도메인 매핑으로 채워진다(매핑이 없으면 null). */
+	val universityName: String? = null,
 	val maritalStatus: MaritalStatus? = null,
 	val smokingStatus: SmokingStatus? = null,
 	val religion: Religion? = null,

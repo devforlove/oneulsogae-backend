@@ -62,4 +62,8 @@ class MatchUserEntity(
 
 	@Column(name = "last_login_at", nullable = false)
 	var lastLoginAt: LocalDateTime,
+
+	/** 학교명. 학교 이메일 인증을 완료한 사용자에 한해 채워진다(선택적 추가 인증이라 nullable). 매칭 표시·뱃지용. */
+	@Column(name = "university_name", length = 100)
+	var universityName: String? = null,
 ) : BaseEntity()

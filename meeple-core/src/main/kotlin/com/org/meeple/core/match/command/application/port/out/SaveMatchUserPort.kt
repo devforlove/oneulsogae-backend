@@ -14,4 +14,7 @@ interface SaveMatchUserPort {
 
 	/** 이미 적재된 사용자의 마지막 로그인 시각만 갱신한다. 행이 없으면 아무 일도 하지 않는다. */
 	fun updateLastLoginAt(userId: Long, lastLoginAt: LocalDateTime)
+
+	/** 이미 적재된 사용자의 학교명만 갱신한다. 행이 없으면 아무 일도 하지 않는다. (학교 인증 완료 시 기록) */
+	fun updateUniversityName(userId: Long, universityName: String?)
 }

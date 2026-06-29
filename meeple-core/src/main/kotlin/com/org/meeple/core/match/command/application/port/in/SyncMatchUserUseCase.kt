@@ -14,4 +14,7 @@ interface SyncMatchUserUseCase {
 
 	/** 이미 적재된 사용자의 마지막 로그인 시각만 갱신한다. (미적재 사용자는 갱신 대상이 없어 무시) */
 	fun updateLastLogin(userId: Long, lastLoginAt: LocalDateTime)
+
+	/** 이미 적재된 사용자의 학교명만 갱신한다. (미적재 사용자는 갱신 대상이 없어 무시 — 학교 인증은 가입 상태와 무관) */
+	fun updateUniversity(userId: Long, universityName: String?)
 }

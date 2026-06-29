@@ -89,6 +89,14 @@ class UserDetailEntity(
 	@Column(name = "company_name", length = 100)
 	var companyName: String? = null,
 
+	/** 학교 이메일. 선택적 학교 인증 완료 시 채워진다. */
+	@Column(name = "university_email")
+	var universityEmail: String? = null,
+
+	/** 학교명. 학교 이메일 인증 완료 시 도메인 매핑으로 채워진다. */
+	@Column(name = "university_name", length = 100)
+	var universityName: String? = null,
+
 	@Enumerated(EnumType.STRING)
 	@Column(name = "marital_status", columnDefinition = "varchar(50)")
 	var maritalStatus: MaritalStatus? = null,
