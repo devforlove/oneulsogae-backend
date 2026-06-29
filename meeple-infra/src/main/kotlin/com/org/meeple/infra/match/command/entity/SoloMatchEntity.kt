@@ -32,6 +32,8 @@ import java.time.LocalDateTime
 		Index(name = "idx_introduced_date", columnList = "introduced_date"),
 		// 성사(status = MATCHED) 유저 제외 seek용
 		Index(name = "idx_status", columnList = "status"),
+		// 만료 정리 배치: status 등치 + expires_at 범위 조회를 받친다.
+		Index(name = "idx_status_expires_at", columnList = "status, expires_at"),
 	],
 )
 class SoloMatchEntity(

@@ -34,6 +34,8 @@ import java.time.LocalDateTime
 		Index(name = "idx_status", columnList = "status"),
 		// 오늘 소개된(introduced_date = today) 팀 제외 seek용. (일일 팀 매칭 배치)
 		Index(name = "idx_introduced_date", columnList = "introduced_date"),
+		// 만료 정리 배치: status 등치 + expires_at 범위 조회를 받친다.
+		Index(name = "idx_status_expires_at", columnList = "status, expires_at"),
 	],
 )
 class TeamMatchEntity(
