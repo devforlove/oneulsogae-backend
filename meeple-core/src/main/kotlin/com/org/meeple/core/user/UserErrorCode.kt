@@ -33,5 +33,5 @@ enum class UserErrorCode(
 	PERSONAL_EMAIL_NOT_ALLOWED("USER-008", "개인 이메일로는 직장 인증을 할 수 없습니다. 회사 이메일을 입력해 주세요.", HttpStatus.BAD_REQUEST),
 
 	// 학교 이메일 인증(대학 인증)
-	UNIVERSITY_NOT_FOUND("USER-016", "등록되지 않은 학교 이메일입니다. 지원하는 학교 이메일을 입력해 주세요.", HttpStatus.BAD_REQUEST),
+	UNIVERSITY_NOT_FOUND("USER-016", "확인되지 않는 학교 이메일입니다. 본인 학교의 이메일을 입력해 주세요.", HttpStatus.BAD_REQUEST),
 }
