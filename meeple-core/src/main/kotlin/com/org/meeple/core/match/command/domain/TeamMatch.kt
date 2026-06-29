@@ -40,6 +40,10 @@ data class TeamMatch(
 	fun close(): TeamMatch =
 		copy(status = MatchStatus.CLOSED, matchedTeams = matchedTeams.deactivateAll())
 
+	/** 더 이상 응답을 받지 않는 종료(성사 MATCHED 포함) 상태인지 여부. */
+	val isClosed: Boolean
+		get() = status.isClosed()
+
 	/** 성사(MATCHED)된 매칭인지 여부. */
 	fun isMatched(): Boolean =
 		status == MatchStatus.MATCHED

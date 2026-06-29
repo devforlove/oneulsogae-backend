@@ -37,6 +37,23 @@ class RunExpireMatchBatchIntegrationTest(
 ) : AbstractIntegrationSupport({
 
 	describe("run") {
+		it("만료 배치를 두 번 실행해도 환불은 한 번만 이뤄진다 (멱등성)") {
+			val past: LocalDateTime = LocalDateTime.now().minusHours(1)
+			val applicantId = 1501L
+			val expiredSolo: SoloMatchEntity = IntegrationUtil.persist(
+				SoloMatchEntityFixture.create(memberKey = "1501-2501", status = MatchStatus.PARTIALLY_ACCEPTED, expiresAt = past),
+			)
+			IntegrationUtil.persist(SoloMatchMemberEntityFixture.create(matchId = expiredSolo.id!!, userId = applicantId, gender = Gender.MALE, status = MatchMemberStatus.APPLY))
+			IntegrationUtil.persist(SoloMatchMemberEntityFixture.create(matchId = expiredSolo.id!!, userId = 2501L, gender = Gender.FEMALE, status = MatchMemberStatus.WAITING))
+			IntegrationUtil.persist(CoinBalanceEntityFixture.create(userId = applicantId, balance = 100))
+
+			runExpireMatchBatchUseCase.run()
+			runExpireMatchBatchUseCase.run()
+
+			coinBalanceOf(applicantId) shouldBe 116
+			popupCountOf(applicantId, PopupType.MATCH_FAILED_REFUND) shouldBe 1
+		}
+
 		it("만료된 PARTIALLY_ACCEPTED 솔로·팀은 정리·환불하고, 성사(MATCHED)·미만료는 그대로 둔다") {
 			val past: LocalDateTime = LocalDateTime.now().minusHours(1)
 			val future: LocalDateTime = LocalDateTime.now().plusHours(1)
@@ -125,4 +142,9 @@ private fun coinBalanceOf(userId: Long): Int {
 private fun popupExists(userId: Long, type: PopupType): Boolean {
 	val q = QPopupEntity.popupEntity
 	return IntegrationUtil.getQuery().selectFrom(q).where(q.userId.eq(userId).and(q.popUpType.eq(type))).fetchFirst() != null
+}
+
+private fun popupCountOf(userId: Long, type: PopupType): Int {
+	val q = QPopupEntity.popupEntity
+	return IntegrationUtil.getQuery().selectFrom(q).where(q.userId.eq(userId).and(q.popUpType.eq(type))).fetch().size
 }

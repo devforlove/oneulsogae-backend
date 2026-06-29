@@ -23,6 +23,7 @@ import com.org.meeple.infra.match.command.entity.SoloMatchEntity
 import com.org.meeple.infra.match.command.entity.TeamMatchEntity
 import com.org.meeple.infra.popup.command.entity.QPopupEntity
 import io.kotest.matchers.nulls.shouldBeNull
+import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
 import java.time.LocalDate
 import java.time.LocalDateTime
@@ -52,6 +53,25 @@ class ExpireMatchServiceIntegrationTest(
 				soloMatchById(header.id!!).shouldBeNull()
 				coinBalanceOf(applicantId) shouldBe 116
 				popupExists(applicantId, PopupType.MATCH_FAILED_REFUND) shouldBe true
+			}
+		}
+
+		context("이미 성사(MATCHED)된 솔로 매칭은") {
+			it("soft-delete·환불·팝업 없이 그대로 둔다") {
+				val applicantId = 1201L
+				val partnerId = 2201L
+				val header: SoloMatchEntity = IntegrationUtil.persist(
+					SoloMatchEntityFixture.create(memberKey = "1201-2201", status = MatchStatus.MATCHED),
+				)
+				IntegrationUtil.persist(SoloMatchMemberEntityFixture.create(matchId = header.id!!, userId = applicantId, gender = Gender.MALE, status = MatchMemberStatus.ACTIVE))
+				IntegrationUtil.persist(SoloMatchMemberEntityFixture.create(matchId = header.id!!, userId = partnerId, gender = Gender.FEMALE, status = MatchMemberStatus.ACTIVE))
+				IntegrationUtil.persist(CoinBalanceEntityFixture.create(userId = applicantId, balance = 100))
+
+				expireMatchUseCase.expireSoloMatch(header.id!!)
+
+				soloMatchById(header.id!!).shouldNotBeNull()
+				coinBalanceOf(applicantId) shouldBe 100
+				popupExists(applicantId, PopupType.MATCH_FAILED_REFUND) shouldBe false
 			}
 		}
 
@@ -101,6 +121,34 @@ class ExpireMatchServiceIntegrationTest(
 				teamMatchById(header.id!!).shouldBeNull()
 				coinBalanceOf(applicantId) shouldBe 120
 				popupExists(applicantId, PopupType.MEETING_FAILED_REFUND) shouldBe true
+			}
+		}
+
+		context("이미 성사(MATCHED)된 팀 매칭은") {
+			it("soft-delete·환불·팝업 없이 그대로 둔다") {
+				val applicantId = 3201L
+				val teamAId = 30L
+				val teamBId = 40L
+				val header: TeamMatchEntity = IntegrationUtil.persist(
+					TeamMatchEntity(
+						memberKey = MatchedTeams.of(listOf(teamAId, teamBId)).memberKey(),
+						introducedDate = LocalDate.now(),
+						expiresAt = LocalDateTime.now().plusYears(100),
+						status = MatchStatus.MATCHED,
+						matchType = TeamMatchType.DAILY,
+						dateInitAmount = 40,
+						dateAcceptAmount = 40,
+					),
+				)
+				IntegrationUtil.persist(MatchedTeamEntity(teamMatchId = header.id!!, teamId = teamAId, status = MatchedTeamStatus.ACTIVE, applicantUserId = applicantId))
+				IntegrationUtil.persist(MatchedTeamEntity(teamMatchId = header.id!!, teamId = teamBId, status = MatchedTeamStatus.ACTIVE))
+				IntegrationUtil.persist(CoinBalanceEntityFixture.create(userId = applicantId, balance = 100))
+
+				expireMatchUseCase.expireTeamMatch(header.id!!)
+
+				teamMatchById(header.id!!).shouldNotBeNull()
+				coinBalanceOf(applicantId) shouldBe 100
+				popupExists(applicantId, PopupType.MEETING_FAILED_REFUND) shouldBe false
 			}
 		}
 	}

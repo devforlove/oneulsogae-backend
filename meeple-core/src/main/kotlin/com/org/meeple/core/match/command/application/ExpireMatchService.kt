@@ -36,6 +36,8 @@ class ExpireMatchService(
 	@Transactional
 	override fun expireSoloMatch(matchId: Long) {
 		val match: Match = getMatchPort.findById(matchId) ?: return
+		// 만료 id 조회 후 사용자 신청으로 성사(MATCHED)된 매칭을 환불·삭제하지 않도록 재검증
+		if (match.isClosed) return
 		val now: LocalDateTime = timeGenerator.now()
 		val refunds: List<MatchRefund> = match.failureRefunds()
 		saveMatchPort.save(match.delete(now))
@@ -48,6 +50,8 @@ class ExpireMatchService(
 	@Transactional
 	override fun expireTeamMatch(teamMatchId: Long) {
 		val teamMatch: TeamMatch = getTeamMatchPort.findById(teamMatchId) ?: return
+		// 만료 id 조회 후 사용자 신청으로 성사(MATCHED)된 매칭을 환불·삭제하지 않도록 재검증
+		if (teamMatch.isClosed) return
 		val now: LocalDateTime = timeGenerator.now()
 		val refunds: List<MatchRefund> = teamMatch.failureRefunds()
 		saveTeamMatchPort.save(teamMatch.delete(now))
