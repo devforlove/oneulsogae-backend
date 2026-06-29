@@ -73,6 +73,9 @@ meeple:
     team-match-batch:
       # 결성(ACTIVE) 팀끼리 가까운 권역으로 2:2 소개. 매일 13:00 (Asia/Seoul). 운영에서 MEEPLE_TEAM_MATCH_BATCH_CRON 환경변수로 덮어쓸 수 있다.
       cron: ${MEEPLE_TEAM_MATCH_BATCH_CRON:0 0 13 * * *}
+    expire-batch:
+      # 매시간 정각 (Asia/Seoul). 만료 후 최대 ~1시간 내 정리·환불. MEEPLE_EXPIRE_BATCH_CRON으로 조정
+      cron: ${MEEPLE_EXPIRE_BATCH_CRON:0 0 * * * *}
 
 logging:
   level:
@@ -112,3 +115,5 @@ meeple:
     team-match-batch:
       # 로컬에서는 팀 매칭 배치도 1분마다 돌려 동작을 빠르게 확인한다. (운영 기본값은 매일 13:00)
       cron: ${MEEPLE_TEAM_MATCH_BATCH_CRON:0 * * * * *}
+    expire-batch:
+      cron: ${MEEPLE_EXPIRE_BATCH_CRON:0 * * * * *}
