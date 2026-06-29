@@ -43,9 +43,9 @@ data class MatchedTeams(
 	fun apply(teamId: Long, applicantUserId: Long): MatchedTeams =
 		MatchedTeams(values.map { matchedTeam: MatchedTeam -> if (matchedTeam.teamId == teamId) matchedTeam.apply(applicantUserId) else matchedTeam })
 
-	/** 신청(APPLY/ACTIVE)한 팀들. (미성사 만료 환불 대상 산정에 쓴다) */
-	fun applied(): List<MatchedTeam> =
-		values.filter { matchedTeam: MatchedTeam -> matchedTeam.hasApplied }
+	/** 환불 대상(신청했으나 미성사) 팀들. (성사로 ACTIVE가 된 팀은 제외한다) */
+	fun refundableTeams(): List<MatchedTeam> =
+		values.filter { matchedTeam: MatchedTeam -> matchedTeam.isRefundable }
 
 	/** [teamId] 팀만 비활성(DEACTIVE) 전이한 새 컬렉션을 반환한다. (나머지는 그대로, 소프트 삭제는 안 함) */
 	fun deactivate(teamId: Long): MatchedTeams =

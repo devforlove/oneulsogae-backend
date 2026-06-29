@@ -229,5 +229,11 @@ class TeamMatchTest : DescribeSpec({
 
 			proposed.failureRefunds() shouldBe emptyList()
 		}
+
+		it("성사(MATCHED)되어 전원 ACTIVE면 환불 대상이 없다") {
+			val matched: TeamMatch = TeamMatch.propose(10L, 20L, TeamMatchType.RECOMMENDED, now).respond(10L, 100L).respond(20L, 200L)
+
+			matched.failureRefunds() shouldBe emptyList()
+		}
 	}
 })

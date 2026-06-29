@@ -40,4 +40,8 @@ data class MatchedTeam(
 	/** 이 팀이 신청(또는 성사로 활성)했는지 여부. (APPLY/ACTIVE) */
 	val hasApplied: Boolean
 		get() = status == MatchedTeamStatus.APPLY || status == MatchedTeamStatus.ACTIVE
+
+	/** 이 팀이 환불 대상인지 여부. (신청(APPLY)했으나 아직 성사되지 않은 상태 — 성사로 ACTIVE가 된 팀은 환불 대상이 아니다) */
+	val isRefundable: Boolean
+		get() = status == MatchedTeamStatus.APPLY
 }

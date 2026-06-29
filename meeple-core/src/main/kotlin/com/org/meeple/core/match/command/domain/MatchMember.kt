@@ -24,6 +24,10 @@ data class MatchMember(
 	val hasApplied: Boolean
 		get() = status == MatchMemberStatus.APPLY || status == MatchMemberStatus.ACTIVE
 
+	/** 이 참가자가 환불 대상인지 여부. (신청(APPLY)했으나 아직 성사되지 않은 상태 — 성사로 ACTIVE가 된 참가자는 환불 대상이 아니다) */
+	val isRefundable: Boolean
+		get() = status == MatchMemberStatus.APPLY
+
 	/** 이 참가자가 비활성(DEACTIVE) 상태인지 여부. (매칭을 나간 참가자) */
 	val isDeactivated: Boolean
 		get() = status == MatchMemberStatus.DEACTIVE

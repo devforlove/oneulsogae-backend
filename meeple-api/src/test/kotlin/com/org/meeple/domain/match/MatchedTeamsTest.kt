@@ -38,14 +38,20 @@ class MatchedTeamsTest : DescribeSpec({
 		}
 	}
 
-	describe("applied - 신청한 팀") {
-		it("APPLY/ACTIVE인 팀만 돌려준다") {
+	describe("refundableTeams - 환불 대상 팀") {
+		it("APPLY인 팀만 돌려주고 신청자(applicantUserId)를 보존한다") {
 			val matchedTeams: MatchedTeams = MatchedTeams.of(listOf(10L, 20L)).apply(10L, 100L)
 
-			val applied: List<com.org.meeple.core.match.command.domain.MatchedTeam> = matchedTeams.applied()
+			val refundable: List<com.org.meeple.core.match.command.domain.MatchedTeam> = matchedTeams.refundableTeams()
 
-			applied.map { it.teamId } shouldBe listOf(10L)
-			applied.first().applicantUserId shouldBe 100L
+			refundable.map { it.teamId } shouldBe listOf(10L)
+			refundable.first().applicantUserId shouldBe 100L
+		}
+
+		it("성사로 ACTIVE가 된 팀은 환불 대상에서 제외한다") {
+			val matched: MatchedTeams = MatchedTeams.of(listOf(10L, 20L)).apply(10L, 100L).apply(20L, 200L).activateAll()
+
+			matched.refundableTeams() shouldBe emptyList()
 		}
 	}
 

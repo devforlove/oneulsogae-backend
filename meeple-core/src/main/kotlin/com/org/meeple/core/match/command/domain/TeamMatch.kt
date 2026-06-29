@@ -125,10 +125,10 @@ data class TeamMatch(
 
 	/**
 	 * 미성사(만료) 제거 시, 신청한 팀의 지불자별 환불 금액 목록을 산정한다. (1:1 [Match.failureRefunds] 미러)
-	 * 실제로 코인을 지불한(신청한) 팀의 [MatchedTeam.applicantUserId]에게만 신청 비용([dateInitAmount])의 절반(내림)을 돌려준다.
+	 * 신청(APPLY)했으나 성사되지 못한 팀의 [MatchedTeam.applicantUserId]에게만 신청 비용([dateInitAmount])의 절반(내림)을 돌려준다. (성사로 ACTIVE가 된 팀은 제외)
 	 */
 	fun failureRefunds(): List<MatchRefund> =
-		matchedTeams.applied()
+		matchedTeams.refundableTeams()
 			.mapNotNull { team: MatchedTeam -> team.applicantUserId?.let { userId: Long -> MatchRefund(userId = userId, amount = dateInitAmount / 2) } }
 			.filter { refund: MatchRefund -> refund.amount > 0 }
 

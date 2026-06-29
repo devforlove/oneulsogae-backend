@@ -6,6 +6,7 @@ import com.org.meeple.core.common.error.BusinessException
 import com.org.meeple.core.fixture.MatchFixture
 import com.org.meeple.core.match.MatchErrorCode
 import com.org.meeple.core.match.command.domain.Match
+import com.org.meeple.core.match.command.domain.MatchRefund
 import com.org.meeple.core.match.command.domain.event.InterestSent
 import com.org.meeple.core.match.command.domain.event.MatchAccepted
 import com.org.meeple.core.match.command.domain.event.MatchEnded
@@ -54,6 +55,40 @@ class MatchTest : DescribeSpec({
 
 			responded.hasUserInterest(maleUserId) shouldBe true
 			responded.hasPartnerInterest(maleUserId) shouldBe false
+		}
+	}
+
+	describe("failureRefunds - 미성사 만료 환불 산정") {
+		it("신청(APPLY)했으나 미성사인 참가자에게만 신청 비용의 절반을 환불한다") {
+			val partiallyAccepted: Match = MatchFixture.create(
+				members = MatchFixture.membersOf(
+					maleUserId = maleUserId, femaleUserId = femaleUserId,
+					maleStatus = MatchMemberStatus.APPLY, femaleStatus = MatchMemberStatus.WAITING,
+				),
+				status = MatchStatus.PARTIALLY_ACCEPTED,
+			)
+
+			val refunds: List<MatchRefund> = partiallyAccepted.failureRefunds()
+
+			refunds.size shouldBe 1
+			refunds.first().userId shouldBe maleUserId
+			refunds.first().amount shouldBe partiallyAccepted.datingInitAmount / 2
+		}
+
+		it("성사(MATCHED)되어 전원 ACTIVE면 환불 대상이 없다") {
+			val matched: Match = MatchFixture.create(
+				members = MatchFixture.membersOf(
+					maleUserId = maleUserId, femaleUserId = femaleUserId,
+					maleStatus = MatchMemberStatus.ACTIVE, femaleStatus = MatchMemberStatus.ACTIVE,
+				),
+				status = MatchStatus.MATCHED,
+			)
+
+			matched.failureRefunds() shouldBe emptyList()
+		}
+
+		it("아무도 신청하지 않았으면 환불 대상이 없다") {
+			proposedMatch().failureRefunds() shouldBe emptyList()
 		}
 	}
 

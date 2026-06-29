@@ -47,9 +47,9 @@ data class MatchMembers(
 	fun anyApplied(): Boolean =
 		values.any { it.hasApplied }
 
-	/** 신청(코인 지불)한 참가자들. (환불 대상 산정에 쓴다) */
-	fun applied(): List<MatchMember> =
-		values.filter { it.hasApplied }
+	/** 환불 대상(신청했으나 미성사) 참가자들. (성사로 ACTIVE가 된 참가자는 제외한다) */
+	fun refundableMembers(): List<MatchMember> =
+		values.filter { it.isRefundable }
 
 	/** 모든 참가자에 소속 매칭 id([matchId])를 채운 새 컬렉션. (헤더 저장으로 id를 얻은 뒤 영속화 직전에 호출) */
 	fun withMatchId(matchId: Long): MatchMembers =
