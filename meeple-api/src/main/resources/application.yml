@@ -3,6 +3,11 @@ spring:
     name: meeple-api
   profiles:
     default: local
+  jpa:
+    # OSIV(Open Session In View)는 요청 전체 동안 영속성 컨텍스트/DB 커넥션을 붙잡아, 트래픽이 몰리면
+    # 커넥션 풀 고갈·지연을 유발한다. 트랜잭션 경계 밖 지연 로딩을 차단해 조기에 드러내도록 끈다.
+    # (조회는 @Transactional(readOnly) 서비스 또는 조회 시점에 완결되는 projection read model로 처리한다)
+    open-in-view: false
   data:
     redis:
       # 명령 타임아웃. Redis가 느려지거나 응답 불능일 때 요청이 기본값(수십 초)만큼 매달리지 않고 빠르게 실패하게 한다.
