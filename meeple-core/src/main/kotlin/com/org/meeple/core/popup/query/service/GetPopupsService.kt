@@ -7,6 +7,7 @@ import com.org.meeple.core.coin.command.application.port.`in`.AcquireCoinUseCase
 import com.org.meeple.core.coin.command.application.port.`in`.command.AcquireCoinCommand
 import com.org.meeple.core.common.error.BusinessException
 import com.org.meeple.core.common.time.TimeGenerator
+import com.org.meeple.core.popup.command.application.port.`in`.HidePopupUseCase
 import com.org.meeple.core.popup.query.dao.GetPrivatePopupDao
 import com.org.meeple.core.popup.query.dao.GetPublicPopupDao
 import com.org.meeple.core.popup.query.dto.PopupViews
@@ -24,12 +25,16 @@ import java.time.LocalDateTime
  * 조회 흐름의 부수효과로 함께 처리한다. (CQRS 조회 무부수효과 원칙의 의도적 예외)
  * 코인 적립은 [AcquireCoinUseCase]의 자체 트랜잭션에서 수행되고, 팝업 조회는 별도 트랜잭션 없이(OSIV) 읽는다.
  * 이미 오늘 출석 코인을 받은 경우([CoinErrorCode.DAILY_COIN_ALREADY_ACQUIRED])엔 일일 보상 팝업을 응답에서 제외한다.
+ *
+ * 응답에 1회성 팝업([com.org.meeple.common.popup.PopupType.removeAfterView], 예: 환불 안내)이 있으면,
+ * "본 시점"에 [HidePopupUseCase]로 soft-delete해 다음 조회부터 노출되지 않게 한다. (출석 코인과 같은 조회-시점 부수효과)
  */
 @Service
 class GetPopupsService(
 	private val getPublicPopupDao: GetPublicPopupDao,
 	private val getPrivatePopupDao: GetPrivatePopupDao,
 	private val acquireCoinUseCase: AcquireCoinUseCase,
+	private val hidePopupUseCase: HidePopupUseCase,
 	private val timeGenerator: TimeGenerator,
 ) : GetPopupsUseCase {
 
@@ -40,20 +45,18 @@ class GetPopupsService(
 			.mergeBefore(getPublicPopupDao.findVisible(now))
 
 		// 신규 유저 팝업은 isNewUser=true인 요청에만 노출한다. (아니면 제외)
-		val popups: PopupViews = if (isNewUser) merged else merged.withoutNewUser()
+		val withoutNewUser: PopupViews = if (isNewUser) merged else merged.withoutNewUser()
 
-		// 일일 보상 팝업이 없으면 코인 적립 없이 그대로 반환한다.
-		if (!popups.hasDailyReward()) {
-			return popups
+		// 일일 보상 팝업이 노출 중이면 출석 코인을 하루 1회 적립하고, 이미 오늘 받았다면 그 팝업을 응답에서 제외한다.
+		val result: PopupViews = when {
+			!withoutNewUser.hasDailyReward() -> withoutNewUser
+			acquireDailyRewardCoin(userId) -> withoutNewUser
+			else -> withoutNewUser.withoutDailyReward()
 		}
 
-		// 일일 보상 팝업이 노출 중이면 출석 코인을 하루 1회 적립한다.
-		// 이미 오늘 받았다면 중복 노출을 막기 위해 일일 보상 팝업을 응답에서 제외한다.
-		return if (acquireDailyRewardCoin(userId)) {
-			popups
-		} else {
-			popups.withoutDailyReward()
-		}
+		// 응답에 포함된 1회성 팝업은 본 시점에 제거해 다음 조회부터 노출되지 않게 한다. (명령 in-port 자체 트랜잭션)
+		hidePopupUseCase.hideByIds(result.idsToRemoveAfterView())
+		return result
 	}
 
 	/**

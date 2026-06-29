@@ -30,6 +30,14 @@ data class PopupViews(
 		PopupViews(values.filterNot { view: PopupView -> view.popUpType == PopupType.NEW_USER })
 
 	/**
+	 * 한 번 조회하면 제거할 팝업([PopupType.removeAfterView])의 id 목록. (환불 안내 등 1회성 개인 팝업)
+	 * 조회 서비스가 이 id들을 명령 in-port에 넘겨 soft-delete해 다음 조회부터 노출되지 않게 한다.
+	 */
+	fun idsToRemoveAfterView(): List<Long> =
+		values.filter { view: PopupView -> view.popUpType.removeAfterView }
+			.map { view: PopupView -> view.id }
+
+	/**
 	 * 이 목록을 [lower]보다 앞에 두고 합친 새 목록을 만든다. (이 목록의 정렬 우선순위가 더 높다 — 예: 개인 팝업 > 전역 팝업)
 	 * 각 그룹 내부는 display_order(동순위는 id) 오름차순으로 정렬하되, 그룹 간에는 재정렬하지 않아 이 목록이 항상 먼저 온다.
 	 */
