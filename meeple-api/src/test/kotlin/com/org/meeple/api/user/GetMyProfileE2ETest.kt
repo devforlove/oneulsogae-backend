@@ -40,6 +40,29 @@ class GetMyProfileE2ETest : AbstractIntegrationSupport({
 				}
 			}
 		}
+
+		context("학교 인증을 마친 사용자가 조회하면") {
+			it("학교 이메일·학교명이 응답에 내려온다 (200)") {
+				val userId: Long = 5002L
+				IntegrationUtil.persist(
+					UserDetailEntity(
+						userId = userId,
+						nickname = "학교유저",
+						universityEmail = "student@snu.ac.kr",
+						universityName = "서울대학교",
+					),
+				)
+
+				get("/users/v1/profile") {
+					bearer(accessTokenFor(userId))
+				} expect {
+					status(200)
+					body("success", true)
+					body("data.universityEmail", "student@snu.ac.kr")
+					body("data.universityName", "서울대학교")
+				}
+			}
+		}
 	}
 
 	afterTest {

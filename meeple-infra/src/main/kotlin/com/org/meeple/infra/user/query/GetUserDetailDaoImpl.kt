@@ -44,6 +44,8 @@ class GetUserDetailDaoImpl(
 					Expressions.path(List::class.java, detail, "interests"),
 					detail.companyEmail,
 					detail.companyName,
+					detail.universityEmail,
+					detail.universityName,
 					detail.maritalStatus,
 					detail.smokingStatus,
 					detail.religion,

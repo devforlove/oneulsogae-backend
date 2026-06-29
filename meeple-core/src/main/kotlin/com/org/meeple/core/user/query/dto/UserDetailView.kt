@@ -30,6 +30,8 @@ data class UserDetailView(
 	val interests: List<String>,
 	val companyEmail: String?,
 	val companyName: String?,
+	val universityEmail: String?,
+	val universityName: String?,
 	val maritalStatus: MaritalStatus?,
 	val smokingStatus: SmokingStatus?,
 	val religion: Religion?,
