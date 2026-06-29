@@ -40,15 +40,4 @@ interface MatchUserJpaRepository : JpaRepository<MatchUserEntity, Long> {
 	@Modifying
 	@Query("delete from MatchUserEntity m where m.userId = :userId")
 	fun deleteByUserId(@Param("userId") userId: Long): Int
-
-	/** 이미 적재된 사용자의 학교명만 갱신한다. 영향 행 수를 반환한다(행이 없으면 0 = no-op). */
-	@Modifying
-	@Query(
-		"""
-		update MatchUserEntity m
-		set m.universityName = :universityName
-		where m.userId = :userId
-		""",
-	)
-	fun updateUniversityName(@Param("userId") userId: Long, @Param("universityName") universityName: String?): Int
 }

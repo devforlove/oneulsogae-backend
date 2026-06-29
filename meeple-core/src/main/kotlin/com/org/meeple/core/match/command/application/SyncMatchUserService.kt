@@ -31,8 +31,4 @@ class SyncMatchUserService(
 	override fun updateLastLogin(userId: Long, lastLoginAt: LocalDateTime) {
 		saveMatchUserPort.updateLastLoginAt(userId, lastLoginAt)
 	}
-
-	override fun updateUniversity(userId: Long, universityName: String?) {
-		saveMatchUserPort.updateUniversityName(userId, universityName)
-	}
 }
