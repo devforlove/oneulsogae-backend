@@ -36,7 +36,7 @@ class PopupTest : DescribeSpec({
 	}
 
 	describe("meetingFailedRefund") {
-		it("미팅 환불 안내 개인 팝업을 생성한다 (MEETING_FAILED_REFUND, 7일 노출)") {
+		it("미팅 환불 안내 개인 팝업을 생성한다 (MEETING_FAILED_REFUND, 1000일 노출)") {
 			val popup: Popup = Popup.meetingFailedRefund(userId = 100L, refundAmount = 20, now = now)
 
 			popup.popUpType shouldBe PopupType.MEETING_FAILED_REFUND
@@ -44,7 +44,7 @@ class PopupTest : DescribeSpec({
 			popup.description shouldBe "미팅이 매칭되지 않아 사용한 코인의 절반인 20코인을 돌려드렸어요."
 			popup.imageCode shouldBe Popup.MEETING_FAILED_REFUND_IMAGE_CODE
 			popup.exposedFrom shouldBe now
-			popup.exposedTo shouldBe now.plusDays(7)
+			popup.exposedTo shouldBe now.plusDays(1000)
 		}
 	}
 })

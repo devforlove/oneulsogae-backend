@@ -45,7 +45,7 @@ data class Popup(
 		val EXPOSED_TO_MAX: LocalDateTime = LocalDateTime.of(9999, 12, 31, 23, 59, 59)
 
 		/** 개인 환불 팝업의 노출 기간(일). 환불 안내가 무한히 남지 않도록 생성 시점부터 이 기간까지만 노출한다. */
-		private const val REFUND_POPUP_EXPOSURE_DAYS: Long = 7L
+		private const val REFUND_POPUP_EXPOSURE_DAYS: Long = 1000L
 
 		/** 소개팅 매칭 실패 환불 팝업 이미지의 image_templates 코드. (실제 이미지는 DB에서 교체) */
 		const val MATCH_FAILED_REFUND_IMAGE_CODE: String = "POPUP_MATCH_FAILED_REFUND"
