@@ -2,8 +2,8 @@ package com.org.meeple.api.match.response
 
 import com.org.meeple.common.match.TeamStatus
 import com.org.meeple.common.user.Gender
-import com.org.meeple.core.match.query.dto.MeetingTab
-import com.org.meeple.core.match.query.dto.MyTeam
+import com.org.meeple.core.teammatch.query.dto.MeetingTab
+import com.org.meeple.core.teammatch.query.dto.MyTeam
 import java.time.LocalDate
 
 /**

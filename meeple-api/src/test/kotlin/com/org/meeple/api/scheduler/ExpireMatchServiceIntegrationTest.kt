@@ -7,20 +7,21 @@ import com.org.meeple.common.match.MatchedTeamStatus
 import com.org.meeple.common.match.TeamMatchType
 import com.org.meeple.common.popup.PopupType
 import com.org.meeple.common.user.Gender
-import com.org.meeple.core.match.command.application.port.`in`.ExpireMatchUseCase
-import com.org.meeple.core.match.command.domain.MatchedTeams
+import com.org.meeple.core.solomatch.command.application.port.`in`.ExpireSoloMatchUseCase
+import com.org.meeple.core.teammatch.command.application.port.`in`.ExpireTeamMatchUseCase
+import com.org.meeple.core.teammatch.command.domain.MatchedTeams
 import com.org.meeple.infra.coin.command.entity.QCoinBalanceEntity
 import com.org.meeple.infra.fixture.CoinBalanceEntityFixture
 import com.org.meeple.infra.fixture.IntegrationUtil
 import com.org.meeple.infra.fixture.SoloMatchEntityFixture
 import com.org.meeple.infra.fixture.SoloMatchMemberEntityFixture
-import com.org.meeple.infra.match.command.entity.MatchedTeamEntity
-import com.org.meeple.infra.match.command.entity.QMatchedTeamEntity
-import com.org.meeple.infra.match.command.entity.QSoloMatchEntity
-import com.org.meeple.infra.match.command.entity.QSoloMatchMemberEntity
-import com.org.meeple.infra.match.command.entity.QTeamMatchEntity
-import com.org.meeple.infra.match.command.entity.SoloMatchEntity
-import com.org.meeple.infra.match.command.entity.TeamMatchEntity
+import com.org.meeple.infra.teammatch.command.entity.MatchedTeamEntity
+import com.org.meeple.infra.teammatch.command.entity.QMatchedTeamEntity
+import com.org.meeple.infra.solomatch.command.entity.QSoloMatchEntity
+import com.org.meeple.infra.solomatch.command.entity.QSoloMatchMemberEntity
+import com.org.meeple.infra.teammatch.command.entity.QTeamMatchEntity
+import com.org.meeple.infra.solomatch.command.entity.SoloMatchEntity
+import com.org.meeple.infra.teammatch.command.entity.TeamMatchEntity
 import com.org.meeple.infra.popup.command.entity.QPopupEntity
 import io.kotest.matchers.nulls.shouldBeNull
 import io.kotest.matchers.nulls.shouldNotBeNull
@@ -29,11 +30,12 @@ import java.time.LocalDate
 import java.time.LocalDateTime
 
 /**
- * [ExpireMatchUseCase](ExpireMatchService) 통합 테스트. 실 컨텍스트 + Testcontainers(MySQL).
+ * [ExpireSoloMatchUseCase]·[ExpireTeamMatchUseCase] 통합 테스트. 실 컨텍스트 + Testcontainers(MySQL).
  * 매치 1건의 soft-delete + 코인 환불 + 팝업 생성을 직접 검증한다.
  */
 class ExpireMatchServiceIntegrationTest(
-	private val expireMatchUseCase: ExpireMatchUseCase,
+	private val expireSoloMatchUseCase: ExpireSoloMatchUseCase,
+	private val expireTeamMatchUseCase: ExpireTeamMatchUseCase,
 ) : AbstractIntegrationSupport({
 
 	describe("expireSoloMatch") {
@@ -48,7 +50,7 @@ class ExpireMatchServiceIntegrationTest(
 				IntegrationUtil.persist(SoloMatchMemberEntityFixture.create(matchId = header.id!!, userId = partnerId, gender = Gender.FEMALE, status = MatchMemberStatus.WAITING))
 				IntegrationUtil.persist(CoinBalanceEntityFixture.create(userId = applicantId, balance = 100))
 
-				expireMatchUseCase.expireSoloMatch(header.id!!)
+				expireSoloMatchUseCase.expireSoloMatch(header.id!!)
 
 				soloMatchById(header.id!!).shouldBeNull()
 				coinBalanceOf(applicantId) shouldBe 116
@@ -67,7 +69,7 @@ class ExpireMatchServiceIntegrationTest(
 				IntegrationUtil.persist(SoloMatchMemberEntityFixture.create(matchId = header.id!!, userId = partnerId, gender = Gender.FEMALE, status = MatchMemberStatus.ACTIVE))
 				IntegrationUtil.persist(CoinBalanceEntityFixture.create(userId = applicantId, balance = 100))
 
-				expireMatchUseCase.expireSoloMatch(header.id!!)
+				expireSoloMatchUseCase.expireSoloMatch(header.id!!)
 
 				soloMatchById(header.id!!).shouldNotBeNull()
 				coinBalanceOf(applicantId) shouldBe 100
@@ -86,7 +88,7 @@ class ExpireMatchServiceIntegrationTest(
 				IntegrationUtil.persist(SoloMatchMemberEntityFixture.create(matchId = header.id!!, userId = b, gender = Gender.FEMALE, status = MatchMemberStatus.WAITING))
 				IntegrationUtil.persist(CoinBalanceEntityFixture.create(userId = a, balance = 100))
 
-				expireMatchUseCase.expireSoloMatch(header.id!!)
+				expireSoloMatchUseCase.expireSoloMatch(header.id!!)
 
 				soloMatchById(header.id!!).shouldBeNull()
 				coinBalanceOf(a) shouldBe 100
@@ -116,7 +118,7 @@ class ExpireMatchServiceIntegrationTest(
 				IntegrationUtil.persist(MatchedTeamEntity(teamMatchId = header.id!!, teamId = teamBId, status = MatchedTeamStatus.WAITING))
 				IntegrationUtil.persist(CoinBalanceEntityFixture.create(userId = applicantId, balance = 100))
 
-				expireMatchUseCase.expireTeamMatch(header.id!!)
+				expireTeamMatchUseCase.expireTeamMatch(header.id!!)
 
 				teamMatchById(header.id!!).shouldBeNull()
 				coinBalanceOf(applicantId) shouldBe 120
@@ -144,7 +146,7 @@ class ExpireMatchServiceIntegrationTest(
 				IntegrationUtil.persist(MatchedTeamEntity(teamMatchId = header.id!!, teamId = teamBId, status = MatchedTeamStatus.ACTIVE))
 				IntegrationUtil.persist(CoinBalanceEntityFixture.create(userId = applicantId, balance = 100))
 
-				expireMatchUseCase.expireTeamMatch(header.id!!)
+				expireTeamMatchUseCase.expireTeamMatch(header.id!!)
 
 				teamMatchById(header.id!!).shouldNotBeNull()
 				coinBalanceOf(applicantId) shouldBe 100

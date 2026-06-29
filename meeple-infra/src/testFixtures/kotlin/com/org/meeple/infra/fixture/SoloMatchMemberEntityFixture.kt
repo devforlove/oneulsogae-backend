@@ -2,7 +2,7 @@ package com.org.meeple.infra.fixture
 
 import com.org.meeple.common.match.MatchMemberStatus
 import com.org.meeple.common.user.Gender
-import com.org.meeple.infra.match.command.entity.SoloMatchMemberEntity
+import com.org.meeple.infra.solomatch.command.entity.SoloMatchMemberEntity
 
 /**
  * [SoloMatchMemberEntity] 테스트 픽스처. 합리적 기본값을 주고, 필요한 값만 덮어쓴다.

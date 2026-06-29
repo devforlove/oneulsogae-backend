@@ -2,9 +2,9 @@ package com.org.meeple.core.fixture
 
 import com.org.meeple.common.match.TeamStatus
 import com.org.meeple.common.user.Gender
-import com.org.meeple.core.match.command.domain.Team
-import com.org.meeple.core.match.command.domain.TeamMember
-import com.org.meeple.core.match.command.domain.TeamMembers
+import com.org.meeple.core.teammatch.command.domain.Team
+import com.org.meeple.core.teammatch.command.domain.TeamMember
+import com.org.meeple.core.teammatch.command.domain.TeamMembers
 
 /**
  * [Team] 도메인 모델 테스트 픽스처. 기본은 초대중(INVITING) 상태의, 같은 성별 두 구성원으로 결성된 팀이다.

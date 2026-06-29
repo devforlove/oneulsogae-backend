@@ -3,7 +3,7 @@ package com.org.meeple.domain.match
 import com.org.meeple.common.user.Gender
 import com.org.meeple.common.user.MaritalStatus
 import com.org.meeple.core.common.event.MatchProfileSnapshot
-import com.org.meeple.core.match.command.domain.MatchUser
+import com.org.meeple.core.matchuser.command.domain.MatchUser
 import io.kotest.core.spec.style.DescribeSpec
 import io.kotest.matchers.shouldBe
 import java.time.LocalDate

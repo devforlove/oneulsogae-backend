@@ -1,7 +1,7 @@
 package com.org.meeple.api.match.response
 
 import com.org.meeple.common.match.MatchStatus
-import com.org.meeple.core.match.command.domain.Match
+import com.org.meeple.core.solomatch.command.domain.Match
 
 /**
  * 매칭 상태만 담는 응답. (관심 보내기/수락 결과)

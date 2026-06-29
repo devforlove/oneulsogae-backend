@@ -12,15 +12,15 @@ import com.org.meeple.infra.alarm.command.entity.QAlarmEntity
 import com.org.meeple.infra.fixture.IntegrationUtil
 import com.org.meeple.infra.fixture.MatchUserEntityFixture
 import com.org.meeple.infra.fixture.RecommendedTeamEntityFixture
-import com.org.meeple.infra.match.command.entity.MatchedTeamEntity
-import com.org.meeple.infra.match.command.entity.QMatchUserEntity
-import com.org.meeple.infra.match.command.entity.QMatchedTeamEntity
-import com.org.meeple.infra.match.command.entity.QRecommendedTeamEntity
-import com.org.meeple.infra.match.command.entity.QTeamEntity
-import com.org.meeple.infra.match.command.entity.QTeamMatchEntity
-import com.org.meeple.infra.match.command.entity.QTeamMemberEntity
-import com.org.meeple.infra.match.command.entity.TeamEntity
-import com.org.meeple.infra.match.command.entity.TeamMatchEntity
+import com.org.meeple.infra.teammatch.command.entity.MatchedTeamEntity
+import com.org.meeple.infra.matchuser.command.entity.QMatchUserEntity
+import com.org.meeple.infra.teammatch.command.entity.QMatchedTeamEntity
+import com.org.meeple.infra.teammatch.command.entity.QRecommendedTeamEntity
+import com.org.meeple.infra.teammatch.command.entity.QTeamEntity
+import com.org.meeple.infra.teammatch.command.entity.QTeamMatchEntity
+import com.org.meeple.infra.teammatch.command.entity.QTeamMemberEntity
+import com.org.meeple.infra.teammatch.command.entity.TeamEntity
+import com.org.meeple.infra.teammatch.command.entity.TeamMatchEntity
 import io.kotest.matchers.shouldBe
 
 /**

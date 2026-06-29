@@ -4,7 +4,7 @@ import com.org.meeple.common.user.UserStatus
 import com.org.meeple.infra.coin.command.entity.QCoinBalanceEntity
 import com.org.meeple.infra.coin.command.entity.QCoinHistoryEntity
 import com.org.meeple.infra.fixture.IntegrationUtil
-import com.org.meeple.infra.match.command.entity.QMatchUserEntity
+import com.org.meeple.infra.matchuser.command.entity.QMatchUserEntity
 import com.org.meeple.infra.region.entity.QRegionEntity
 import com.org.meeple.infra.user.command.entity.QUserDetailEntity
 import com.org.meeple.infra.user.command.entity.UserDetailEntity

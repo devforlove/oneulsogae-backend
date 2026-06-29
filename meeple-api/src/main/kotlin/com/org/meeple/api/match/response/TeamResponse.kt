@@ -1,7 +1,7 @@
 package com.org.meeple.api.match.response
 
 import com.org.meeple.common.match.TeamStatus
-import com.org.meeple.core.match.command.domain.Team
+import com.org.meeple.core.teammatch.command.domain.Team
 
 /**
  * 팀 결성(초대) 결과 응답. 결성된 팀의 식별자·이름·활동지역 id·소개·상태·구성원 userId를 담는다. (표시용 지역명은 regions 조회로 매핑)

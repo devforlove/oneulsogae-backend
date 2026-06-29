@@ -13,10 +13,10 @@ import com.org.meeple.infra.fixture.MatchUserEntityFixture
 import com.org.meeple.infra.fixture.RegionEntityFixture
 import com.org.meeple.infra.fixture.UserCompanyEntityFixture
 import com.org.meeple.infra.fixture.UserEntityFixture
-import com.org.meeple.infra.match.command.entity.MatchUserEntity
-import com.org.meeple.infra.match.command.entity.QSoloMatchEntity
-import com.org.meeple.infra.match.command.entity.QSoloMatchMemberEntity
-import com.org.meeple.infra.match.command.entity.QMatchUserEntity
+import com.org.meeple.infra.matchuser.command.entity.MatchUserEntity
+import com.org.meeple.infra.solomatch.command.entity.QSoloMatchEntity
+import com.org.meeple.infra.solomatch.command.entity.QSoloMatchMemberEntity
+import com.org.meeple.infra.matchuser.command.entity.QMatchUserEntity
 import com.org.meeple.infra.region.entity.QRegionEntity
 import com.org.meeple.infra.user.command.entity.QCompanyEmailVerificationEntity
 import com.org.meeple.infra.user.command.entity.QUserCompanyEntity

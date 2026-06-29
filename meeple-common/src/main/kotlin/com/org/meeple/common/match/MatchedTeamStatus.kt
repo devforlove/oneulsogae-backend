@@ -1,7 +1,7 @@
 package com.org.meeple.common.match
 
 /**
- * 팀 매칭([com.org.meeple.infra.match.command.entity.TeamMatchEntity])에 참가한 한 팀([com.org.meeple.infra.match.command.entity.MatchedTeamEntity])의 상태.
+ * 팀 매칭([com.org.meeple.infra.teammatch.command.entity.TeamMatchEntity])에 참가한 한 팀([com.org.meeple.infra.teammatch.command.entity.MatchedTeamEntity])의 상태.
  * 같은 팀이라도 매치마다 상태가 다르므로 팀이 아니라 참가 행이 보관한다.
  * WAITING(소개 직후) → APPLY(이 팀이 매칭 신청) → ACTIVE(양 팀 성사) / DEACTIVE(팀 해체).
  */

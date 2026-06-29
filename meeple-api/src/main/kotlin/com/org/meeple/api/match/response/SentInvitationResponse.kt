@@ -4,8 +4,8 @@ import com.org.meeple.common.match.TeamMemberStatus
 import com.org.meeple.common.match.TeamStatus
 import com.org.meeple.common.user.Gender
 import com.org.meeple.core.common.time.ageAt
-import com.org.meeple.core.match.query.dto.SentInvitation
-import com.org.meeple.core.match.query.dto.SentInvitationMember
+import com.org.meeple.core.teammatch.query.dto.SentInvitation
+import com.org.meeple.core.teammatch.query.dto.SentInvitationMember
 import java.time.LocalDate
 
 /**

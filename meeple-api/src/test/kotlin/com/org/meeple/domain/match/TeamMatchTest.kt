@@ -4,8 +4,8 @@ import com.org.meeple.common.match.MatchStatus
 import com.org.meeple.common.match.MatchedTeamStatus
 import com.org.meeple.common.match.TeamMatchType
 import com.org.meeple.core.common.error.BusinessException
-import com.org.meeple.core.match.TeamMatchErrorCode
-import com.org.meeple.core.match.command.domain.TeamMatch
+import com.org.meeple.core.teammatch.TeamMatchErrorCode
+import com.org.meeple.core.teammatch.command.domain.TeamMatch
 import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.core.spec.style.DescribeSpec
 import io.kotest.matchers.shouldBe
@@ -192,7 +192,7 @@ class TeamMatchTest : DescribeSpec({
 			val left: TeamMatch = matched().leave(10L, now)
 
 			left.status shouldBe MatchStatus.MATCHED
-			val ten: com.org.meeple.core.match.command.domain.MatchedTeam = left.matchedTeams.values.first { it.teamId == 10L }
+			val ten: com.org.meeple.core.teammatch.command.domain.MatchedTeam = left.matchedTeams.values.first { it.teamId == 10L }
 			ten.status shouldBe MatchedTeamStatus.DEACTIVE
 			ten.deletedAt shouldBe null
 			left.matchedTeams.values.first { it.teamId == 20L }.status shouldBe MatchedTeamStatus.ACTIVE
@@ -217,7 +217,7 @@ class TeamMatchTest : DescribeSpec({
 			val partiallyAccepted: TeamMatch =
 				TeamMatch.propose(10L, 20L, TeamMatchType.RECOMMENDED, now).respond(10L, 100L)
 
-			val refunds: List<com.org.meeple.core.match.command.domain.MatchRefund> = partiallyAccepted.failureRefunds()
+			val refunds: List<com.org.meeple.core.teammatch.command.domain.MatchRefund> = partiallyAccepted.failureRefunds()
 
 			refunds.size shouldBe 1
 			refunds.first().userId shouldBe 100L

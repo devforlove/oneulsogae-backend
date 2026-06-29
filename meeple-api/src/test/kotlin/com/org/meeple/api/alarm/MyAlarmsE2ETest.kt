@@ -10,8 +10,8 @@ import com.org.meeple.infra.alarm.command.entity.QAlarmEntity
 import com.org.meeple.infra.fixture.AlarmEntityFixture
 import com.org.meeple.infra.fixture.IntegrationUtil
 import com.org.meeple.infra.fixture.UserDetailEntityFixture
-import com.org.meeple.infra.match.command.entity.QTeamMemberEntity
-import com.org.meeple.infra.match.command.entity.TeamMemberEntity
+import com.org.meeple.infra.teammatch.command.entity.QTeamMemberEntity
+import com.org.meeple.infra.teammatch.command.entity.TeamMemberEntity
 import com.org.meeple.infra.user.command.entity.QUserDetailEntity
 import org.hamcrest.Matchers.containsInAnyOrder
 import org.hamcrest.Matchers.notNullValue

@@ -1,8 +1,8 @@
 package com.org.meeple.domain.match
 
 import com.org.meeple.common.match.MatchedTeamStatus
-import com.org.meeple.core.match.command.domain.MatchedTeam
-import com.org.meeple.core.match.command.domain.MatchedTeams
+import com.org.meeple.core.teammatch.command.domain.MatchedTeam
+import com.org.meeple.core.teammatch.command.domain.MatchedTeams
 import io.kotest.core.spec.style.DescribeSpec
 import io.kotest.matchers.shouldBe
 import java.time.LocalDateTime
@@ -42,7 +42,7 @@ class MatchedTeamsTest : DescribeSpec({
 		it("APPLY인 팀만 돌려주고 신청자(applicantUserId)를 보존한다") {
 			val matchedTeams: MatchedTeams = MatchedTeams.of(listOf(10L, 20L)).apply(10L, 100L)
 
-			val refundable: List<com.org.meeple.core.match.command.domain.MatchedTeam> = matchedTeams.refundableTeams()
+			val refundable: List<com.org.meeple.core.teammatch.command.domain.MatchedTeam> = matchedTeams.refundableTeams()
 
 			refundable.map { it.teamId } shouldBe listOf(10L)
 			refundable.first().applicantUserId shouldBe 100L

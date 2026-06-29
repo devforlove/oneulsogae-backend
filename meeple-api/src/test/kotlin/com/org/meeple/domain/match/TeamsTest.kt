@@ -3,11 +3,11 @@ package com.org.meeple.domain.match
 import com.org.meeple.common.match.TeamMemberStatus
 import com.org.meeple.common.match.TeamStatus
 import com.org.meeple.common.user.Gender
-import com.org.meeple.core.match.command.domain.RecommendedTeamHistory
-import com.org.meeple.core.match.command.domain.Team
-import com.org.meeple.core.match.command.domain.TeamMember
-import com.org.meeple.core.match.command.domain.TeamMembers
-import com.org.meeple.core.match.command.domain.Teams
+import com.org.meeple.core.teammatch.command.domain.RecommendedTeamHistory
+import com.org.meeple.core.teammatch.command.domain.Team
+import com.org.meeple.core.teammatch.command.domain.TeamMember
+import com.org.meeple.core.teammatch.command.domain.TeamMembers
+import com.org.meeple.core.teammatch.command.domain.Teams
 import io.kotest.core.spec.style.DescribeSpec
 import io.kotest.matchers.collections.shouldContainExactlyInAnyOrder
 import io.kotest.matchers.nulls.shouldNotBeNull

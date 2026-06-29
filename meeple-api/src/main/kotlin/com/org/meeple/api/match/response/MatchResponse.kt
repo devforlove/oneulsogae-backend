@@ -3,7 +3,7 @@ package com.org.meeple.api.match.response
 import com.org.meeple.common.match.MatchStatus
 import com.org.meeple.common.user.Gender
 import com.org.meeple.core.common.time.ageAt
-import com.org.meeple.core.match.query.dto.MatchWithPartner
+import com.org.meeple.core.solomatch.query.dto.MatchWithPartner
 import java.time.LocalDate
 import java.time.LocalDateTime
 

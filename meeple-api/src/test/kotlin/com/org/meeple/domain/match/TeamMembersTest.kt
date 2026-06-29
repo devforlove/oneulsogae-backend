@@ -1,8 +1,8 @@
 package com.org.meeple.domain.match
 
 import com.org.meeple.common.match.TeamMemberStatus
-import com.org.meeple.core.match.command.domain.TeamMember
-import com.org.meeple.core.match.command.domain.TeamMembers
+import com.org.meeple.core.teammatch.command.domain.TeamMember
+import com.org.meeple.core.teammatch.command.domain.TeamMembers
 import io.kotest.core.spec.style.DescribeSpec
 import io.kotest.matchers.collections.shouldContainExactlyInAnyOrder
 import io.kotest.matchers.nulls.shouldNotBeNull

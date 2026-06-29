@@ -1,7 +1,7 @@
 package com.org.meeple.domain.match
 
 import com.org.meeple.common.match.MatchedTeamStatus
-import com.org.meeple.core.match.command.domain.MatchedTeam
+import com.org.meeple.core.teammatch.command.domain.MatchedTeam
 import io.kotest.core.spec.style.DescribeSpec
 import io.kotest.matchers.shouldBe
 import java.time.LocalDateTime

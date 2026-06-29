@@ -4,9 +4,9 @@ import com.org.meeple.common.match.MatchMemberStatus
 import com.org.meeple.common.match.MatchStatus
 import com.org.meeple.common.match.SoloMatchType
 import com.org.meeple.common.user.Gender
-import com.org.meeple.core.match.command.domain.Match
-import com.org.meeple.core.match.command.domain.MatchMember
-import com.org.meeple.core.match.command.domain.MatchMembers
+import com.org.meeple.core.solomatch.command.domain.Match
+import com.org.meeple.core.solomatch.command.domain.MatchMember
+import com.org.meeple.core.solomatch.command.domain.MatchMembers
 import java.time.LocalDate
 import java.time.LocalDateTime
 
