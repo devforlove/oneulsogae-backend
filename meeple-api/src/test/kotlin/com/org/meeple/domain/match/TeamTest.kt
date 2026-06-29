@@ -4,10 +4,10 @@ import com.org.meeple.common.match.TeamMemberStatus
 import com.org.meeple.common.match.TeamStatus
 import com.org.meeple.common.user.Gender
 import com.org.meeple.core.common.error.BusinessException
-import com.org.meeple.core.match.TeamErrorCode
-import com.org.meeple.core.match.command.domain.Team
-import com.org.meeple.core.match.command.domain.TeamMember
-import com.org.meeple.core.match.command.domain.TeamMembers
+import com.org.meeple.core.teammatch.TeamErrorCode
+import com.org.meeple.core.teammatch.command.domain.Team
+import com.org.meeple.core.teammatch.command.domain.TeamMember
+import com.org.meeple.core.teammatch.command.domain.TeamMembers
 import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.core.spec.style.DescribeSpec
 import io.kotest.matchers.collections.shouldContainExactlyInAnyOrder

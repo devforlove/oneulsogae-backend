@@ -2,7 +2,7 @@ package com.org.meeple.infra.fixture
 
 import com.org.meeple.common.user.Gender
 import com.org.meeple.common.user.MaritalStatus
-import com.org.meeple.infra.match.command.entity.MatchUserEntity
+import com.org.meeple.infra.matchuser.command.entity.MatchUserEntity
 import java.time.LocalDate
 import java.time.LocalDateTime
 

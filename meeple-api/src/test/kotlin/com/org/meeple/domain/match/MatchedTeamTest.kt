@@ -1,7 +1,7 @@
 package com.org.meeple.domain.match
 
 import com.org.meeple.common.match.MatchedTeamStatus
-import com.org.meeple.core.match.command.domain.MatchedTeam
+import com.org.meeple.core.teammatch.command.domain.MatchedTeam
 import io.kotest.core.spec.style.DescribeSpec
 import io.kotest.matchers.shouldBe
 import java.time.LocalDateTime
@@ -22,14 +22,17 @@ class MatchedTeamTest : DescribeSpec({
 	}
 
 	describe("apply") {
-		it("이 팀을 신청(APPLY) 상태로 전이한다") {
-			waitingTeam().apply().status shouldBe MatchedTeamStatus.APPLY
+		it("이 팀을 신청(APPLY) 상태로 전이하고 신청자를 기록한다") {
+			val applied: MatchedTeam = waitingTeam().apply(100L)
+
+			applied.status shouldBe MatchedTeamStatus.APPLY
+			applied.applicantUserId shouldBe 100L
 		}
 	}
 
 	describe("activate") {
 		it("이 팀을 활성(ACTIVE) 상태로 전이한다") {
-			waitingTeam().apply().activate().status shouldBe MatchedTeamStatus.ACTIVE
+			waitingTeam().apply(100L).activate().status shouldBe MatchedTeamStatus.ACTIVE
 		}
 	}
 

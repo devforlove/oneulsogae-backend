@@ -1,0 +1,12 @@
+package com.org.meeple.core.teammatch.command.domain.event
+
+/**
+ * 초대자가 보낸 팀 초대를 취소했을 때 발행되는 도메인 이벤트.
+ * 수신측(알람 저장 등)이 후속 처리에 필요한 식별 정보만 담는다.
+ * [invitedUserId]는 초대받았던 사람(알람 수신자), [inviterUserId]는 취소한 사람, [teamId]는 철회된 팀이다.
+ */
+data class TeamInvitationCanceled(
+	val teamId: Long,
+	val inviterUserId: Long,
+	val invitedUserId: Long,
+)

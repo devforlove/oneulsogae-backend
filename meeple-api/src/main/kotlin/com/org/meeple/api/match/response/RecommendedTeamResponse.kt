@@ -3,8 +3,8 @@ package com.org.meeple.api.match.response
 import com.org.meeple.common.match.MatchStatus
 import com.org.meeple.common.user.Gender
 import com.org.meeple.core.common.time.ageAt
-import com.org.meeple.core.match.query.dto.RecommendedTeam
-import com.org.meeple.core.match.query.dto.RecommendedTeamMember
+import com.org.meeple.core.teammatch.query.dto.RecommendedTeam
+import com.org.meeple.core.teammatch.query.dto.RecommendedTeamMember
 import java.time.LocalDate
 import java.time.LocalDateTime
 

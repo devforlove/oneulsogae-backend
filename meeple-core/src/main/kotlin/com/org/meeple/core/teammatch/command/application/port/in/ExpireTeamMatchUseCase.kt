@@ -1,0 +1,12 @@
+package com.org.meeple.core.teammatch.command.application.port.`in`
+
+/**
+ * 만료된(미성사) 팀 매칭 1건을 정리하는 유스케이스(in-port). (매치 1건 = 트랜잭션 1개)
+ * 팀 매칭을 soft-delete하고, 성사되지 못한 신청 팀 참가자에게 신청 비용의 절반을 환불하며 환불 팝업을 만든다.
+ * 만료 대상 선별(성사·종료·미만료 제외)은 호출 측(배치 조회)이 책임진다.
+ */
+interface ExpireTeamMatchUseCase {
+
+	/** 만료된 팀 매칭([teamMatchId])을 정리한다. (없으면 무시) */
+	fun expireTeamMatch(teamMatchId: Long)
+}

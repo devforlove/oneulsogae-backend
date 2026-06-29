@@ -61,4 +61,23 @@ class PopupViewsTest : DescribeSpec({
 				.withoutDailyReward().values.map { it.id } shouldBe listOf(1L)
 		}
 	}
+
+	describe("withoutNewUser") {
+		it("신규 유저 팝업만 제외하고 나머지는 유지한다") {
+			val result: PopupViews = PopupViews(
+				listOf(
+					view(1L, PopupType.NORMAL),
+					view(2L, PopupType.NEW_USER),
+					view(3L, PopupType.DAILY_REWARD),
+				),
+			).withoutNewUser()
+
+			result.values.map { it.id } shouldBe listOf(1L, 3L)
+		}
+
+		it("신규 유저 팝업이 없으면 그대로 유지한다") {
+			PopupViews(listOf(view(1L, PopupType.NORMAL)))
+				.withoutNewUser().values.map { it.id } shouldBe listOf(1L)
+		}
+	}
 })

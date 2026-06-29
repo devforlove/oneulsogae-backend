@@ -1,6 +1,6 @@
 package com.org.meeple.common.match
 
-/** 2:2 매칭에서 한 팀([com.org.meeple.infra.match.command.entity.TeamEntity])의 결성 상태. */
+/** 2:2 매칭에서 한 팀([com.org.meeple.infra.teammatch.command.entity.TeamEntity])의 결성 상태. */
 enum class TeamStatus(val description: String) {
 
 	/** 초대중. 구성원을 초대해 팀을 결성하는 중인 상태. */

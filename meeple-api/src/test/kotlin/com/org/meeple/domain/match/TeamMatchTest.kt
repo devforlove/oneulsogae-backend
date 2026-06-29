@@ -4,8 +4,8 @@ import com.org.meeple.common.match.MatchStatus
 import com.org.meeple.common.match.MatchedTeamStatus
 import com.org.meeple.common.match.TeamMatchType
 import com.org.meeple.core.common.error.BusinessException
-import com.org.meeple.core.match.TeamMatchErrorCode
-import com.org.meeple.core.match.command.domain.TeamMatch
+import com.org.meeple.core.teammatch.TeamMatchErrorCode
+import com.org.meeple.core.teammatch.command.domain.TeamMatch
 import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.core.spec.style.DescribeSpec
 import io.kotest.matchers.shouldBe
@@ -104,7 +104,7 @@ class TeamMatchTest : DescribeSpec({
 		it("한 팀만 신청하면 그 팀이 APPLY, 매칭은 PARTIALLY_ACCEPTED가 된다") {
 			val teamMatch: TeamMatch = TeamMatch.propose(10L, 20L, TeamMatchType.RECOMMENDED, now)
 
-			val responded: TeamMatch = teamMatch.respond(10L)
+			val responded: TeamMatch = teamMatch.respond(10L, 100L)
 
 			responded.status shouldBe MatchStatus.PARTIALLY_ACCEPTED
 			responded.matchedTeams.values.first { it.teamId == 10L }.status shouldBe MatchedTeamStatus.APPLY
@@ -116,7 +116,7 @@ class TeamMatchTest : DescribeSpec({
 		it("양 팀이 모두 신청하면 MATCHED + 전원 ACTIVE가 되고 만료가 100년 연장된다") {
 			val teamMatch: TeamMatch = TeamMatch.propose(10L, 20L, TeamMatchType.RECOMMENDED, now)
 
-			val matched: TeamMatch = teamMatch.respond(10L).respond(20L)
+			val matched: TeamMatch = teamMatch.respond(10L, 100L).respond(20L, 200L)
 
 			matched.status shouldBe MatchStatus.MATCHED
 			matched.matchedTeams.values.all { it.status == MatchedTeamStatus.ACTIVE } shouldBe true
@@ -143,7 +143,7 @@ class TeamMatchTest : DescribeSpec({
 	describe("validateTerminable - 팀 매칭 종료 검증") {
 		// 양 팀 신청으로 성사(MATCHED)된 팀 매칭
 		fun matched(): TeamMatch =
-			TeamMatch.propose(10L, 20L, TeamMatchType.RECOMMENDED, now).respond(10L).respond(20L)
+			TeamMatch.propose(10L, 20L, TeamMatchType.RECOMMENDED, now).respond(10L, 100L).respond(20L, 200L)
 
 		it("참가 팀이 아니면 NOT_TEAM_MATCH_PARTICIPANT를 던진다") {
 			val ex: BusinessException = shouldThrow { matched().validateTerminable(99L) }
@@ -157,7 +157,7 @@ class TeamMatchTest : DescribeSpec({
 		}
 
 		it("성사(MATCHED) 전이면 TEAM_MATCH_NOT_MATCHED를 던진다") {
-			val partiallyAccepted: TeamMatch = TeamMatch.propose(10L, 20L, TeamMatchType.RECOMMENDED, now).respond(10L)
+			val partiallyAccepted: TeamMatch = TeamMatch.propose(10L, 20L, TeamMatchType.RECOMMENDED, now).respond(10L, 100L)
 			val ex: BusinessException = shouldThrow { partiallyAccepted.validateTerminable(10L) }
 			ex.errorCode shouldBe TeamMatchErrorCode.TEAM_MATCH_NOT_MATCHED
 		}
@@ -177,7 +177,7 @@ class TeamMatchTest : DescribeSpec({
 
 	describe("isLastActiveTeam") {
 		fun matched(): TeamMatch =
-			TeamMatch.propose(10L, 20L, TeamMatchType.RECOMMENDED, now).respond(10L).respond(20L)
+			TeamMatch.propose(10L, 20L, TeamMatchType.RECOMMENDED, now).respond(10L, 100L).respond(20L, 200L)
 
 		it("상대 팀이 활성이면 false다") {
 			matched().isLastActiveTeam(10L) shouldBe false
@@ -186,13 +186,13 @@ class TeamMatchTest : DescribeSpec({
 
 	describe("leave - 팀 매칭 종료") {
 		fun matched(): TeamMatch =
-			TeamMatch.propose(10L, 20L, TeamMatchType.RECOMMENDED, now).respond(10L).respond(20L)
+			TeamMatch.propose(10L, 20L, TeamMatchType.RECOMMENDED, now).respond(10L, 100L).respond(20L, 200L)
 
 		it("상대 팀이 활성이면 내 팀만 DEACTIVE로 전이되고(소프트 삭제 안 함) 헤더는 MATCHED로 유지된다") {
 			val left: TeamMatch = matched().leave(10L, now)
 
 			left.status shouldBe MatchStatus.MATCHED
-			val ten: com.org.meeple.core.match.command.domain.MatchedTeam = left.matchedTeams.values.first { it.teamId == 10L }
+			val ten: com.org.meeple.core.teammatch.command.domain.MatchedTeam = left.matchedTeams.values.first { it.teamId == 10L }
 			ten.status shouldBe MatchedTeamStatus.DEACTIVE
 			ten.deletedAt shouldBe null
 			left.matchedTeams.values.first { it.teamId == 20L }.status shouldBe MatchedTeamStatus.ACTIVE
@@ -208,6 +208,32 @@ class TeamMatchTest : DescribeSpec({
 			closed.deletedAt shouldBe now
 			closed.matchedTeams.values.all { it.status == MatchedTeamStatus.DEACTIVE } shouldBe true
 			closed.matchedTeams.values.all { it.deletedAt == now } shouldBe true
+		}
+	}
+
+	describe("failureRefunds - 미성사 만료 환불 산정") {
+		it("신청(APPLY)한 팀의 지불자에게만 신청 비용의 절반을 환불한다") {
+			// teamA(10) 지불자 userId=100이 신청, teamB(20)는 미신청
+			val partiallyAccepted: TeamMatch =
+				TeamMatch.propose(10L, 20L, TeamMatchType.RECOMMENDED, now).respond(10L, 100L)
+
+			val refunds: List<com.org.meeple.core.teammatch.command.domain.MatchRefund> = partiallyAccepted.failureRefunds()
+
+			refunds.size shouldBe 1
+			refunds.first().userId shouldBe 100L
+			refunds.first().amount shouldBe 20 // MEETING_INIT(40)의 절반
+		}
+
+		it("아무도 신청하지 않았으면 환불 대상이 없다") {
+			val proposed: TeamMatch = TeamMatch.propose(10L, 20L, TeamMatchType.RECOMMENDED, now)
+
+			proposed.failureRefunds() shouldBe emptyList()
+		}
+
+		it("성사(MATCHED)되어 전원 ACTIVE면 환불 대상이 없다") {
+			val matched: TeamMatch = TeamMatch.propose(10L, 20L, TeamMatchType.RECOMMENDED, now).respond(10L, 100L).respond(20L, 200L)
+
+			matched.failureRefunds() shouldBe emptyList()
 		}
 	}
 })

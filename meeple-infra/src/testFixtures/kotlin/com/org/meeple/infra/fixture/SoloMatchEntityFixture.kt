@@ -3,7 +3,7 @@ package com.org.meeple.infra.fixture
 import com.org.meeple.common.coin.CoinUsageType
 import com.org.meeple.common.match.MatchStatus
 import com.org.meeple.common.match.SoloMatchType
-import com.org.meeple.infra.match.command.entity.SoloMatchEntity
+import com.org.meeple.infra.solomatch.command.entity.SoloMatchEntity
 import java.time.LocalDate
 import java.time.LocalDateTime
 

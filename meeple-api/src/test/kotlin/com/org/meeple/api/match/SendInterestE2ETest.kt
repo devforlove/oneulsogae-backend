@@ -8,7 +8,7 @@ import com.org.meeple.common.integration.post
 import com.org.meeple.common.match.MatchMemberStatus
 import com.org.meeple.common.match.MatchStatus
 import com.org.meeple.common.user.Gender
-import com.org.meeple.core.match.command.domain.MatchMembers
+import com.org.meeple.core.solomatch.command.domain.MatchMembers
 import com.org.meeple.infra.alarm.command.entity.AlarmEntity
 import com.org.meeple.infra.alarm.command.entity.QAlarmEntity
 import com.org.meeple.infra.chat.command.entity.QChatRoomEntity
@@ -20,9 +20,9 @@ import com.org.meeple.infra.fixture.IntegrationUtil
 import com.org.meeple.infra.fixture.SoloMatchEntityFixture
 import com.org.meeple.infra.fixture.SoloMatchMemberEntityFixture
 import com.org.meeple.infra.fixture.UserDetailEntityFixture
-import com.org.meeple.infra.match.command.entity.SoloMatchEntity
-import com.org.meeple.infra.match.command.entity.QSoloMatchEntity
-import com.org.meeple.infra.match.command.entity.QSoloMatchMemberEntity
+import com.org.meeple.infra.solomatch.command.entity.SoloMatchEntity
+import com.org.meeple.infra.solomatch.command.entity.QSoloMatchEntity
+import com.org.meeple.infra.solomatch.command.entity.QSoloMatchMemberEntity
 import com.org.meeple.infra.user.command.entity.QUserDetailEntity
 import io.kotest.matchers.shouldBe
 

@@ -33,11 +33,14 @@ class GetPopupsService(
 	private val timeGenerator: TimeGenerator,
 ) : GetPopupsUseCase {
 
-	override fun getVisiblePopups(userId: Long): PopupViews {
+	override fun getVisiblePopups(userId: Long, isNewUser: Boolean): PopupViews {
 		val now: LocalDateTime = timeGenerator.now()
 		// 개인 팝업을 전역 팝업보다 앞에 두고, 각 그룹은 display_order(동순위 id) 순으로 정렬해 합친다.
-		val popups: PopupViews = getPrivatePopupDao.findVisible(now, userId)
+		val merged: PopupViews = getPrivatePopupDao.findVisible(now, userId)
 			.mergeBefore(getPublicPopupDao.findVisible(now))
+
+		// 신규 유저 팝업은 isNewUser=true인 요청에만 노출한다. (아니면 제외)
+		val popups: PopupViews = if (isNewUser) merged else merged.withoutNewUser()
 
 		// 일일 보상 팝업이 없으면 코인 적립 없이 그대로 반환한다.
 		if (!popups.hasDailyReward()) {

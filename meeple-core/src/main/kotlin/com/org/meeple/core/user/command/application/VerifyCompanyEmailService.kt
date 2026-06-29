@@ -6,9 +6,9 @@ import com.org.meeple.core.coin.command.application.port.`in`.AcquireCoinUseCase
 import com.org.meeple.core.coin.command.application.port.`in`.command.AcquireCoinCommand
 import com.org.meeple.core.common.error.BusinessException
 import com.org.meeple.core.common.event.MatchProfileSnapshot
-import com.org.meeple.core.match.command.application.port.`in`.RecommendMatchUseCase
-import com.org.meeple.core.match.command.application.port.`in`.RecommendTeamUseCase
-import com.org.meeple.core.match.command.application.port.`in`.SyncMatchUserUseCase
+import com.org.meeple.core.solomatch.command.application.port.`in`.RecommendMatchUseCase
+import com.org.meeple.core.teammatch.command.application.port.`in`.RecommendTeamUseCase
+import com.org.meeple.core.matchuser.command.application.port.`in`.SyncMatchUserUseCase
 import com.org.meeple.core.user.UserErrorCode
 import com.org.meeple.core.common.time.TimeGenerator
 import com.org.meeple.core.user.query.service.port.`in`.GetUserCompanyUseCase

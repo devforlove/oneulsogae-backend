@@ -1,6 +1,8 @@
 package com.org.meeple.domain.popup
 
+import com.org.meeple.common.popup.PopupType
 import com.org.meeple.core.fixture.PopupFixture
+import com.org.meeple.core.popup.command.domain.Popup
 import io.kotest.core.spec.style.DescribeSpec
 import io.kotest.matchers.shouldBe
 import java.time.LocalDateTime
@@ -30,6 +32,18 @@ class PopupTest : DescribeSpec({
 		it("노출 기간 안(경계 포함)이면 노출 대상이다") {
 			PopupFixture.create(exposedFrom = now, exposedTo = now).isVisible(now) shouldBe true
 			PopupFixture.create(exposedFrom = now.minusHours(1), exposedTo = now.plusHours(1)).isVisible(now) shouldBe true
+		}
+	}
+
+	describe("meetingFailedRefund") {
+		it("미팅 환불 안내 개인 팝업을 생성한다 (MEETING_FAILED_REFUND, 7일 노출)") {
+			val popup: Popup = Popup.meetingFailedRefund(userId = 100L, refundAmount = 20, now = now)
+
+			popup.popUpType shouldBe PopupType.MEETING_FAILED_REFUND
+			popup.userId shouldBe 100L
+			popup.description shouldBe "미팅이 매칭되지 않아 사용한 코인의 절반인 20코인을 돌려드렸어요."
+			popup.exposedFrom shouldBe now
+			popup.exposedTo shouldBe now.plusDays(7)
 		}
 	}
 })

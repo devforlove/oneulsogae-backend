@@ -2,7 +2,7 @@ package com.org.meeple.domain.match
 
 import com.org.meeple.common.match.MatchMemberStatus
 import com.org.meeple.common.user.Gender
-import com.org.meeple.core.match.command.domain.MatchMembers
+import com.org.meeple.core.solomatch.command.domain.MatchMembers
 import io.kotest.core.spec.style.DescribeSpec
 import io.kotest.matchers.shouldBe
 

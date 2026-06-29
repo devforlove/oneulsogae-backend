@@ -6,9 +6,9 @@ import com.org.meeple.auth.AuthUser
 import com.org.meeple.auth.LoginUser
 import com.org.meeple.core.common.response.ApiResponse
 import com.org.meeple.core.common.time.TimeGenerator
-import com.org.meeple.core.match.command.application.port.`in`.EndTeamMatchUseCase
-import com.org.meeple.core.match.command.application.port.`in`.SendTeamInterestUseCase
-import com.org.meeple.core.match.query.service.port.`in`.GetMeetingTabUseCase
+import com.org.meeple.core.teammatch.command.application.port.`in`.EndTeamMatchUseCase
+import com.org.meeple.core.teammatch.command.application.port.`in`.SendTeamInterestUseCase
+import com.org.meeple.core.teammatch.query.service.port.`in`.GetMeetingTabUseCase
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.tags.Tag
 import org.springframework.web.bind.annotation.DeleteMapping

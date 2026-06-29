@@ -1,6 +1,6 @@
 package com.org.meeple.infra.fixture
 
-import com.org.meeple.infra.match.command.entity.RecommendedTeamEntity
+import com.org.meeple.infra.teammatch.command.entity.RecommendedTeamEntity
 import java.time.LocalDate
 
 /**

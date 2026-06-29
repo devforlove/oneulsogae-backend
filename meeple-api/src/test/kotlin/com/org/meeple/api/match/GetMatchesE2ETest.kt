@@ -7,14 +7,14 @@ import com.org.meeple.common.match.MatchMemberStatus
 import com.org.meeple.common.match.MatchStatus
 import com.org.meeple.common.user.Gender
 import com.org.meeple.common.user.UserStatus
-import com.org.meeple.core.match.command.domain.MatchMembers
+import com.org.meeple.core.solomatch.command.domain.MatchMembers
 import com.org.meeple.infra.fixture.IntegrationUtil
 import com.org.meeple.infra.fixture.SoloMatchEntityFixture
 import com.org.meeple.infra.fixture.SoloMatchMemberEntityFixture
 import com.org.meeple.infra.fixture.UserEntityFixture
-import com.org.meeple.infra.match.command.entity.SoloMatchEntity
-import com.org.meeple.infra.match.command.entity.QSoloMatchEntity
-import com.org.meeple.infra.match.command.entity.QSoloMatchMemberEntity
+import com.org.meeple.infra.solomatch.command.entity.SoloMatchEntity
+import com.org.meeple.infra.solomatch.command.entity.QSoloMatchEntity
+import com.org.meeple.infra.solomatch.command.entity.QSoloMatchMemberEntity
 import com.org.meeple.infra.user.command.entity.QUserDetailEntity
 import com.org.meeple.infra.user.command.entity.QUserEntity
 import com.org.meeple.infra.user.command.entity.UserDetailEntity
@@ -24,7 +24,7 @@ import java.time.LocalDate
 /**
  * `GET /matches/v1` E2E 테스트.
  *
- * 매칭 목록 조회가 QueryDSL 투영으로 [com.org.meeple.core.match.query.dto.MatchWithPartner]를 바로 만들 때:
+ * 매칭 목록 조회가 QueryDSL 투영으로 [com.org.meeple.core.solomatch.query.dto.MatchWithPartner]를 바로 만들 때:
  * - 관심 여부(hasUserInterest/hasPartnerInterest)가 참가자 status(APPLY/ACTIVE)에서 올바로 산출되는지,
  * - `@Convert`(JSON) 컬럼인 상대 프로필 traits/interests가 컨버터를 거쳐 `List<String>`으로 복원되는지 검증한다.
  */

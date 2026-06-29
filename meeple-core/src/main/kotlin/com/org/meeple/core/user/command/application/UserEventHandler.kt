@@ -2,7 +2,7 @@ package com.org.meeple.core.user.command.application
 
 import com.org.meeple.core.common.event.MatchProfileSnapshot
 import com.org.meeple.core.common.event.UserLoggedIn
-import com.org.meeple.core.match.command.application.port.`in`.SyncMatchUserUseCase
+import com.org.meeple.core.matchuser.command.application.port.`in`.SyncMatchUserUseCase
 import com.org.meeple.core.user.command.application.port.out.GetUserDetailPort
 import com.org.meeple.core.user.command.application.port.out.GetUserPort
 import com.org.meeple.core.user.command.domain.User

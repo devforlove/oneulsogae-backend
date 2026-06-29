@@ -10,7 +10,7 @@ import java.time.LocalDateTime
 
 /**
  * [CreateRefundPopupUseCase] 구현. (명령 경로)
- * 환불 사실을 알리는 개인 팝업([Popup.matchFailedRefund])을 만들어 저장한다.
+ * 환불 사실을 알리는 개인 팝업([Popup.matchFailedRefund], [Popup.meetingFailedRefund])을 만들어 저장한다.
  */
 @Service
 @Transactional
@@ -22,5 +22,10 @@ class CreateRefundPopupService(
 	override fun createMatchFailedRefund(userId: Long, refundAmount: Int) {
 		val now: LocalDateTime = timeGenerator.now()
 		savePopupPort.save(Popup.matchFailedRefund(userId = userId, refundAmount = refundAmount, now = now))
+	}
+
+	override fun createMeetingFailedRefund(userId: Long, refundAmount: Int) {
+		val now: LocalDateTime = timeGenerator.now()
+		savePopupPort.save(Popup.meetingFailedRefund(userId = userId, refundAmount = refundAmount, now = now))
 	}
 }

@@ -1,10 +1,10 @@
 package com.org.meeple.api.match
 
 import com.org.meeple.common.integration.AbstractIntegrationSupport
-import com.org.meeple.core.match.command.application.port.out.SaveRecommendedTeamHistoryPort
-import com.org.meeple.core.match.command.domain.RecommendedTeamHistory
+import com.org.meeple.core.teammatch.command.application.port.out.SaveRecommendedTeamHistoryPort
+import com.org.meeple.core.teammatch.command.domain.RecommendedTeamHistory
 import com.org.meeple.infra.fixture.IntegrationUtil
-import com.org.meeple.infra.match.command.entity.QRecommendedTeamHistoryEntity
+import com.org.meeple.infra.teammatch.command.entity.QRecommendedTeamHistoryEntity
 import io.kotest.matchers.collections.shouldContainExactlyInAnyOrder
 import org.springframework.beans.factory.annotation.Autowired
 

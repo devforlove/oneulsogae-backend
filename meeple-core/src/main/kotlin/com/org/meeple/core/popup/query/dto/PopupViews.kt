@@ -25,6 +25,10 @@ data class PopupViews(
 	fun withoutDailyReward(): PopupViews =
 		PopupViews(values.filterNot { view: PopupView -> view.popUpType == PopupType.DAILY_REWARD })
 
+	/** 신규 유저(NEW_USER) 팝업을 제외한 새 목록을 반환한다. (신규 유저가 아닌 요청에는 노출하지 않는다) */
+	fun withoutNewUser(): PopupViews =
+		PopupViews(values.filterNot { view: PopupView -> view.popUpType == PopupType.NEW_USER })
+
 	/**
 	 * 이 목록을 [lower]보다 앞에 두고 합친 새 목록을 만든다. (이 목록의 정렬 우선순위가 더 높다 — 예: 개인 팝업 > 전역 팝업)
 	 * 각 그룹 내부는 display_order(동순위는 id) 오름차순으로 정렬하되, 그룹 간에는 재정렬하지 않아 이 목록이 항상 먼저 온다.

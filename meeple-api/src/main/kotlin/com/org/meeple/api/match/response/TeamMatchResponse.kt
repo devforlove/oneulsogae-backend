@@ -2,8 +2,8 @@ package com.org.meeple.api.match.response
 
 import com.org.meeple.common.match.MatchStatus
 import com.org.meeple.common.match.MatchedTeamStatus
-import com.org.meeple.core.match.command.domain.MatchedTeam
-import com.org.meeple.core.match.command.domain.TeamMatch
+import com.org.meeple.core.teammatch.command.domain.MatchedTeam
+import com.org.meeple.core.teammatch.command.domain.TeamMatch
 
 /**
  * 팀 매칭 관심/수락 결과 응답. 매칭 상태와 참가 팀별 상태를 담는다.

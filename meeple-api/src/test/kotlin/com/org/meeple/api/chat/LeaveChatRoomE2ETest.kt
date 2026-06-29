@@ -17,8 +17,8 @@ import com.org.meeple.infra.fixture.ChatRoomMemberEntityFixture
 import com.org.meeple.infra.fixture.IntegrationUtil
 import com.org.meeple.infra.fixture.SoloMatchEntityFixture
 import com.org.meeple.infra.fixture.SoloMatchMemberEntityFixture
-import com.org.meeple.infra.match.command.entity.QSoloMatchEntity
-import com.org.meeple.infra.match.command.entity.QSoloMatchMemberEntity
+import com.org.meeple.infra.solomatch.command.entity.QSoloMatchEntity
+import com.org.meeple.infra.solomatch.command.entity.QSoloMatchMemberEntity
 import io.kotest.matchers.shouldBe
 
 /**

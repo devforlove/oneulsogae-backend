@@ -64,5 +64,21 @@ data class Popup(
 				exposedFrom = now,
 				exposedTo = now.plusDays(REFUND_POPUP_EXPOSURE_DAYS),
 			)
+
+		/**
+		 * 미팅(팀) 매칭 실패로 [refundAmount]코인을 환불한 사실을 알리는 개인([userId]) 팝업을 만든다.
+		 * [now]부터 [REFUND_POPUP_EXPOSURE_DAYS]일 동안만 노출한다. (소개팅 [matchFailedRefund]와 동일 골격, 문구만 미팅 기준)
+		 */
+		fun meetingFailedRefund(userId: Long, refundAmount: Int, now: LocalDateTime): Popup =
+			Popup(
+				title = "미팅 매칭 실패 환불",
+				description = "미팅이 매칭되지 않아 사용한 코인의 절반인 ${refundAmount}코인을 돌려드렸어요.",
+				displayOrder = 0,
+				buttonText = "확인",
+				popUpType = PopupType.MEETING_FAILED_REFUND,
+				userId = userId,
+				exposedFrom = now,
+				exposedTo = now.plusDays(REFUND_POPUP_EXPOSURE_DAYS),
+			)
 	}
 }

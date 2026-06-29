@@ -1,6 +1,6 @@
 package com.org.meeple.api.match.request
 
-import com.org.meeple.core.match.command.application.port.`in`.command.InviteTeamCommand
+import com.org.meeple.core.teammatch.command.application.port.`in`.command.InviteTeamCommand
 import jakarta.validation.constraints.NotBlank
 import jakarta.validation.constraints.NotNull
 import jakarta.validation.constraints.Positive

@@ -1,8 +1,8 @@
 package com.org.meeple.domain.match
 
 import com.org.meeple.common.match.MatchedTeamStatus
-import com.org.meeple.core.match.command.domain.MatchedTeam
-import com.org.meeple.core.match.command.domain.MatchedTeams
+import com.org.meeple.core.teammatch.command.domain.MatchedTeam
+import com.org.meeple.core.teammatch.command.domain.MatchedTeams
 import io.kotest.core.spec.style.DescribeSpec
 import io.kotest.matchers.shouldBe
 import java.time.LocalDateTime
@@ -29,12 +29,29 @@ class MatchedTeamsTest : DescribeSpec({
 		it("주어진 teamId 팀만 APPLY로 전이하고 나머지는 그대로다") {
 			val matchedTeams: MatchedTeams = MatchedTeams.of(listOf(10L, 20L))
 
-			val applied: MatchedTeams = matchedTeams.apply(10L)
+			val applied: MatchedTeams = matchedTeams.apply(10L, 100L)
 
 			applied.values.first { it.teamId == 10L }.status shouldBe MatchedTeamStatus.APPLY
 			applied.values.first { it.teamId == 20L }.status shouldBe MatchedTeamStatus.WAITING
 			// 원본 불변
 			matchedTeams.values.all { it.status == MatchedTeamStatus.WAITING } shouldBe true
+		}
+	}
+
+	describe("refundableTeams - 환불 대상 팀") {
+		it("APPLY인 팀만 돌려주고 신청자(applicantUserId)를 보존한다") {
+			val matchedTeams: MatchedTeams = MatchedTeams.of(listOf(10L, 20L)).apply(10L, 100L)
+
+			val refundable: List<com.org.meeple.core.teammatch.command.domain.MatchedTeam> = matchedTeams.refundableTeams()
+
+			refundable.map { it.teamId } shouldBe listOf(10L)
+			refundable.first().applicantUserId shouldBe 100L
+		}
+
+		it("성사로 ACTIVE가 된 팀은 환불 대상에서 제외한다") {
+			val matched: MatchedTeams = MatchedTeams.of(listOf(10L, 20L)).apply(10L, 100L).apply(20L, 200L).activateAll()
+
+			matched.refundableTeams() shouldBe emptyList()
 		}
 	}
 
@@ -44,11 +61,11 @@ class MatchedTeamsTest : DescribeSpec({
 			none.anyApplied() shouldBe false
 			none.allApplied() shouldBe false
 
-			val partial: MatchedTeams = none.apply(10L)
+			val partial: MatchedTeams = none.apply(10L, 100L)
 			partial.anyApplied() shouldBe true
 			partial.allApplied() shouldBe false
 
-			val all: MatchedTeams = partial.apply(20L)
+			val all: MatchedTeams = partial.apply(20L, 200L)
 			all.allApplied() shouldBe true
 		}
 	}

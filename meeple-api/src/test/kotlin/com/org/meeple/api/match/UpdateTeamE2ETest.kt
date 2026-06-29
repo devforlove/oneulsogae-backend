@@ -7,9 +7,9 @@ import com.org.meeple.common.integration.put
 import com.org.meeple.common.user.Gender
 import com.org.meeple.infra.fixture.IntegrationUtil
 import com.org.meeple.infra.fixture.MatchUserEntityFixture
-import com.org.meeple.infra.match.command.entity.QMatchUserEntity
-import com.org.meeple.infra.match.command.entity.QTeamEntity
-import com.org.meeple.infra.match.command.entity.QTeamMemberEntity
+import com.org.meeple.infra.matchuser.command.entity.QMatchUserEntity
+import com.org.meeple.infra.teammatch.command.entity.QTeamEntity
+import com.org.meeple.infra.teammatch.command.entity.QTeamMemberEntity
 
 /**
  * `PUT /teams/v1/{teamId}` E2E 테스트. (팀 이름·소개·활동지역 수정)

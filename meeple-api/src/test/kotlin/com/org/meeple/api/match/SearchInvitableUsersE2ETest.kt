@@ -9,9 +9,9 @@ import com.org.meeple.core.common.time.ageAt
 import com.org.meeple.infra.fixture.IntegrationUtil
 import com.org.meeple.infra.fixture.MatchUserEntityFixture
 import com.org.meeple.infra.fixture.UserDetailEntityFixture
-import com.org.meeple.infra.match.command.entity.QMatchUserEntity
-import com.org.meeple.infra.match.command.entity.QTeamMemberEntity
-import com.org.meeple.infra.match.command.entity.TeamMemberEntity
+import com.org.meeple.infra.matchuser.command.entity.QMatchUserEntity
+import com.org.meeple.infra.teammatch.command.entity.QTeamMemberEntity
+import com.org.meeple.infra.teammatch.command.entity.TeamMemberEntity
 import com.org.meeple.infra.user.command.entity.QUserDetailEntity
 import org.hamcrest.Matchers.containsInAnyOrder
 import org.hamcrest.Matchers.hasSize
