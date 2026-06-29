@@ -65,7 +65,7 @@ class SendTeamInterestService(
 
 		teamMatch.validateRespondable(actorTeam.id)
 
-		val updated: TeamMatch = saveTeamMatchPort.save(teamMatch.respond(actorTeam.id))
+		val updated: TeamMatch = saveTeamMatchPort.save(teamMatch.respond(actorTeam.id, userId))
 		return when (updated.status) {
 			MatchStatus.MATCHED -> completeMatch(userId, updated, teams)
 			MatchStatus.PARTIALLY_ACCEPTED -> recordInterest(userId, updated, actorTeam, teams)

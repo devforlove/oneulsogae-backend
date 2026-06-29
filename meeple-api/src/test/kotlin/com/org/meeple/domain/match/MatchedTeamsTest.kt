@@ -29,12 +29,23 @@ class MatchedTeamsTest : DescribeSpec({
 		it("주어진 teamId 팀만 APPLY로 전이하고 나머지는 그대로다") {
 			val matchedTeams: MatchedTeams = MatchedTeams.of(listOf(10L, 20L))
 
-			val applied: MatchedTeams = matchedTeams.apply(10L)
+			val applied: MatchedTeams = matchedTeams.apply(10L, 100L)
 
 			applied.values.first { it.teamId == 10L }.status shouldBe MatchedTeamStatus.APPLY
 			applied.values.first { it.teamId == 20L }.status shouldBe MatchedTeamStatus.WAITING
 			// 원본 불변
 			matchedTeams.values.all { it.status == MatchedTeamStatus.WAITING } shouldBe true
+		}
+	}
+
+	describe("applied - 신청한 팀") {
+		it("APPLY/ACTIVE인 팀만 돌려준다") {
+			val matchedTeams: MatchedTeams = MatchedTeams.of(listOf(10L, 20L)).apply(10L, 100L)
+
+			val applied: List<com.org.meeple.core.match.command.domain.MatchedTeam> = matchedTeams.applied()
+
+			applied.map { it.teamId } shouldBe listOf(10L)
+			applied.first().applicantUserId shouldBe 100L
 		}
 	}
 
@@ -44,11 +55,11 @@ class MatchedTeamsTest : DescribeSpec({
 			none.anyApplied() shouldBe false
 			none.allApplied() shouldBe false
 
-			val partial: MatchedTeams = none.apply(10L)
+			val partial: MatchedTeams = none.apply(10L, 100L)
 			partial.anyApplied() shouldBe true
 			partial.allApplied() shouldBe false
 
-			val all: MatchedTeams = partial.apply(20L)
+			val all: MatchedTeams = partial.apply(20L, 200L)
 			all.allApplied() shouldBe true
 		}
 	}

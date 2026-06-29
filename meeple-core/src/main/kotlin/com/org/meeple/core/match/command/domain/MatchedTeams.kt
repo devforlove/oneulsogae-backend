@@ -39,9 +39,13 @@ data class MatchedTeams(
 	fun find(teamId: Long): MatchedTeam? =
 		values.firstOrNull { matchedTeam: MatchedTeam -> matchedTeam.teamId == teamId }
 
-	/** [teamId] 팀을 신청(APPLY) 처리한 새 컬렉션을 반환한다. (나머지는 그대로) */
-	fun apply(teamId: Long): MatchedTeams =
-		MatchedTeams(values.map { matchedTeam: MatchedTeam -> if (matchedTeam.teamId == teamId) matchedTeam.apply() else matchedTeam })
+	/** [teamId] 팀을 신청(APPLY) 처리하고 지불자([applicantUserId])를 기록한 새 컬렉션을 반환한다. (나머지는 그대로) */
+	fun apply(teamId: Long, applicantUserId: Long): MatchedTeams =
+		MatchedTeams(values.map { matchedTeam: MatchedTeam -> if (matchedTeam.teamId == teamId) matchedTeam.apply(applicantUserId) else matchedTeam })
+
+	/** 신청(APPLY/ACTIVE)한 팀들. (미성사 만료 환불 대상 산정에 쓴다) */
+	fun applied(): List<MatchedTeam> =
+		values.filter { matchedTeam: MatchedTeam -> matchedTeam.hasApplied }
 
 	/** [teamId] 팀만 비활성(DEACTIVE) 전이한 새 컬렉션을 반환한다. (나머지는 그대로, 소프트 삭제는 안 함) */
 	fun deactivate(teamId: Long): MatchedTeams =
