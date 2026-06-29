@@ -40,4 +40,8 @@ class MatchedTeamEntity(
 	@Enumerated(EnumType.STRING)
 	@Column(name = "status", nullable = false, columnDefinition = "varchar(50)")
 	var status: MatchedTeamStatus = MatchedTeamStatus.WAITING,
+
+	/** 이 팀이 신청(APPLY)할 때 코인을 지불한 구성원 userId. 미신청이면 null. (미성사 만료 환불 대상 식별용) */
+	@Column(name = "applicant_user_id")
+	var applicantUserId: Long? = null,
 ) : BaseEntity()

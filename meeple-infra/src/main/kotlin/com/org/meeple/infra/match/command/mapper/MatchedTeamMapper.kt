@@ -12,6 +12,7 @@ fun MatchedTeamEntity.toDomain(): MatchedTeam =
 		teamMatchId = teamMatchId,
 		teamId = teamId,
 		status = status,
+		applicantUserId = applicantUserId,
 		deletedAt = deletedAt,
 	)
 
@@ -25,6 +26,7 @@ fun MatchedTeam.toEntity(): MatchedTeamEntity =
 		teamMatchId = teamMatchId,
 		teamId = teamId,
 		status = status,
+		applicantUserId = applicantUserId,
 	).also {
 		if (id != 0L) it.id = id
 		deletedAt?.let { at: LocalDateTime -> it.softDelete(at) }
