@@ -12,6 +12,9 @@ enum class PopupType(val description: String) {
 	/** 소개팅 매칭 실패로 사용한 코인의 절반을 환불할 때 보여주는 팝업. */
 	MATCH_FAILED_REFUND("매칭 실패 환불"),
 
+	/** 미팅(팀) 매칭 실패로 사용한 코인의 절반을 환불할 때 보여주는 팝업. */
+	MEETING_FAILED_REFUND("미팅 매칭 실패 환불"),
+
 	/** 신규 유저에게만 노출하는 팝업. (isNewUser=true인 요청에만 내려준다) */
 	NEW_USER("신규 유저"),
 }
