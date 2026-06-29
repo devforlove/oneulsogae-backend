@@ -7,8 +7,10 @@ import com.org.meeple.core.common.response.ApiResponse
 import com.org.meeple.core.popup.query.service.port.`in`.GetPopupsUseCase
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.tags.Tag
+import io.swagger.v3.oas.annotations.Parameter
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.RequestMapping
+import org.springframework.web.bind.annotation.RequestParam
 import org.springframework.web.bind.annotation.RestController
 
 /**
@@ -23,11 +25,13 @@ class PopupController(
 	private val getPopupsUseCase: GetPopupsUseCase,
 ) {
 
-	/** 현재 노출 중인 팝업 목록을 노출 순서대로 조회한다. (출석 보상 팝업이 있으면 출석 코인 적립) */
-	@Operation(summary = "노출 팝업 목록 조회", description = "현재 노출 대상(노출 ON + 기간 내)인 팝업 목록을 display_order 오름차순으로 조회한다. 일일 보상 팝업이 포함되면 출석 코인을 적립한다(하루 1회).")
+	/** 현재 노출 중인 팝업 목록을 노출 순서대로 조회한다. (출석 보상 팝업이 있으면 출석 코인 적립, isNewUser=true면 신규 유저 팝업 포함) */
+	@Operation(summary = "노출 팝업 목록 조회", description = "현재 노출 대상(노출 ON + 기간 내)인 팝업 목록을 display_order 오름차순으로 조회한다. 일일 보상 팝업이 포함되면 출석 코인을 적립한다(하루 1회). isNewUser=true면 신규 유저 팝업도 함께 내려준다.")
 	@GetMapping
 	fun visiblePopups(
 		@LoginUser user: AuthUser,
+		@Parameter(description = "신규 유저 여부. true면 신규 유저 팝업을 함께 노출한다.")
+		@RequestParam(defaultValue = "false") isNewUser: Boolean,
 	): ApiResponse<List<PopupResponse>> =
-		ApiResponse.success(PopupResponse.listOf(getPopupsUseCase.getVisiblePopups(user.id)))
+		ApiResponse.success(PopupResponse.listOf(getPopupsUseCase.getVisiblePopups(user.id, isNewUser)))
 }
