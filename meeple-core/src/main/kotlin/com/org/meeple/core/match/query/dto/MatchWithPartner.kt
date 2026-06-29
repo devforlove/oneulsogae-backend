@@ -35,6 +35,7 @@ data class MatchWithPartner(
 	val activityArea: String?,
 	val introduction: String?,
 	val companyName: String?,
+	val universityName: String?,
 	val traits: List<String>,
 	val interests: List<String>,
 	val maritalStatus: MaritalStatus?,

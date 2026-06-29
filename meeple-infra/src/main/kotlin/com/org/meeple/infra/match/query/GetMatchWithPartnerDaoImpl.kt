@@ -61,6 +61,7 @@ class GetMatchWithPartnerDaoImpl(
 					region.sido.concat(" ").concat(region.sigungu),
 					userDetail.introduction,
 					userDetail.companyName,
+					userDetail.universityName,
 					Expressions.path(List::class.java, userDetail, "traits"),
 					Expressions.path(List::class.java, userDetail, "interests"),
 					userDetail.maritalStatus,

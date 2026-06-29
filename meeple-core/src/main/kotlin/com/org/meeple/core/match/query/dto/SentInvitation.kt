@@ -29,6 +29,7 @@ data class SentInvitationMember(
 	val nickname: String,
 	val job: String?,
 	val companyName: String?,
+	val universityName: String?,
 	val gender: Gender,
 	val profileImageCode: String,
 	val birthday: LocalDate,

@@ -32,8 +32,15 @@ class SearchInvitableUsersE2ETest : AbstractIntegrationSupport({
 		IntegrationUtil.persist(MatchUserEntityFixture.create(userId = userId, gender = gender, nickname = nickname, birthday = BIRTHDAY))
 	}
 
-	// 프로필 상세(user_details, 닉네임·직업·회사명) 행을 저장한다.
-	fun persistUserDetail(userId: Long, gender: Gender, nickname: String, job: String?, companyName: String?) {
+	// 프로필 상세(user_details, 닉네임·직업·회사명·학교명) 행을 저장한다.
+	fun persistUserDetail(
+		userId: Long,
+		gender: Gender,
+		nickname: String,
+		job: String?,
+		companyName: String?,
+		universityName: String? = null,
+	) {
 		IntegrationUtil.persist(
 			UserDetailEntityFixture.create(
 				userId = userId,
@@ -41,6 +48,7 @@ class SearchInvitableUsersE2ETest : AbstractIntegrationSupport({
 				gender = gender,
 				job = job,
 				companyName = companyName,
+				universityName = universityName,
 			),
 		)
 	}
@@ -64,8 +72,9 @@ class SearchInvitableUsersE2ETest : AbstractIntegrationSupport({
 				persistMatchUser(userId, Gender.MALE, nickname)
 
 				// 포함 대상 A, E: 같은 성별(MALE)·매칭가능·동일 닉네임 (동명이인 2명)
-				persistUserDetail(7002L, Gender.MALE, nickname, job = "개발자", companyName = "토스")
+				persistUserDetail(7002L, Gender.MALE, nickname, job = "개발자", companyName = "토스", universityName = "서울대학교")
 				persistMatchUser(7002L, Gender.MALE, nickname)
+				// 학교 인증을 안 한 유저는 universityName이 null로 내려온다.
 				persistUserDetail(7003L, Gender.MALE, nickname, job = null, companyName = null)
 				persistMatchUser(7003L, Gender.MALE, nickname)
 
@@ -74,7 +83,7 @@ class SearchInvitableUsersE2ETest : AbstractIntegrationSupport({
 				persistMatchUser(7004L, Gender.FEMALE, nickname)
 
 				// 포함 대상 C: 이미 활성 팀 소속이어도 검색에는 노출된다 (초대 시점에 invite 명령이 차단)
-				persistUserDetail(7005L, Gender.MALE, nickname, job = "기획", companyName = "라인")
+				persistUserDetail(7005L, Gender.MALE, nickname, job = "기획", companyName = "라인", universityName = "연세대학교")
 				persistMatchUser(7005L, Gender.MALE, nickname)
 				persistActiveTeamMember(7005L)
 
@@ -94,6 +103,8 @@ class SearchInvitableUsersE2ETest : AbstractIntegrationSupport({
 					body("data.userId", containsInAnyOrder(7002, 7003, 7005))
 					body("data.job", containsInAnyOrder("개발자", null, "기획"))
 					body("data.companyName", containsInAnyOrder("토스", null, "라인"))
+					// 학교명: 인증한 유저는 학교명, 안 한 유저(7003)는 null로 내려온다.
+					body("data.universityName", containsInAnyOrder("서울대학교", null, "연세대학교"))
 					// 신규 필드: 포함 대상 3명 모두 픽스처 기본값(MALE·"1"·EXPECTED_AGE)
 					body("data.gender", containsInAnyOrder("MALE", "MALE", "MALE"))
 					body("data.profileImageCode", containsInAnyOrder("1", "1", "1"))

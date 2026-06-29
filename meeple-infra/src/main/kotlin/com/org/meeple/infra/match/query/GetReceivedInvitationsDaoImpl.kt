@@ -101,6 +101,7 @@ class GetReceivedInvitationsDaoImpl(
 			matchUser.nickname,
 			userDetail.job,
 			userDetail.companyName,
+			userDetail.universityName,
 			matchUser.gender,
 			matchUser.profileImageCode,
 			matchUser.birthday,
