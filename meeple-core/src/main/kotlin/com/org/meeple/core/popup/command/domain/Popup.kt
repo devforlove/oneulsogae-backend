@@ -16,9 +16,7 @@ data class Popup(
 	val title: String? = null,
 	val description: String? = null,
 	val displayOrder: Int,
-	val imageUrl: String? = null,
-	val imageWidth: Int? = null,
-	val imageHeight: Int? = null,
+	val imageCode: String? = null,
 	val linkUrl: String? = null,
 	val buttonText: String? = null,
 	val popUpType: PopupType = PopupType.NORMAL,
@@ -49,6 +47,12 @@ data class Popup(
 		/** 개인 환불 팝업의 노출 기간(일). 환불 안내가 무한히 남지 않도록 생성 시점부터 이 기간까지만 노출한다. */
 		private const val REFUND_POPUP_EXPOSURE_DAYS: Long = 7L
 
+		/** 소개팅 매칭 실패 환불 팝업 이미지의 image_templates 코드. (실제 이미지는 DB에서 교체) */
+		const val MATCH_FAILED_REFUND_IMAGE_CODE: String = "POPUP_MATCH_FAILED_REFUND"
+
+		/** 미팅(팀) 매칭 실패 환불 팝업 이미지의 image_templates 코드. */
+		const val MEETING_FAILED_REFUND_IMAGE_CODE: String = "POPUP_MEETING_FAILED_REFUND"
+
 		/**
 		 * 소개팅 매칭 실패로 [refundAmount]코인을 환불한 사실을 알리는 개인([userId]) 팝업을 만든다.
 		 * [now]부터 [REFUND_POPUP_EXPOSURE_DAYS]일 동안만 노출한다. (별도 읽음 처리 개념이 없어 노출 기간으로 정리한다)
@@ -58,6 +62,7 @@ data class Popup(
 				title = "소개팅 매칭 실패 환불",
 				description = "소개팅이 매칭되지 않아 사용한 코인의 절반인 ${refundAmount}코인을 돌려드렸어요.",
 				displayOrder = 0,
+				imageCode = MATCH_FAILED_REFUND_IMAGE_CODE,
 				buttonText = "확인",
 				popUpType = PopupType.MATCH_FAILED_REFUND,
 				userId = userId,
@@ -74,6 +79,7 @@ data class Popup(
 				title = "미팅 매칭 실패 환불",
 				description = "미팅이 매칭되지 않아 사용한 코인의 절반인 ${refundAmount}코인을 돌려드렸어요.",
 				displayOrder = 0,
+				imageCode = MEETING_FAILED_REFUND_IMAGE_CODE,
 				buttonText = "확인",
 				popUpType = PopupType.MEETING_FAILED_REFUND,
 				userId = userId,

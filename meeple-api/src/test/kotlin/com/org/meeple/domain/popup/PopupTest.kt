@@ -42,6 +42,7 @@ class PopupTest : DescribeSpec({
 			popup.popUpType shouldBe PopupType.MEETING_FAILED_REFUND
 			popup.userId shouldBe 100L
 			popup.description shouldBe "미팅이 매칭되지 않아 사용한 코인의 절반인 20코인을 돌려드렸어요."
+			popup.imageCode shouldBe Popup.MEETING_FAILED_REFUND_IMAGE_CODE
 			popup.exposedFrom shouldBe now
 			popup.exposedTo shouldBe now.plusDays(7)
 		}

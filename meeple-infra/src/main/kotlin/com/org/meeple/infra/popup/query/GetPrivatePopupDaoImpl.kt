@@ -3,6 +3,7 @@ package com.org.meeple.infra.popup.query
 import com.org.meeple.core.popup.query.dao.GetPrivatePopupDao
 import com.org.meeple.core.popup.query.dto.PopupView
 import com.org.meeple.core.popup.query.dto.PopupViews
+import com.org.meeple.infra.image.entity.QImageTemplateEntity
 import com.org.meeple.infra.popup.command.entity.QPopupEntity
 import com.querydsl.core.types.Projections
 import com.querydsl.jpa.impl.JPAQueryFactory
@@ -23,6 +24,7 @@ class GetPrivatePopupDaoImpl(
 
 	override fun findVisible(now: LocalDateTime, userId: Long): PopupViews {
 		val popup: QPopupEntity = QPopupEntity.popupEntity
+		val template: QImageTemplateEntity = QImageTemplateEntity.imageTemplateEntity
 		val views: List<PopupView> = queryFactory
 			.select(
 				Projections.constructor(
@@ -31,15 +33,16 @@ class GetPrivatePopupDaoImpl(
 					popup.title,
 					popup.description,
 					popup.displayOrder,
-					popup.imageUrl,
-					popup.imageWidth,
-					popup.imageHeight,
+					template.imageUrl,
+					template.imageWidth,
+					template.imageHeight,
 					popup.linkUrl,
 					popup.buttonText,
 					popup.popUpType,
 				),
 			)
 			.from(popup)
+			.leftJoin(template).on(template.code.eq(popup.imageCode))
 			.where(
 				popup.userId.eq(userId),
 				popup.exposedFrom.loe(now),

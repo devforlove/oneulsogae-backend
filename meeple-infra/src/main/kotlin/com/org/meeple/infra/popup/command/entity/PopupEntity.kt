@@ -42,17 +42,9 @@ class PopupEntity(
 	@Column(name = "display_order", nullable = false)
 	var displayOrder: Int,
 
-	/** 팝업 이미지 URL. 없으면 null. */
-	@Column(name = "image_url", length = 500)
-	var imageUrl: String? = null,
-
-	/** 팝업 이미지 너비(px). 없으면 null. */
-	@Column(name = "image_width")
-	var imageWidth: Int? = null,
-
-	/** 팝업 이미지 높이(px). 없으면 null. */
-	@Column(name = "image_height")
-	var imageHeight: Int? = null,
+	/** 팝업 이미지 참조 코드(image_templates.code). 없으면 null. 실제 이미지(url·치수)는 조회 시 image_templates를 조인해 해석한다. */
+	@Column(name = "image_code", length = 100)
+	var imageCode: String? = null,
 
 	/** 팝업 클릭 시 이동할 링크 URL. 없으면 null. */
 	@Column(name = "link_url", length = 500)
