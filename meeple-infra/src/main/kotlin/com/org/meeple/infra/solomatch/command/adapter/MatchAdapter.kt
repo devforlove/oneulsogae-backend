@@ -12,7 +12,7 @@ import com.org.meeple.infra.solomatch.command.mapper.toEntities
 import com.org.meeple.infra.solomatch.command.mapper.toEntity
 import com.org.meeple.infra.solomatch.command.repository.MatchJpaRepository
 import com.org.meeple.infra.solomatch.command.repository.MatchMemberJpaRepository
-import com.org.meeple.scheduler.match.command.application.port.out.SaveMatchRecordPort
+import com.org.meeple.scheduler.solomatch.command.application.port.out.SaveMatchRecordPort
 import org.springframework.stereotype.Component
 import java.time.LocalDateTime
 

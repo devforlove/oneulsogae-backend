@@ -3,8 +3,8 @@ package com.org.meeple.infra.teammatch.query
 import com.org.meeple.common.match.TeamMemberStatus
 import com.org.meeple.infra.matchuser.command.entity.QMatchUserEntity
 import com.org.meeple.infra.teammatch.command.entity.QTeamMemberEntity
-import com.org.meeple.scheduler.match.query.dao.GetRecommendableSoloUserDao
-import com.org.meeple.scheduler.match.query.dto.RecommendableSoloUser
+import com.org.meeple.scheduler.teammatch.query.dao.GetRecommendableSoloUserDao
+import com.org.meeple.scheduler.teammatch.query.dto.RecommendableSoloUser
 import com.querydsl.core.types.Projections
 import com.querydsl.jpa.JPAExpressions
 import com.querydsl.jpa.impl.JPAQueryFactory

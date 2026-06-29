@@ -1,7 +1,7 @@
 package com.org.meeple.infra.teammatch.query
 
 import com.org.meeple.infra.teammatch.command.entity.QRecommendedTeamEntity
-import com.org.meeple.scheduler.match.query.dao.GetRecommendedTeamRecordDao
+import com.org.meeple.scheduler.teammatch.query.dao.GetRecommendedTeamRecordDao
 import com.querydsl.jpa.impl.JPAQueryFactory
 import org.springframework.stereotype.Component
 import java.time.LocalDate

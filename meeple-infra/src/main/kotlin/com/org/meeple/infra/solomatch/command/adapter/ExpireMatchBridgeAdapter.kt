@@ -2,7 +2,7 @@ package com.org.meeple.infra.solomatch.command.adapter
 
 import com.org.meeple.core.solomatch.command.application.port.`in`.ExpireSoloMatchUseCase
 import com.org.meeple.core.teammatch.command.application.port.`in`.ExpireTeamMatchUseCase
-import com.org.meeple.scheduler.match.command.application.port.out.ExpireMatchPort
+import com.org.meeple.scheduler.common.command.application.port.out.ExpireMatchPort
 import org.springframework.stereotype.Component
 
 /**

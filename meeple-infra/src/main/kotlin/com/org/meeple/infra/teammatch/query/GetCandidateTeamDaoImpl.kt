@@ -2,8 +2,8 @@ package com.org.meeple.infra.teammatch.query
 
 import com.org.meeple.common.match.TeamStatus
 import com.org.meeple.infra.teammatch.command.entity.QTeamEntity
-import com.org.meeple.scheduler.match.query.dao.GetCandidateTeamDao
-import com.org.meeple.scheduler.match.query.dto.CandidateTeam
+import com.org.meeple.scheduler.teammatch.query.dao.GetCandidateTeamDao
+import com.org.meeple.scheduler.teammatch.query.dto.CandidateTeam
 import com.querydsl.core.types.Projections
 import com.querydsl.jpa.impl.JPAQueryFactory
 import org.springframework.stereotype.Component

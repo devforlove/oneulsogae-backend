@@ -13,7 +13,7 @@ import com.org.meeple.infra.teammatch.command.mapper.toEntities
 import com.org.meeple.infra.teammatch.command.mapper.toEntity
 import com.org.meeple.infra.teammatch.command.repository.MatchedTeamJpaRepository
 import com.org.meeple.infra.teammatch.command.repository.TeamMatchJpaRepository
-import com.org.meeple.scheduler.match.command.application.port.out.SaveTeamMatchRecordPort
+import com.org.meeple.scheduler.teammatch.command.application.port.out.SaveTeamMatchRecordPort
 import jakarta.persistence.EntityManager
 import jakarta.persistence.LockModeType
 import org.springframework.stereotype.Component

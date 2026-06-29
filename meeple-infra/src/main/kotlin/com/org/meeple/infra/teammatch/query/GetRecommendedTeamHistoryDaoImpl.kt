@@ -2,7 +2,7 @@ package com.org.meeple.infra.teammatch.query
 
 import com.org.meeple.infra.teammatch.command.entity.RecommendedTeamHistoryEntity
 import com.org.meeple.infra.teammatch.command.repository.RecommendedTeamHistoryJpaRepository
-import com.org.meeple.scheduler.match.query.dao.GetRecommendedTeamHistoryDao
+import com.org.meeple.scheduler.teammatch.query.dao.GetRecommendedTeamHistoryDao
 import org.springframework.stereotype.Component
 
 /**

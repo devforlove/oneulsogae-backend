@@ -5,8 +5,8 @@ import com.org.meeple.common.match.MatchStatus
 import com.org.meeple.core.solomatch.command.domain.MatchMembers
 import com.org.meeple.infra.solomatch.command.entity.QSoloMatchEntity
 import com.org.meeple.infra.solomatch.command.entity.QSoloMatchMemberEntity
-import com.org.meeple.scheduler.match.query.dao.GetMatchRecordDao
-import com.org.meeple.scheduler.match.query.dto.MatchedUserIds
+import com.org.meeple.scheduler.solomatch.query.dao.GetMatchRecordDao
+import com.org.meeple.scheduler.solomatch.query.dto.MatchedUserIds
 import com.querydsl.jpa.impl.JPAQueryFactory
 import jakarta.persistence.EntityManager
 import org.springframework.stereotype.Component

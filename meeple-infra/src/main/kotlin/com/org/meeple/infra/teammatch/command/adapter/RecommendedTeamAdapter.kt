@@ -6,7 +6,7 @@ import com.org.meeple.infra.teammatch.command.repository.RecommendedTeamJpaRepos
 import org.springframework.stereotype.Component
 import java.time.LocalDate
 import com.org.meeple.core.teammatch.command.application.port.out.SaveRecommendedTeamPort as CoreSaveRecommendedTeamPort
-import com.org.meeple.scheduler.match.command.application.port.out.SaveRecommendedTeamPort as SchedulerSaveRecommendedTeamPort
+import com.org.meeple.scheduler.teammatch.command.application.port.out.SaveRecommendedTeamPort as SchedulerSaveRecommendedTeamPort
 
 /**
  * [RecommendedTeamEntity]의 command 영속성 어댑터. (엔티티당 어댑터 하나)

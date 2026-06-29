@@ -21,7 +21,7 @@ import com.org.meeple.infra.teammatch.command.entity.QTeamMatchEntity
 import com.org.meeple.infra.solomatch.command.entity.SoloMatchEntity
 import com.org.meeple.infra.teammatch.command.entity.TeamMatchEntity
 import com.org.meeple.infra.popup.command.entity.QPopupEntity
-import com.org.meeple.scheduler.match.command.application.port.`in`.RunExpireMatchBatchUseCase
+import com.org.meeple.scheduler.common.command.application.port.`in`.RunExpireMatchBatchUseCase
 import io.kotest.matchers.nulls.shouldBeNull
 import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe

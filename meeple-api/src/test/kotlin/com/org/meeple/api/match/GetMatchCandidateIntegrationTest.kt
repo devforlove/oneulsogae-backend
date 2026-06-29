@@ -16,7 +16,7 @@ import com.org.meeple.infra.solomatch.command.entity.QSoloMatchMemberEntity
 import com.org.meeple.infra.solomatch.command.entity.SoloMatchEntity
 import com.org.meeple.infra.region.entity.QRegionEntity
 import com.org.meeple.infra.region.entity.RegionEntity
-import com.org.meeple.scheduler.match.command.application.port.out.RegionProximityPort
+import com.org.meeple.scheduler.common.command.application.port.out.RegionProximityPort
 import io.kotest.matchers.nulls.shouldBeNull
 import io.kotest.matchers.shouldBe
 import java.time.LocalDateTime

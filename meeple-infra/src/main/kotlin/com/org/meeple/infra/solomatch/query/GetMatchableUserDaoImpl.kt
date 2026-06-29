@@ -1,8 +1,8 @@
 package com.org.meeple.infra.solomatch.query
 
 import com.org.meeple.infra.matchuser.command.entity.QMatchUserEntity
-import com.org.meeple.scheduler.match.query.dao.GetMatchableUserDao
-import com.org.meeple.scheduler.match.query.dto.MatchableUser
+import com.org.meeple.scheduler.solomatch.query.dao.GetMatchableUserDao
+import com.org.meeple.scheduler.solomatch.query.dto.MatchableUser
 import com.querydsl.core.types.Projections
 import com.querydsl.jpa.impl.JPAQueryFactory
 import org.springframework.stereotype.Component

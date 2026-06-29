@@ -1,6 +1,6 @@
 package com.org.meeple.common.config
 
-import com.org.meeple.scheduler.match.command.application.port.out.RegionShuffler
+import com.org.meeple.scheduler.common.command.application.port.out.RegionShuffler
 import org.springframework.boot.test.context.TestConfiguration
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Primary

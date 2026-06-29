@@ -30,7 +30,7 @@ import com.org.meeple.infra.user.command.entity.QUserCompanyEntity
 import com.org.meeple.infra.user.command.entity.QUserDetailEntity
 import com.org.meeple.infra.user.command.entity.QUserEntity
 import com.org.meeple.infra.user.command.entity.UserDetailEntity
-import com.org.meeple.scheduler.match.command.application.port.out.RegionProximityPort
+import com.org.meeple.scheduler.common.command.application.port.out.RegionProximityPort
 import io.kotest.matchers.nulls.shouldBeNull
 import io.kotest.matchers.shouldBe
 import org.hamcrest.Matchers.hasSize

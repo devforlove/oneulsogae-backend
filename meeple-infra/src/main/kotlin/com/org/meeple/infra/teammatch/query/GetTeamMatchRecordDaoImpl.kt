@@ -5,8 +5,8 @@ import com.org.meeple.common.match.MatchedTeamStatus
 import com.org.meeple.core.teammatch.command.domain.MatchedTeams
 import com.org.meeple.infra.teammatch.command.entity.QMatchedTeamEntity
 import com.org.meeple.infra.teammatch.command.entity.QTeamMatchEntity
-import com.org.meeple.scheduler.match.query.dao.GetTeamMatchRecordDao
-import com.org.meeple.scheduler.match.query.dto.MatchedTeamIds
+import com.org.meeple.scheduler.teammatch.query.dao.GetTeamMatchRecordDao
+import com.org.meeple.scheduler.teammatch.query.dto.MatchedTeamIds
 import com.querydsl.jpa.impl.JPAQueryFactory
 import jakarta.persistence.EntityManager
 import org.springframework.stereotype.Component

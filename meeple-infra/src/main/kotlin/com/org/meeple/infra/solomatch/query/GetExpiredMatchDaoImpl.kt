@@ -3,7 +3,7 @@ package com.org.meeple.infra.solomatch.query
 import com.org.meeple.common.match.MatchStatus
 import com.org.meeple.infra.solomatch.command.entity.QSoloMatchEntity
 import com.org.meeple.infra.teammatch.command.entity.QTeamMatchEntity
-import com.org.meeple.scheduler.match.command.application.port.out.GetExpiredMatchPort
+import com.org.meeple.scheduler.common.command.application.port.out.GetExpiredMatchPort
 import com.querydsl.jpa.impl.JPAQueryFactory
 import org.springframework.stereotype.Component
 import java.time.LocalDateTime

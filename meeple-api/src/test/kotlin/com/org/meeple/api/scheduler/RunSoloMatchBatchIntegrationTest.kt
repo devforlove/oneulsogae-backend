@@ -17,8 +17,8 @@ import com.org.meeple.infra.solomatch.command.entity.QSoloMatchMemberEntity
 import com.org.meeple.infra.solomatch.command.entity.SoloMatchEntity
 import com.org.meeple.infra.region.entity.QRegionEntity
 import com.org.meeple.infra.region.entity.RegionEntity
-import com.org.meeple.scheduler.match.command.application.port.`in`.RunSoloMatchBatchUseCase
-import com.org.meeple.scheduler.match.command.domain.SoloMatchBatchResult
+import com.org.meeple.scheduler.solomatch.command.application.port.`in`.RunSoloMatchBatchUseCase
+import com.org.meeple.scheduler.solomatch.command.domain.SoloMatchBatchResult
 import io.kotest.matchers.collections.shouldBeEmpty
 import io.kotest.matchers.nulls.shouldBeNull
 import io.kotest.matchers.nulls.shouldNotBeNull

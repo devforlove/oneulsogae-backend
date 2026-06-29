@@ -22,8 +22,8 @@ import com.org.meeple.infra.teammatch.command.entity.TeamMatchEntity
 import com.org.meeple.infra.teammatch.command.entity.TeamMemberEntity
 import com.org.meeple.infra.region.entity.QRegionEntity
 import com.org.meeple.infra.region.entity.RegionEntity
-import com.org.meeple.scheduler.match.command.application.port.`in`.RunTeamMatchBatchUseCase
-import com.org.meeple.scheduler.match.command.domain.TeamMatchBatchResult
+import com.org.meeple.scheduler.teammatch.command.application.port.`in`.RunTeamMatchBatchUseCase
+import com.org.meeple.scheduler.teammatch.command.domain.TeamMatchBatchResult
 import io.kotest.matchers.nulls.shouldBeNull
 import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe

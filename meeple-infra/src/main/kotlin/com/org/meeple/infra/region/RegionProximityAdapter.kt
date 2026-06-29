@@ -1,7 +1,7 @@
 package com.org.meeple.infra.region
 
 import com.org.meeple.infra.region.RegionProximityRegistry
-import com.org.meeple.scheduler.match.command.application.port.out.RegionProximityPort
+import com.org.meeple.scheduler.common.command.application.port.out.RegionProximityPort
 import org.springframework.stereotype.Component
 
 /**

@@ -5,8 +5,8 @@ import com.org.meeple.common.match.TeamStatus
 import com.org.meeple.infra.matchuser.command.entity.QMatchUserEntity
 import com.org.meeple.infra.teammatch.command.entity.QTeamEntity
 import com.org.meeple.infra.teammatch.command.entity.QTeamMemberEntity
-import com.org.meeple.scheduler.match.query.dao.GetMatchableTeamDao
-import com.org.meeple.scheduler.match.query.dto.MatchableTeam
+import com.org.meeple.scheduler.teammatch.query.dao.GetMatchableTeamDao
+import com.org.meeple.scheduler.teammatch.query.dto.MatchableTeam
 import com.querydsl.core.types.Projections
 import com.querydsl.jpa.impl.JPAQueryFactory
 import org.springframework.stereotype.Component
