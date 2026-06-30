@@ -22,6 +22,7 @@ object UserDetailEntityFixture {
 		introduction: String? = null,
 		companyEmail: String? = null,
 		companyName: String? = null,
+		universityEmail: String? = null,
 		universityName: String? = null,
 	): UserDetailEntity =
 		UserDetailEntity(
@@ -36,6 +37,7 @@ object UserDetailEntityFixture {
 			introduction = introduction,
 			companyEmail = companyEmail,
 			companyName = companyName,
+			universityEmail = universityEmail,
 			universityName = universityName,
 		)
 }

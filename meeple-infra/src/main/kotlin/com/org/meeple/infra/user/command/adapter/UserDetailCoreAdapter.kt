@@ -24,6 +24,9 @@ class UserDetailCoreAdapter(
 	override fun existsCompanyEmailUsedByOther(companyEmail: String, excludeUserId: Long): Boolean =
 		userDetailJpaRepository.existsByCompanyEmailAndUserIdNot(companyEmail, excludeUserId)
 
+	override fun existsUniversityEmailUsedByOther(universityEmail: String, excludeUserId: Long): Boolean =
+		userDetailJpaRepository.existsByUniversityEmailAndUserIdNot(universityEmail, excludeUserId)
+
 	override fun save(userDetail: UserDetail): UserDetail =
 		userDetailJpaRepository.save(userDetail.toEntity()).toDomain()
 }

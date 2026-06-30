@@ -12,4 +12,6 @@ interface UserDetailJpaRepository : JpaRepository<UserDetailEntity, Long> {
 	fun findByUserId(userId: Long): UserDetailEntity?
 
 	fun existsByCompanyEmailAndUserIdNot(companyEmail: String, userId: Long): Boolean
+
+	fun existsByUniversityEmailAndUserIdNot(universityEmail: String, userId: Long): Boolean
 }

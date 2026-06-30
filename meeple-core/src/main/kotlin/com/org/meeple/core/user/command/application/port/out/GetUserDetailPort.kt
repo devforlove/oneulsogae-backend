@@ -13,4 +13,7 @@ interface GetUserDetailPort {
 
 	/** [excludeUserId]를 제외한 다른 사용자가 [companyEmail]을 회사 이메일로 이미 인증했는지 여부. */
 	fun existsCompanyEmailUsedByOther(companyEmail: String, excludeUserId: Long): Boolean
+
+	/** [excludeUserId]를 제외한 다른 사용자가 [universityEmail]을 학교 이메일로 이미 인증했는지 여부. */
+	fun existsUniversityEmailUsedByOther(universityEmail: String, excludeUserId: Long): Boolean
 }

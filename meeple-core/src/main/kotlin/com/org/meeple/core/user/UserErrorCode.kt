@@ -35,4 +35,5 @@ enum class UserErrorCode(
 
 	// 학교 이메일 인증(대학 인증)
 	UNIVERSITY_NOT_FOUND("USER-016", "확인되지 않는 학교 이메일입니다. 본인 학교의 이메일을 입력해 주세요.", HttpStatus.BAD_REQUEST),
+	UNIVERSITY_EMAIL_ALREADY_USED("USER-018", "이미 다른 사용자가 인증한 학교 이메일입니다.", HttpStatus.CONFLICT),
 }

@@ -4,6 +4,7 @@ import com.org.meeple.core.common.error.BusinessException
 import com.org.meeple.core.common.time.TimeGenerator
 import com.org.meeple.core.user.UserErrorCode
 import com.org.meeple.core.user.command.application.port.`in`.RequestUniversityEmailVerificationUseCase
+import com.org.meeple.core.user.command.application.port.out.GetUserDetailPort
 import com.org.meeple.core.user.command.application.port.out.SaveUniversityEmailVerificationPort
 import com.org.meeple.core.user.command.application.port.out.SendUniversityEmailVerificationPort
 import com.org.meeple.core.user.command.domain.UniversityEmailVerification
@@ -21,6 +22,7 @@ import java.security.SecureRandom
 @Service
 class RequestUniversityEmailVerificationService(
 	private val getUserUniversityUseCase: GetUserUniversityUseCase,
+	private val getUserDetailPort: GetUserDetailPort,
 	private val saveUniversityEmailVerificationPort: SaveUniversityEmailVerificationPort,
 	private val sendUniversityEmailVerificationPort: SendUniversityEmailVerificationPort,
 	private val timeGenerator: TimeGenerator,
@@ -30,6 +32,11 @@ class RequestUniversityEmailVerificationService(
 
 	@Transactional
 	override fun request(userId: Long, universityEmail: String): UniversityEmailVerification {
+		// 다른 사용자가 이미 인증해 쓰고 있는 학교 이메일이면, 인증메일 발송 전에 막는다.
+		if (getUserDetailPort.existsUniversityEmailUsedByOther(universityEmail, userId)) {
+			throw BusinessException(UserErrorCode.UNIVERSITY_EMAIL_ALREADY_USED)
+		}
+
 		val code: String = generateCode()
 		// 개인 이메일 차단 검증을 먼저 거친 뒤(create), 등록된 학교 도메인인지 확인한다. (매핑이 없으면 발송하지 않고 예외)
 		val verification: UniversityEmailVerification = UniversityEmailVerification.create(

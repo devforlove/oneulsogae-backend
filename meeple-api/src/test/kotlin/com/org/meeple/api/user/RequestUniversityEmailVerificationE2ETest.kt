@@ -5,9 +5,11 @@ import com.org.meeple.common.integration.expect
 import com.org.meeple.common.integration.post
 import com.org.meeple.common.user.UserStatus
 import com.org.meeple.infra.fixture.IntegrationUtil
+import com.org.meeple.infra.fixture.UserDetailEntityFixture
 import com.org.meeple.infra.fixture.UserEntityFixture
 import com.org.meeple.infra.fixture.UserUniversityEntityFixture
 import com.org.meeple.infra.user.command.entity.QUniversityEmailVerificationEntity
+import com.org.meeple.infra.user.command.entity.QUserDetailEntity
 import com.org.meeple.infra.user.command.entity.QUserEntity
 import com.org.meeple.infra.user.command.entity.QUserUniversityEntity
 import io.kotest.matchers.shouldBe
@@ -65,6 +67,38 @@ class RequestUniversityEmailVerificationE2ETest : AbstractIntegrationSupport({
 			}
 		}
 
+		context("다른 사용자가 이미 인증해 쓰고 있는 학교 이메일로 인증을 요청하면") {
+			it("발송 없이 409(UNIVERSITY_EMAIL_ALREADY_USED)를 반환한다") {
+				IntegrationUtil.persist(UserUniversityEntityFixture.create(emailDomain = "snu.ac.kr", universityName = "서울대학교"))
+				// 다른 사용자가 이미 해당 학교 이메일을 인증해 프로필에 보유한 상태.
+				val otherUserId: Long = IntegrationUtil.persist(
+					UserEntityFixture.create(
+						providerId = "other-provider-id",
+						email = "other@test.com",
+						status = UserStatus.ACTIVE,
+					),
+				).id!!
+				IntegrationUtil.persist(
+					UserDetailEntityFixture.create(userId = otherUserId, universityEmail = "student@snu.ac.kr"),
+				)
+
+				val userId: Long = IntegrationUtil.persist(
+					UserEntityFixture.create(status = UserStatus.ACTIVE),
+				).id!!
+
+				post("/users/v1/university-email/verifications") {
+					bearer(accessTokenFor(userId))
+					jsonBody("""{"universityEmail": "student@snu.ac.kr"}""")
+				} expect {
+					status(409)
+					body("success", false)
+					body("error.code", "USER-018")
+				}
+
+				universityVerificationCountOf(userId) shouldBe 0
+			}
+		}
+
 		context("등록되지 않은 학교 이메일로 인증을 요청하면") {
 			it("발송 없이 USER-016으로 실패한다 (400)") {
 				val userId: Long = IntegrationUtil.persist(
@@ -89,6 +123,7 @@ class RequestUniversityEmailVerificationE2ETest : AbstractIntegrationSupport({
 	afterTest {
 		IntegrationUtil.deleteAll(QUniversityEmailVerificationEntity.universityEmailVerificationEntity)
 		IntegrationUtil.deleteAll(QUserUniversityEntity.userUniversityEntity)
+		IntegrationUtil.deleteAll(QUserDetailEntity.userDetailEntity)
 		IntegrationUtil.deleteAll(QUserEntity.userEntity)
 	}
 })
