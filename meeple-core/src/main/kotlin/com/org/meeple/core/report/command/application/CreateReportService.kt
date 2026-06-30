@@ -1,5 +1,7 @@
 package com.org.meeple.core.report.command.application
 
+import com.org.meeple.common.chat.ChatRoomMatchType
+import com.org.meeple.common.report.ReportTargetType
 import com.org.meeple.core.chat.command.application.port.`in`.GetChatRoomMatchUseCase
 import com.org.meeple.core.chat.command.application.port.`in`.result.ChatRoomMatch
 import com.org.meeple.core.report.command.application.port.`in`.CreateReportUseCase
@@ -23,10 +25,14 @@ class CreateReportService(
 	@Transactional
 	override fun create(reporterId: Long, command: CreateReportCommand): Report {
 		val chatRoomMatch: ChatRoomMatch = getChatRoomMatchUseCase.getMatch(command.chatRoomId)
+		val targetType: ReportTargetType = when (chatRoomMatch.matchType) {
+			ChatRoomMatchType.SOLO -> ReportTargetType.USER
+			ChatRoomMatchType.TEAM -> ReportTargetType.TEAM
+		}
 		val report: Report = Report.create(
 			type = command.type,
 			fromUserId = reporterId,
-			matchType = chatRoomMatch.matchType,
+			targetType = targetType,
 			targetId = chatRoomMatch.matchId,
 			chatRoomId = command.chatRoomId,
 			description = command.description,
