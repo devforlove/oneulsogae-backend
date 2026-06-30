@@ -45,6 +45,10 @@ class ChatRoomMemberAdapter(
 			chatRoomMemberJpaRepository.saveAll(members.toEntities()).map { it.toDomain() },
 		)
 
+	// core(REST 읽음 경로): 참가자의 안 읽은 개수만 타깃 UPDATE로 0으로 되돌린다. (읽음 포인터는 건드리지 않아 WS 전진을 덮지 않음)
+	override fun resetUnreadCount(chatRoomId: Long, userId: Long, now: LocalDateTime): Int =
+		chatRoomMemberJpaRepository.resetUnreadCount(chatRoomId, userId, now)
+
 	// chatting(발송 경로): 발신자가 그 방의 활성 참가자인지 존재 검증. (나간(DEACTIVE) 사용자는 발송 불가)
 	override fun existsByChatRoomIdAndUserId(chatRoomId: Long, userId: Long): Boolean =
 		chatRoomMemberJpaRepository.existsByChatRoomIdAndUserIdAndStatus(chatRoomId, userId, ChatRoomMemberStatus.ACTIVE)

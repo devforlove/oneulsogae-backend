@@ -2,9 +2,7 @@ package com.org.meeple.core.chat.command.application
 
 import com.org.meeple.core.chat.ChatErrorCode
 import com.org.meeple.core.chat.command.application.port.`in`.MarkChatRoomAsReadUseCase
-import com.org.meeple.core.chat.command.application.port.out.GetChatRoomMemberPort
 import com.org.meeple.core.chat.command.application.port.out.SaveChatRoomMemberPort
-import com.org.meeple.core.chat.command.domain.ChatRoomMember
 import com.org.meeple.core.common.error.BusinessException
 import com.org.meeple.core.common.time.TimeGenerator
 import org.springframework.stereotype.Service
@@ -13,22 +11,23 @@ import java.time.LocalDateTime
 
 /**
  * [MarkChatRoomAsReadUseCase] 구현.
- * 조회자의 참가자([ChatRoomMember]) 행을 로드해(없으면 비참가자로 보고 거절) 안 읽은 개수를 0으로 되돌리고 마지막 읽음 시각을 갱신한다.
- * 읽음 상태는 참가자 단위로 관리되므로 그 한 행만 갱신하며, 같은 방의 다른 참가자 안 읽은 개수에는 영향이 없다.
+ * 조회자의 안 읽은 개수(뱃지)를 0으로 되돌리고 마지막 읽음 시각을 갱신한다. 읽음 상태는 참가자 단위라 본인 행만 갱신된다.
+ * 엔티티 전체 머지(blind overwrite) 대신 타깃 UPDATE를 쓴다: WS 읽음 경로가 전진시킨 읽음 포인터(lastReadMessageId)를
+ * 옛 값으로 덮어 역행시키거나(읽음영수증 회귀), 동시 증가분을 잃는 lost update를 막기 위함이다. (읽음 포인터는 WS 경로가 전담)
  */
 @Service
 @Transactional
 class MarkChatRoomAsReadService(
-	private val getChatRoomMemberPort: GetChatRoomMemberPort,
 	private val saveChatRoomMemberPort: SaveChatRoomMemberPort,
 	private val timeGenerator: TimeGenerator,
 ) : MarkChatRoomAsReadUseCase {
 
 	override fun markAsRead(userId: Long, chatRoomId: Long) {
-		val member: ChatRoomMember = getChatRoomMemberPort.findByChatRoomIdAndUserId(chatRoomId, userId)
-			?: throw BusinessException(ChatErrorCode.NOT_CHAT_ROOM_PARTICIPANT)
-
 		val now: LocalDateTime = timeGenerator.now()
-		saveChatRoomMemberPort.save(member.markAsRead(now))
+		// 안 읽은 개수만 타깃 UPDATE로 0으로 되돌린다. 갱신 행이 0이면 (소프트삭제 안 된) 참가자가 없는 것이므로 비참가자로 보고 거절한다.
+		val updated: Int = saveChatRoomMemberPort.resetUnreadCount(chatRoomId, userId, now)
+		if (updated == 0) {
+			throw BusinessException(ChatErrorCode.NOT_CHAT_ROOM_PARTICIPANT)
+		}
 	}
 }

@@ -71,4 +71,27 @@ interface ChatRoomMemberJpaRepository : JpaRepository<ChatRoomMemberEntity, Long
 		@Param("now") now: LocalDateTime,
 		@Param("status") status: ChatRoomMemberStatus,
 	): Int
+
+	/**
+	 * [chatRoomId] 방의 (소프트삭제 안 된) 참가자 [userId]의 안 읽은 개수(뱃지)만 0으로 되돌리고 마지막 읽음 시각을 갱신한다. 갱신된 행 수를 반환한다.
+	 * 읽음 포인터([lastReadMessageId])는 건드리지 않는다 — 그 포인터는 WS 읽음 경로([advanceReadPointer])가 메세지 조회 시점에 forward-only로 전진시킨다.
+	 * 엔티티 전체 머지(blind overwrite) 대신 이 타깃 UPDATE를 써, 동시 WS 전진을 덮어 포인터가 역행하거나(읽음영수증 회귀) 동시 증가분이 유실되는 것을 막는다.
+	 * 벌크 JPQL UPDATE는 @SQLRestriction이 자동 적용되지 않으므로 `deleted_at` 조건을 명시한다.
+	 */
+	@Modifying(clearAutomatically = true)
+	@Query(
+		"""
+		update ChatRoomMemberEntity m
+		set m.unreadCount = 0,
+		    m.lastReadAt = :now
+		where m.chatRoomId = :chatRoomId
+		  and m.userId = :userId
+		  and m.deletedAt is null
+		""",
+	)
+	fun resetUnreadCount(
+		@Param("chatRoomId") chatRoomId: Long,
+		@Param("userId") userId: Long,
+		@Param("now") now: LocalDateTime,
+	): Int
 }
