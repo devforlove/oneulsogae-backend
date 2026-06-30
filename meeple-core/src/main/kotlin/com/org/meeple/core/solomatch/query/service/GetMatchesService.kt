@@ -28,6 +28,8 @@ class GetMatchesService(
 		// 상대 프로필 표시 조인에 필요한 요청자 성별은 user 도메인 in-port로 읽는다. (표시 경로는 user_details에 의존)
 		val gender: Gender = getUserWithDetailUseCase.getByUserId(userId).getGender()
 		val now: LocalDateTime = timeGenerator.now()
+		// 최신 매칭부터 노출하도록 matchId 내림차순으로 정렬한다.
 		return getMatchWithPartnerDao.findAllWithPartnerByUserId(userId, gender, now)
+			.sortedByDescending { match: MatchWithPartner -> match.matchId }
 	}
 }
