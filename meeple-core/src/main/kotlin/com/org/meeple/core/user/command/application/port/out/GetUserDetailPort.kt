@@ -10,4 +10,7 @@ interface GetUserDetailPort {
 
 	/** userId로 프로필 상세를 조회한다. 없으면 null. */
 	fun findByUserId(userId: Long): UserDetail?
+
+	/** [excludeUserId]를 제외한 다른 사용자가 [companyEmail]을 회사 이메일로 이미 인증했는지 여부. */
+	fun existsCompanyEmailUsedByOther(companyEmail: String, excludeUserId: Long): Boolean
 }

@@ -80,6 +80,43 @@ class RequestCompanyEmailVerificationE2ETest : AbstractIntegrationSupport({
 			}
 		}
 
+		context("다른 사용자가 이미 인증해 쓰고 있는 회사 이메일로 인증을 요청하면") {
+			it("부수효과 없이 409(COMPANY_EMAIL_ALREADY_USED)를 반환한다") {
+				// 다른 사용자가 이미 해당 회사 이메일을 인증해 프로필에 보유한 상태.
+				val otherUserId: Long = IntegrationUtil.persist(
+					UserEntityFixture.create(
+						providerId = "other-provider-id",
+						email = "other@test.com",
+						status = UserStatus.ACTIVE,
+					),
+				).id!!
+				IntegrationUtil.persist(
+					UserDetailEntityFixture.create(userId = otherUserId, companyEmail = "user@meeple.com"),
+				)
+
+				val userId: Long = IntegrationUtil.persist(
+					UserEntityFixture.create(status = UserStatus.ONBOARDING),
+				).id!!
+				IntegrationUtil.persist(UserDetailEntityFixture.create(userId = userId))
+				val regionId: Long = IntegrationUtil.persist(
+					RegionEntityFixture.create(sido = "서울특별시", sigungu = "강남구"),
+				).id!!
+
+				post("/users/v1/onboarding/company-email/verifications") {
+					bearer(accessTokenFor(userId))
+					jsonBody(fullProfileBody(companyEmail = "user@meeple.com", regionId = regionId))
+				} expect {
+					status(409)
+					body("success", false)
+					body("error.code", "USER-017")
+				}
+
+				// 중복으로 막혔으므로 상태 전환·인증번호 발급 등 부수효과가 없어야 한다.
+				userStatusOf(userId) shouldBe UserStatus.ONBOARDING
+				verificationCountOf(userId) shouldBe 0
+			}
+		}
+
 		context("필수 프로필 필드(성별)가 빠지면") {
 			it("도메인에 닿기 전 검증 실패로 400을 반환한다") {
 				post("/users/v1/onboarding/company-email/verifications") {

@@ -10,4 +10,6 @@ import org.springframework.data.jpa.repository.JpaRepository
 interface UserDetailJpaRepository : JpaRepository<UserDetailEntity, Long> {
 
 	fun findByUserId(userId: Long): UserDetailEntity?
+
+	fun existsByCompanyEmailAndUserIdNot(companyEmail: String, userId: Long): Boolean
 }

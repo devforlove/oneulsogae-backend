@@ -7,6 +7,7 @@ import com.org.meeple.core.common.time.TimeGenerator
 import com.org.meeple.core.user.command.application.port.`in`.UpdateUserDetailUseCase
 import com.org.meeple.core.user.command.application.port.`in`.command.UpdateUserDetailCommand
 import com.org.meeple.core.user.command.application.port.`in`.RequestCompanyEmailVerificationUseCase
+import com.org.meeple.core.user.command.application.port.out.GetUserDetailPort
 import com.org.meeple.core.user.command.application.port.out.GetUserPort
 import com.org.meeple.core.user.command.application.port.out.SaveCompanyEmailVerificationPort
 import com.org.meeple.core.user.command.application.port.out.SaveUserPort
@@ -32,6 +33,7 @@ class RequestCompanyEmailVerificationService(
 	private val updateUserDetailUseCase: UpdateUserDetailUseCase,
 	private val createCoinBalanceUseCase: CreateCoinBalanceUseCase,
 	private val getUserPort: GetUserPort,
+	private val getUserDetailPort: GetUserDetailPort,
 	private val saveUserPort: SaveUserPort,
 	private val saveCompanyEmailVerificationPort: SaveCompanyEmailVerificationPort,
 	private val sendCompanyEmailVerificationPort: SendCompanyEmailVerificationPort,
@@ -42,6 +44,11 @@ class RequestCompanyEmailVerificationService(
 
 	@Transactional
 	override fun request(userId: Long, command: UpdateUserDetailCommand): CompanyEmailVerification {
+		// 다른 사용자가 이미 인증해 쓰고 있는 회사 이메일이면, 부수효과(프로필 저장·메일 발송) 전에 막는다.
+		if (getUserDetailPort.existsCompanyEmailUsedByOther(command.companyEmail, userId)) {
+			throw BusinessException(UserErrorCode.COMPANY_EMAIL_ALREADY_USED)
+		}
+
 		startEmailVerificationIfOnboarding(userId)
 		updateUserDetailUseCase.update(userId, command)
 		// 온보딩 단계에서 코인 잔액 행을 미리 준비해, 이후 적립/차감이 항상 기존 행을 갱신하게 한다. (조회 경로는 쓰기를 하지 않음)
