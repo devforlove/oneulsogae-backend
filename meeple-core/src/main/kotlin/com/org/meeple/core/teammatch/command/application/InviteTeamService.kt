@@ -7,6 +7,8 @@ import com.org.meeple.core.teammatch.TeamErrorCode
 import com.org.meeple.core.teammatch.command.application.port.`in`.InviteTeamUseCase
 import com.org.meeple.core.teammatch.command.application.port.`in`.command.InviteTeamCommand
 import com.org.meeple.core.common.event.DomainEventPublisher
+import com.org.meeple.core.common.lock.DistributedLock
+import com.org.meeple.core.common.lock.LockKeyConstraints
 import com.org.meeple.core.matchuser.command.application.port.`in`.GetMatchUserUseCase
 import com.org.meeple.core.teammatch.command.application.port.out.GetTeamPort
 import com.org.meeple.core.teammatch.command.application.port.out.SaveTeamPort
@@ -30,6 +32,8 @@ class InviteTeamService(
 	private val domainEventPublisher: DomainEventPublisher,
 ) : InviteTeamUseCase {
 
+	// ownerId로 잠가 같은 사용자의 동시 초대(더블탭 등)를 직렬화한다. 검사→생성 사이 경합으로 owner가 두 활성 팀을 갖는 것을 막는다. (waitTime=0)
+	@DistributedLock(prefix = LockKeyConstraints.TEAM_MEMBERSHIP, keys = ["#ownerId"], waitTime = 0)
 	@Transactional
 	override fun invite(ownerId: Long, command: InviteTeamCommand): Team {
 		// 한 사용자는 활성 팀(INVITING/ACTIVE)에 하나만 속할 수 있다. owner·초대대상 모두 검증.

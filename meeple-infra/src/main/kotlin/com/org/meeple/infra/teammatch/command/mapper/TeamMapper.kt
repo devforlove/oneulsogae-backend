@@ -12,6 +12,7 @@ import java.time.LocalDateTime
 fun TeamEntity.toDomain(members: TeamMembers): Team =
 	Team(
 		id = id ?: 0,
+		version = version,
 		name = name,
 		gender = gender,
 		regionId = regionId,
@@ -35,5 +36,7 @@ fun Team.toEntity(): TeamEntity =
 		status = status,
 	).also {
 		if (id != 0L) it.id = id
+		// 읽은 시점의 버전을 그대로 실어, merge 시 낙관적 락이 그 버전 기준으로 충돌을 검사하도록 한다.
+		it.version = version
 		deletedAt?.let { at: LocalDateTime -> it.softDelete(at) }
 	}

@@ -9,6 +9,7 @@ import jakarta.persistence.EnumType
 import jakarta.persistence.Enumerated
 import jakarta.persistence.Index
 import jakarta.persistence.Table
+import jakarta.persistence.Version
 import org.hibernate.annotations.SQLRestriction
 
 /**
@@ -50,4 +51,14 @@ class TeamEntity(
 	@Enumerated(EnumType.STRING)
 	@Column(name = "status", nullable = false, columnDefinition = "varchar(50)")
 	var status: TeamStatus = TeamStatus.INVITING,
-) : BaseEntity()
+) : BaseEntity() {
+
+	/**
+	 * 낙관적 락 버전. 같은 팀에 대한 동시 변경(예: 초대받은 사람의 수락 ↔ 초대자의 철회)을 teams 한 행의 버전으로 직렬화한다.
+	 * 수락은 userId 락([com.org.meeple.core.common.lock.LockKeyConstraints.TEAM_MEMBERSHIP])으로, 철회·해체·수정은 teamId 락으로
+	 * 잠가 락 키가 달라 서로 배제되지 않으므로, 같은 팀 행에 동시에 쓰는 경합은 이 버전으로 막는다(충돌 시 커밋 실패).
+	 */
+	@Version
+	@Column(name = "version", nullable = false)
+	var version: Long = 0
+}

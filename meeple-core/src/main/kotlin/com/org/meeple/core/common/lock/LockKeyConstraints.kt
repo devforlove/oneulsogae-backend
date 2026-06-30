@@ -20,10 +20,19 @@ object LockKeyConstraints {
 	const val MATCH_INTEREST: String = "MATCH_INTEREST"
 
 	/**
-	 * 팀 결성 라이프사이클(수락/철회/해체) 처리 락. teamId로 잠가 한 팀의 상태 변경을 직렬화한다.
-	 * 수락(invited)과 초대취소(owner) 동시 요청으로 인한 ACTIVE↔DEACTIVATED lost update를 막는다.
+	 * 팀 결성 라이프사이클(철회/해체/수정) 처리 락. teamId로 잠가 한 팀의 상태 변경을 직렬화한다.
+	 * 같은 팀에 대한 철회·해체·수정 동시 요청으로 인한 lost update를 막는다.
+	 * (수락은 사용자 단위 직렬화가 필요해 [TEAM_MEMBERSHIP]을 쓰고, 같은 팀의 수락↔철회 경합은 teams 행의 낙관적 락(@Version)으로 막는다)
 	 */
 	const val TEAM_LIFECYCLE: String = "TEAM_LIFECYCLE"
+
+	/**
+	 * 팀 소속(초대 생성/수락) 처리 락. userId로 잠가 한 사용자의 활성 팀 합류를 직렬화한다.
+	 * "한 사용자는 활성 팀 하나"는 사용자 단위 불변식이라 teamId가 아니라 userId(초대자=ownerId, 수락자=userId)로 잠근다.
+	 * 동시 초대(owner 중복 생성)·동시 수락(서로 다른 두 팀 수락)·초대와 수락 동시 요청으로 두 활성 팀에 소속되는 것을 막는다.
+	 * (teamId 키와 섞이지 않도록 [TEAM_LIFECYCLE]과 다른 접두사를 쓴다)
+	 */
+	const val TEAM_MEMBERSHIP: String = "TEAM_MEMBERSHIP"
 
 	/**
 	 * 팀 매칭 관심(신청/수락) 처리 락. teamMatchId로 잠가 같은 팀 매칭의 상태 변경을 직렬화한다.

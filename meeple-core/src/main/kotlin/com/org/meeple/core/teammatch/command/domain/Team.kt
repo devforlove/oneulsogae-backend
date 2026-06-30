@@ -15,6 +15,8 @@ import java.time.LocalDateTime
  */
 data class Team(
 	val id: Long = 0,
+	/** 낙관적 락 버전. 영속성 계층이 같은 팀 행의 동시 변경(수락↔철회 등)을 이 값으로 감지한다. (읽은 시점 값을 실어 저장) */
+	val version: Long = 0,
 	val name: String,
 	/** 팀 성별. 팀은 동성으로 구성되므로 팀 단위로 하나의 성별을 가진다. (구성원은 성별을 따로 보관하지 않는다) */
 	val gender: Gender,

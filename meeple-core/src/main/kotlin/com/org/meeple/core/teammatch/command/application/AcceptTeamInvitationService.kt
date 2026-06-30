@@ -26,7 +26,8 @@ import org.springframework.transaction.annotation.Transactional
  * [AcceptTeamInvitationUseCase] 구현. 초대받은 사용자가 팀 초대를 수락한다.
  * 팀을 조회해 [Team.acceptInvitation]으로 상태를 전이(전원 수락 시 ACTIVE)한 뒤 저장한다.
  * 수락과 동시에 그 사용자가 받은 다른 초대들은 모두 비활성화한다. (한 초대 수락 = 나머지 초대 자동 거절)
- * 수락(invited)↔초대취소(owner) 동시 요청 경합을 막기 위해 teamId 분산 락으로 직렬화한다. (waitTime=0)
+ * "한 사용자는 활성 팀 하나" 불변식은 사용자 단위라 userId 분산 락으로 직렬화한다. (서로 다른 두 팀 동시 수락·초대와 수락 동시 요청 차단, waitTime=0)
+ * 같은 팀에 대한 수락↔철회(owner) 경합은 락 키가 달라(userId vs teamId) 배제되지 않으므로, teams 행의 낙관적 락([Team.version])으로 막는다.
  */
 @Service
 class AcceptTeamInvitationService(
@@ -38,7 +39,7 @@ class AcceptTeamInvitationService(
 	private val domainEventPublisher: DomainEventPublisher,
 ) : AcceptTeamInvitationUseCase {
 
-	@DistributedLock(prefix = LockKeyConstraints.TEAM_LIFECYCLE, keys = ["#teamId"], waitTime = 0)
+	@DistributedLock(prefix = LockKeyConstraints.TEAM_MEMBERSHIP, keys = ["#userId"], waitTime = 0)
 	@Transactional
 	override fun accept(userId: Long, teamId: Long): Team {
 		val team: Team = getTeamPort.findById(teamId)
