@@ -1,5 +1,6 @@
 package com.org.meeple.api.scheduler
 
+import com.org.meeple.common.alarm.AlarmType
 import com.org.meeple.common.integration.AbstractIntegrationSupport
 import com.org.meeple.common.match.MatchStatus
 import com.org.meeple.common.match.MatchedTeamStatus
@@ -8,6 +9,8 @@ import com.org.meeple.common.match.TeamMemberStatus
 import com.org.meeple.common.match.TeamStatus
 import com.org.meeple.common.user.Gender
 import com.org.meeple.core.teammatch.command.domain.MatchedTeams
+import com.org.meeple.infra.alarm.command.entity.AlarmEntity
+import com.org.meeple.infra.alarm.command.entity.QAlarmEntity
 import com.org.meeple.infra.fixture.IntegrationUtil
 import com.org.meeple.infra.fixture.MatchUserEntityFixture
 import com.org.meeple.infra.fixture.RegionEntityFixture
@@ -24,6 +27,7 @@ import com.org.meeple.infra.region.entity.QRegionEntity
 import com.org.meeple.infra.region.entity.RegionEntity
 import com.org.meeple.scheduler.teammatch.command.application.port.`in`.RunTeamMatchBatchUseCase
 import com.org.meeple.scheduler.teammatch.command.domain.TeamMatchBatchResult
+import io.kotest.matchers.collections.shouldBeEmpty
 import io.kotest.matchers.nulls.shouldBeNull
 import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
@@ -67,6 +71,36 @@ class RunTeamMatchBatchIntegrationTest(
 
 				result.recommended shouldBe 0
 				proposedTeamMatchBetween(maleTeamId, otherMaleTeamId).shouldBeNull()
+			}
+		}
+
+		context("자격은 됐지만 끝까지 소개받지 못한 팀의 활성 구성원은") {
+			it("'오늘 소개 없음' 알람을 받는다") {
+				val regionId: Long = persistRegion("서울특별시", "강남구", 37.50, 127.00)
+				// 반대 성별 후보 팀이 없어 끝까지 미매칭으로 남는다.
+				val memberUserId: Long = 7001L
+				persistActiveTeam(gender = Gender.MALE, regionId = regionId, memberUserId = memberUserId)
+
+				val result: TeamMatchBatchResult = runTeamMatchBatchUseCase.run()
+
+				result.recommended shouldBe 0
+				noMatchAlarms(memberUserId).size shouldBe 1
+			}
+		}
+
+		context("오늘 소개를 받은 팀의 활성 구성원은") {
+			it("'오늘 소개 없음' 알람을 받지 않는다") {
+				val regionId: Long = persistRegion("서울특별시", "강남구", 37.50, 127.00)
+				val maleMemberId: Long = 7001L
+				val femaleMemberId: Long = 7002L
+				persistActiveTeam(gender = Gender.MALE, regionId = regionId, memberUserId = maleMemberId)
+				persistActiveTeam(gender = Gender.FEMALE, regionId = regionId, memberUserId = femaleMemberId)
+
+				val result: TeamMatchBatchResult = runTeamMatchBatchUseCase.run()
+
+				result.recommended shouldBe 1
+				noMatchAlarms(maleMemberId).shouldBeEmpty()
+				noMatchAlarms(femaleMemberId).shouldBeEmpty()
 			}
 		}
 
@@ -170,6 +204,7 @@ class RunTeamMatchBatchIntegrationTest(
 	}
 
 	afterTest {
+		IntegrationUtil.deleteAll(QAlarmEntity.alarmEntity)
 		IntegrationUtil.deleteAll(QMatchedTeamEntity.matchedTeamEntity)
 		IntegrationUtil.deleteAll(QTeamMatchEntity.teamMatchEntity)
 		IntegrationUtil.deleteAll(QTeamMemberEntity.teamMemberEntity)
@@ -233,6 +268,17 @@ private fun persistCancelledPastTeamMatch(teamAId: Long, teamBId: Long) {
 	)
 	IntegrationUtil.persist(MatchedTeamEntity(teamMatchId = header.id!!, teamId = teamAId, status = MatchedTeamStatus.DEACTIVE).apply { softDelete() })
 	IntegrationUtil.persist(MatchedTeamEntity(teamMatchId = header.id!!, teamId = teamBId, status = MatchedTeamStatus.DEACTIVE).apply { softDelete() })
+}
+
+private fun noMatchAlarms(userId: Long): List<AlarmEntity> {
+	val alarm: QAlarmEntity = QAlarmEntity.alarmEntity
+	return IntegrationUtil.getQuery()
+		.selectFrom(alarm)
+		.where(
+			alarm.userId.eq(userId)
+				.and(alarm.type.eq(AlarmType.MANY_TO_MANY_NO_MATCH_TODAY)),
+		)
+		.fetch()
 }
 
 private fun proposedTeamMatchBetween(teamAId: Long, teamBId: Long): TeamMatchEntity? {

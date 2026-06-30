@@ -33,6 +33,10 @@ class TeamMatchPool private constructor(
 	fun contains(team: MatchableTeam): Boolean =
 		team.teamId in available
 
+	/** 배치 종료 후 아직 가용한(=끝까지 짝지어지지 않은) teamId 전체. (오늘 소개를 못 받은 팀) */
+	fun remainingTeamIds(): Set<Long> =
+		available.toSet()
+
 	private data class BucketKey(val gender: Gender, val regionId: Long)
 
 	companion object {

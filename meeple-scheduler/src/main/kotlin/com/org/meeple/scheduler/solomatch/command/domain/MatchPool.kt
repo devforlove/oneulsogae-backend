@@ -32,6 +32,10 @@ class MatchPool private constructor(
 	fun contains(user: MatchableUser): Boolean =
 		user.userId in available
 
+	/** 배치 종료 후 아직 가용한(=끝까지 짝지어지지 않은) userId 전체. (오늘 소개를 못 받은 대상) */
+	fun remainingUserIds(): Set<Long> =
+		available.toSet()
+
 	private data class BucketKey(val gender: Gender, val regionId: Long)
 
 	companion object {

@@ -1,11 +1,14 @@
 package com.org.meeple.api.scheduler
 
+import com.org.meeple.common.alarm.AlarmType
 import com.org.meeple.common.integration.AbstractIntegrationSupport
 import com.org.meeple.common.match.MatchMemberStatus
 import com.org.meeple.common.match.MatchStatus
 import com.org.meeple.common.match.SoloMatchType
 import com.org.meeple.common.user.Gender
 import com.org.meeple.core.solomatch.command.domain.MatchMembers
+import com.org.meeple.infra.alarm.command.entity.AlarmEntity
+import com.org.meeple.infra.alarm.command.entity.QAlarmEntity
 import com.org.meeple.infra.fixture.IntegrationUtil
 import com.org.meeple.infra.fixture.MatchUserEntityFixture
 import com.org.meeple.infra.fixture.RegionEntityFixture
@@ -62,6 +65,33 @@ class RunSoloMatchBatchIntegrationTest(
 
 				result.recommended shouldBe 0
 				matchesInvolving(maleId1).shouldBeEmpty()
+			}
+		}
+
+		context("자격은 됐지만 끝까지 소개받지 못한 유저는") {
+			it("'오늘 소개 없음' 알람을 받는다") {
+				val regionId: Long = persistRegion("서울특별시", "강남구", 37.50, 127.00)
+				// 반대 성별 후보가 없어 끝까지 미매칭으로 남는다.
+				val maleId: Long = persistMatchableUser(userId = 1001L, gender = Gender.MALE, regionId = regionId)
+
+				val result: SoloMatchBatchResult = runSoloMatchBatchUseCase.run()
+
+				result.recommended shouldBe 0
+				noMatchAlarms(maleId).size shouldBe 1
+			}
+		}
+
+		context("오늘 소개를 받은 유저는") {
+			it("'오늘 소개 없음' 알람을 받지 않는다") {
+				val regionId: Long = persistRegion("서울특별시", "강남구", 37.50, 127.00)
+				val maleId: Long = persistMatchableUser(userId = 1001L, gender = Gender.MALE, regionId = regionId)
+				val femaleId: Long = persistMatchableUser(userId = 1002L, gender = Gender.FEMALE, regionId = regionId)
+
+				val result: SoloMatchBatchResult = runSoloMatchBatchUseCase.run()
+
+				result.recommended shouldBe 1
+				noMatchAlarms(maleId).shouldBeEmpty()
+				noMatchAlarms(femaleId).shouldBeEmpty()
 			}
 		}
 
@@ -192,12 +222,24 @@ class RunSoloMatchBatchIntegrationTest(
 	}
 
 	afterTest {
+		IntegrationUtil.deleteAll(QAlarmEntity.alarmEntity)
 		IntegrationUtil.deleteAll(QSoloMatchMemberEntity.soloMatchMemberEntity)
 		IntegrationUtil.deleteAll(QSoloMatchEntity.soloMatchEntity)
 		IntegrationUtil.deleteAll(QMatchUserEntity.matchUserEntity)
 		IntegrationUtil.deleteAll(QRegionEntity.regionEntity)
 	}
 })
+
+private fun noMatchAlarms(userId: Long): List<AlarmEntity> {
+	val alarm: QAlarmEntity = QAlarmEntity.alarmEntity
+	return IntegrationUtil.getQuery()
+		.selectFrom(alarm)
+		.where(
+			alarm.userId.eq(userId)
+				.and(alarm.type.eq(AlarmType.ONE_TO_ONE_NO_MATCH_TODAY)),
+		)
+		.fetch()
+}
 
 private fun persistRegion(sido: String, sigungu: String, latitude: Double, longitude: Double): Long {
 	val region: RegionEntity = IntegrationUtil.persist(

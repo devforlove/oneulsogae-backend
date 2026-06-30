@@ -66,4 +66,27 @@ class MatchPoolTest : DescribeSpec({
 			pool.freshCandidates(Gender.FEMALE, 1L).shouldBeEmpty()
 		}
 	}
+
+	describe("remainingUserIds") {
+
+		it("아직 제거되지 않은(짝지어지지 않은) 유저 전체를 돌려준다") {
+			val matched: MatchableUser = user(10L, Gender.FEMALE, 1L, base)
+			val unmatchedA: MatchableUser = user(11L, Gender.FEMALE, 1L, base)
+			val unmatchedB: MatchableUser = user(12L, Gender.MALE, 2L, base)
+			val pool: MatchPool = MatchPool.of(listOf(matched, unmatchedA, unmatchedB))
+
+			pool.remove(matched)
+
+			pool.remainingUserIds() shouldContainExactlyInAnyOrder setOf(11L, 12L)
+		}
+
+		it("모두 제거되면 빈 집합을 돌려준다") {
+			val target: MatchableUser = user(10L, Gender.FEMALE, 1L, base)
+			val pool: MatchPool = MatchPool.of(listOf(target))
+
+			pool.remove(target)
+
+			pool.remainingUserIds().shouldBeEmpty()
+		}
+	}
 })

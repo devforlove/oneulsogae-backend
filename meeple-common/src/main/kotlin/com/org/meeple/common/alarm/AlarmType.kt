@@ -12,6 +12,9 @@ enum class AlarmType(val description: String) {
 	/** [1:1 매칭] 성사된 매칭을 상대가 종료(나감). (방에 남는 상대에게) */
 	ONE_TO_ONE_MATCH_ENDED("매칭 종료"),
 
+	/** [1:1 매칭] 오늘 일일 배치에서 소개할 상대를 찾지 못함. (자격은 됐으나 미매칭인 유저에게) */
+	ONE_TO_ONE_NO_MATCH_TODAY("오늘 소개 없음"),
+
 	/** [다대다 매칭] 상대가 나에게 관심을 보냄. */
 	MANY_TO_MANY_INTEREST_RECEIVED("관심 받음"),
 
@@ -20,6 +23,9 @@ enum class AlarmType(val description: String) {
 
 	/** [다대다 매칭] 성사된 매칭을 상대 팀이 종료(나감). (방에 남는 상대 팀에게) */
 	MANY_TO_MANY_MATCH_ENDED("매칭 종료"),
+
+	/** [다대다 매칭] 오늘 일일 배치에서 우리 팀과 소개할 상대 팀을 찾지 못함. (미매칭 팀의 활성 구성원에게) */
+	MANY_TO_MANY_NO_MATCH_TODAY("오늘 소개 없음"),
 
 	/** [팀 매칭] 팀에 초대받음. */
 	TEAM_INVITATION_RECEIVED("팀 초대 받음"),
