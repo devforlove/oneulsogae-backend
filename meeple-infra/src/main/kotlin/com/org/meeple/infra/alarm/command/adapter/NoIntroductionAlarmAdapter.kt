@@ -44,11 +44,9 @@ class NoIntroductionAlarmAdapter(
 	}
 
 	override fun notifyTeamUnmatched(teamIds: Collection<Long>, now: LocalDateTime) {
-		// 한 사용자는 활성 팀 하나뿐이므로(불변식) 구성원 → 소속 팀 매핑이 유일하다. 알람의 fromTeamId로 본인 팀을 싣는다.
-		val teamByMember: Map<Long, Long> = teamIds
-			.flatMap { teamId: Long -> activeMemberUserIds(teamId).map { userId: Long -> userId to teamId } }
-			.toMap()
-		freshRecipients(teamByMember.keys, AlarmType.MANY_TO_MANY_NO_MATCH_TODAY, now).forEach { userId: Long ->
+		// 상대 팀이 유발한 알림이 아니므로 fromTeamId는 두지 않는다. (소개 자체가 없었던 결과 알림)
+		val memberUserIds: List<Long> = teamIds.flatMap { teamId: Long -> activeMemberUserIds(teamId) }
+		freshRecipients(memberUserIds, AlarmType.MANY_TO_MANY_NO_MATCH_TODAY, now).forEach { userId: Long ->
 			saveQuietly(userId) {
 				SaveAlarmCommand(
 					userId = userId,
@@ -56,7 +54,6 @@ class NoIntroductionAlarmAdapter(
 					title = "오늘의 팀 소개",
 					description = "오늘은 우리 팀과 어울리는 상대 팀을 찾지 못했어요. 내일 다시 찾아볼게요.",
 					link = "/",
-					fromTeamId = teamByMember[userId],
 				)
 			}
 		}
