@@ -53,6 +53,10 @@ class TeamMatchAdapter(
 		return savedEntity.toDomain(savedMatchedTeams)
 	}
 
+	// 소프트삭제 포함 member_key 존재 검사. (재소개 방지 유니크와 같은 범위 — 추천 승격 전 중복 조합 건너뛰기용)
+	override fun existsByMemberKey(memberKey: String): Boolean =
+		teamMatchJpaRepository.countByMemberKeyIncludingDeleted(memberKey) > 0
+
 	override fun findById(teamMatchId: Long): TeamMatch? {
 		val header: TeamMatchEntity = teamMatchJpaRepository.findById(teamMatchId).orElse(null) ?: return null
 		val matchedTeams: MatchedTeams = MatchedTeams(

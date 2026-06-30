@@ -22,6 +22,8 @@ import com.org.meeple.infra.teammatch.command.entity.QTeamMemberEntity
 import com.org.meeple.infra.teammatch.command.entity.TeamEntity
 import com.org.meeple.infra.teammatch.command.entity.TeamMatchEntity
 import io.kotest.matchers.shouldBe
+import java.time.LocalDate
+import java.time.LocalDateTime
 
 /**
  * `POST /teams/v1/{teamId}/acceptance` 수락으로 팀이 결성(ACTIVE)될 때,
@@ -143,6 +145,43 @@ class TeamMatchPromotionOnAcceptE2ETest : AbstractIntegrationSupport({
 				val teamMatches: List<TeamMatchEntity> = allTeamMatches()
 				teamMatches.size shouldBe 1
 				teamMatches[0].memberKey shouldBe listOf(teamId, sharedRecTeam).sorted().joinToString("-")
+			}
+		}
+
+		context("추천 팀과 이미 (과거 소개돼 종료·소프트삭제된) 팀 매칭 조합이 있으면") {
+			it("승격을 건너뛰고 수락은 정상 처리된다 (200, ux_member_key 위반 5xx 없음)") {
+				val ownerId = 3041L
+				val invitedUserId = 3042L
+				persistMatchUser(ownerId, Gender.MALE)
+				persistMatchUser(invitedUserId, Gender.MALE)
+				val recTeam: Long = persistFemaleTeam(TeamStatus.ACTIVE)
+				persistRecommendation(ownerId, recTeam)
+
+				val teamId: Long = inviteTeam(ownerId, invitedUserId)
+
+				// 결성될 팀(teamId)과 추천 팀(recTeam) 조합의 팀 매칭이 과거에 있었고 종료·소프트삭제된 상태로 시드한다.
+				// ux_member_key는 deleted_at과 무관하므로, 이 조합을 다시 승격하려 하면 유니크 위반이 난다 — 승격은 이를 건너뛰어야 한다.
+				val existingKey: String = listOf(teamId, recTeam).sorted().joinToString("-")
+				IntegrationUtil.persist(
+					TeamMatchEntity(
+						memberKey = existingKey,
+						introducedDate = LocalDate.of(2026, 1, 1),
+						expiresAt = LocalDateTime.of(2026, 1, 1, 0, 0),
+						status = MatchStatus.CLOSED,
+						matchType = TeamMatchType.RECOMMENDED,
+						dateInitAmount = 0,
+						dateAcceptAmount = 0,
+					).also { it.softDelete(LocalDateTime.of(2026, 1, 1, 0, 0)) },
+				)
+
+				post("/teams/v1/$teamId/acceptance") {
+					bearer(accessTokenFor(invitedUserId))
+				} expect {
+					status(200)
+				}
+
+				// 새 팀 매칭은 승격되지 않는다. (소프트삭제된 기존 행은 @SQLRestriction으로 활성 조회에서 제외되어 0건)
+				allTeamMatches().size shouldBe 0
 			}
 		}
 	}

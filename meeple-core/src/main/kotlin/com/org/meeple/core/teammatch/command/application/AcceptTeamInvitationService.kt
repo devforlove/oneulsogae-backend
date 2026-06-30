@@ -10,6 +10,7 @@ import com.org.meeple.core.common.time.TimeGenerator
 import com.org.meeple.core.teammatch.TeamErrorCode
 import com.org.meeple.core.teammatch.command.application.port.`in`.AcceptTeamInvitationUseCase
 import com.org.meeple.core.teammatch.command.application.port.out.GetRecommendedTeamPort
+import com.org.meeple.core.teammatch.command.application.port.out.GetTeamMatchPort
 import com.org.meeple.core.teammatch.command.application.port.out.GetTeamPort
 import com.org.meeple.core.teammatch.command.application.port.out.SaveTeamMatchPort
 import com.org.meeple.core.teammatch.command.application.port.out.SaveTeamPort
@@ -34,6 +35,7 @@ class AcceptTeamInvitationService(
 	private val getTeamPort: GetTeamPort,
 	private val saveTeamPort: SaveTeamPort,
 	private val getRecommendedTeamPort: GetRecommendedTeamPort,
+	private val getTeamMatchPort: GetTeamMatchPort,
 	private val saveTeamMatchPort: SaveTeamMatchPort,
 	private val timeGenerator: TimeGenerator,
 	private val domainEventPublisher: DomainEventPublisher,
@@ -100,9 +102,12 @@ class AcceptTeamInvitationService(
 		recommendedTeamIds.forEach { recommendedTeamId: Long ->
 			val recommended: Team? = getTeamPort.findById(recommendedTeamId)
 			if (recommended != null && recommended.status == TeamStatus.ACTIVE) {
-				saveTeamMatchPort.save(
-					TeamMatch.propose(team.id, recommendedTeamId, TeamMatchType.RECOMMENDED, now),
-				)
+				val proposed: TeamMatch = TeamMatch.propose(team.id, recommendedTeamId, TeamMatchType.RECOMMENDED, now)
+				// 이미 소개된 조합(과거 소개돼 종료·소프트삭제된 것 포함)이면 승격을 건너뛴다.
+				// 반대편 팀 결성·일일 배치가 같은 쌍을 먼저 만든 경우 ux_member_key 유니크 위반으로 수락이 5xx가 되던 것을 막는다(재소개 방지와 동일 의미).
+				if (!getTeamMatchPort.existsByMemberKey(proposed.memberKey())) {
+					saveTeamMatchPort.save(proposed)
+				}
 			}
 		}
 	}
