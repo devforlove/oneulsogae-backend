@@ -7,8 +7,10 @@ import com.org.meeple.core.common.event.UserLoggedIn
 import com.org.meeple.core.common.time.TimeGenerator
 import com.org.meeple.core.user.command.application.port.`in`.RegisterUserUseCase
 import com.org.meeple.core.user.command.application.port.out.GetUserPort
+import com.org.meeple.core.user.command.application.port.out.RestoreUserPort
 import com.org.meeple.core.user.command.application.port.out.SaveUserPort
 import com.org.meeple.core.user.command.domain.User
+import com.org.meeple.core.user.command.domain.event.UserProfileChanged
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import java.time.LocalDateTime
@@ -21,6 +23,7 @@ import java.time.LocalDateTime
 class RegisterUserService(
 	private val getUserPort: GetUserPort,
 	private val saveUserPort: SaveUserPort,
+	private val restoreUserPort: RestoreUserPort,
 	private val timeGenerator: TimeGenerator,
 	private val domainEventPublisher: DomainEventPublisher,
 ) : RegisterUserUseCase {
@@ -36,6 +39,15 @@ class RegisterUserService(
 		val existing: User? = getUserPort.findByProviderAndProviderId(provider, providerId)
 		if (existing != null) {
 			return recordLogin(existing)
+		}
+
+		// 탈퇴 유예중(소프트삭제) 계정이면 복구한다. (10일 경계는 파기 배치가 provider_id 치환으로 강제)
+		val withdrawnId: Long? = getUserPort.findWithdrawnUserId(provider, providerId)
+		if (withdrawnId != null) {
+			val restored: User = restoreUserPort.restore(withdrawnId, timeGenerator.now())
+			// 복구된 사용자를 매칭 읽기모델에 재적재한다(매칭 가능하면). UserLoggedIn은 기존 행만 갱신하므로 ProfileChanged로 전체 동기화.
+			domainEventPublisher.publish(UserProfileChanged(restored.id))
+			return restored
 		}
 
 		// 신규 가입은 이메일이 반드시 있어야 한다. (OAuth provider가 이메일 제공에 동의받지 못하면 null)
