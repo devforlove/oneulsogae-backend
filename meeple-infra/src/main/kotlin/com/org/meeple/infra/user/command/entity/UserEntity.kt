@@ -33,7 +33,7 @@ class UserEntity(
 	val provider: String,
 
 	@Column(name = "provider_id", nullable = false)
-	val providerId: String,
+	var providerId: String,
 
 	@Column(name = "email")
 	var email: String? = null,

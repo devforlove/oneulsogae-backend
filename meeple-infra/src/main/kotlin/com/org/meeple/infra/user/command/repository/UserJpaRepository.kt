@@ -30,4 +30,9 @@ interface UserJpaRepository : JpaRepository<UserEntity, Long> {
 	@Modifying(clearAutomatically = true)
 	@Query(value = "update users set deleted_at = null, last_login_at = :now where id = :id", nativeQuery = true)
 	fun restoreById(@Param("id") id: Long, @Param("now") now: LocalDateTime): Int
+
+	/** 파기: users 익명화. (소프트삭제 행 대상 → 네이티브) */
+	@Modifying(clearAutomatically = true)
+	@Query(value = "update users set email = null, provider_id = :providerId, status = 'WITHDRAWN' where id = :id", nativeQuery = true)
+	fun anonymizeById(@Param("id") id: Long, @Param("providerId") providerId: String): Int
 }

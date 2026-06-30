@@ -1,11 +1,13 @@
 package com.org.meeple.infra.user.command.adapter
 
-import com.org.meeple.core.user.command.domain.UserDetail
+import com.org.meeple.core.user.command.application.port.out.AnonymizeUserDetailPort
 import com.org.meeple.core.user.command.application.port.out.GetUserDetailPort
 import com.org.meeple.core.user.command.application.port.out.SaveUserDetailPort
+import com.org.meeple.core.user.command.domain.UserDetail
 import com.org.meeple.infra.user.command.mapper.toDomain
 import com.org.meeple.infra.user.command.mapper.toEntity
 import com.org.meeple.infra.user.command.repository.UserDetailJpaRepository
+import java.time.LocalDateTime
 import org.springframework.stereotype.Component
 
 /**
@@ -16,7 +18,7 @@ import org.springframework.stereotype.Component
 @Component
 class UserDetailCoreAdapter(
 	private val userDetailJpaRepository: UserDetailJpaRepository,
-) : GetUserDetailPort, SaveUserDetailPort {
+) : GetUserDetailPort, SaveUserDetailPort, AnonymizeUserDetailPort {
 
 	override fun findByUserId(userId: Long): UserDetail? =
 		userDetailJpaRepository.findByUserId(userId)?.toDomain()
@@ -29,4 +31,12 @@ class UserDetailCoreAdapter(
 
 	override fun save(userDetail: UserDetail): UserDetail =
 		userDetailJpaRepository.save(userDetail.toEntity()).toDomain()
+
+	override fun anonymize(userId: Long, at: LocalDateTime) {
+		// 파기 시점의 user_details는 아직 deleted_at이 null이라 일반 조회로 로드된다.
+		val entity = userDetailJpaRepository.findByUserId(userId) ?: return
+		entity.anonymize()
+		entity.softDelete(at)
+		userDetailJpaRepository.save(entity)
+	}
 }

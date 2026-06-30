@@ -116,4 +116,29 @@ class UserDetailEntity(
 	@Enumerated(EnumType.STRING)
 	@Column(name = "body_type", columnDefinition = "varchar(50)")
 	var bodyType: BodyType? = null,
-) : BaseEntity()
+) : BaseEntity() {
+
+	/** 모든 프로필 개인정보(PII)를 제거한다. (파기 단계 — id/userId만 남는다) */
+	fun anonymize() {
+		nickname = null
+		profileImageCode = null
+		birthday = null
+		height = null
+		gender = null
+		phoneNumber = null
+		job = null
+		regionId = null
+		introduction = null
+		traits = emptyList()
+		interests = emptyList()
+		companyEmail = null
+		companyName = null
+		universityEmail = null
+		universityName = null
+		maritalStatus = null
+		smokingStatus = null
+		religion = null
+		drinkingStatus = null
+		bodyType = null
+	}
+}
