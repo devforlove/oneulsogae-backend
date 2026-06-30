@@ -66,6 +66,35 @@ class IntegrationUtil(
 			}
 		}
 
+		/**
+		 * 네이티브 DML(UPDATE/DELETE)을 실행한다. (@SQLRestriction 우회 — 소프트삭제 행 조작 포함)
+		 * 테스트 픽스처 보정(예: deleted_at 강제 변경)에 사용한다.
+		 */
+		fun nativeUpdate(sql: String) {
+			inTransaction { entityManager.createNativeQuery(sql).executeUpdate() }
+		}
+
+		/**
+		 * 네이티브 SQL로 단일 행을 조회한다. (@SQLRestriction 소프트삭제 필터를 우회해
+		 * 소프트삭제·익명화 행을 직접 검증할 때 사용한다)
+		 * - 결과가 없으면 null 반환.
+		 * - 단일 컬럼이면 `arrayOf(value)`, 복수 컬럼이면 `Array<Any?>` 반환.
+		 */
+		fun nativeQuerySingleOrNull(sql: String): Array<Any?>? {
+			var result: Array<Any?>? = null
+			inTransaction {
+				@Suppress("UNCHECKED_CAST")
+				val rows: List<Any> = entityManager.createNativeQuery(sql).resultList as List<Any>
+				if (rows.isNotEmpty()) {
+					result = when (val row: Any = rows[0]) {
+						is Array<*> -> @Suppress("UNCHECKED_CAST") (row as Array<Any?>)
+						else -> arrayOf(row)
+					}
+				}
+			}
+			return result
+		}
+
 		// 단일 EntityManager를 공유하므로, 트랜잭션마다 영속성 컨텍스트를 비워(clear)
 		// 서버가 커밋한 최신 상태를 이후 조회가 그대로 읽도록 한다. (1차 캐시로 인한 stale read 방지)
 		private fun inTransaction(block: () -> Unit) {
