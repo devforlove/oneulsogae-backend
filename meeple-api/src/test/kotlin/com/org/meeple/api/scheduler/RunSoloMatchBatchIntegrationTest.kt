@@ -81,6 +81,19 @@ class RunSoloMatchBatchIntegrationTest(
 			}
 		}
 
+		context("배치가 하루에 여러 번 돌아도") {
+			it("미매칭 유저는 '오늘 소개 없음' 알람을 한 번만 받는다") {
+				val regionId: Long = persistRegion("서울특별시", "강남구", 37.50, 127.00)
+				// 반대 성별 후보가 없어 매 실행 미매칭으로 남는다.
+				val maleId: Long = persistMatchableUser(userId = 1001L, gender = Gender.MALE, regionId = regionId)
+
+				runSoloMatchBatchUseCase.run()
+				runSoloMatchBatchUseCase.run()
+
+				noMatchAlarms(maleId).size shouldBe 1
+			}
+		}
+
 		context("오늘 소개를 받은 유저는") {
 			it("'오늘 소개 없음' 알람을 받지 않는다") {
 				val regionId: Long = persistRegion("서울특별시", "강남구", 37.50, 127.00)

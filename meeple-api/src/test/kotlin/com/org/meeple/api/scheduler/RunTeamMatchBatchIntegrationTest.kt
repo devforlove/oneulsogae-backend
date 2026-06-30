@@ -88,6 +88,20 @@ class RunTeamMatchBatchIntegrationTest(
 			}
 		}
 
+		context("배치가 하루에 여러 번 돌아도") {
+			it("미매칭 팀의 활성 구성원은 '오늘 소개 없음' 알람을 한 번만 받는다") {
+				val regionId: Long = persistRegion("서울특별시", "강남구", 37.50, 127.00)
+				// 반대 성별 후보 팀이 없어 매 실행 미매칭으로 남는다.
+				val memberUserId: Long = 7001L
+				persistActiveTeam(gender = Gender.MALE, regionId = regionId, memberUserId = memberUserId)
+
+				runTeamMatchBatchUseCase.run()
+				runTeamMatchBatchUseCase.run()
+
+				noMatchAlarms(memberUserId).size shouldBe 1
+			}
+		}
+
 		context("오늘 소개를 받은 팀의 활성 구성원은") {
 			it("'오늘 소개 없음' 알람을 받지 않는다") {
 				val regionId: Long = persistRegion("서울특별시", "강남구", 37.50, 127.00)

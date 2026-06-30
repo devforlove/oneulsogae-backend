@@ -1,5 +1,6 @@
 package com.org.meeple.infra.alarm.command.repository
 
+import com.org.meeple.common.alarm.AlarmType
 import com.org.meeple.infra.alarm.command.entity.AlarmEntity
 import org.springframework.data.jpa.repository.JpaRepository
 import org.springframework.data.jpa.repository.Modifying
@@ -25,4 +26,18 @@ interface AlarmJpaRepository : JpaRepository<AlarmEntity, Long> {
 			"where a.userId = :userId and a.isRead = false and a.createdAt >= :since",
 	)
 	fun markAllReadByUserIdSince(@Param("userId") userId: Long, @Param("since") since: LocalDateTime): Int
+
+	/**
+	 * [userIds] 중 [since](포함) 이후 [type] 알람을 이미 받은 userId만 추려 반환한다. (당일 중복 알림 차단용)
+	 * 복합 인덱스(user_id, created_at)로 userId IN seek + created_at 범위를 받쳐, type은 잔여 필터로 본다.
+	 */
+	@Query(
+		"select distinct a.userId from AlarmEntity a " +
+			"where a.userId in :userIds and a.type = :type and a.createdAt >= :since",
+	)
+	fun findAlarmedUserIds(
+		@Param("userIds") userIds: Collection<Long>,
+		@Param("type") type: AlarmType,
+		@Param("since") since: LocalDateTime,
+	): List<Long>
 }

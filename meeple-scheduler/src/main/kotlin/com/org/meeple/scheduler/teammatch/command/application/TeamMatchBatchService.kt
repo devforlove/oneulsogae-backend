@@ -78,7 +78,7 @@ class TeamMatchBatchService(
 
 		// 루프가 끝난 뒤 풀에 남은(=끝까지 소개받지 못한) 팀의 활성 구성원에게만 "오늘 소개 없음" 알람을 보낸다.
 		// (skipped 카운터는 이후 다른 팀의 짝으로 매칭될 수 있어 부정확하므로 풀 잔여로 정확히 판정한다)
-		noIntroductionAlarmPort.notifyTeamUnmatched(pool.remainingTeamIds())
+		noIntroductionAlarmPort.notifyTeamUnmatched(pool.remainingTeamIds(), now)
 
 		val result: TeamMatchBatchResult = TeamMatchBatchResult(targets = matchables.size, recommended = recommended, skipped = skipped, failed = failed)
 		log.info("일일 팀 매칭 배치 완료: {}", result)
