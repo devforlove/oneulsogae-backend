@@ -104,7 +104,9 @@ class AcceptTeamInvitationService(
 			if (recommended != null && recommended.status == TeamStatus.ACTIVE) {
 				val proposed: TeamMatch = TeamMatch.propose(team.id, recommendedTeamId, TeamMatchType.RECOMMENDED, now)
 				// 이미 소개된 조합(과거 소개돼 종료·소프트삭제된 것 포함)이면 승격을 건너뛴다.
-				// 반대편 팀 결성·일일 배치가 같은 쌍을 먼저 만든 경우 ux_member_key 유니크 위반으로 수락이 5xx가 되던 것을 막는다(재소개 방지와 동일 의미).
+				// 현재 도메인 규칙상 도달 불가능한 방어선이다: TeamMatch 생성 경로(일일 배치·추천 승격)는 모두 커밋된 ACTIVE 팀만 짝짓는데,
+				// 이 시점의 team은 이번 accept로 "처음" ACTIVE가 되는 중(아직 미커밋)이라 그 누구도 team.id가 든 행을 먼저 만들 수 없다.
+				// 향후 비활성 팀에도 소개 행을 만드는 경로나 팀 재활성화가 생기면 ux_member_key 유니크 위반(수락 5xx)을 막는 가드가 된다.
 				if (!getTeamMatchPort.existsByMemberKey(proposed.memberKey())) {
 					saveTeamMatchPort.save(proposed)
 				}
