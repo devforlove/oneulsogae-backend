@@ -18,7 +18,7 @@ private val EMAIL_REGEX: Regex = Regex("^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$")
  */
 data class Inquiry(
 	val id: Long = 0,
-	val userId: Long,
+	val userId: Long?,
 	val category: InquiryCategory,
 	val email: String,
 	val message: String,
@@ -28,9 +28,9 @@ data class Inquiry(
 ) {
 	companion object {
 
-		/** 회원([userId])의 문의를 [category]·[email]·[message]로 접수한다. 입력을 검증한 뒤 PENDING으로 만든다. */
+		/** 작성자([userId], 비로그인이면 null)의 문의를 [category]·[email]·[message]로 접수한다. 입력을 검증한 뒤 PENDING으로 만든다. */
 		fun create(
-			userId: Long,
+			userId: Long?,
 			category: InquiryCategory,
 			email: String,
 			message: String,
