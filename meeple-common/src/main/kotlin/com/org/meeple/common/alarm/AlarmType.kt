@@ -1,5 +1,7 @@
 package com.org.meeple.common.alarm
 
+import com.org.meeple.common.notification.NotificationCategory
+
 /** 알람(알림) 유형. */
 enum class AlarmType(val description: String) {
 
@@ -41,4 +43,16 @@ enum class AlarmType(val description: String) {
 
 	/** [팀 매칭] 팀이 해체됨(해체를 실행한 구성원을 제외한 같은 팀의 남은 구성원에게). */
 	TEAM_DISBANDED("팀 해체됨"),
+	;
+
+	/** 이 알람 유형이 속한 알림 설정 카테고리. (알림톡 전송 게이트가 이 값으로 사용자 설정을 평가) */
+	fun category(): NotificationCategory =
+		when (this) {
+			ONE_TO_ONE_INTEREST_RECEIVED, ONE_TO_ONE_MATCHED, ONE_TO_ONE_MATCH_ENDED, ONE_TO_ONE_NO_MATCH_TODAY ->
+				NotificationCategory.ONE_TO_ONE
+			MANY_TO_MANY_INTEREST_RECEIVED, MANY_TO_MANY_MATCHED, MANY_TO_MANY_MATCH_ENDED, MANY_TO_MANY_NO_MATCH_TODAY ->
+				NotificationCategory.MEETING
+			TEAM_INVITATION_RECEIVED, TEAM_INVITATION_DECLINED, TEAM_INVITATION_CANCELED, TEAM_INVITATION_ACCEPTED, TEAM_DISBANDED ->
+				NotificationCategory.TEAM
+		}
 }
