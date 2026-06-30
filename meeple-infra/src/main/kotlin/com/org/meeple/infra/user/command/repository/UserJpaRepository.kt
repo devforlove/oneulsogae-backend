@@ -2,6 +2,10 @@ package com.org.meeple.infra.user.command.repository
 
 import com.org.meeple.infra.user.command.entity.UserEntity
 import org.springframework.data.jpa.repository.JpaRepository
+import org.springframework.data.jpa.repository.Modifying
+import org.springframework.data.jpa.repository.Query
+import org.springframework.data.repository.query.Param
+import java.time.LocalDateTime
 
 /**
  * 사용자 영속성 엔티티에 대한 Spring Data JPA 리포지토리.
@@ -12,4 +16,9 @@ interface UserJpaRepository : JpaRepository<UserEntity, Long> {
 	fun findByProviderAndProviderId(provider: String, providerId: String): UserEntity?
 
 	fun existsByEmail(email: String): Boolean
+
+	/** 소프트삭제(탈퇴): deleted_at을 설정한다. @SQLRestriction 우회를 위해 네이티브. */
+	@Modifying(clearAutomatically = true)
+	@Query(value = "update users set deleted_at = :now where id = :id and deleted_at is null", nativeQuery = true)
+	fun softDeleteById(@Param("id") id: Long, @Param("now") now: LocalDateTime): Int
 }
