@@ -55,6 +55,8 @@ class SecurityConfig(
 					// WebSocket 핸드셰이크(SockJS 하위 경로 포함)는 토큰을 못 싣으므로 열어둔다.
 					// 실제 인증은 STOMP CONNECT 프레임에서 AuthChannelInterceptor가 수행한다.
 					.requestMatchers("/ws/chat/**").permitAll()
+					// 비로그인 사용자도 고객센터 문의를 접수할 수 있도록 연다. (토큰 있으면 컨트롤러가 회원 ID로 귀속)
+					.requestMatchers("/inquiries/v1").permitAll()
 					.anyRequest().authenticated()
 			}
 			// 인증이 필요한 요청인데 토큰이 없거나 유효하지 않으면(만료/위조) 401 JSON으로 차단한다.

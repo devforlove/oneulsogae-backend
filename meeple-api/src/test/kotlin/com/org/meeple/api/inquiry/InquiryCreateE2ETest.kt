@@ -55,14 +55,27 @@ class InquiryCreateE2ETest : AbstractIntegrationSupport({
 		}
 
 		context("인증 토큰이 없으면") {
-			it("401을 반환한다") {
-				post("/inquiries/v1") {
-					jsonBody("""{"category": "ETC", "email": "user@test.com", "message": "토큰 없이 보내는 문의입니다."}""")
-				} expect {
-					status(401)
+				it("익명 문의로 저장되고(user_id NULL) inquiryId를 반환한다 (200)") {
+					val response = post("/inquiries/v1") {
+						jsonBody("""{"category": "ETC", "email": "guest@test.com", "message": "토큰 없이 보내는 문의입니다."}""")
+					}
+					response expect {
+						status(200)
+						body("success", true)
+						body("data.inquiryId", notNullValue())
+					}
+					val inquiryId: Long = response.extract().path<Int>("data.inquiryId").toLong()
+
+					val inquiry: QInquiryEntity = QInquiryEntity.inquiryEntity
+					val saved: InquiryEntity = IntegrationUtil.getQuery()
+						.selectFrom(inquiry)
+						.where(inquiry.id.eq(inquiryId))
+						.fetchOne()!!
+					saved.userId shouldBe null
+					saved.status shouldBe InquiryStatus.PENDING
+					saved.email shouldBe "guest@test.com"
 				}
 			}
-		}
 	}
 
 	afterTest {

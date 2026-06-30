@@ -13,7 +13,7 @@ import org.hibernate.annotations.SQLRestriction
 import java.time.LocalDateTime
 
 /**
- * 고객센터 1:1 문의 영속성 엔티티. 작성 회원(user_id)·유형(category)·답변 이메일(email)·내용(message)을 보관한다.
+ * 고객센터 1:1 문의 영속성 엔티티. 작성 회원(user_id, 비로그인이면 null)·유형(category)·답변 이메일(email)·내용(message)을 보관한다.
  * 접수 시각은 별도 컬럼 없이 [BaseEntity]의 created_at(JPA Auditing)으로 갈음한다.
  * status/answer/answered_at은 추후 운영자 답변용으로 선반영했고, 생성 시 PENDING·null이다.
  * 삭제는 soft delete(deleted_at)로 처리한다.
@@ -27,8 +27,8 @@ import java.time.LocalDateTime
 	],
 )
 class InquiryEntity(
-	@Column(name = "user_id", nullable = false)
-	var userId: Long,
+	@Column(name = "user_id", nullable = true)
+	var userId: Long?,
 
 	@Enumerated(EnumType.STRING)
 	@Column(name = "category", nullable = false, columnDefinition = "varchar(50)")
