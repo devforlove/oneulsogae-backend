@@ -35,4 +35,8 @@ interface UserJpaRepository : JpaRepository<UserEntity, Long> {
 	@Modifying(clearAutomatically = true)
 	@Query(value = "update users set email = null, provider_id = :providerId, status = 'WITHDRAWN' where id = :id", nativeQuery = true)
 	fun anonymizeById(@Param("id") id: Long, @Param("providerId") providerId: String): Int
+
+	/** 파기 대상: 유예 경과(deleted_at < cutoff) + 아직 미익명화(status <> WITHDRAWN). 소프트삭제 행이라 네이티브. */
+	@Query(value = "select id from users where deleted_at is not null and deleted_at < :cutoff and status <> 'WITHDRAWN'", nativeQuery = true)
+	fun findPurgableUserIds(@Param("cutoff") cutoff: LocalDateTime): List<Long>
 }

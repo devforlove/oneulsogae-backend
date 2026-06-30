@@ -81,6 +81,13 @@ meeple:
     expire-batch:
       # 매시간 정각 (Asia/Seoul). 만료 후 최대 ~1시간 내 정리·환불. MEEPLE_EXPIRE_BATCH_CRON으로 조정
       cron: ${MEEPLE_EXPIRE_BATCH_CRON:0 0 * * * *}
+  user:
+    withdrawal:
+      # 탈퇴 후 개인정보 보관 유예 기간(일). 기간 경과 후 파기 배치가 익명화한다.
+      retention-days: 10
+      purge-batch:
+        # 매일 05:00 KST. MEEPLE_PURGE_WITHDRAWN_BATCH_CRON 환경변수로 조정 가능.
+        cron: ${MEEPLE_PURGE_WITHDRAWN_BATCH_CRON:0 0 5 * * *}
 
 logging:
   level:
@@ -122,3 +129,9 @@ meeple:
       cron: ${MEEPLE_TEAM_MATCH_BATCH_CRON:0 * * * * *}
     expire-batch:
       cron: ${MEEPLE_EXPIRE_BATCH_CRON:0 * * * * *}
+  user:
+    withdrawal:
+      retention-days: 10
+      purge-batch:
+        # 로컬에서는 1분마다 돌려 동작을 빠르게 확인한다. (운영 기본값은 매일 05:00)
+        cron: ${MEEPLE_PURGE_WITHDRAWN_BATCH_CRON:0 * * * * *}
