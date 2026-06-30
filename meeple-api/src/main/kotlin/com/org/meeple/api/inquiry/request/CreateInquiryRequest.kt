@@ -19,7 +19,7 @@ data class CreateInquiryRequest(
 	@field:Size(min = 10, max = 1000, message = "문의 내용은 10자 이상 1000자 이하여야 합니다.")
 	val message: String? = null,
 ) {
-	fun toCommand(userId: Long): CreateInquiryCommand =
+	fun toCommand(userId: Long?): CreateInquiryCommand =
 		CreateInquiryCommand(
 			userId = userId,
 			category = category!!,
