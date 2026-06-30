@@ -2,6 +2,7 @@ package com.org.meeple.api.user
 
 import com.org.meeple.common.integration.AbstractIntegrationSupport
 import com.org.meeple.common.user.UserStatus
+import com.org.meeple.core.user.command.application.port.`in`.PurgeWithdrawnUserUseCase
 import com.org.meeple.core.user.command.application.port.`in`.RegisterUserUseCase
 import com.org.meeple.core.user.command.domain.User
 import com.org.meeple.infra.fixture.IntegrationUtil
@@ -23,6 +24,7 @@ import java.time.LocalDateTime
 class PurgeWithdrawnUserE2ETest : AbstractIntegrationSupport() {
 
     @Autowired private lateinit var purgeWithdrawnUserBatchJob: PurgeWithdrawnUserBatchJob
+    @Autowired private lateinit var purgeWithdrawnUserUseCase: PurgeWithdrawnUserUseCase
     @Autowired private lateinit var registerUserUseCase: RegisterUserUseCase
 
     init {
@@ -62,6 +64,41 @@ class PurgeWithdrawnUserE2ETest : AbstractIntegrationSupport() {
                 val newUser: User = registerUserUseCase.registerIfAbsent("kakao", "kakao-777", "new@test.com", null)
                 newUser.id shouldNotBe oldId
                 newUser.status shouldBe UserStatus.ONBOARDING   // 복구가 아닌 신규 → 온보딩부터
+            }
+
+            it("활성(deleted_at=null) 계정은 파기 직접 호출에도 변경되지 않는다 — anonymizeById 가드 검증") {
+                // 소프트삭제 없이 처음부터 활성 상태인 사용자.
+                // 배치 SELECT(findUserIdsWithdrawnBefore)를 우회해 purge()를 직접 호출함으로써
+                // anonymizeById의 WHERE 가드(deleted_at IS NOT NULL)를 직접 타격한다.
+                val email: String = "active-guard@test.com"
+                val providerId: String = "kakao-active-guard"
+                val userId: Long = IntegrationUtil.persist(
+                    UserEntityFixture.create(
+                        provider = "kakao",
+                        providerId = providerId,
+                        email = email,
+                        status = UserStatus.ACTIVE,
+                    ),
+                ).id!!
+                IntegrationUtil.persist(UserDetailEntityFixture.create(userId = userId))
+
+                // 배치 SELECT 없이 직접 purge() 호출 → anonymizeById 가드가 0행 반환해야 한다.
+                purgeWithdrawnUserUseCase.purge(userId)
+
+                // 가드가 UPDATE를 막아 users 행이 그대로여야 한다.
+                val userRow: Array<Any?> = IntegrationUtil.nativeQuerySingleOrNull(
+                    "select email, provider_id, status from users where id = $userId"
+                )!!
+                userRow[0] shouldBe email         // email 보존(익명화 안 됨)
+                userRow[1] shouldBe providerId    // provider_id 원본(치환 안 됨)
+                userRow[2] shouldBe "ACTIVE"      // status 원본
+
+                // user 익명화 0행이면 user_details도 손대지 않는다(원자성 검증).
+                val detailRow: Array<Any?> = IntegrationUtil.nativeQuerySingleOrNull(
+                    "select nickname, deleted_at from user_details where user_id = $userId"
+                )!!
+                detailRow[0] shouldNotBe null   // nickname PII 보존
+                detailRow[1] shouldBe null      // user_details 소프트삭제 안 됨
             }
 
             it("배치 적재 후 복구된(deleted_at=null) 사용자는 파기하지 않는다 (C1 회귀)") {
