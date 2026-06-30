@@ -13,8 +13,8 @@ import org.springframework.stereotype.Component
 import java.time.LocalDateTime
 
 /**
- * 사용자 아웃포트([GetUserPort], [SaveUserPort])의 JPA 구현 어댑터.
- * 엔티티/도메인 변환([UserMapper])을 책임지며, 외부에는 도메인 모델만 노출한다.
+ * 사용자 관련 아웃포트([GetUserPort], [SaveUserPort], [SoftDeleteUserPort], [RestoreUserPort], [AnonymizeUserPort])의 JPA 구현 어댑터.
+ * 엔티티/도메인 변환을 책임지며, 외부에는 도메인 모델만 노출한다.
  */
 @Component
 class UserRepositoryAdapter(
@@ -47,7 +47,6 @@ class UserRepositoryAdapter(
 		return userJpaRepository.findById(userId).orElseThrow().toDomain()
 	}
 
-	override fun anonymize(userId: Long, anonymizedProviderId: String) {
-		userJpaRepository.anonymizeById(userId, anonymizedProviderId)
-	}
+	override fun anonymize(userId: Long, anonymizedProviderId: String): Boolean =
+		userJpaRepository.anonymizeById(userId, anonymizedProviderId) > 0
 }

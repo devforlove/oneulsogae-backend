@@ -21,7 +21,11 @@ class PurgeWithdrawnUserService(
 
 	@Transactional
 	override fun purge(userId: Long) {
-		anonymizeUserPort.anonymize(userId, "withdrawn_$userId")
-		anonymizeUserDetailPort.anonymize(userId, timeGenerator.now())
+		// users 익명화가 실제로 적용된 경우에만 user_details도 익명화한다.
+		// deleted_at이 null(배치 적재 후 복구된 활성 계정)이면 0행 → false → user_details 건드리지 않음.
+		val anonymized: Boolean = anonymizeUserPort.anonymize(userId, "withdrawn_$userId")
+		if (anonymized) {
+			anonymizeUserDetailPort.anonymize(userId, timeGenerator.now())
+		}
 	}
 }

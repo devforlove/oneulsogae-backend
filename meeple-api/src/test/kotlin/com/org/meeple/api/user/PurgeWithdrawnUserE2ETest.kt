@@ -43,10 +43,62 @@ class PurgeWithdrawnUserE2ETest : AbstractIntegrationSupport() {
 
                 purgeWithdrawnUserBatchJob.run()
 
+                // 파기 직접 검증: email=null, provider_id 치환, status=WITHDRAWN
+                val userRow: Array<Any?> = IntegrationUtil.nativeQuerySingleOrNull(
+                    "select email, provider_id, status from users where id = $oldId"
+                )!!
+                userRow[0] shouldBe null                         // email 익명화
+                userRow[1] shouldBe "withdrawn_$oldId"           // provider_id 치환
+                userRow[2] shouldBe "WITHDRAWN"                  // status 파기 마커
+
+                // user_details PII 익명화 검증 (닉네임 null)
+                val detailRow: Array<Any?> = IntegrationUtil.nativeQuerySingleOrNull(
+                    "select nickname, deleted_at from user_details where user_id = $oldId"
+                )!!
+                detailRow[0] shouldBe null      // nickname PII 제거됨
+                detailRow[1] shouldNotBe null   // user_details도 소프트삭제됨
+
                 // 파기 후: provider_id가 치환돼 복구 대상이 아니므로 같은 카카오로 신규 가입된다.
                 val newUser: User = registerUserUseCase.registerIfAbsent("kakao", "kakao-777", "new@test.com", null)
                 newUser.id shouldNotBe oldId
                 newUser.status shouldBe UserStatus.ONBOARDING   // 복구가 아닌 신규 → 온보딩부터
+            }
+
+            it("배치 적재 후 복구된(deleted_at=null) 사용자는 파기하지 않는다 (C1 회귀)") {
+                // 11일 전 소프트삭제 상태로 적재한다.
+                val withdrawnAt: LocalDateTime = LocalDateTime.now().minusDays(11)
+                val userId: Long = IntegrationUtil.persist(
+                    UserEntityFixture.create(
+                        provider = "kakao",
+                        providerId = "kakao-999",
+                        email = "active@test.com",
+                        status = UserStatus.ACTIVE,
+                    ).also { it.softDelete(withdrawnAt) },
+                ).id!!
+                IntegrationUtil.persist(UserDetailEntityFixture.create(userId = userId))
+
+                // 배치 적재 시점과 개별 파기 사이에 복구가 일어난 상황을 직접 모사:
+                // @SQLRestriction 우회를 위해 네이티브 UPDATE로 deleted_at을 null로 되돌린다.
+                IntegrationUtil.nativeUpdate("update users set deleted_at = null where id = $userId")
+
+                // 배치 실행 — 복구된 행은 WHERE deleted_at IS NOT NULL 가드로 건드리지 않아야 한다.
+                purgeWithdrawnUserBatchJob.run()
+
+                // 검증: users 행이 활성(email 보존, status 원본, provider_id 원본) 상태여야 한다.
+                val row: Array<Any?> = IntegrationUtil.nativeQuerySingleOrNull(
+                    "select email, provider_id, status, deleted_at from users where id = $userId"
+                )!!
+                row[0] shouldBe "active@test.com"   // email 보존 (파기되지 않음)
+                row[1] shouldBe "kakao-999"          // provider_id 원본
+                row[2] shouldBe "ACTIVE"             // status 원본
+                row[3] shouldBe null                 // deleted_at=null(활성)
+
+                // user_details도 PII 보존 확인
+                val detailRow: Array<Any?> = IntegrationUtil.nativeQuerySingleOrNull(
+                    "select nickname, deleted_at from user_details where user_id = $userId"
+                )!!
+                detailRow[0] shouldNotBe null   // nickname 보존
+                detailRow[1] shouldBe null      // 소프트삭제 안 됨
             }
         }
 

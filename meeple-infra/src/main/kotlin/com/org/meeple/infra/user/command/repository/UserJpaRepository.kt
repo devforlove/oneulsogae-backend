@@ -26,14 +26,17 @@ interface UserJpaRepository : JpaRepository<UserEntity, Long> {
 	@Query(value = "select id from users where provider = :provider and provider_id = :providerId and deleted_at is not null", nativeQuery = true)
 	fun findWithdrawnId(@Param("provider") provider: String, @Param("providerId") providerId: String): Long?
 
-	/** 복구: deleted_at 해제 + last_login_at 갱신. */
+	/** 복구: deleted_at 해제 + last_login_at 갱신. deleted_at이 null이면(이미 활성) 가드로 건너뛴다. */
 	@Modifying(clearAutomatically = true)
-	@Query(value = "update users set deleted_at = null, last_login_at = :now where id = :id", nativeQuery = true)
+	@Query(value = "update users set deleted_at = null, last_login_at = :now where id = :id and deleted_at is not null", nativeQuery = true)
 	fun restoreById(@Param("id") id: Long, @Param("now") now: LocalDateTime): Int
 
-	/** 파기: users 익명화. (소프트삭제 행 대상 → 네이티브) */
+	/**
+	 * 파기: users 익명화. (소프트삭제 행 대상 → 네이티브)
+	 * deleted_at이 null(복구된 활성 계정)이거나 이미 WITHDRAWN이면 0행 반환해 멱등을 보장한다.
+	 */
 	@Modifying(clearAutomatically = true)
-	@Query(value = "update users set email = null, provider_id = :providerId, status = 'WITHDRAWN' where id = :id", nativeQuery = true)
+	@Query(value = "update users set email = null, provider_id = :providerId, status = 'WITHDRAWN' where id = :id and deleted_at is not null and status <> 'WITHDRAWN'", nativeQuery = true)
 	fun anonymizeById(@Param("id") id: Long, @Param("providerId") providerId: String): Int
 
 	/** 파기 대상: 유예 경과(deleted_at < cutoff) + 아직 미익명화(status <> WITHDRAWN). 소프트삭제 행이라 네이티브. */
