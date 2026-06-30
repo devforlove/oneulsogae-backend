@@ -21,4 +21,13 @@ interface UserJpaRepository : JpaRepository<UserEntity, Long> {
 	@Modifying(clearAutomatically = true)
 	@Query(value = "update users set deleted_at = :now where id = :id and deleted_at is null", nativeQuery = true)
 	fun softDeleteById(@Param("id") id: Long, @Param("now") now: LocalDateTime): Int
+
+	/** 소프트삭제 포함 조회: 탈퇴 유예중(원본 provider_id 잔존) 사용자 id. */
+	@Query(value = "select id from users where provider = :provider and provider_id = :providerId and deleted_at is not null", nativeQuery = true)
+	fun findWithdrawnId(@Param("provider") provider: String, @Param("providerId") providerId: String): Long?
+
+	/** 복구: deleted_at 해제 + last_login_at 갱신. */
+	@Modifying(clearAutomatically = true)
+	@Query(value = "update users set deleted_at = null, last_login_at = :now where id = :id", nativeQuery = true)
+	fun restoreById(@Param("id") id: Long, @Param("now") now: LocalDateTime): Int
 }

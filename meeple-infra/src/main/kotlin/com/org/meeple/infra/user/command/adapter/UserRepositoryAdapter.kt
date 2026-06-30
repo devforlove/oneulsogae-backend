@@ -1,6 +1,7 @@
 package com.org.meeple.infra.user.command.adapter
 
 import com.org.meeple.core.user.command.application.port.out.GetUserPort
+import com.org.meeple.core.user.command.application.port.out.RestoreUserPort
 import com.org.meeple.core.user.command.application.port.out.SaveUserPort
 import com.org.meeple.core.user.command.application.port.out.SoftDeleteUserPort
 import com.org.meeple.core.user.command.domain.User
@@ -17,7 +18,7 @@ import java.time.LocalDateTime
 @Component
 class UserRepositoryAdapter(
 	private val userJpaRepository: UserJpaRepository,
-) : GetUserPort, SaveUserPort, SoftDeleteUserPort {
+) : GetUserPort, SaveUserPort, SoftDeleteUserPort, RestoreUserPort {
 
 	override fun findByProviderAndProviderId(provider: String, providerId: String): User? =
 		userJpaRepository.findByProviderAndProviderId(provider, providerId)?.toDomain()
@@ -34,5 +35,14 @@ class UserRepositoryAdapter(
 
 	override fun softDelete(userId: Long, at: LocalDateTime) {
 		userJpaRepository.softDeleteById(userId, at)
+	}
+
+	override fun findWithdrawnUserId(provider: String, providerId: String): Long? =
+		userJpaRepository.findWithdrawnId(provider, providerId)
+
+	override fun restore(userId: Long, at: LocalDateTime): User {
+		userJpaRepository.restoreById(userId, at)
+		// 복구 후에는 @SQLRestriction을 통과하므로 일반 조회로 도메인 모델을 읽는다.
+		return userJpaRepository.findById(userId).orElseThrow().toDomain()
 	}
 }
