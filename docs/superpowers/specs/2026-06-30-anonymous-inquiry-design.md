@@ -42,7 +42,7 @@
 
 - `InquiryEntity.userId: Long?` + `@Column(name = "user_id", nullable = true)`.
 - `InquiryMapper`: 타입만 nullable로 맞추면 현재 매핑 그대로 동작한다.
-- `idx_user_id` 인덱스는 유지한다. 회원별 문의 조회 의미는 그대로이며, NULL 행만 인덱스에서 빠진다.
+- `idx_user_id` 인덱스는 유지한다. 회원별 문의 조회 의미는 그대로다. (InnoDB 세컨더리 인덱스는 NULL 값도 색인하므로 익명 문의 행도 인덱스에 포함된다)
 
 ### 4. DDL 마이그레이션
 
