@@ -23,6 +23,13 @@ class MatchPool private constructor(
 	fun regionsWith(gender: Gender): Set<Long> =
 		regionsByGender[gender] ?: emptySet()
 
+	/** [gender]의 아직 가용한 후보 전체(지역 무관). 이상형 종합 점수 정렬 경로에서 후보 집합으로 쓴다. */
+	fun availableCandidates(gender: Gender): List<MatchableUser> =
+		bucketsByKey.entries
+			.filter { (key: BucketKey, _) -> key.gender == gender }
+			.flatMap { (_, users: List<MatchableUser>) -> users }
+			.filter { user: MatchableUser -> user.userId in available }
+
 	/** 매칭된 [user]를 가용에서 제거한다. */
 	fun remove(user: MatchableUser) {
 		available.remove(user.userId)
