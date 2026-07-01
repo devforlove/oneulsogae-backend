@@ -38,13 +38,16 @@ class GetMatchedTeamDaoImpl(
 		val membersByTeamId: Map<Long, TeamMembers> =
 			recommendedTeamMemberLoader.loadByTeamIds(teams.map { team: RecommendedTeam -> team.teamId })
 
-		// 최신 매칭부터 노출하도록 teamMatchId 내림차순으로 정렬한다. (진행 중 매칭이라 teamMatchId는 non-null)
+		// 성사(MATCHED) → 상대 수락 대기(PARTIALLY_ACCEPTED) → 소개됨(PROPOSED) 순으로 노출하고, 같은 상태 안에서는 최신(teamMatchId 내림차순)순으로 정렬한다. (진행 중 매칭이라 teamMatchStatus/teamMatchId는 non-null)
 		return teams
 			.map { team: RecommendedTeam ->
 				val teamMembers: TeamMembers? = membersByTeamId[team.teamId]
 				team.copy(members = teamMembers?.members.orEmpty(), lastLoginAt = teamMembers?.lastLoginAt)
 			}
-			.sortedByDescending { team: RecommendedTeam -> team.teamMatchId }
+			.sortedWith(
+				compareBy<RecommendedTeam> { team: RecommendedTeam -> team.teamMatchStatus?.listPriority ?: Int.MAX_VALUE }
+					.thenByDescending { team: RecommendedTeam -> team.teamMatchId },
+			)
 	}
 
 	// ① 내 참가 행(mine) 기준으로 같은 팀 매칭의 상대 참가 행(opp)을 이어 진행 중인 상대 팀(ACTIVE) 헤더를 최신순으로 조회한다. (구성원은 ②에서 채우므로 빈 목록으로 둔다)

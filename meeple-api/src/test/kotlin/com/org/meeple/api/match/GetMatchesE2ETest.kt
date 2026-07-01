@@ -93,6 +93,54 @@ class GetMatchesE2ETest : AbstractIntegrationSupport({
 				}
 			}
 		}
+
+		context("서로 다른 상태의 매칭이 여러 개 있으면") {
+			it("성사(MATCHED), 상대 수락 대기(PARTIALLY_ACCEPTED), 소개됨(PROPOSED) 순으로 정렬해 내려준다 (200)") {
+				val meUserId: Long = IntegrationUtil.persist(
+					UserEntityFixture.create(status = UserStatus.ACTIVE),
+				).id!!
+				IntegrationUtil.persist(
+					UserDetailEntity(userId = meUserId, nickname = "정렬유저", gender = Gender.MALE, birthday = LocalDate.of(1996, 1, 1)),
+				)
+
+				// 나와 새 상대로 주어진 상태의 매칭 한 건을 만들고 matchId를 반환한다.
+				fun seedMatch(providerId: String, status: MatchStatus): Long {
+					val partnerUserId: Long = IntegrationUtil.persist(
+						UserEntityFixture.create(providerId = providerId, status = UserStatus.ACTIVE),
+					).id!!
+					IntegrationUtil.persist(
+						UserDetailEntity(userId = partnerUserId, nickname = "상대-$providerId", gender = Gender.FEMALE, birthday = LocalDate.of(1999, 1, 1)),
+					)
+					val matchId: Long = IntegrationUtil.persist(
+						SoloMatchEntityFixture.create(
+							memberKey = MatchMembers.memberKeyOf(listOf(meUserId, partnerUserId)),
+							status = status,
+						),
+					).id!!
+					IntegrationUtil.persist(
+						SoloMatchMemberEntityFixture.create(matchId = matchId, userId = meUserId, gender = Gender.MALE, status = MatchMemberStatus.WAITING),
+					)
+					IntegrationUtil.persist(
+						SoloMatchMemberEntityFixture.create(matchId = matchId, userId = partnerUserId, gender = Gender.FEMALE, status = MatchMemberStatus.WAITING),
+					)
+					return matchId
+				}
+
+				// 상태 우선순위 정렬을 보이기 위해 요청 순서와 무관하게 시딩한다.
+				val proposedId: Long = seedMatch("provider-proposed", MatchStatus.PROPOSED)
+				val partiallyAcceptedId: Long = seedMatch("provider-partial", MatchStatus.PARTIALLY_ACCEPTED)
+				val matchedId: Long = seedMatch("provider-matched", MatchStatus.MATCHED)
+
+				get("/matches/v1") {
+					bearer(accessTokenFor(meUserId))
+				} expect {
+					status(200)
+					body("data.size()", 3)
+					body("data.status", contains("MATCHED", "PARTIALLY_ACCEPTED", "PROPOSED"))
+					body("data.matchId", contains(matchedId.toInt(), partiallyAcceptedId.toInt(), proposedId.toInt()))
+				}
+			}
+		}
 	}
 
 	afterTest {

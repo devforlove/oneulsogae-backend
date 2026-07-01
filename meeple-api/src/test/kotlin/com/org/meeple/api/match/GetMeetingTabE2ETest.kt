@@ -26,6 +26,7 @@ import com.org.meeple.infra.teammatch.command.entity.TeamMatchEntity
 import com.org.meeple.infra.teammatch.command.entity.TeamMemberEntity
 import com.org.meeple.infra.region.entity.QRegionEntity
 import com.org.meeple.infra.user.command.entity.QUserDetailEntity
+import org.hamcrest.Matchers.contains
 import org.hamcrest.Matchers.hasSize
 import org.hamcrest.Matchers.notNullValue
 import org.hamcrest.Matchers.nullValue
@@ -291,6 +292,51 @@ class GetMeetingTabE2ETest : AbstractIntegrationSupport({
 					body("data.recommendedTeams[0].hasPartnerInterest", true)
 					body("data.myTeam.teamId", myTeamId.toInt())
 					body("data.receivedInvitationCount", 0)
+				}
+			}
+		}
+
+		context("결성(ACTIVE) 팀에 서로 다른 상태의 진행 중 매칭이 여러 개 있으면") {
+			it("매칭된 상대 팀을 성사(MATCHED), 상대 수락 대기(PARTIALLY_ACCEPTED), 소개됨(PROPOSED) 순으로 내려준다 (200)") {
+				val me = 5007L
+				val friend = 5307L
+				persistMatchUser(me, Gender.MALE)
+				persistMatchUser(friend, Gender.MALE)
+				val myTeamId: Long = persistTeam(TeamStatus.ACTIVE, Gender.MALE)
+				persistMember(myTeamId, me, TeamMemberStatus.ACTIVE)
+				persistMember(myTeamId, friend, TeamMemberStatus.ACTIVE)
+
+				// 내 팀과 주어진 상태로 진행 중 매칭된 상대 팀 한 건을 만들고 상대 팀 id를 반환한다.
+				fun seedMatchedOpponent(memberBase: Long, status: MatchStatus): Long {
+					val oppTeamId: Long = persistTeam(TeamStatus.ACTIVE, Gender.FEMALE)
+					persistMember(oppTeamId, memberBase, TeamMemberStatus.ACTIVE)
+					persistMember(oppTeamId, memberBase + 1, TeamMemberStatus.ACTIVE)
+					persistMatchUser(memberBase, Gender.FEMALE)
+					persistMatchUser(memberBase + 1, Gender.FEMALE)
+					IntegrationUtil.persist(UserDetailEntityFixture.create(userId = memberBase, gender = Gender.FEMALE))
+					IntegrationUtil.persist(UserDetailEntityFixture.create(userId = memberBase + 1, gender = Gender.FEMALE))
+					val teamMatchId: Long = persistTeamMatch(
+						"$myTeamId-$oppTeamId",
+						expiresAt = LocalDateTime.of(2999, 1, 1, 0, 0),
+						status = status,
+					)
+					persistMatchedTeam(teamMatchId, myTeamId, MatchedTeamStatus.WAITING)
+					persistMatchedTeam(teamMatchId, oppTeamId, MatchedTeamStatus.WAITING)
+					return oppTeamId
+				}
+
+				// 상태 우선순위 정렬을 보이기 위해 요청 순서와 무관하게 시딩한다.
+				val proposedOppTeamId: Long = seedMatchedOpponent(5601L, MatchStatus.PROPOSED)
+				val partiallyAcceptedOppTeamId: Long = seedMatchedOpponent(5611L, MatchStatus.PARTIALLY_ACCEPTED)
+				val matchedOppTeamId: Long = seedMatchedOpponent(5621L, MatchStatus.MATCHED)
+
+				get("/team-matches/v1/meeting-tab") {
+					bearer(accessTokenFor(me))
+				} expect {
+					status(200)
+					body("data.recommendedTeams", hasSize<Any>(3))
+					body("data.recommendedTeams.teamMatchStatus", contains("MATCHED", "PARTIALLY_ACCEPTED", "PROPOSED"))
+					body("data.recommendedTeams.teamId", contains(matchedOppTeamId.toInt(), partiallyAcceptedOppTeamId.toInt(), proposedOppTeamId.toInt()))
 				}
 			}
 		}
