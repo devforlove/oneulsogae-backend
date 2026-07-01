@@ -1,8 +1,8 @@
 package com.org.meeple.core.solomatch.query.dao
 
 import com.org.meeple.common.user.Gender
-import com.org.meeple.core.solomatch.query.dao.dto.ExtraIntroCandidate
-import com.org.meeple.core.solomatch.query.dao.dto.ExtraIntroScoringRow
+import com.org.meeple.core.solomatch.query.dto.ExtraIntroCandidate
+import com.org.meeple.core.solomatch.query.dto.ExtraIntroScoringRow
 import com.org.meeple.matching.MatchScoringProfile
 import java.time.LocalDate
 import java.time.LocalDateTime

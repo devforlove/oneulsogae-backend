@@ -1,4 +1,4 @@
-package com.org.meeple.core.solomatch.query.dao.dto
+package com.org.meeple.core.solomatch.query.dto
 
 import com.org.meeple.matching.MatchScoringProfile
 import com.org.meeple.matching.ScoringCandidate

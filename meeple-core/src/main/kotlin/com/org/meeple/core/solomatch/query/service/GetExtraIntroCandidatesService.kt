@@ -5,9 +5,9 @@ import com.org.meeple.core.common.time.TimeGenerator
 import com.org.meeple.core.matchuser.command.application.port.`in`.GetMatchUserUseCase
 import com.org.meeple.core.matchuser.command.domain.MatchUser
 import com.org.meeple.core.solomatch.query.dao.GetExtraIntroCandidateDao
-import com.org.meeple.core.solomatch.query.dao.dto.ExtraIntroCandidate
-import com.org.meeple.core.solomatch.query.dao.dto.ExtraIntroCandidates
-import com.org.meeple.core.solomatch.query.dao.dto.ExtraIntroScoringRow
+import com.org.meeple.core.solomatch.query.dto.ExtraIntroCandidate
+import com.org.meeple.core.solomatch.query.dto.ExtraIntroCandidates
+import com.org.meeple.core.solomatch.query.dto.ExtraIntroScoringRow
 import com.org.meeple.core.solomatch.query.service.port.`in`.GetExtraIntroCandidatesUseCase
 import com.org.meeple.matching.MatchScoringProfile
 import com.org.meeple.matching.MatchSelector

@@ -1,4 +1,4 @@
-package com.org.meeple.core.solomatch.query.dao.dto
+package com.org.meeple.core.solomatch.query.dto
 
 import com.org.meeple.common.user.BodyType
 import com.org.meeple.common.user.DrinkingStatus
