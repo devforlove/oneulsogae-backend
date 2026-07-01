@@ -25,6 +25,9 @@ enum class UserErrorCode(
 	EMAIL_ALREADY_REGISTERED("USER-009", "이미 다른 계정에서 사용 중인 이메일입니다.", HttpStatus.CONFLICT),
 	EMAIL_REQUIRED("USER-010", "이메일 제공에 동의해야 가입할 수 있습니다.", HttpStatus.BAD_REQUEST),
 
+	// 이상형(user_ideal_types)
+	INVALID_IDEAL_TYPE_RANGE("USER-019", "이상형 범위가 올바르지 않습니다. 최소값이 최대값보다 클 수 없고, 한쪽만 입력할 수 없습니다.", HttpStatus.BAD_REQUEST),
+
 	// 회사 이메일 인증(직장 인증)
 	VERIFICATION_NOT_FOUND("USER-003", "인증 요청 내역이 없습니다. 인증번호를 다시 요청해 주세요.", HttpStatus.NOT_FOUND),
 	VERIFICATION_EXPIRED("USER-004", "만료된 인증번호입니다. 다시 요청해 주세요.", HttpStatus.GONE),
