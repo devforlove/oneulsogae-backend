@@ -19,7 +19,7 @@ data class ExtraIntroCandidateRow(
  * 재소개 제외는 선택 단계에서 [existsIntroduced]로 판정한다. (배치의 existsByPair와 동일한 memberKey 기준)
  */
 interface GetExtraIntroCandidatePort {
-	fun findCandidates(requesterId: Long, partnerGender: Gender, loginAfter: LocalDateTime): List<ExtraIntroCandidateRow>
+	fun findCandidates(requesterId: Long, partnerGender: Gender, loginAfter: LocalDateTime, today: LocalDate): List<ExtraIntroCandidateRow>
 	fun findRequesterProfile(requesterId: Long, today: LocalDate): MatchScoringProfile?
 	fun existsIntroduced(requesterId: Long, candidateId: Long): Boolean
 }

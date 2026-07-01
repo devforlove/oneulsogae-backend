@@ -55,7 +55,7 @@ class IntroduceExtraMatchService(
 		val today: LocalDate = now.toLocalDate()
 
 		val candidates: List<ExtraIntroCandidateRow> =
-			getExtraIntroCandidatePort.findCandidates(userId, requester.partnerGender(), loginAfter)
+			getExtraIntroCandidatePort.findCandidates(userId, requester.partnerGender(), loginAfter, today)
 		val requesterProfile: MatchScoringProfile? = getExtraIntroCandidatePort.findRequesterProfile(userId, today)
 		val nearby: List<Long> = getRegionProximityPort.nearbyRegionIds(requester.regionId)
 		val rankByRegion: Map<Long, Int> = nearby.withIndex().associate { (index: Int, regionId: Long) -> regionId to index }

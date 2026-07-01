@@ -41,7 +41,7 @@ class GetExtraIntroCandidatesService(
 		val today: LocalDate = now.toLocalDate()
 
 		val rows: List<ExtraIntroScoringRow> =
-			getExtraIntroCandidateDao.findScoringRows(userId, requester.partnerGender(), loginAfter)
+			getExtraIntroCandidateDao.findScoringRows(userId, requester.partnerGender(), loginAfter, today)
 		if (rows.isEmpty()) return ExtraIntroCandidates(totalCount = 0, candidates = emptyList())
 
 		val requesterProfile: MatchScoringProfile? = getExtraIntroCandidateDao.findRequesterProfile(userId, today)

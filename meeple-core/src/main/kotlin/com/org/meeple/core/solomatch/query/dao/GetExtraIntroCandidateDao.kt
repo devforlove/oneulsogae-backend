@@ -13,8 +13,8 @@ import java.time.LocalDateTime
  */
 interface GetExtraIntroCandidateDao {
 
-	/** 요청자([requesterId])의 자격 후보 경량 스코어링 행 전체. (재소개 이력 있는 후보 제외) */
-	fun findScoringRows(requesterId: Long, partnerGender: Gender, loginAfter: LocalDateTime): List<ExtraIntroScoringRow>
+	/** 요청자([requesterId])의 자격 후보 경량 스코어링 행 전체. (재소개 이력 있는 후보 제외, [today] 기준 나이) */
+	fun findScoringRows(requesterId: Long, partnerGender: Gender, loginAfter: LocalDateTime, today: LocalDate): List<ExtraIntroScoringRow>
 
 	/** 요청자 자신의 스코어링 프로필. (양방향 이상형 부합 계산용, [today] 기준 나이) */
 	fun findRequesterProfile(requesterId: Long, today: LocalDate): MatchScoringProfile?
