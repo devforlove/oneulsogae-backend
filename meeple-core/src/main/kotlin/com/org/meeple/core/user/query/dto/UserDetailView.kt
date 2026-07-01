@@ -32,6 +32,8 @@ data class UserDetailView(
 	val companyName: String?,
 	val universityEmail: String?,
 	val universityName: String?,
+	/** 보조 이메일. 마케팅·광고·매칭 알림 수신용. (미설정 시 null) */
+	val secondaryEmail: String?,
 	val maritalStatus: MaritalStatus?,
 	val smokingStatus: SmokingStatus?,
 	val religion: Religion?,

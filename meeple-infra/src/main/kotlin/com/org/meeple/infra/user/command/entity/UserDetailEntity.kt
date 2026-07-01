@@ -97,6 +97,10 @@ class UserDetailEntity(
 	@Column(name = "university_name", length = 100)
 	var universityName: String? = null,
 
+	/** 보조 이메일. 마케팅·광고·매칭 알림 수신용으로 선택적으로 설정한다. */
+	@Column(name = "secondary_email")
+	var secondaryEmail: String? = null,
+
 	@Enumerated(EnumType.STRING)
 	@Column(name = "marital_status", columnDefinition = "varchar(50)")
 	var maritalStatus: MaritalStatus? = null,
@@ -135,6 +139,7 @@ class UserDetailEntity(
 		companyName = null
 		universityEmail = null
 		universityName = null
+		secondaryEmail = null
 		maritalStatus = null
 		smokingStatus = null
 		religion = null

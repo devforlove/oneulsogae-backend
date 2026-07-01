@@ -46,6 +46,7 @@ class GetUserDetailDaoImpl(
 					detail.companyName,
 					detail.universityEmail,
 					detail.universityName,
+					detail.secondaryEmail,
 					detail.maritalStatus,
 					detail.smokingStatus,
 					detail.religion,

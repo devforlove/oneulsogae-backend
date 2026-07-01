@@ -2,6 +2,7 @@ package com.org.meeple.api.user
 
 import com.org.meeple.api.match.request.UpdateProfileRequest
 import com.org.meeple.api.match.response.ProfileOptionsResponse
+import com.org.meeple.api.user.request.UpdateSecondaryEmailRequest
 import com.org.meeple.api.user.response.UserProfileResponse
 import com.org.meeple.auth.AuthUser
 import com.org.meeple.auth.LoginUser
@@ -9,6 +10,7 @@ import com.org.meeple.core.common.response.ApiResponse
 import com.org.meeple.core.common.time.TimeGenerator
 import com.org.meeple.core.user.query.service.port.`in`.GetUserDetailUseCase
 import com.org.meeple.core.user.command.application.port.`in`.UpdateProfileUseCase
+import com.org.meeple.core.user.command.application.port.`in`.UpdateSecondaryEmailUseCase
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.tags.Tag
 import jakarta.validation.Valid
@@ -24,6 +26,7 @@ import org.springframework.web.bind.annotation.RestController
 class UserProfileController(
 	private val getUserDetailUseCase: GetUserDetailUseCase,
 	private val updateProfileUseCase: UpdateProfileUseCase,
+	private val updateSecondaryEmailUseCase: UpdateSecondaryEmailUseCase,
 	private val timeGenerator: TimeGenerator,
 ) {
 
@@ -51,4 +54,16 @@ class UserProfileController(
 		@Valid @RequestBody request: UpdateProfileRequest,
 	): ApiResponse<UserProfileResponse> =
 		ApiResponse.success(UserProfileResponse.of(updateProfileUseCase.updateProfile(user.id, request.toCommand()), timeGenerator.today()))
+
+	/**
+	 * 현재 로그인 사용자의 보조 이메일(마케팅·광고·매칭 알림 수신용)을 설정/변경/해제한다.
+	 * secondaryEmail이 null이거나 공백이면 해제된다.
+	 */
+	@Operation(summary = "보조 이메일 설정", description = "마케팅·광고·매칭 알림 수신용 보조 이메일을 설정/변경한다. null 또는 공백이면 해제된다.")
+	@PutMapping("/secondary-email")
+	fun updateSecondaryEmail(
+		@LoginUser user: AuthUser,
+		@Valid @RequestBody request: UpdateSecondaryEmailRequest,
+	): ApiResponse<UserProfileResponse> =
+		ApiResponse.success(UserProfileResponse.of(updateSecondaryEmailUseCase.updateSecondaryEmail(user.id, request.secondaryEmail), timeGenerator.today()))
 }

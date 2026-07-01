@@ -322,6 +322,42 @@ class UserDetailTest : DescribeSpec({
 		}
 	}
 
+	describe("changeSecondaryEmail") {
+		val registered: UserDetail = UserDetailFixture.create(gender = Gender.FEMALE)
+
+		it("보조 이메일을 설정하면 해당 값이 채워지고 다른 필드는 보존된다") {
+			val updated: UserDetail = registered.changeSecondaryEmail("marketing@user.com")
+
+			updated.secondaryEmail shouldBe "marketing@user.com"
+			updated.companyEmail shouldBe registered.companyEmail // 다른 이메일은 보존
+			updated.gender shouldBe Gender.FEMALE
+		}
+
+		it("이미 설정된 보조 이메일을 다른 값으로 교체한다") {
+			val updated: UserDetail = registered
+				.changeSecondaryEmail("old@user.com")
+				.changeSecondaryEmail("new@user.com")
+
+			updated.secondaryEmail shouldBe "new@user.com"
+		}
+
+		it("null을 주면 보조 이메일이 해제된다") {
+			val updated: UserDetail = registered
+				.changeSecondaryEmail("marketing@user.com")
+				.changeSecondaryEmail(null)
+
+			updated.secondaryEmail.shouldBeNull()
+		}
+
+		it("공백 문자열을 주면 해제로 간주해 null로 정규화한다") {
+			val updated: UserDetail = registered
+				.changeSecondaryEmail("marketing@user.com")
+				.changeSecondaryEmail("   ")
+
+			updated.secondaryEmail.shouldBeNull()
+		}
+	}
+
 	describe("matchProfileSnapshotOrNull") {
 		val loginAt: LocalDateTime = LocalDateTime.of(2026, 6, 19, 10, 0)
 

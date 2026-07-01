@@ -42,6 +42,8 @@ data class UserDetail(
 	val universityEmail: String? = null,
 	/** 학교명. 학교 이메일 인증 완료 시 도메인 매핑으로 채워진다(매핑이 없으면 null). */
 	val universityName: String? = null,
+	/** 보조 이메일. 마케팅·광고·매칭 알림 수신용으로 사용자가 선택적으로 설정한다. (미설정 시 null) */
+	val secondaryEmail: String? = null,
 	val maritalStatus: MaritalStatus? = null,
 	val smokingStatus: SmokingStatus? = null,
 	val religion: Religion? = null,
@@ -52,6 +54,13 @@ data class UserDetail(
 	/** 사용자가 직접 닉네임을 설정/변경한다. */
 	fun changeNickname(nickname: String): UserDetail =
 		copy(nickname = nickname)
+
+	/**
+	 * 마케팅·광고·매칭 알림 수신용 보조 이메일을 설정/변경/해제한다.
+	 * null이나 공백 문자열은 해제로 간주해 null로 정규화한다. (형식 검증은 요청 경계에서 수행)
+	 */
+	fun changeSecondaryEmail(secondaryEmail: String?): UserDetail =
+		copy(secondaryEmail = secondaryEmail?.takeIf { it.isNotBlank() })
 
 	/**
 	 * 온보딩 입력값으로 편집 가능 필드와 회사 이메일을 교체한다.
