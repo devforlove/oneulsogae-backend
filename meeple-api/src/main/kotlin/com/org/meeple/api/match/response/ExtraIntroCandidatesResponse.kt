@@ -1,20 +1,26 @@
 package com.org.meeple.api.match.response
 
+import com.org.meeple.common.coin.CoinUsageType
 import com.org.meeple.common.user.Gender
 import com.org.meeple.core.common.time.ageAt
 import com.org.meeple.core.solomatch.query.dto.ExtraIntroCandidate
 import com.org.meeple.core.solomatch.query.dto.ExtraIntroCandidates
 import java.time.LocalDate
 
-/** 추가 소개 후보 목록 응답. [totalCount]=전체 자격 후보 수, [candidates]=점수 상위 표시 목록. */
+/**
+ * 추가 소개 후보 목록 응답.
+ * [totalCount]=전체 자격 후보 수, [coinCost]=추가 소개 1회에 필요한 코인 비용(서버 고정), [candidates]=점수 상위 표시 목록.
+ */
 data class ExtraIntroCandidatesResponse(
 	val totalCount: Int,
+	val coinCost: Int,
 	val candidates: List<ExtraIntroCandidateResponse>,
 ) {
 	companion object {
 		fun of(result: ExtraIntroCandidates, today: LocalDate): ExtraIntroCandidatesResponse =
 			ExtraIntroCandidatesResponse(
 				totalCount = result.totalCount,
+				coinCost = CoinUsageType.EXTRA_INTRO.coinAmount,
 				candidates = result.candidates.map { c: ExtraIntroCandidate -> ExtraIntroCandidateResponse.of(c, today) },
 			)
 	}

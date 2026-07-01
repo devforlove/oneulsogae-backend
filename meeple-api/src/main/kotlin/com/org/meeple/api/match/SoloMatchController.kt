@@ -82,7 +82,7 @@ class SoloMatchController(
 	/**
 	 * 오늘의 추천 외 추가로 소개받을 수 있는 자격 후보 상위 목록과 전체 후보 수를 조회한다. (부수효과 없는 순수 조회)
 	 */
-	@Operation(summary = "추가 소개 후보 조회", description = "오늘의 추천 외 추가로 소개받을 수 있는 자격 후보 상위 목록과 전체 후보 수를 반환한다.")
+	@Operation(summary = "추가 소개 후보 조회", description = "오늘의 추천 외 추가로 소개받을 수 있는 자격 후보 상위 목록과 전체 후보 수, 추가 소개 1회에 필요한 코인 비용을 반환한다.")
 	@GetMapping("/extra/candidates")
 	fun extraIntroCandidates(
 		@LoginUser user: AuthUser,

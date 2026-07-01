@@ -1,5 +1,6 @@
 package com.org.meeple.api.match
 
+import com.org.meeple.common.coin.CoinUsageType
 import com.org.meeple.common.integration.AbstractIntegrationSupport
 import com.org.meeple.common.integration.expect
 import com.org.meeple.common.integration.get
@@ -62,7 +63,7 @@ class ExtraIntroCandidatesIntegrationTest : AbstractIntegrationSupport({
 	describe("GET /matches/v1/extra/candidates") {
 
 		context("반대 성별 자격 후보가 12명 이상이면") {
-			it("상위 11명만 표시하고 전체 자격 후보 수를 반환한다") {
+			it("상위 11명만 표시하고 전체 자격 후보 수·추가 소개 코인 비용을 반환한다") {
 				val requesterId = 1L
 				persistRequester(requesterId)
 				(1..12).forEach { i: Int -> persistCandidate(1000L + i) }
@@ -74,6 +75,7 @@ class ExtraIntroCandidatesIntegrationTest : AbstractIntegrationSupport({
 					body("success", true)
 					body("data.candidates.size()", 11)
 					body("data.totalCount", 12)
+					body("data.coinCost", CoinUsageType.EXTRA_INTRO.coinAmount)
 				}
 			}
 		}
