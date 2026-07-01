@@ -1,28 +1,21 @@
 package com.org.meeple.infra.solomatch.query
 
 import com.org.meeple.common.user.Gender
-import com.org.meeple.core.common.time.ageAt
 import com.org.meeple.core.solomatch.query.dao.GetExtraIntroCandidateDao
 import com.org.meeple.core.solomatch.query.dto.ExtraIntroCandidate
-import com.org.meeple.core.solomatch.query.dto.ExtraIntroScoringRow
 import com.org.meeple.infra.matchuser.command.entity.QMatchUserEntity
 import com.org.meeple.infra.region.entity.QRegionEntity
 import com.org.meeple.infra.user.command.entity.QUserDetailEntity
-import com.org.meeple.infra.user.command.entity.QUserIdealTypeEntity
-import com.org.meeple.matching.MatchScoringProfile
-import com.querydsl.core.Tuple
 import com.querydsl.core.types.Projections
 import com.querydsl.core.types.dsl.Expressions
 import com.querydsl.jpa.impl.JPAQueryFactory
 import jakarta.persistence.EntityManager
 import org.springframework.stereotype.Component
-import java.time.LocalDate
 import java.time.LocalDateTime
 
 /**
- * [GetExtraIntroCandidateDao]의 QueryDSL 구현. 자격 후보는 match_user(mu)를 기준으로 반대 성별·최근 로그인·본인 제외로 거른 뒤
- * user_details(d)·user_ideal_types(i)를 명시 조인해 스코어링 프로필로 투영한다. (매칭 가능 = match_user 존재이므로 mu가 driving)
- * 나이는 birthday를 [today] 기준으로 계산한다. soft delete 행은 각 엔티티 @SQLRestriction으로 제외된다.
+ * [GetExtraIntroCandidateDao]의 QueryDSL 구현. 자격 후보는 match_user(mu) 단독으로 반대 성별·최근 로그인·본인 제외로 거른다.
+ * (매칭 가능 = match_user 존재이므로 mu가 자격의 단일 기준) 목록은 마스킹 노출이라 스코어링 없이 id만 뽑고, 표시 프로필만 별도 조인한다.
  * 재소개 제외는 solo_match_members self-join을 네이티브로 1회 조회해(소프트 삭제된 과거 소개까지 포함하도록 @SQLRestriction 우회) in-app 필터한다.
  */
 @Component
@@ -31,34 +24,11 @@ class GetExtraIntroCandidateDaoImpl(
 	private val entityManager: EntityManager,
 ) : GetExtraIntroCandidateDao {
 
-	override fun findScoringRows(requesterId: Long, partnerGender: Gender, loginAfter: LocalDateTime, today: LocalDate): List<ExtraIntroScoringRow> {
+	override fun findEligibleCandidateIds(requesterId: Long, partnerGender: Gender, loginAfter: LocalDateTime): List<Long> {
 		val matchUser: QMatchUserEntity = QMatchUserEntity.matchUserEntity
-		val detail: QUserDetailEntity = QUserDetailEntity.userDetailEntity
-		val ideal: QUserIdealTypeEntity = QUserIdealTypeEntity.userIdealTypeEntity
-
-		val tuples: List<Tuple> = queryFactory
-			.select(
-				matchUser.userId,
-				matchUser.regionId,
-				matchUser.lastLoginAt,
-				detail.birthday,
-				detail.height,
-				detail.maritalStatus,
-				detail.smokingStatus,
-				detail.drinkingStatus,
-				detail.religion,
-				ideal.ageMin,
-				ideal.ageMax,
-				ideal.heightMin,
-				ideal.heightMax,
-				ideal.maritalStatus,
-				ideal.smokingStatus,
-				ideal.drinkingStatus,
-				ideal.religion,
-			)
+		val candidateIds: List<Long> = queryFactory
+			.select(matchUser.userId)
 			.from(matchUser)
-			.join(detail).on(detail.userId.eq(matchUser.userId))
-			.leftJoin(ideal).on(ideal.userId.eq(matchUser.userId))
 			.where(
 				matchUser.gender.eq(partnerGender),
 				matchUser.lastLoginAt.goe(loginAfter),
@@ -67,45 +37,7 @@ class GetExtraIntroCandidateDaoImpl(
 			.fetch()
 
 		val introducedUserIds: Set<Long> = findIntroducedPartnerIds(requesterId)
-		return tuples.mapNotNull { tuple: Tuple ->
-			val userId: Long = tuple.get(matchUser.userId)!!
-			if (userId in introducedUserIds) return@mapNotNull null
-			ExtraIntroScoringRow(
-				userId = userId,
-				regionId = tuple.get(matchUser.regionId)!!,
-				lastLoginAt = tuple.get(matchUser.lastLoginAt)!!,
-				profile = scoringProfile(tuple, userId, detail, ideal, today),
-			)
-		}
-	}
-
-	override fun findRequesterProfile(requesterId: Long, today: LocalDate): MatchScoringProfile? {
-		val detail: QUserDetailEntity = QUserDetailEntity.userDetailEntity
-		val ideal: QUserIdealTypeEntity = QUserIdealTypeEntity.userIdealTypeEntity
-
-		val tuple: Tuple = queryFactory
-			.select(
-				detail.userId,
-				detail.birthday,
-				detail.height,
-				detail.maritalStatus,
-				detail.smokingStatus,
-				detail.drinkingStatus,
-				detail.religion,
-				ideal.ageMin,
-				ideal.ageMax,
-				ideal.heightMin,
-				ideal.heightMax,
-				ideal.maritalStatus,
-				ideal.smokingStatus,
-				ideal.drinkingStatus,
-				ideal.religion,
-			)
-			.from(detail)
-			.leftJoin(ideal).on(ideal.userId.eq(detail.userId))
-			.where(detail.userId.eq(requesterId))
-			.fetchOne() ?: return null
-		return scoringProfile(tuple, requesterId, detail, ideal, today)
+		return candidateIds.filterNot { userId: Long -> userId in introducedUserIds }
 	}
 
 	override fun findDisplayProfiles(userIds: List<Long>): List<ExtraIntroCandidate> {
@@ -159,29 +91,4 @@ class GetExtraIntroCandidateDaoImpl(
 			.resultList
 		return ids.map { (it as Number).toLong() }.toSet()
 	}
-
-	private fun scoringProfile(
-		tuple: Tuple,
-		userId: Long,
-		detail: QUserDetailEntity,
-		ideal: QUserIdealTypeEntity,
-		today: LocalDate,
-	): MatchScoringProfile =
-		MatchScoringProfile(
-			userId = userId,
-			age = tuple.get(detail.birthday)?.ageAt(today),
-			height = tuple.get(detail.height),
-			maritalStatus = tuple.get(detail.maritalStatus),
-			smokingStatus = tuple.get(detail.smokingStatus),
-			drinkingStatus = tuple.get(detail.drinkingStatus),
-			religion = tuple.get(detail.religion),
-			idealAgeMin = tuple.get(ideal.ageMin),
-			idealAgeMax = tuple.get(ideal.ageMax),
-			idealHeightMin = tuple.get(ideal.heightMin),
-			idealHeightMax = tuple.get(ideal.heightMax),
-			idealMaritalStatus = tuple.get(ideal.maritalStatus),
-			idealSmokingStatus = tuple.get(ideal.smokingStatus),
-			idealDrinkingStatus = tuple.get(ideal.drinkingStatus),
-			idealReligion = tuple.get(ideal.religion),
-		)
 }

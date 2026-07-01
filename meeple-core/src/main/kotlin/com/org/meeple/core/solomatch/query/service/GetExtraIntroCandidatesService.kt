@@ -1,32 +1,26 @@
 package com.org.meeple.core.solomatch.query.service
 
-import com.org.meeple.core.common.region.GetRegionProximityPort
 import com.org.meeple.core.common.time.TimeGenerator
 import com.org.meeple.core.matchuser.command.application.port.`in`.GetMatchUserUseCase
 import com.org.meeple.core.matchuser.command.domain.MatchUser
 import com.org.meeple.core.solomatch.query.dao.GetExtraIntroCandidateDao
 import com.org.meeple.core.solomatch.query.dto.ExtraIntroCandidate
 import com.org.meeple.core.solomatch.query.dto.ExtraIntroCandidates
-import com.org.meeple.core.solomatch.query.dto.ExtraIntroScoringRow
 import com.org.meeple.core.solomatch.query.service.port.`in`.GetExtraIntroCandidatesUseCase
-import com.org.meeple.matching.MatchScoringProfile
-import com.org.meeple.matching.MatchSelector
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
-import java.time.LocalDate
 import java.time.LocalDateTime
 import kotlin.random.Random
 
 /**
- * [GetExtraIntroCandidatesUseCase] 구현. 자격 후보를 종합 점수로 정렬해 상위 [DISPLAY_LIMIT]명의 표시 프로필과
- * 전체 자격 후보 수를 반환한다. 부수효과 없는 순수 조회다.
+ * [GetExtraIntroCandidatesUseCase] 구현. 자격 후보를 무작위로 섞어 상위 [DISPLAY_LIMIT]명의 표시 프로필과
+ * 전체 자격 후보 수를 반환한다. 목록은 노출 시 마스킹되므로 스코어링·정렬은 하지 않는다. 부수효과 없는 순수 조회다.
  */
 @Service
 @Transactional(readOnly = true)
 class GetExtraIntroCandidatesService(
 	private val getMatchUserUseCase: GetMatchUserUseCase,
 	private val getExtraIntroCandidateDao: GetExtraIntroCandidateDao,
-	private val getRegionProximityPort: GetRegionProximityPort,
 	private val timeGenerator: TimeGenerator,
 	private val random: Random = Random.Default,
 ) : GetExtraIntroCandidatesUseCase {
@@ -36,36 +30,19 @@ class GetExtraIntroCandidatesService(
 		val requester: MatchUser = getMatchUserUseCase.findByUserId(userId)
 			?: return ExtraIntroCandidates(totalCount = 0, candidates = emptyList())
 
-		val now: LocalDateTime = timeGenerator.now()
-		val loginAfter: LocalDateTime = now.minusWeeks(RECENT_LOGIN_WEEKS)
-		val today: LocalDate = now.toLocalDate()
+		val loginAfter: LocalDateTime = timeGenerator.now().minusWeeks(RECENT_LOGIN_WEEKS)
+		val eligibleUserIds: List<Long> =
+			getExtraIntroCandidateDao.findEligibleCandidateIds(userId, requester.partnerGender(), loginAfter)
+		if (eligibleUserIds.isEmpty()) return ExtraIntroCandidates(totalCount = 0, candidates = emptyList())
 
-		val rows: List<ExtraIntroScoringRow> =
-			getExtraIntroCandidateDao.findScoringRows(userId, requester.partnerGender(), loginAfter, today)
-		if (rows.isEmpty()) return ExtraIntroCandidates(totalCount = 0, candidates = emptyList())
-
-		val requesterProfile: MatchScoringProfile? = getExtraIntroCandidateDao.findRequesterProfile(userId, today)
-		val nearby: List<Long> = getRegionProximityPort.nearbyRegionIds(requester.regionId)
-		val rankByRegion: Map<Long, Int> = nearby.withIndex().associate { (index: Int, regionId: Long) -> regionId to index }
-
-		val ordered: List<ExtraIntroScoringRow> = MatchSelector.orderByScore(
-			targetProfile = requesterProfile,
-			candidates = rows,
-			profileOf = { row: ExtraIntroScoringRow -> row.profile },
-			regionRankByRegionId = rankByRegion,
-			regionCount = nearby.size,
-			now = now,
-			loginAfter = loginAfter,
-			random = random,
-		)
-
-		val topUserIds: List<Long> = ordered.take(DISPLAY_LIMIT).map { row: ExtraIntroScoringRow -> row.userId }
+		// 목록은 마스킹되어 노출되므로 무작위로 섞어 상위 일부만 표시한다. (스코어링·정렬 불필요)
+		val pickedUserIds: List<Long> = eligibleUserIds.shuffled(random).take(DISPLAY_LIMIT)
 		val profileByUserId: Map<Long, ExtraIntroCandidate> =
-			getExtraIntroCandidateDao.findDisplayProfiles(topUserIds).associateBy { candidate: ExtraIntroCandidate -> candidate.userId }
-		// 점수 정렬 순서를 유지한다.
-		val candidates: List<ExtraIntroCandidate> = topUserIds.mapNotNull { id: Long -> profileByUserId[id] }
+			getExtraIntroCandidateDao.findDisplayProfiles(pickedUserIds).associateBy { candidate: ExtraIntroCandidate -> candidate.userId }
+		// 섞은 순서를 유지한다.
+		val candidates: List<ExtraIntroCandidate> = pickedUserIds.mapNotNull { id: Long -> profileByUserId[id] }
 
-		return ExtraIntroCandidates(totalCount = rows.size, candidates = candidates)
+		return ExtraIntroCandidates(totalCount = eligibleUserIds.size, candidates = candidates)
 	}
 
 	companion object {
