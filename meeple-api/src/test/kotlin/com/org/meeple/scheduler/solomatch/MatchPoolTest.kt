@@ -89,4 +89,26 @@ class MatchPoolTest : DescribeSpec({
 			pool.remainingUserIds().shouldBeEmpty()
 		}
 	}
+
+	describe("availableCandidates") {
+
+		it("지역과 무관하게 해당 성별의 가용 후보를 모두 돌려준다") {
+			val femaleRegion1: MatchableUser = user(1L, Gender.FEMALE, 10L, base)
+			val femaleRegion2: MatchableUser = user(2L, Gender.FEMALE, 20L, base)
+			val maleRegion1: MatchableUser = user(3L, Gender.MALE, 10L, base)
+			val pool: MatchPool = MatchPool.of(listOf(femaleRegion1, femaleRegion2, maleRegion1))
+
+			pool.availableCandidates(Gender.FEMALE).map { it.userId }.sorted() shouldBe listOf(1L, 2L)
+		}
+
+		it("remove된 후보는 제외된다") {
+			val female1: MatchableUser = user(1L, Gender.FEMALE, 10L, base)
+			val female2: MatchableUser = user(2L, Gender.FEMALE, 20L, base)
+			val pool: MatchPool = MatchPool.of(listOf(female1, female2))
+
+			pool.remove(female1)
+
+			pool.availableCandidates(Gender.FEMALE).map { it.userId } shouldBe listOf(2L)
+		}
+	}
 })

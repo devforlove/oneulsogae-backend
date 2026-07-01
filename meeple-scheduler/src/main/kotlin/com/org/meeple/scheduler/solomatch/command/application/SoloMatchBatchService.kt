@@ -4,37 +4,42 @@ import com.org.meeple.common.user.Gender
 import com.org.meeple.scheduler.solomatch.command.application.port.`in`.RunSoloMatchBatchUseCase
 import com.org.meeple.scheduler.common.command.application.port.out.NoIntroductionAlarmPort
 import com.org.meeple.scheduler.common.command.application.port.out.RegionProximityPort
-import com.org.meeple.scheduler.common.command.application.port.out.RegionShuffler
 import com.org.meeple.scheduler.solomatch.command.application.port.out.SaveMatchRecordPort
 import com.org.meeple.scheduler.common.command.application.port.out.TimeGenerator
-import com.org.meeple.scheduler.solomatch.command.domain.SoloMatchBatchResult
 import com.org.meeple.scheduler.solomatch.command.domain.MatchPool
+import com.org.meeple.scheduler.solomatch.command.domain.MatchScorer
+import com.org.meeple.scheduler.solomatch.command.domain.SoloMatchBatchResult
 import com.org.meeple.scheduler.solomatch.query.dao.GetMatchRecordDao
+import com.org.meeple.scheduler.solomatch.query.dao.GetMatchScoringProfileDao
 import com.org.meeple.scheduler.solomatch.query.dao.GetMatchableUserDao
+import com.org.meeple.scheduler.solomatch.query.dto.MatchScoringProfile
 import com.org.meeple.scheduler.solomatch.query.dto.MatchableUser
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
 import java.time.LocalDate
 import java.time.LocalDateTime
+import kotlin.random.Random
 
 /**
- * [RunSoloMatchBatchUseCase] 구현. 매일 정오에 도는 거리 기반 일일 매칭 배치.
+ * [RunSoloMatchBatchUseCase] 구현. 매일 정오에 도는 일일 매칭 배치.
  *
  * "2주 내 활성 + 오늘 미매칭 + 성사 상태 아님" 유저를 한 번 적재해 [MatchPool]을 만들고,
- * 대상을 순회하며 [RegionProximityPort.nearbyRegionIds]로 가까운 지역부터 반대 성별 후보를 꺼내
- * 재소개 이력([GetMatchRecordDao.existsByPair])이 없는 첫 후보와 PROPOSED 소개를 만든다. 매칭된 두 사람은 풀에서 뺀다.
+ * 스코어링 프로필([GetMatchScoringProfileDao])을 1회 적재한다. 대상마다 가용 반대 성별 후보 전체를
+ * 이상형·거리·최근 종합 점수([MatchScorer])로 정렬해, 재소개 이력([GetMatchRecordDao.existsByPair])이 없는
+ * 최고점 후보와 PROPOSED 소개를 만든다. 이상형은 필터가 아니라 우선순위라 안 맞아도 후보가 있으면 소개한다.
  * 한 사용자의 실패가 다른 사용자에 전파되지 않도록 대상 단위로 격리하고, 예외만 failed로 집계한다.
  */
 @Service
 class SoloMatchBatchService(
 	private val getMatchableUserDao: GetMatchableUserDao,
+	private val getMatchScoringProfileDao: GetMatchScoringProfileDao,
 	private val getMatchRecordDao: GetMatchRecordDao,
 	private val saveMatchRecordPort: SaveMatchRecordPort,
 	private val regionProximityPort: RegionProximityPort,
 	private val timeGenerator: TimeGenerator,
-	private val regionShuffler: RegionShuffler,
 	private val noIntroductionAlarmPort: NoIntroductionAlarmPort,
+	private val random: Random = Random.Default,
 ) : RunSoloMatchBatchUseCase {
 
 	private val log: Logger = LoggerFactory.getLogger(javaClass)
@@ -54,6 +59,9 @@ class SoloMatchBatchService(
 		val matchables: List<MatchableUser> = getMatchableUserDao.findMatchableUsers(loginAfter)
 			.filterNot { user: MatchableUser -> user.userId in excluded }
 		val pool: MatchPool = MatchPool.of(matchables)
+		// 이상형 우선순위 스코어링 프로필을 대상 전체에 대해 1회 적재한다. (user_details 없는 유저는 맵에 없음 → 선호 없음 취급)
+		val profiles: Map<Long, MatchScoringProfile> =
+			getMatchScoringProfileDao.load(matchables.mapTo(mutableSetOf()) { user: MatchableUser -> user.userId }, today)
 
 		var recommended = 0
 		var skipped = 0
@@ -61,7 +69,7 @@ class SoloMatchBatchService(
 		for (target: MatchableUser in matchables) {
 			if (!pool.contains(target)) continue // 이번 실행에서 이미 짝지어진 유저
 			try {
-				val partner: MatchableUser? = findNearestFreshPartner(target, pool)
+				val partner: MatchableUser? = findBestFreshPartner(target, pool, profiles, now, loginAfter)
 				if (partner == null) {
 					skipped++
 					continue
@@ -77,7 +85,6 @@ class SoloMatchBatchService(
 		}
 
 		// 루프가 끝난 뒤 풀에 남은(=끝까지 소개받지 못한) 유저에게만 "오늘 소개 없음" 알람을 보낸다.
-		// (skipped 카운터는 이후 다른 대상의 짝으로 매칭될 수 있어 부정확하므로 풀 잔여로 정확히 판정한다)
 		noIntroductionAlarmPort.notifySoloUnmatched(pool.remainingUserIds(), now)
 
 		val result: SoloMatchBatchResult = SoloMatchBatchResult(targets = matchables.size, recommended = recommended, skipped = skipped, failed = failed)
@@ -85,20 +92,33 @@ class SoloMatchBatchService(
 		return result
 	}
 
-	/** [target] 지역에서 가까운 순 상위 N개 지역을 무작위 순서로 뒤져, 재소개 이력이 없는 첫 후보를 찾는다. (없으면 null) */
-	private fun findNearestFreshPartner(target: MatchableUser, pool: MatchPool): MatchableUser? {
+	/**
+	 * [target]의 가용 반대 성별 후보 전체를 이상형·거리·최근 종합 점수로 정렬해,
+	 * 재소개 이력이 없는 최고점 후보를 돌려준다. (없으면 null) 점수 동점군은 무작위로 섞는다.
+	 */
+	private fun findBestFreshPartner(
+		target: MatchableUser,
+		pool: MatchPool,
+		profiles: Map<Long, MatchScoringProfile>,
+		now: LocalDateTime,
+		loginAfter: LocalDateTime,
+	): MatchableUser? {
 		val partnerGender: Gender = target.gender.opposite()
-		// 후보가 있는 지역만 추려 셔플·순회한다. (풀에 상대 성별 후보가 없는 지역은 헛순회라 건너뛴다)
-		val populatedRegions: Set<Long> = pool.regionsWith(partnerGender)
-		val nearbyPopulated: List<Long> = regionProximityPort.nearbyRegionIds(target.regionId)
-			.filter { regionId: Long -> regionId in populatedRegions }
-		val regionOrder: List<Long> = regionShuffler.shuffleNearest(nearbyPopulated)
-		for (regionId: Long in regionOrder) {
-			for (candidate: MatchableUser in pool.freshCandidates(partnerGender, regionId)) {
-				if (!getMatchRecordDao.existsByPair(target.userId, candidate.userId)) return candidate
+		val targetProfile: MatchScoringProfile? = profiles[target.userId]
+		// 대상 지역 기준 근접 순위(같은 지역=0). 좌표 없는 지역이면 빈 리스트라 거리 점수는 전원 0이 된다.
+		val nearby: List<Long> = regionProximityPort.nearbyRegionIds(target.regionId)
+		val rankByRegion: Map<Long, Int> = nearby.withIndex().associate { (index: Int, regionId: Long) -> regionId to index }
+
+		val scored: List<Pair<MatchableUser, Double>> = pool.availableCandidates(partnerGender)
+			.map { candidate: MatchableUser ->
+				val idealFit: Double = MatchScorer.mutualIdealFit(targetProfile, profiles[candidate.userId])
+				val distanceScore: Double = MatchScorer.distanceScore(rankByRegion[candidate.regionId], nearby.size)
+				val recencyScore: Double = MatchScorer.recencyScore(candidate.lastLoginAt, loginAfter, now)
+				candidate to MatchScorer.combinedScore(idealFit, distanceScore, recencyScore)
 			}
-		}
-		return null
+
+		return MatchScorer.orderByScore(scored, random)
+			.firstOrNull { candidate: MatchableUser -> !getMatchRecordDao.existsByPair(target.userId, candidate.userId) }
 	}
 
 	companion object {

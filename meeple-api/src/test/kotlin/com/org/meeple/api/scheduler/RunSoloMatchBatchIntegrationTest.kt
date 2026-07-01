@@ -6,6 +6,7 @@ import com.org.meeple.common.match.MatchMemberStatus
 import com.org.meeple.common.match.MatchStatus
 import com.org.meeple.common.match.SoloMatchType
 import com.org.meeple.common.user.Gender
+import com.org.meeple.common.user.MaritalStatus
 import com.org.meeple.core.solomatch.command.domain.MatchMembers
 import com.org.meeple.infra.alarm.command.entity.AlarmEntity
 import com.org.meeple.infra.alarm.command.entity.QAlarmEntity
@@ -14,12 +15,16 @@ import com.org.meeple.infra.fixture.MatchUserEntityFixture
 import com.org.meeple.infra.fixture.RegionEntityFixture
 import com.org.meeple.infra.fixture.SoloMatchEntityFixture
 import com.org.meeple.infra.fixture.SoloMatchMemberEntityFixture
+import com.org.meeple.infra.fixture.UserDetailEntityFixture
 import com.org.meeple.infra.matchuser.command.entity.QMatchUserEntity
 import com.org.meeple.infra.solomatch.command.entity.QSoloMatchEntity
 import com.org.meeple.infra.solomatch.command.entity.QSoloMatchMemberEntity
 import com.org.meeple.infra.solomatch.command.entity.SoloMatchEntity
 import com.org.meeple.infra.region.entity.QRegionEntity
 import com.org.meeple.infra.region.entity.RegionEntity
+import com.org.meeple.infra.user.command.entity.QUserDetailEntity
+import com.org.meeple.infra.user.command.entity.QUserIdealTypeEntity
+import com.org.meeple.infra.user.command.entity.UserIdealTypeEntity
 import com.org.meeple.scheduler.solomatch.command.application.port.`in`.RunSoloMatchBatchUseCase
 import com.org.meeple.scheduler.solomatch.command.domain.SoloMatchBatchResult
 import io.kotest.matchers.collections.shouldBeEmpty
@@ -232,9 +237,32 @@ class RunSoloMatchBatchIntegrationTest(
 				proposedMatchBetween(maleId, farFemaleId).shouldBeNull()
 			}
 		}
+
+		context("이상형이 더 잘 맞는 후보가 있으면(거리·최근 동일)") {
+			it("이상형 부합도가 높은 후보를 우선 소개한다(필터가 아니라 우선순위)") {
+				val regionId: Long = persistRegion("서울특별시", "강남구", 37.50, 127.00)
+				val now: LocalDateTime = LocalDateTime.now()
+				// 대상 남성(가장 최근 로그인)의 이상형: 미혼. 두 여성은 같은 지역·같은 로그인 시각 → 거리·최근 동일.
+				val maleId: Long = persistMatchableUser(userId = 1001L, gender = Gender.MALE, regionId = regionId, lastLoginAt = now)
+				val singleFemaleId: Long = persistMatchableUser(userId = 1002L, gender = Gender.FEMALE, regionId = regionId, lastLoginAt = now.minusMinutes(1))
+				val divorcedFemaleId: Long = persistMatchableUser(userId = 1003L, gender = Gender.FEMALE, regionId = regionId, lastLoginAt = now.minusMinutes(1))
+				persistUserDetail(userId = 1001L, gender = Gender.MALE)
+				persistUserDetail(userId = 1002L, gender = Gender.FEMALE, maritalStatus = MaritalStatus.SINGLE)
+				persistUserDetail(userId = 1003L, gender = Gender.FEMALE, maritalStatus = MaritalStatus.DIVORCED)
+				persistIdealType(userId = 1001L, maritalStatus = MaritalStatus.SINGLE)
+
+				val result: SoloMatchBatchResult = runSoloMatchBatchUseCase.run()
+
+				result.recommended shouldBe 1
+				proposedMatchBetween(maleId, singleFemaleId).shouldNotBeNull()    // 이상형 부합 → 우선
+				proposedMatchBetween(maleId, divorcedFemaleId).shouldBeNull()
+			}
+		}
 	}
 
 	afterTest {
+		IntegrationUtil.deleteAll(QUserIdealTypeEntity.userIdealTypeEntity)
+		IntegrationUtil.deleteAll(QUserDetailEntity.userDetailEntity)
 		IntegrationUtil.deleteAll(QAlarmEntity.alarmEntity)
 		IntegrationUtil.deleteAll(QSoloMatchMemberEntity.soloMatchMemberEntity)
 		IntegrationUtil.deleteAll(QSoloMatchEntity.soloMatchEntity)
@@ -351,4 +379,15 @@ private fun matchesInvolving(userId: Long): List<SoloMatchEntity> {
 		.join(match).on(match.id.eq(member.matchId))
 		.where(member.userId.eq(userId))
 		.fetch()
+}
+
+private fun persistUserDetail(userId: Long, gender: Gender, maritalStatus: MaritalStatus? = null) {
+	IntegrationUtil.persist(
+		UserDetailEntityFixture.create(userId = userId, gender = gender, birthday = LocalDate.of(1996, 1, 1))
+			.apply { this.maritalStatus = maritalStatus },
+	)
+}
+
+private fun persistIdealType(userId: Long, maritalStatus: MaritalStatus) {
+	IntegrationUtil.persist(UserIdealTypeEntity(userId = userId, maritalStatus = maritalStatus))
 }
