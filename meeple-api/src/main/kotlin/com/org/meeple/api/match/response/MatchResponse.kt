@@ -63,6 +63,7 @@ data class PartnerResponse(
 	val religion: String?,
 	val drinkingStatus: String?,
 	val bodyType: String?,
+	val lastLoginAt: LocalDateTime?,
 ) {
 	companion object {
 		fun of(matchWithPartner: MatchWithPartner, today: LocalDate): PartnerResponse =
@@ -85,6 +86,7 @@ data class PartnerResponse(
 				religion = matchWithPartner.religion?.description,
 				drinkingStatus = matchWithPartner.drinkingStatus?.description,
 				bodyType = matchWithPartner.bodyType?.description,
+				lastLoginAt = matchWithPartner.lastLoginAt,
 			)
 	}
 }

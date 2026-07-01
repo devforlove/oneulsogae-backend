@@ -8,6 +8,7 @@ import com.org.meeple.infra.solomatch.command.entity.QSoloMatchEntity
 import com.org.meeple.infra.solomatch.command.entity.QSoloMatchMemberEntity
 import com.org.meeple.infra.region.entity.QRegionEntity
 import com.org.meeple.infra.user.command.entity.QUserDetailEntity
+import com.org.meeple.infra.user.command.entity.QUserEntity
 import com.querydsl.core.types.Projections
 import com.querydsl.core.types.dsl.Expressions
 import com.querydsl.jpa.impl.JPAQueryFactory
@@ -37,6 +38,7 @@ class GetMatchWithPartnerDaoImpl(
 		val mySoloMatchMember: QSoloMatchMemberEntity = QSoloMatchMemberEntity("mySoloMatchMember")
 		val partnerSoloMatchMember: QSoloMatchMemberEntity = QSoloMatchMemberEntity("partnerSoloMatchMember")
 		val userDetail: QUserDetailEntity = QUserDetailEntity.userDetailEntity
+		val partnerUser: QUserEntity = QUserEntity.userEntity
 		val region: QRegionEntity = QRegionEntity.regionEntity
 
 		return queryFactory
@@ -69,6 +71,7 @@ class GetMatchWithPartnerDaoImpl(
 					userDetail.religion,
 					userDetail.drinkingStatus,
 					userDetail.bodyType,
+					partnerUser.lastLoginAt,
 				),
 			)
 			.from(mySoloMatchMember)
@@ -79,6 +82,8 @@ class GetMatchWithPartnerDaoImpl(
 				// 상대 status는 거르지 않는다. 상대가 나갔어도(DEACTIVE) 내 목록엔 남겨 상대 프로필과 함께 보여준다.
 			)
 			.join(userDetail).on(userDetail.userId.eq(partnerSoloMatchMember.userId))
+			// lastLoginAt 원천인 users를 조인한다. 상대 users 행이 없어도 매칭은 목록에 남기므로 leftJoin.
+			.leftJoin(partnerUser).on(partnerUser.id.eq(partnerSoloMatchMember.userId))
 			.leftJoin(region).on(region.id.eq(userDetail.regionId))
 			.where(
 				mySoloMatchMember.userId.eq(userId),

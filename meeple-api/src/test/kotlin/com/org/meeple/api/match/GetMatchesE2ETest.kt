@@ -19,7 +19,9 @@ import com.org.meeple.infra.user.command.entity.QUserDetailEntity
 import com.org.meeple.infra.user.command.entity.QUserEntity
 import com.org.meeple.infra.user.command.entity.UserDetailEntity
 import org.hamcrest.Matchers.contains
+import org.hamcrest.Matchers.notNullValue
 import java.time.LocalDate
+import java.time.LocalDateTime
 
 /**
  * `GET /matches/v1` E2E 테스트.
@@ -42,8 +44,11 @@ class GetMatchesE2ETest : AbstractIntegrationSupport({
 					UserDetailEntity(userId = meUserId, nickname = "철수", gender = Gender.MALE, birthday = LocalDate.of(1996, 1, 1)),
 				)
 
-				// 상대는 dao 조인 대상(solo_match_members + user_details)만 있으면 된다.
-				val partnerUserId = 9001L
+				// 상대는 dao 조인 대상(solo_match_members + user_details)이 필요하고, lastLoginAt은 users에서 온다.
+				val partnerLastLoginAt: LocalDateTime = LocalDateTime.of(2026, 6, 30, 9, 0, 0)
+				val partnerUserId: Long = IntegrationUtil.persist(
+					UserEntityFixture.create(providerId = "partner-provider-id", status = UserStatus.ACTIVE, lastLoginAt = partnerLastLoginAt),
+				).id!!
 				IntegrationUtil.persist(
 					UserDetailEntity(
 						userId = partnerUserId,
@@ -84,6 +89,7 @@ class GetMatchesE2ETest : AbstractIntegrationSupport({
 					body("data[0].partner.nickname", "영희")
 					body("data[0].partner.traits", contains("요가", "등산"))
 					body("data[0].partner.interests", contains("재즈", "미술"))
+					body("data[0].partner.lastLoginAt", notNullValue())
 				}
 			}
 		}

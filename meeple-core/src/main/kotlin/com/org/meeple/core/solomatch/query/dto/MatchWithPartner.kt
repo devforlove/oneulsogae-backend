@@ -43,4 +43,6 @@ data class MatchWithPartner(
 	val religion: Religion?,
 	val drinkingStatus: DrinkingStatus?,
 	val bodyType: BodyType?,
+	/** 상대방의 마지막 로그인 시각. (users 원천, 미로그인 이력이면 null) */
+	val lastLoginAt: LocalDateTime?,
 )
