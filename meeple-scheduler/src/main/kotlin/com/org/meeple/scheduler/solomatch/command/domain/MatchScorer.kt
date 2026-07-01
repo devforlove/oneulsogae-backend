@@ -42,11 +42,8 @@ object MatchScorer {
 	}
 
 	/** 세 요소를 가중 합산한 종합 점수(0~1). 이상형 0.4 / 거리 0.4 / 최근 0.2. */
-	fun combinedScore(idealFit: Double, distanceScore: Double, recencyScore: Double): Double {
-		val raw: Double = IDEAL_WEIGHT * idealFit + DISTANCE_WEIGHT * distanceScore + RECENCY_WEIGHT * recencyScore
-		// 부동소수점 가중합 오차(예: 0.6000000000000001) 제거를 위해 소수 9자리로 반올림한다.
-		return Math.round(raw * 1e9) / 1e9
-	}
+	fun combinedScore(idealFit: Double, distanceScore: Double, recencyScore: Double): Double =
+		IDEAL_WEIGHT * idealFit + DISTANCE_WEIGHT * distanceScore + RECENCY_WEIGHT * recencyScore
 
 	/**
 	 * 후보를 종합 점수 내림차순으로 정렬하되, [BUCKET_SIZE] 단위 버킷 안은 [random]으로 섞는다.

@@ -10,6 +10,7 @@ import com.org.meeple.scheduler.solomatch.query.dto.MatchableUser
 import com.org.meeple.scheduler.solomatch.query.dto.MatchScoringProfile
 import io.kotest.core.spec.style.DescribeSpec
 import io.kotest.matchers.collections.shouldContainExactly
+import io.kotest.matchers.doubles.plusOrMinus
 import io.kotest.matchers.shouldBe
 import java.time.LocalDateTime
 import kotlin.random.Random
@@ -120,8 +121,8 @@ class MatchScorerTest : DescribeSpec({
 
     describe("combinedScore") {
         it("이상형 0.4 / 거리 0.4 / 최근 0.2 가중합") {
-            MatchScorer.combinedScore(idealFit = 1.0, distanceScore = 0.5, recencyScore = 0.0) shouldBe 0.6
-            MatchScorer.combinedScore(idealFit = 0.0, distanceScore = 0.0, recencyScore = 1.0) shouldBe 0.2
+            MatchScorer.combinedScore(idealFit = 1.0, distanceScore = 0.5, recencyScore = 0.0) shouldBe (0.6 plusOrMinus 1e-9)
+            MatchScorer.combinedScore(idealFit = 0.0, distanceScore = 0.0, recencyScore = 1.0) shouldBe (0.2 plusOrMinus 1e-9)
         }
     }
 
