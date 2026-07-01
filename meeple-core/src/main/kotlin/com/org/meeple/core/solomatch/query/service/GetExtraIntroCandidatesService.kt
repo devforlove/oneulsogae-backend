@@ -61,7 +61,7 @@ class GetExtraIntroCandidatesService(
 
 		val topUserIds: List<Long> = ordered.take(DISPLAY_LIMIT).map { row: ExtraIntroScoringRow -> row.userId }
 		val profileByUserId: Map<Long, ExtraIntroCandidate> =
-			getExtraIntroCandidateDao.findDisplayProfiles(topUserIds).associateBy { it.userId }
+			getExtraIntroCandidateDao.findDisplayProfiles(topUserIds).associateBy { candidate: ExtraIntroCandidate -> candidate.userId }
 		// 점수 정렬 순서를 유지한다.
 		val candidates: List<ExtraIntroCandidate> = topUserIds.mapNotNull { id: Long -> profileByUserId[id] }
 

@@ -104,6 +104,7 @@ class SoloMatchBatchService(
 		loginAfter: LocalDateTime,
 	): MatchableUser? {
 		val partnerGender: Gender = target.gender.opposite()
+		// 대상 지역 기준 근접 순위(같은 지역=0). 좌표 없는 지역이면 빈 리스트라 거리 점수는 전원 0이 된다.
 		val nearby: List<Long> = regionProximityPort.nearbyRegionIds(target.regionId)
 		val rankByRegion: Map<Long, Int> = nearby.withIndex().associate { (index: Int, regionId: Long) -> regionId to index }
 
