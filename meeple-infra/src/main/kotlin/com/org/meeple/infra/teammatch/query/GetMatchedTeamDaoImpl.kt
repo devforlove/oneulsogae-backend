@@ -35,12 +35,15 @@ class GetMatchedTeamDaoImpl(
 		val teams: List<RecommendedTeam> = findInProgressOpponentTeams(myTeamId, now)
 		if (teams.isEmpty()) return emptyList()
 
-		val membersByTeamId: Map<Long, List<RecommendedTeamMember>> =
+		val membersByTeamId: Map<Long, TeamMembers> =
 			recommendedTeamMemberLoader.loadByTeamIds(teams.map { team: RecommendedTeam -> team.teamId })
 
 		// 최신 매칭부터 노출하도록 teamMatchId 내림차순으로 정렬한다. (진행 중 매칭이라 teamMatchId는 non-null)
 		return teams
-			.map { team: RecommendedTeam -> team.copy(members = membersByTeamId[team.teamId].orEmpty()) }
+			.map { team: RecommendedTeam ->
+				val teamMembers: TeamMembers? = membersByTeamId[team.teamId]
+				team.copy(members = teamMembers?.members.orEmpty(), lastLoginAt = teamMembers?.lastLoginAt)
+			}
 			.sortedByDescending { team: RecommendedTeam -> team.teamMatchId }
 	}
 
@@ -63,6 +66,8 @@ class GetMatchedTeamDaoImpl(
 					team.introduction,
 					teamActivityArea,
 					Expressions.constant(emptyList<RecommendedTeamMember>()),
+					// lastLoginAt은 구성원 로더에서 채우므로 여기선 null 자리표시자로 둔다.
+					Expressions.nullExpression(LocalDateTime::class.java),
 					teamMatch.dateInitAmount,
 					teamMatch.dateAcceptAmount,
 					teamMatch.id,

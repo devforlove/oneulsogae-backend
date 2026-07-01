@@ -4,7 +4,6 @@ import com.org.meeple.common.coin.CoinUsageType
 import com.org.meeple.common.match.TeamStatus
 import com.org.meeple.core.teammatch.query.dao.GetRecommendedTeamDao
 import com.org.meeple.core.teammatch.query.dto.RecommendedTeam
-import com.org.meeple.core.teammatch.query.dto.RecommendedTeamMember
 import com.org.meeple.infra.teammatch.command.entity.QRecommendedTeamEntity
 import com.org.meeple.infra.teammatch.command.entity.QTeamEntity
 import com.org.meeple.infra.region.entity.QRegionEntity
@@ -50,16 +49,18 @@ class GetRecommendedTeamDaoImpl(
 		if (headers.isEmpty()) return emptyList()
 
 		val teamIds: List<Long> = headers.map { header: Tuple -> header.get(team.id)!! }
-		val membersByTeamId: Map<Long, List<RecommendedTeamMember>> = recommendedTeamMemberLoader.loadByTeamIds(teamIds)
+		val membersByTeamId: Map<Long, TeamMembers> = recommendedTeamMemberLoader.loadByTeamIds(teamIds)
 
 		return headers.map { header: Tuple ->
 			val teamId: Long = header.get(team.id)!!
+			val teamMembers: TeamMembers? = membersByTeamId[teamId]
 			RecommendedTeam(
 				teamId = teamId,
 				name = header.get(team.name)!!,
 				introduction = header.get(team.introduction),
 				activityArea = header.get(teamActivityArea),
-				members = membersByTeamId[teamId].orEmpty(),
+				members = teamMembers?.members.orEmpty(),
+				lastLoginAt = teamMembers?.lastLoginAt,
 				// 순수 추천 팀은 아직 team_match가 없어, 관심 보낼 때 생성될 매칭의 기본 비용(MEETING_INIT/ACCEPT)을 채운다.
 				datingInitAmount = CoinUsageType.MEETING_INIT.coinAmount,
 				datingAcceptAmount = CoinUsageType.MEETING_ACCEPT.coinAmount,

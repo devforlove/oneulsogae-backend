@@ -19,6 +19,8 @@ data class RecommendedTeamResponse(
 	val introduction: String?,
 	val activityArea: String?,
 	val members: List<Member>,
+	/** 팀 구성원 중 가장 최근 로그인 시각. ACTIVE 구성원이 없으면 null. */
+	val lastLoginAt: LocalDateTime?,
 	val datingInitAmount: Int,
 	val datingAcceptAmount: Int,
 	/** 이 팀과의 팀 매칭 id. 관심 보내기 호출에 쓴다. 아직 매칭이 없는 순수 추천 팀이면 null. */
@@ -79,6 +81,7 @@ data class RecommendedTeamResponse(
 							interests = member.interests,
 						)
 					},
+					lastLoginAt = recommendedTeam.lastLoginAt,
 					datingInitAmount = recommendedTeam.datingInitAmount,
 					datingAcceptAmount = recommendedTeam.datingAcceptAmount,
 					teamMatchId = recommendedTeam.teamMatchId,

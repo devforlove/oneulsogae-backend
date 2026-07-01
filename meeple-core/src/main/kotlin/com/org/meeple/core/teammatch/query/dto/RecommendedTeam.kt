@@ -16,6 +16,8 @@ data class RecommendedTeam(
 	/** 팀 활동지역명 "시/도 시/군/구"(teams.region_id ⋈ regions). 지역 미설정이면 null. */
 	val activityArea: String?,
 	val members: List<RecommendedTeamMember>,
+	/** 팀 ACTIVE 구성원 중 가장 최근 로그인 시각(match_user 원천). ACTIVE 구성원이 없으면 null. */
+	val lastLoginAt: LocalDateTime?,
 	/** 이 팀에 관심을 보낼 때 드는 신청 비용. 매칭된 상대 팀이면 team_matches.date_init_amount(DB), 순수 추천이면 MEETING_INIT 상수. */
 	val datingInitAmount: Int,
 	/** 이 팀에 관심을 보낼 때 드는 수락 비용. 매칭된 상대 팀이면 team_matches.date_accept_amount(DB), 순수 추천이면 MEETING_ACCEPT 상수. */

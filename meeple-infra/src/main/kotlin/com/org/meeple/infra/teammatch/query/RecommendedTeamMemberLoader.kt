@@ -12,6 +12,13 @@ import com.querydsl.core.types.Projections
 import com.querydsl.core.types.dsl.Expressions
 import com.querydsl.jpa.impl.JPAQueryFactory
 import org.springframework.stereotype.Component
+import java.time.LocalDateTime
+
+/** 팀 카드에 붙일 ACTIVE 구성원과, 그 팀 구성원 중 가장 최근 로그인 시각(구성원이 있으면 non-null). */
+data class TeamMembers(
+	val members: List<RecommendedTeamMember>,
+	val lastLoginAt: LocalDateTime,
+)
 
 /**
  * 팀 카드(추천 팀·매칭 팀)에 붙일 ACTIVE 구성원 프로필을 적재하는 공용 로더. (조회 전용)
@@ -19,14 +26,15 @@ import org.springframework.stereotype.Component
  * (닉네임·성별·프로필이미지·생일=match_user, 직업·회사명·키·자기소개·특성·관심사=user_details, 활동지역명=regions)
  *
  * 인덱스: team_members(team_id, user_id) 유니크(ux_team_id_user_id)의 선두 team_id로 IN seek + match_user·user_details user_id 유니크 조인 + regions PK 조인이라 N+1·풀스캔이 없다.
+ * 팀 최근 로그인(lastLoginAt)은 이미 조인한 match_user 행에서 함께 읽어 팀별 최댓값을 인메모리로 집계한다. (추가 조인·쿼리 없음)
  */
 @Component
 class RecommendedTeamMemberLoader(
 	private val queryFactory: JPAQueryFactory,
 ) {
 
-	/** [teamIds] 팀들의 ACTIVE 구성원 프로필을 teamId별로 묶어 반환한다. (빈 입력이면 빈 맵) */
-	fun loadByTeamIds(teamIds: List<Long>): Map<Long, List<RecommendedTeamMember>> {
+	/** [teamIds] 팀들의 ACTIVE 구성원 프로필과 팀별 최근 로그인 시각을 teamId별로 묶어 반환한다. (빈 입력이면 빈 맵) */
+	fun loadByTeamIds(teamIds: List<Long>): Map<Long, TeamMembers> {
 		if (teamIds.isEmpty()) return emptyMap()
 
 		val member: QTeamMemberEntity = QTeamMemberEntity.teamMemberEntity
@@ -55,7 +63,7 @@ class RecommendedTeamMemberLoader(
 		)
 
 		return queryFactory
-			.select(member.teamId, memberProjection)
+			.select(member.teamId, memberProjection, matchUser.lastLoginAt)
 			.from(member)
 			.join(matchUser).on(matchUser.userId.eq(member.userId))
 			.join(userDetail).on(userDetail.userId.eq(member.userId))
@@ -66,6 +74,13 @@ class RecommendedTeamMemberLoader(
 			)
 			.orderBy(member.userId.asc())
 			.fetch()
-			.groupBy({ row: Tuple -> row.get(member.teamId)!! }, { row: Tuple -> row.get(memberProjection)!! })
+			.groupBy { row: Tuple -> row.get(member.teamId)!! }
+			.mapValues { (_, rows: List<Tuple>) ->
+				TeamMembers(
+					members = rows.map { row: Tuple -> row.get(memberProjection)!! },
+					// 그룹에 행이 하나라도 있으므로(팀이 키로 존재) 최댓값은 non-null이다. match_user.last_login_at도 not-null 컬럼.
+					lastLoginAt = rows.maxOf { row: Tuple -> row.get(matchUser.lastLoginAt)!! },
+				)
+			}
 	}
 }

@@ -27,6 +27,7 @@ import com.org.meeple.infra.teammatch.command.entity.TeamMemberEntity
 import com.org.meeple.infra.region.entity.QRegionEntity
 import com.org.meeple.infra.user.command.entity.QUserDetailEntity
 import org.hamcrest.Matchers.hasSize
+import org.hamcrest.Matchers.notNullValue
 import org.hamcrest.Matchers.nullValue
 import org.hamcrest.Matchers.startsWith
 import java.time.LocalDate
@@ -38,9 +39,14 @@ import java.time.LocalDateTime
  */
 class GetMeetingTabE2ETest : AbstractIntegrationSupport({
 
-	fun persistMatchUser(userId: Long, gender: Gender = Gender.MALE, profileImageCode: String = "1") {
+	fun persistMatchUser(
+		userId: Long,
+		gender: Gender = Gender.MALE,
+		profileImageCode: String = "1",
+		lastLoginAt: LocalDateTime = LocalDateTime.now(),
+	) {
 		IntegrationUtil.persist(
-			MatchUserEntityFixture.create(userId = userId, gender = gender, profileImageCode = profileImageCode),
+			MatchUserEntityFixture.create(userId = userId, gender = gender, profileImageCode = profileImageCode, lastLoginAt = lastLoginAt),
 		)
 	}
 
@@ -88,8 +94,9 @@ class GetMeetingTabE2ETest : AbstractIntegrationSupport({
 				val teamId: Long = persistTeam(TeamStatus.ACTIVE, Gender.FEMALE, regionId = gangnamId)
 				persistMember(teamId, 5101L, TeamMemberStatus.ACTIVE)
 				persistMember(teamId, 5102L, TeamMemberStatus.ACTIVE)
-				persistMatchUser(5101L, Gender.FEMALE)
-				persistMatchUser(5102L, Gender.FEMALE)
+				// 팀 lastLoginAt은 구성원 중 최댓값이어야 한다. 5102가 더 최근이라 그 값이 나온다.
+				persistMatchUser(5101L, Gender.FEMALE, lastLoginAt = LocalDateTime.of(2026, 6, 20, 10, 0))
+				persistMatchUser(5102L, Gender.FEMALE, lastLoginAt = LocalDateTime.of(2026, 6, 25, 15, 30))
 				// 팀원 상세 프로필(user_details). 멤버 조회가 match_user ⋈ user_details inner join이라 필수.
 				IntegrationUtil.persist(
 					UserDetailEntityFixture.create(
@@ -122,6 +129,8 @@ class GetMeetingTabE2ETest : AbstractIntegrationSupport({
 					body("data.recommendedTeams[0].members[0].introduction", "반가워요")
 					body("data.recommendedTeams[0].members[0].traits", hasSize<Any>(0))
 					body("data.recommendedTeams[0].members[0].interests", hasSize<Any>(0))
+					// 팀 최근 로그인은 구성원(6/20, 6/25) 중 최댓값
+					body("data.recommendedTeams[0].lastLoginAt", startsWith("2026-06-25T15:30"))
 					// 팀에 관심을 보낼 때 드는 코인 비용(MEETING_INIT/ACCEPT = 40)
 					body("data.recommendedTeams[0].datingInitAmount", 40)
 					body("data.recommendedTeams[0].datingAcceptAmount", 40)
@@ -267,6 +276,8 @@ class GetMeetingTabE2ETest : AbstractIntegrationSupport({
 					body("data.recommendedTeams", hasSize<Any>(1))
 					body("data.recommendedTeams[0].teamId", oppTeamId.toInt())
 					body("data.recommendedTeams[0].members", hasSize<Any>(2))
+					// 매칭 상대 팀 경로에서도 구성원 최근 로그인이 채워진다.
+					body("data.recommendedTeams[0].lastLoginAt", notNullValue())
 					// 비용은 team_matches(DB)에서 조회한 값(55/65)이 그대로 내려온다.
 					body("data.recommendedTeams[0].datingInitAmount", 55)
 					body("data.recommendedTeams[0].datingAcceptAmount", 65)
