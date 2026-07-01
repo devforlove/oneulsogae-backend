@@ -1,13 +1,18 @@
 package com.org.meeple.scheduler.solomatch
 
 import com.org.meeple.common.user.DrinkingStatus
+import com.org.meeple.common.user.Gender
 import com.org.meeple.common.user.MaritalStatus
 import com.org.meeple.common.user.Religion
 import com.org.meeple.common.user.SmokingStatus
 import com.org.meeple.scheduler.solomatch.command.domain.MatchScorer
+import com.org.meeple.scheduler.solomatch.query.dto.MatchableUser
 import com.org.meeple.scheduler.solomatch.query.dto.MatchScoringProfile
 import io.kotest.core.spec.style.DescribeSpec
+import io.kotest.matchers.collections.shouldContainExactly
 import io.kotest.matchers.shouldBe
+import java.time.LocalDateTime
+import kotlin.random.Random
 
 /**
  * [MatchScorer] 유닛 테스트. 이상형 부합(양방향)·거리·최근·종합 점수와 버킷 정렬을 프레임워크 없이 검증한다.
@@ -88,6 +93,61 @@ class MatchScorerTest : DescribeSpec({
                 maritalStatus = MaritalStatus.SINGLE, idealAgeMin = 28, idealAgeMax = 32,
             )
             MatchScorer.mutualIdealFit(target, candidate) shouldBe 1.0
+        }
+    }
+
+    describe("distanceScore") {
+        it("같은 지역(rank 0)이면 1.0, 가장 먼 지역이면 0.0") {
+            MatchScorer.distanceScore(rank = 0, regionCount = 5) shouldBe 1.0
+            MatchScorer.distanceScore(rank = 4, regionCount = 5) shouldBe 0.0
+            MatchScorer.distanceScore(rank = 2, regionCount = 5) shouldBe 0.5
+        }
+        it("근접 목록에 없는 지역(rank null)은 0.0, 지역이 1개 이하면 1.0") {
+            MatchScorer.distanceScore(rank = null, regionCount = 5) shouldBe 0.0
+            MatchScorer.distanceScore(rank = 0, regionCount = 1) shouldBe 1.0
+        }
+    }
+
+    describe("recencyScore") {
+        val loginAfter: LocalDateTime = LocalDateTime.of(2026, 6, 17, 12, 0)   // now - 2주
+        val now: LocalDateTime = LocalDateTime.of(2026, 7, 1, 12, 0)
+        it("now에 로그인=1.0, 창 시작=0.0, 중간=0.5") {
+            MatchScorer.recencyScore(now, loginAfter, now) shouldBe 1.0
+            MatchScorer.recencyScore(loginAfter, loginAfter, now) shouldBe 0.0
+            MatchScorer.recencyScore(LocalDateTime.of(2026, 6, 24, 12, 0), loginAfter, now) shouldBe 0.5
+        }
+    }
+
+    describe("combinedScore") {
+        it("이상형 0.4 / 거리 0.4 / 최근 0.2 가중합") {
+            MatchScorer.combinedScore(idealFit = 1.0, distanceScore = 0.5, recencyScore = 0.0) shouldBe 0.6
+            MatchScorer.combinedScore(idealFit = 0.0, distanceScore = 0.0, recencyScore = 1.0) shouldBe 0.2
+        }
+    }
+
+    describe("orderByScore") {
+        fun user(userId: Long): MatchableUser =
+            MatchableUser(userId, Gender.FEMALE, regionId = 1L, lastLoginAt = LocalDateTime.of(2026, 7, 1, 12, 0))
+
+        it("점수 내림차순으로 정렬한다(버킷이 다르면 결정적)") {
+            val scored: List<Pair<MatchableUser, Double>> = listOf(
+                user(1L) to 0.30,
+                user(2L) to 0.90,
+                user(3L) to 0.60,
+            )
+            MatchScorer.orderByScore(scored, Random(0)).map { u: MatchableUser -> u.userId } shouldContainExactly listOf(2L, 3L, 1L)
+        }
+
+        it("같은 버킷(0.05 이내) 안은 무작위지만 높은 버킷이 항상 앞선다") {
+            // 0.90, 0.91 → 같은 버킷(18). 0.50 → 버킷 10. 앞 두 명이 어떤 순서든 셋째는 3L.
+            val scored: List<Pair<MatchableUser, Double>> = listOf(
+                user(1L) to 0.90,
+                user(2L) to 0.91,
+                user(3L) to 0.50,
+            )
+            val ordered: List<Long> = MatchScorer.orderByScore(scored, Random(42)).map { u: MatchableUser -> u.userId }
+            ordered.last() shouldBe 3L
+            ordered.take(2).sorted() shouldContainExactly listOf(1L, 2L)
         }
     }
 })
