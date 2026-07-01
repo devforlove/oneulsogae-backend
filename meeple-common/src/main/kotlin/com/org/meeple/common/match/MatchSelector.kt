@@ -1,4 +1,4 @@
-package com.org.meeple.matching
+package com.org.meeple.common.match
 
 import java.time.LocalDateTime
 import kotlin.random.Random

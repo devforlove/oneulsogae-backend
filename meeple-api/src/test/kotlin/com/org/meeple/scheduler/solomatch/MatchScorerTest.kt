@@ -5,8 +5,8 @@ import com.org.meeple.common.user.Gender
 import com.org.meeple.common.user.MaritalStatus
 import com.org.meeple.common.user.Religion
 import com.org.meeple.common.user.SmokingStatus
-import com.org.meeple.matching.MatchScorer
-import com.org.meeple.matching.MatchScoringProfile
+import com.org.meeple.common.match.MatchScorer
+import com.org.meeple.common.match.MatchScoringProfile
 import com.org.meeple.scheduler.solomatch.query.dto.MatchableUser
 import io.kotest.core.spec.style.DescribeSpec
 import io.kotest.matchers.collections.shouldContainExactly

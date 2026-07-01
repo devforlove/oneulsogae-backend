@@ -3,7 +3,7 @@ package com.org.meeple.infra.solomatch.query
 import com.org.meeple.core.common.time.ageAt
 import com.org.meeple.infra.user.command.entity.QUserDetailEntity
 import com.org.meeple.infra.user.command.entity.QUserIdealTypeEntity
-import com.org.meeple.matching.MatchScoringProfile
+import com.org.meeple.common.match.MatchScoringProfile
 import com.org.meeple.scheduler.solomatch.query.dao.GetMatchScoringProfileDao
 import com.querydsl.core.Tuple
 import com.querydsl.jpa.impl.JPAQueryFactory

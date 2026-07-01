@@ -1,4 +1,4 @@
-package com.org.meeple.matching
+package com.org.meeple.common.match
 
 import com.org.meeple.common.user.DrinkingStatus
 import com.org.meeple.common.user.MaritalStatus

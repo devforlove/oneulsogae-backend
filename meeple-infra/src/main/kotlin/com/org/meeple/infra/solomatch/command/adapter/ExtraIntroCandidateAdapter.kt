@@ -8,7 +8,7 @@ import com.org.meeple.core.solomatch.command.domain.MatchMembers
 import com.org.meeple.infra.matchuser.command.entity.QMatchUserEntity
 import com.org.meeple.infra.user.command.entity.QUserDetailEntity
 import com.org.meeple.infra.user.command.entity.QUserIdealTypeEntity
-import com.org.meeple.matching.MatchScoringProfile
+import com.org.meeple.common.match.MatchScoringProfile
 import com.querydsl.core.Tuple
 import com.querydsl.jpa.impl.JPAQueryFactory
 import jakarta.persistence.EntityManager

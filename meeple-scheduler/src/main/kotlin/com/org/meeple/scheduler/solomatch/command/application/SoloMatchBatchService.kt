@@ -1,8 +1,8 @@
 package com.org.meeple.scheduler.solomatch.command.application
 
 import com.org.meeple.common.user.Gender
-import com.org.meeple.matching.MatchScoringProfile
-import com.org.meeple.matching.MatchSelector
+import com.org.meeple.common.match.MatchScoringProfile
+import com.org.meeple.common.match.MatchSelector
 import com.org.meeple.scheduler.solomatch.command.application.port.`in`.RunSoloMatchBatchUseCase
 import com.org.meeple.scheduler.common.command.application.port.out.NoIntroductionAlarmPort
 import com.org.meeple.scheduler.common.command.application.port.out.RegionProximityPort

@@ -1,6 +1,6 @@
 package com.org.meeple.scheduler.solomatch.query.dao
 
-import com.org.meeple.matching.MatchScoringProfile
+import com.org.meeple.common.match.MatchScoringProfile
 import java.time.LocalDate
 
 /**

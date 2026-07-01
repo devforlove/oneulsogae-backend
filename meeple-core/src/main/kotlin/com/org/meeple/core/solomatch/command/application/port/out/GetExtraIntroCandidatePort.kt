@@ -1,8 +1,8 @@
 package com.org.meeple.core.solomatch.command.application.port.out
 
 import com.org.meeple.common.user.Gender
-import com.org.meeple.matching.MatchScoringProfile
-import com.org.meeple.matching.ScoringCandidate
+import com.org.meeple.common.match.MatchScoringProfile
+import com.org.meeple.common.match.ScoringCandidate
 import java.time.LocalDate
 import java.time.LocalDateTime
 

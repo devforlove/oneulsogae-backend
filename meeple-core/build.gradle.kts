@@ -5,9 +5,6 @@ plugins {
 
 dependencies {
 	implementation(project(":meeple-common"))
-	// 매칭 스코어링·선택 알고리즘(순수). 일일 배치(scheduler)와 실시간 추가 소개(core)가 공유한다.
-	implementation(project(":meeple-matching"))
-
 	implementation("org.springframework.boot:spring-boot-starter-validation")
 	implementation("org.springframework:spring-tx")
 	implementation("org.springframework:spring-web")
