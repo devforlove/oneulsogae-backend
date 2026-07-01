@@ -11,4 +11,7 @@ enum class SoloMatchType(val description: String) {
 
 	/** 사용자 요청(필수 신청)으로 생성된 소개. */
 	REQUIRED("요청 매칭"),
+
+	/** 사용자가 코인으로 추가 소개받아 생성된 소개. */
+	EXTRA("추가 소개"),
 }
