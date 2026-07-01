@@ -84,6 +84,30 @@ class UserIdealTypeTest : DescribeSpec({
 			}.errorCode shouldBe UserErrorCode.INVALID_IDEAL_TYPE_RANGE
 		}
 
+		it("나이 최대가 상한(60)을 넘으면 INVALID_IDEAL_TYPE_RANGE를 던진다") {
+			shouldThrow<BusinessException> {
+				UserIdealType.of(
+					userId = 1L,
+					ageMin = 20, ageMax = 70,
+					heightMin = null, heightMax = null,
+					maritalStatus = null, smokingStatus = null,
+					drinkingStatus = null, religion = null, distance = null,
+				)
+			}.errorCode shouldBe UserErrorCode.INVALID_IDEAL_TYPE_RANGE
+		}
+
+		it("키 최대가 상한(195)을 넘으면 INVALID_IDEAL_TYPE_RANGE를 던진다") {
+			shouldThrow<BusinessException> {
+				UserIdealType.of(
+					userId = 1L,
+					ageMin = null, ageMax = null,
+					heightMin = 150, heightMax = 200,
+					maritalStatus = null, smokingStatus = null,
+					drinkingStatus = null, religion = null, distance = null,
+				)
+			}.errorCode shouldBe UserErrorCode.INVALID_IDEAL_TYPE_RANGE
+		}
+
 		it("키 최소가 최대보다 크면 INVALID_IDEAL_TYPE_RANGE를 던진다") {
 			shouldThrow<BusinessException> {
 				UserIdealType.of(
