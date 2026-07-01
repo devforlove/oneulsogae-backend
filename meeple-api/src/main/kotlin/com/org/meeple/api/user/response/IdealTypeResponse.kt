@@ -23,9 +23,10 @@ data class IdealTypeResponse(
 ) {
 	companion object {
 
-		/** 조회(query) read model 매핑. */
-		fun of(view: IdealTypeView): IdealTypeResponse =
-			IdealTypeResponse(
+		/** 조회(query) read model 매핑. 미설정(null)이면 전 항목 null인 [empty] 응답을 준다. */
+		fun of(view: IdealTypeView?): IdealTypeResponse =
+			if (view == null) empty()
+			else IdealTypeResponse(
 				ageRange = range(view.ageMin, view.ageMax),
 				heightRange = range(view.heightMin, view.heightMax),
 				maritalStatus = view.maritalStatus,

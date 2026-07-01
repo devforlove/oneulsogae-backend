@@ -30,9 +30,7 @@ class IdealTypeController(
 	fun getMyIdealType(
 		@LoginUser user: AuthUser,
 	): ApiResponse<IdealTypeResponse> =
-		ApiResponse.success(
-			getIdealTypeUseCase.findByUserId(user.id)?.let(IdealTypeResponse::of) ?: IdealTypeResponse.empty(),
-		)
+		ApiResponse.success(IdealTypeResponse.of(getIdealTypeUseCase.findByUserId(user.id)))
 
 	/** 현재 로그인 사용자의 이상형을 저장한다(신규 생성 또는 전체 교체). */
 	@Operation(summary = "내 이상형 저장", description = "현재 로그인 사용자의 이상형을 저장(upsert)한다. 생략(null)한 항목은 '상관없음'으로 저장된다.")
