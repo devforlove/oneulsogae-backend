@@ -40,4 +40,10 @@ object LockKeyConstraints {
 	 * 동시 요청·더블클릭으로 인한 lost update·코인 이중 차감을 막는다. (waitTime=0이면 겹친 요청은 즉시 실패)
 	 */
 	const val TEAM_MATCH_INTEREST: String = "TEAM_MATCH_INTEREST"
+
+	/**
+	 * 추가 소개(코인으로 오늘의 추천 외 1명 더 소개받기) 처리 락. userId로 잠가 같은 사용자의 추가 소개 요청을 직렬화한다.
+	 * 동시 요청·더블클릭으로 인한 코인 이중 차감을 막는다.
+	 */
+	const val EXTRA_INTRO: String = "EXTRA_INTRO"
 }

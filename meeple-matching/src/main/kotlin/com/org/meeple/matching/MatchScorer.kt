@@ -1,14 +1,13 @@
-package com.org.meeple.scheduler.solomatch.command.domain
+package com.org.meeple.matching
 
-import com.org.meeple.scheduler.solomatch.query.dto.MatchableUser
-import com.org.meeple.scheduler.solomatch.query.dto.MatchScoringProfile
 import java.time.Duration
 import java.time.LocalDateTime
 import kotlin.random.Random
 
 /**
- * 일일 매칭의 이상형 우선순위 점수 계산기(순수). 이상형은 필터가 아니라 우선순위이므로,
+ * 매칭의 이상형 우선순위 점수 계산기(순수). 이상형은 필터가 아니라 우선순위이므로,
  * 부합하지 않아도 점수만 낮아진다. 이상형 부합(양방향)·거리·최근을 0~1로 정규화해 가중 합산한다.
+ * 일일 배치와 실시간 추가 소개가 공유한다.
  */
 object MatchScorer {
 
@@ -47,15 +46,15 @@ object MatchScorer {
 
 	/**
 	 * 후보를 종합 점수 내림차순으로 정렬하되, [BUCKET_SIZE] 단위 버킷 안은 [random]으로 섞는다.
-	 * (상위 동점군 내 무작위 — 매일 같은 상대만 뽑히지 않게 하면서 이상형 우선순위는 유지)
+	 * (상위 동점군 내 무작위 — 같은 상대만 반복 노출되지 않게 하면서 이상형 우선순위는 유지)
 	 */
-	fun orderByScore(scored: List<Pair<MatchableUser, Double>>, random: Random): List<MatchableUser> =
+	fun <T> orderByScore(scored: List<Pair<T, Double>>, random: Random): List<T> =
 		scored
 			.groupBy { (_, score: Double) -> (score / BUCKET_SIZE).toInt() }
 			.entries
-			.sortedByDescending { entry: Map.Entry<Int, List<Pair<MatchableUser, Double>>> -> entry.key }
-			.flatMap { entry: Map.Entry<Int, List<Pair<MatchableUser, Double>>> ->
-				entry.value.shuffled(random).map { (user: MatchableUser, _) -> user }
+			.sortedByDescending { entry: Map.Entry<Int, List<Pair<T, Double>>> -> entry.key }
+			.flatMap { entry: Map.Entry<Int, List<Pair<T, Double>>> ->
+				entry.value.shuffled(random).map { (item: T, _) -> item }
 			}
 
 	/** [preference]의 이상형으로 [other]의 속성을 평가한 한 방향 부합도(0~1). 지정 조건이 없으면 1.0. */

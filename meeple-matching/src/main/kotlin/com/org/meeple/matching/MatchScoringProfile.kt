@@ -1,4 +1,4 @@
-package com.org.meeple.scheduler.solomatch.query.dto
+package com.org.meeple.matching
 
 import com.org.meeple.common.user.DrinkingStatus
 import com.org.meeple.common.user.MaritalStatus

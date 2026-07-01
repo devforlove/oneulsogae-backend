@@ -18,4 +18,10 @@ enum class MatchErrorCode(
 	MATCH_ALREADY_CLOSED("MATCH-003", "이미 종료된 매칭입니다.", HttpStatus.CONFLICT),
 	MATCH_NOT_MATCHED("MATCH-009", "성사된 매칭만 종료할 수 있습니다.", HttpStatus.CONFLICT),
 	MATCH_BATCH_ALREADY_RUNNING("MATCH-008", "매칭 배치가 이미 실행 중입니다.", HttpStatus.CONFLICT),
+
+	/** 추가 소개: 소개 가능한 후보가 없음(코인 미차감). */
+	EXTRA_INTRO_NO_CANDIDATE("MATCH-010", "소개 가능한 상대가 없습니다.", HttpStatus.NOT_FOUND),
+
+	/** 추가 소개: 요청자가 아직 매칭 가능 상태가 아님(읽기 모델 미적재). */
+	MATCH_USER_NOT_MATCHABLE("MATCH-011", "매칭 가능한 상태가 아닙니다.", HttpStatus.BAD_REQUEST),
 }

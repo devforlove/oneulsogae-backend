@@ -43,6 +43,9 @@ dependencies {
 	testImplementation("io.kotest:kotest-assertions-core:5.9.1")
 	testImplementation("io.kotest.extensions:kotest-extensions-spring:1.3.0")
 
+	// 매칭 스코어링·선택 알고리즘(순수) 유닛 테스트용. scheduler/infra가 implementation으로만 가져와 전이되지 않으므로 직접 의존한다.
+	testImplementation(project(":meeple-matching"))
+
 	// 통합테스트: infra의 testFixtures(IntegrationUtil + QueryDSL)를 테스트 의존성으로만 가져온다.
 	testImplementation(testFixtures(project(":meeple-infra")))
 

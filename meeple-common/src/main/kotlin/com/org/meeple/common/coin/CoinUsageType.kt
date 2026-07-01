@@ -18,4 +18,7 @@ enum class CoinUsageType(val description: String, val coinAmount: Int) {
 
 	/** 미팅 수락. */
 	MEETING_ACCEPT("미팅 수락", 40),
+
+	/** 추가 소개(오늘의 추천 외 1명 더 소개받기). */
+	EXTRA_INTRO("추가 소개", 30),
 }

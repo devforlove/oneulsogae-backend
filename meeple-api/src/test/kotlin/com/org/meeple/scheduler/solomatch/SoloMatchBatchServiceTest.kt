@@ -2,6 +2,7 @@ package com.org.meeple.scheduler.solomatch
 
 import com.org.meeple.common.user.Gender
 import com.org.meeple.common.user.MaritalStatus
+import com.org.meeple.matching.MatchScoringProfile
 import com.org.meeple.scheduler.common.command.application.port.out.NoIntroductionAlarmPort
 import com.org.meeple.scheduler.common.command.application.port.out.RegionProximityPort
 import com.org.meeple.scheduler.common.command.application.port.out.TimeGenerator
@@ -10,7 +11,6 @@ import com.org.meeple.scheduler.solomatch.command.application.port.out.SaveMatch
 import com.org.meeple.scheduler.solomatch.query.dao.GetMatchRecordDao
 import com.org.meeple.scheduler.solomatch.query.dao.GetMatchScoringProfileDao
 import com.org.meeple.scheduler.solomatch.query.dao.GetMatchableUserDao
-import com.org.meeple.scheduler.solomatch.query.dto.MatchScoringProfile
 import com.org.meeple.scheduler.solomatch.query.dto.MatchableUser
 import com.org.meeple.scheduler.solomatch.query.dto.MatchedUserIds
 import io.kotest.core.spec.style.DescribeSpec

@@ -1,13 +1,17 @@
 package com.org.meeple.api.match
 
+import com.org.meeple.api.match.response.ExtraIntroCandidatesResponse
+import com.org.meeple.api.match.response.ExtraIntroResponse
 import com.org.meeple.api.match.response.MatchResponse
 import com.org.meeple.api.match.response.MatchStatusResponse
 import com.org.meeple.auth.AuthUser
 import com.org.meeple.auth.LoginUser
 import com.org.meeple.core.common.response.ApiResponse
 import com.org.meeple.core.common.time.TimeGenerator
+import com.org.meeple.core.solomatch.query.service.port.`in`.GetExtraIntroCandidatesUseCase
 import com.org.meeple.core.solomatch.query.service.port.`in`.GetMatchesUseCase
 import com.org.meeple.core.solomatch.command.application.port.`in`.EndMatchUseCase
+import com.org.meeple.core.solomatch.command.application.port.`in`.IntroduceExtraMatchUseCase
 import com.org.meeple.core.solomatch.command.application.port.`in`.SendInterestUseCase
 import org.springframework.web.bind.annotation.DeleteMapping
 import org.springframework.web.bind.annotation.GetMapping
@@ -31,6 +35,8 @@ class SoloMatchController(
 	private val getMatchesUseCase: GetMatchesUseCase,
 	private val sendInterestUseCase: SendInterestUseCase,
 	private val endMatchUseCase: EndMatchUseCase,
+	private val getExtraIntroCandidatesUseCase: GetExtraIntroCandidatesUseCase,
+	private val introduceExtraMatchUseCase: IntroduceExtraMatchUseCase,
 	private val timeGenerator: TimeGenerator,
 ) {
 
@@ -72,4 +78,24 @@ class SoloMatchController(
 		endMatchUseCase.endMatch(user.id, matchId)
 		return ApiResponse.success()
 	}
+
+	/**
+	 * 오늘의 추천 외 추가로 소개받을 수 있는 자격 후보 상위 목록과 전체 후보 수를 조회한다. (부수효과 없는 순수 조회)
+	 */
+	@Operation(summary = "추가 소개 후보 조회", description = "오늘의 추천 외 추가로 소개받을 수 있는 자격 후보 상위 목록과 전체 후보 수를 반환한다.")
+	@GetMapping("/extra/candidates")
+	fun extraIntroCandidates(
+		@LoginUser user: AuthUser,
+	): ApiResponse<ExtraIntroCandidatesResponse> =
+		ApiResponse.success(ExtraIntroCandidatesResponse.of(getExtraIntroCandidatesUseCase.getCandidates(user.id), timeGenerator.today()))
+
+	/**
+	 * 코인을 차감하고 자격 후보 1명을 골라 매칭을 생성한다. 후보가 없으면 실패한다.
+	 */
+	@Operation(summary = "추가 소개 받기", description = "코인을 차감하고 자격 후보 1명을 골라 매칭을 생성한다. 후보가 없으면 실패한다.")
+	@PostMapping("/extra")
+	fun introduceExtra(
+		@LoginUser user: AuthUser,
+	): ApiResponse<ExtraIntroResponse> =
+		ApiResponse.success(ExtraIntroResponse.of(introduceExtraMatchUseCase.introduce(user.id), user.id))
 }

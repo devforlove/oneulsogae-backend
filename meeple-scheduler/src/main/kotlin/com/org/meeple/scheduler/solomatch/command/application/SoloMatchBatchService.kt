@@ -1,18 +1,18 @@
 package com.org.meeple.scheduler.solomatch.command.application
 
 import com.org.meeple.common.user.Gender
+import com.org.meeple.matching.MatchScoringProfile
+import com.org.meeple.matching.MatchSelector
 import com.org.meeple.scheduler.solomatch.command.application.port.`in`.RunSoloMatchBatchUseCase
 import com.org.meeple.scheduler.common.command.application.port.out.NoIntroductionAlarmPort
 import com.org.meeple.scheduler.common.command.application.port.out.RegionProximityPort
 import com.org.meeple.scheduler.solomatch.command.application.port.out.SaveMatchRecordPort
 import com.org.meeple.scheduler.common.command.application.port.out.TimeGenerator
 import com.org.meeple.scheduler.solomatch.command.domain.MatchPool
-import com.org.meeple.scheduler.solomatch.command.domain.MatchScorer
 import com.org.meeple.scheduler.solomatch.command.domain.SoloMatchBatchResult
 import com.org.meeple.scheduler.solomatch.query.dao.GetMatchRecordDao
 import com.org.meeple.scheduler.solomatch.query.dao.GetMatchScoringProfileDao
 import com.org.meeple.scheduler.solomatch.query.dao.GetMatchableUserDao
-import com.org.meeple.scheduler.solomatch.query.dto.MatchScoringProfile
 import com.org.meeple.scheduler.solomatch.query.dto.MatchableUser
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
@@ -26,7 +26,7 @@ import kotlin.random.Random
  *
  * "2주 내 활성 + 오늘 미매칭 + 성사 상태 아님" 유저를 한 번 적재해 [MatchPool]을 만들고,
  * 스코어링 프로필([GetMatchScoringProfileDao])을 1회 적재한다. 대상마다 가용 반대 성별 후보 전체를
- * 이상형·거리·최근 종합 점수([MatchScorer])로 정렬해, 재소개 이력([GetMatchRecordDao.existsByPair])이 없는
+ * 이상형·거리·최근 종합 점수([MatchSelector])로 정렬해, 재소개 이력([GetMatchRecordDao.existsByPair])이 없는
  * 최고점 후보와 PROPOSED 소개를 만든다. 이상형은 필터가 아니라 우선순위라 안 맞아도 후보가 있으면 소개한다.
  * 한 사용자의 실패가 다른 사용자에 전파되지 않도록 대상 단위로 격리하고, 예외만 failed로 집계한다.
  */
@@ -104,21 +104,21 @@ class SoloMatchBatchService(
 		loginAfter: LocalDateTime,
 	): MatchableUser? {
 		val partnerGender: Gender = target.gender.opposite()
-		val targetProfile: MatchScoringProfile? = profiles[target.userId]
 		// 대상 지역 기준 근접 순위(같은 지역=0). 좌표 없는 지역이면 빈 리스트라 거리 점수는 전원 0이 된다.
 		val nearby: List<Long> = regionProximityPort.nearbyRegionIds(target.regionId)
 		val rankByRegion: Map<Long, Int> = nearby.withIndex().associate { (index: Int, regionId: Long) -> regionId to index }
 
-		val scored: List<Pair<MatchableUser, Double>> = pool.availableCandidates(partnerGender)
-			.map { candidate: MatchableUser ->
-				val idealFit: Double = MatchScorer.mutualIdealFit(targetProfile, profiles[candidate.userId])
-				val distanceScore: Double = MatchScorer.distanceScore(rankByRegion[candidate.regionId], nearby.size)
-				val recencyScore: Double = MatchScorer.recencyScore(candidate.lastLoginAt, loginAfter, now)
-				candidate to MatchScorer.combinedScore(idealFit, distanceScore, recencyScore)
-			}
-
-		return MatchScorer.orderByScore(scored, random)
-			.firstOrNull { candidate: MatchableUser -> !getMatchRecordDao.existsByPair(target.userId, candidate.userId) }
+		return MatchSelector.selectBest(
+			targetProfile = profiles[target.userId],
+			candidates = pool.availableCandidates(partnerGender),
+			profileOf = { candidate: MatchableUser -> profiles[candidate.userId] },
+			regionRankByRegionId = rankByRegion,
+			regionCount = nearby.size,
+			now = now,
+			loginAfter = loginAfter,
+			random = random,
+			isExcluded = { candidate: MatchableUser -> getMatchRecordDao.existsByPair(target.userId, candidate.userId) },
+		)
 	}
 
 	companion object {

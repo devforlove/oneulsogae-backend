@@ -1,6 +1,7 @@
 package com.org.meeple.scheduler.solomatch.query.dto
 
 import com.org.meeple.common.user.Gender
+import com.org.meeple.matching.ScoringCandidate
 import java.time.LocalDateTime
 
 /**
@@ -8,8 +9,8 @@ import java.time.LocalDateTime
  * 버킷 키(성별·지역)와 후보 정렬(최근 로그인)에 쓰므로 모두 non-null이다.
  */
 data class MatchableUser(
-	val userId: Long,
+	override val userId: Long,
 	val gender: Gender,
-	val regionId: Long,
-	val lastLoginAt: LocalDateTime,
-)
+	override val regionId: Long,
+	override val lastLoginAt: LocalDateTime,
+) : ScoringCandidate
