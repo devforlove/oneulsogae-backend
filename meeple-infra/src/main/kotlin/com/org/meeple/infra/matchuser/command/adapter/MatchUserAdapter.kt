@@ -105,6 +105,9 @@ class MatchUserAdapter(
 		matchUserJpaRepository.updateLastLoginAt(userId, lastLoginAt)
 	}
 
+	override fun updateRefuseSameCompanyIntro(userId: Long, refuse: Boolean): Int =
+		matchUserJpaRepository.updateRefuseSameCompanyIntro(userId, refuse)
+
 	override fun findByUserId(userId: Long): MatchUser? =
 		matchUserJpaRepository.findByUserId(userId)?.toDomain()
 

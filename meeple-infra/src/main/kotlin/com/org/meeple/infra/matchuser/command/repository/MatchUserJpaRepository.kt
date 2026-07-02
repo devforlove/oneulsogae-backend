@@ -36,6 +36,17 @@ interface MatchUserJpaRepository : JpaRepository<MatchUserEntity, Long> {
 	)
 	fun updateLastLoginAt(@Param("userId") userId: Long, @Param("lastLoginAt") lastLoginAt: LocalDateTime): Int
 
+	/** 같은 회사 소개 거부 플래그만 갱신한다. 영향 행 수를 반환한다(행이 없으면 0 = 미적재). */
+	@Modifying
+	@Query(
+		"""
+		update MatchUserEntity m
+		set m.refuseSameCompanyIntro = :refuse
+		where m.userId = :userId
+		""",
+	)
+	fun updateRefuseSameCompanyIntro(@Param("userId") userId: Long, @Param("refuse") refuse: Boolean): Int
+
 	/** 해당 사용자의 행을 삭제한다. 영향 행 수를 반환한다(행이 없으면 0 = no-op, 예외 없음). */
 	@Modifying
 	@Query("delete from MatchUserEntity m where m.userId = :userId")

@@ -5,7 +5,7 @@ import java.time.LocalDateTime
 
 /**
  * 매칭 읽기 모델(match_user) 저장 아웃포트.
- * user 프로필/상태 변경 이벤트에 반응해 매칭 가능 사용자를 적재(upsert)하거나, 로그인 시각만 갱신한다.
+ * user 프로필/상태 변경 이벤트에 반응해 매칭 가능 사용자를 적재(upsert)하거나, 로그인 시각·매칭 설정만 갱신한다.
  */
 interface SaveMatchUserPort {
 
@@ -14,4 +14,7 @@ interface SaveMatchUserPort {
 
 	/** 이미 적재된 사용자의 마지막 로그인 시각만 갱신한다. 행이 없으면 아무 일도 하지 않는다. */
 	fun updateLastLoginAt(userId: Long, lastLoginAt: LocalDateTime)
+
+	/** 같은 회사 소개 거부 플래그만 갱신한다. 갱신된 행 수를 반환한다(행이 없으면 0). */
+	fun updateRefuseSameCompanyIntro(userId: Long, refuse: Boolean): Int
 }
