@@ -27,6 +27,9 @@ import java.time.LocalDateTime
 		// 타입별 최신 수령일 조회(user_id + coin_get_type, occurred_at 내림차순 1행)를 커버하며,
 		// 최좌측 prefix(user_id)로 사용자별 적립 내역 조회(findByUserId)도 함께 커버한다.
 		Index(name = "idx_user_id_coin_get_type_occurred_at", columnList = "user_id, coin_get_type, occurred_at"),
+		// 사용자별 거래 내역 커서 페이징(user_id 동등 + id 내림차순 keyset)용.
+		// (위 복합 인덱스는 user_id 내부가 coin_get_type·occurred_at순이라 id 정렬을 받쳐주지 못한다)
+		Index(name = "idx_user_id_id", columnList = "user_id, id"),
 	],
 )
 class CoinHistoryEntity(
