@@ -17,8 +17,8 @@ import com.org.meeple.core.solomatch.command.application.port.out.ExtraIntroCand
 import com.org.meeple.core.solomatch.command.application.port.out.GetExtraIntroCandidatePort
 import com.org.meeple.core.solomatch.command.application.port.out.SaveMatchPort
 import com.org.meeple.core.solomatch.command.domain.Match
-import com.org.meeple.common.match.MatchScoringProfile
-import com.org.meeple.common.match.MatchSelector
+import com.org.meeple.common.match.selection.MatchScoringProfile
+import com.org.meeple.common.match.selection.MatchSelector
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import java.time.LocalDate

@@ -1,7 +1,7 @@
 package com.org.meeple.scheduler.solomatch.query.dto
 
 import com.org.meeple.common.user.Gender
-import com.org.meeple.common.match.ScoringCandidate
+import com.org.meeple.common.match.selection.ScoringCandidate
 import java.time.LocalDateTime
 
 /**

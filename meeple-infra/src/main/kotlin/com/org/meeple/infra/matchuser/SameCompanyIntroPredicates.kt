@@ -4,7 +4,7 @@ import com.org.meeple.infra.matchuser.command.entity.QMatchUserEntity
 import com.querydsl.core.types.dsl.BooleanExpression
 
 /**
- * 같은 회사 소개 차단 정책([com.org.meeple.common.match.SameCompanyIntroPolicy])의 QueryDSL 표현.
+ * 같은 회사 소개 차단 정책([com.org.meeple.common.match.selection.SameCompanyIntroPolicy])의 QueryDSL 표현.
  * SQL 후보 조회 경로(온보딩 추천·추가소개 미리보기)가 공유한다. 인메모리 선정 경로는 MatchSelector가 순수 정책으로 거른다.
  */
 object SameCompanyIntroPredicates {

@@ -2,7 +2,7 @@ package com.org.meeple.scheduler.solomatch
 
 import com.org.meeple.common.user.Gender
 import com.org.meeple.common.user.MaritalStatus
-import com.org.meeple.common.match.MatchScoringProfile
+import com.org.meeple.common.match.selection.MatchScoringProfile
 import com.org.meeple.scheduler.common.command.application.port.out.NoIntroductionAlarmPort
 import com.org.meeple.scheduler.common.command.application.port.out.RegionProximityPort
 import com.org.meeple.scheduler.common.command.application.port.out.TimeGenerator

@@ -1,4 +1,4 @@
-package com.org.meeple.common.match
+package com.org.meeple.common.match.selection
 
 /**
  * 같은 회사 구성원 소개 차단 정책(순수 로직). 모든 추천 경로(일일 배치·추가 소개·온보딩)가 이 기준을 공유한다.

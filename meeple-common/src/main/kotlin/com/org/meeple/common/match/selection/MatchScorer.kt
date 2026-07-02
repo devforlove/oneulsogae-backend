@@ -1,4 +1,4 @@
-package com.org.meeple.common.match
+package com.org.meeple.common.match.selection
 
 import java.time.Duration
 import java.time.LocalDateTime

@@ -11,7 +11,7 @@ import com.org.meeple.infra.fixture.UserDetailEntityFixture
 import com.org.meeple.infra.user.command.entity.QUserDetailEntity
 import com.org.meeple.infra.user.command.entity.QUserIdealTypeEntity
 import com.org.meeple.infra.user.command.entity.UserIdealTypeEntity
-import com.org.meeple.common.match.MatchScoringProfile
+import com.org.meeple.common.match.selection.MatchScoringProfile
 import com.org.meeple.scheduler.solomatch.query.dao.GetMatchScoringProfileDao
 import io.kotest.matchers.nulls.shouldBeNull
 import io.kotest.matchers.nulls.shouldNotBeNull

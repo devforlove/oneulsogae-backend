@@ -1,4 +1,4 @@
-package com.org.meeple.common.match
+package com.org.meeple.common.match.selection
 
 import io.kotest.core.spec.style.DescribeSpec
 import io.kotest.matchers.nulls.shouldBeNull
