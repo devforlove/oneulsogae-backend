@@ -10,6 +10,7 @@ import jakarta.persistence.Enumerated
 import jakarta.persistence.Index
 import jakarta.persistence.Table
 import jakarta.persistence.UniqueConstraint
+import org.hibernate.annotations.ColumnDefault
 import java.time.LocalDate
 import java.time.LocalDateTime
 
@@ -62,4 +63,13 @@ class MatchUserEntity(
 
 	@Column(name = "last_login_at", nullable = false)
 	var lastLoginAt: LocalDateTime,
+
+	/**
+	 * 같은 회사 구성원에게 소개(추천)되는 것을 거부하는지. 기본값은 거부(true).
+	 * user 스냅샷 동기화 대상이 아닌 매칭 설정 값이라 upsert의 UPDATE 경로에서 덮어쓰지 않는다.
+	 * (매칭 불가 전이로 행이 하드 삭제된 뒤 재생성되면 기본값 true로 초기화된다)
+	 */
+	@ColumnDefault("true")
+	@Column(name = "refuse_same_company_intro", nullable = false)
+	var refuseSameCompanyIntro: Boolean = true,
 ) : BaseEntity()
