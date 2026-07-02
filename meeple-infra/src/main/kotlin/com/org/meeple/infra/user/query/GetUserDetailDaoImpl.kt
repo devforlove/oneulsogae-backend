@@ -2,6 +2,7 @@ package com.org.meeple.infra.user.query
 
 import com.org.meeple.core.user.query.dao.GetUserDetailDao
 import com.org.meeple.core.user.query.dto.UserDetailView
+import com.org.meeple.infra.matchuser.command.entity.QMatchUserEntity
 import com.org.meeple.infra.region.entity.QRegionEntity
 import com.org.meeple.infra.user.command.entity.QUserDetailEntity
 import com.querydsl.core.types.Projections
@@ -23,6 +24,7 @@ class GetUserDetailDaoImpl(
 	override fun findByUserId(userId: Long): UserDetailView? {
 		val detail: QUserDetailEntity = QUserDetailEntity.userDetailEntity
 		val region: QRegionEntity = QRegionEntity.regionEntity
+		val matchUser: QMatchUserEntity = QMatchUserEntity.matchUserEntity
 		return queryFactory
 			.select(
 				Projections.constructor(
@@ -52,10 +54,13 @@ class GetUserDetailDaoImpl(
 					detail.religion,
 					detail.drinkingStatus,
 					detail.bodyType,
+					// 같은 회사 소개 거부 플래그는 match_user를 join해 채운다. (행이 없으면 기본값 거부 true)
+					matchUser.refuseSameCompanyIntro.coalesce(true),
 				)
 			)
 			.from(detail)
 			.leftJoin(region).on(region.id.eq(detail.regionId))
+			.leftJoin(matchUser).on(matchUser.userId.eq(detail.userId))
 			.where(detail.userId.eq(userId))
 			.fetchOne()
 	}

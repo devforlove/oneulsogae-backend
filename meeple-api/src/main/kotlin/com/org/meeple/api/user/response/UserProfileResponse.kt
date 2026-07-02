@@ -38,6 +38,8 @@ data class UserProfileResponse(
 	val religion: Religion?,
 	val drinkingStatus: DrinkingStatus?,
 	val bodyType: BodyType?,
+	/** 같은 회사 구성원 소개 거부 여부. 조회(GET) 시 match_user join으로 채워지고, 수정(PUT) 응답에선 null. */
+	val refuseSameCompanyIntro: Boolean?,
 ) {
 	companion object {
 		/** 조회(query) read model 매핑. */
@@ -65,6 +67,7 @@ data class UserProfileResponse(
 				religion = detail.religion,
 				drinkingStatus = detail.drinkingStatus,
 				bodyType = detail.bodyType,
+				refuseSameCompanyIntro = detail.refuseSameCompanyIntro,
 			)
 
 		/** 명령(command) 결과 도메인 매핑. (프로필 수정 후 갱신된 [UserDetail] 렌더링 — 표시용 활동지역은 join이 없어 null, regionId만 싣는다) */
@@ -92,6 +95,7 @@ data class UserProfileResponse(
 				religion = detail.religion,
 				drinkingStatus = detail.drinkingStatus,
 				bodyType = detail.bodyType,
+				refuseSameCompanyIntro = null,
 			)
 	}
 }

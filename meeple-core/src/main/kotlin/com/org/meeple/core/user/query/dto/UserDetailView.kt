@@ -39,4 +39,6 @@ data class UserDetailView(
 	val religion: Religion?,
 	val drinkingStatus: DrinkingStatus?,
 	val bodyType: BodyType?,
+	/** 같은 회사 구성원 소개 거부 여부. match_user join으로 채우며, 행이 없으면 기본값 거부(true). */
+	val refuseSameCompanyIntro: Boolean,
 )

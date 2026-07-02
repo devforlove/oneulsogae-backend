@@ -4,6 +4,7 @@ import com.org.meeple.common.integration.AbstractIntegrationSupport
 import com.org.meeple.common.integration.expect
 import com.org.meeple.common.integration.get
 import com.org.meeple.infra.fixture.IntegrationUtil
+import com.org.meeple.infra.fixture.MatchUserEntityFixture
 import com.org.meeple.infra.user.command.entity.UserDetailEntity
 import org.hamcrest.Matchers.contains
 
@@ -37,6 +38,52 @@ class GetMyProfileE2ETest : AbstractIntegrationSupport({
 					body("data.nickname", "투영유저")
 					body("data.traits", contains("운동", "독서"))
 					body("data.interests", contains("영화", "여행", "코딩"))
+				}
+			}
+		}
+
+		context("match_user 행이 없는 사용자가 조회하면") {
+			it("같은 회사 소개 거부 플래그가 기본값 거부(true)로 내려온다 (200)") {
+				val userId: Long = 5003L
+				IntegrationUtil.persist(
+					UserDetailEntity(
+						userId = userId,
+						nickname = "기본거부유저",
+					),
+				)
+
+				get("/users/v1/profile") {
+					bearer(accessTokenFor(userId))
+				} expect {
+					status(200)
+					body("success", true)
+					body("data.refuseSameCompanyIntro", true)
+				}
+			}
+		}
+
+		context("같은 회사 소개 거부를 해제한 사용자가 조회하면") {
+			it("같은 회사 소개 거부 플래그가 false로 내려온다 (200)") {
+				val userId: Long = 5004L
+				IntegrationUtil.persist(
+					UserDetailEntity(
+						userId = userId,
+						nickname = "거부해제유저",
+					),
+				)
+				IntegrationUtil.persist(
+					MatchUserEntityFixture.create(
+						userId = userId,
+						refuseSameCompanyIntro = false,
+					),
+				)
+
+				get("/users/v1/profile") {
+					bearer(accessTokenFor(userId))
+				} expect {
+					status(200)
+					body("success", true)
+					body("data.refuseSameCompanyIntro", false)
 				}
 			}
 		}
