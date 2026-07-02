@@ -64,6 +64,10 @@ class MatchUserEntity(
 	@Column(name = "last_login_at", nullable = false)
 	var lastLoginAt: LocalDateTime,
 
+	/** 회사명. 같은 회사 소개 차단 판정에 쓴다. 회사 미인증이면 null. (user 스냅샷으로 동기화) */
+	@Column(name = "company_name", length = 100)
+	var companyName: String? = null,
+
 	/**
 	 * 같은 회사 구성원에게 소개(추천)되는 것을 거부하는지. 기본값은 거부(true).
 	 * user 스냅샷 동기화 대상이 아닌 매칭 설정 값이라 upsert의 UPDATE 경로에서 덮어쓰지 않는다.

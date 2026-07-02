@@ -201,6 +201,8 @@ data class UserDetail(
 			nickname = nickname ?: return null,
 			profileImageCode = profileImageCode ?: return null,
 			lastLoginAt = lastLoginAt ?: return null,
+			// 회사명은 선택 필드라 매칭 가능 판정에 관여하지 않는다. (같은 회사 소개 차단 판정용)
+			companyName = companyName,
 		)
 	}
 

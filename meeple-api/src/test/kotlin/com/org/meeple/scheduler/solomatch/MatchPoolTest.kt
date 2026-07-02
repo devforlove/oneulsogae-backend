@@ -13,7 +13,7 @@ class MatchPoolTest : DescribeSpec({
 
 	val base: LocalDateTime = LocalDateTime.of(2026, 6, 23, 0, 0)
 	fun user(id: Long, gender: Gender, regionId: Long, lastLoginAt: LocalDateTime): MatchableUser =
-		MatchableUser(userId = id, gender = gender, regionId = regionId, lastLoginAt = lastLoginAt)
+		MatchableUser(userId = id, gender = gender, regionId = regionId, lastLoginAt = lastLoginAt, companyName = null, refuseSameCompanyIntro = true)
 
 	describe("freshCandidates") {
 

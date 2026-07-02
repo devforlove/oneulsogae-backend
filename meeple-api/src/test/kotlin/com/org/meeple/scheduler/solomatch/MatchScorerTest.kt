@@ -128,7 +128,7 @@ class MatchScorerTest : DescribeSpec({
 
     describe("orderByScore") {
         fun user(userId: Long): MatchableUser =
-            MatchableUser(userId, Gender.FEMALE, regionId = 1L, lastLoginAt = LocalDateTime.of(2026, 7, 1, 12, 0))
+            MatchableUser(userId, Gender.FEMALE, regionId = 1L, lastLoginAt = LocalDateTime.of(2026, 7, 1, 12, 0), companyName = null, refuseSameCompanyIntro = true)
 
         it("점수 내림차순으로 정렬한다(버킷이 다르면 결정적)") {
             val scored: List<Pair<MatchableUser, Double>> = listOf(

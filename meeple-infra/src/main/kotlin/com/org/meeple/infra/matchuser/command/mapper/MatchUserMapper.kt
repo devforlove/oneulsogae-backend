@@ -14,6 +14,8 @@ fun MatchUserEntity.toDomain(): MatchUser =
 		nickname = nickname,
 		profileImageCode = profileImageCode,
 		lastLoginAt = lastLoginAt,
+		companyName = companyName,
+		refuseSameCompanyIntro = refuseSameCompanyIntro,
 	)
 
 /**
@@ -29,11 +31,14 @@ fun MatchUser.toEntity(): MatchUserEntity =
 		nickname = nickname,
 		profileImageCode = profileImageCode,
 		lastLoginAt = lastLoginAt,
+		companyName = companyName,
+		refuseSameCompanyIntro = refuseSameCompanyIntro,
 	)
 
 /**
  * 기존 엔티티의 가변 필드를 도메인 값으로 갱신한다. (upsert의 UPDATE 경로)
  * id·user_id·생성 시각은 보존하고, 매칭 기준 필드만 덮어쓴다.
+ * (같은 회사 소개 거부 플래그는 스냅샷 동기화 대상이 아닌 사용자 설정 값이라 덮어쓰지 않는다)
  */
 fun MatchUserEntity.applyFrom(matchUser: MatchUser) {
 	gender = matchUser.gender
@@ -43,4 +48,5 @@ fun MatchUserEntity.applyFrom(matchUser: MatchUser) {
 	nickname = matchUser.nickname
 	profileImageCode = matchUser.profileImageCode
 	lastLoginAt = matchUser.lastLoginAt
+	companyName = matchUser.companyName
 }

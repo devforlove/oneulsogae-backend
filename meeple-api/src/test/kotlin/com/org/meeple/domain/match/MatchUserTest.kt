@@ -23,10 +23,11 @@ class MatchUserTest : DescribeSpec({
 		nickname = "민수",
 		profileImageCode = "1",
 		lastLoginAt = LocalDateTime.of(2026, 6, 19, 9, 0),
+		companyName = "미플컴퍼니",
 	)
 
 	describe("from") {
-		it("스냅샷의 기준 필드를 그대로 매칭 읽기 모델로 옮긴다") {
+		it("스냅샷의 기준 필드를 그대로 매칭 읽기 모델로 옮긴다 (같은 회사 소개 거부는 신규 적재 기본값 true)") {
 			val matchUser: MatchUser = MatchUser.from(userId = 42L, snapshot = snapshot)
 
 			matchUser shouldBe MatchUser(
@@ -38,6 +39,8 @@ class MatchUserTest : DescribeSpec({
 				nickname = "민수",
 				profileImageCode = "1",
 				lastLoginAt = snapshot.lastLoginAt,
+				companyName = "미플컴퍼니",
+				refuseSameCompanyIntro = true,
 			)
 		}
 	}

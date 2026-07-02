@@ -77,8 +77,10 @@ class SoloMatchBatchServiceTest : DescribeSpec({
 			idealMaritalStatus = idealMaritalStatus, idealSmokingStatus = null, idealDrinkingStatus = null, idealReligion = null,
 		)
 
-	fun male(userId: Long, lastLoginAt: LocalDateTime): MatchableUser = MatchableUser(userId, Gender.MALE, 1L, lastLoginAt)
-	fun female(userId: Long, lastLoginAt: LocalDateTime): MatchableUser = MatchableUser(userId, Gender.FEMALE, 1L, lastLoginAt)
+	fun male(userId: Long, lastLoginAt: LocalDateTime, companyName: String? = null, refuseSameCompanyIntro: Boolean = true): MatchableUser =
+		MatchableUser(userId, Gender.MALE, 1L, lastLoginAt, companyName, refuseSameCompanyIntro)
+	fun female(userId: Long, lastLoginAt: LocalDateTime, companyName: String? = null, refuseSameCompanyIntro: Boolean = true): MatchableUser =
+		MatchableUser(userId, Gender.FEMALE, 1L, lastLoginAt, companyName, refuseSameCompanyIntro)
 
 	describe("run - 이상형 우선순위") {
 
@@ -135,6 +137,50 @@ class SoloMatchBatchServiceTest : DescribeSpec({
 
 			result.recommended shouldBe 1
 			saves shouldContainExactlyInAnyOrder listOf(1001L to 1003L)
+		}
+	}
+
+	describe("run - 같은 회사 소개 차단") {
+
+		it("같은 회사이고 대상이 거부하면 그 후보를 건너뛰고 다음 후보를 소개한다") {
+			// 대상 1001(거부)과 1002는 같은 회사 → 차단. 1003(다른 회사)과 소개된다.
+			val matchables: List<MatchableUser> = listOf(
+				male(1001L, now, companyName = "미플컴퍼니", refuseSameCompanyIntro = true),
+				female(1002L, now.minusMinutes(1), companyName = "미플컴퍼니", refuseSameCompanyIntro = false),
+				female(1003L, now.minusMinutes(2), companyName = "다른회사"),
+			)
+			val saves: MutableList<Pair<Long, Long>> = mutableListOf()
+
+			val result = service(matchables, profiles = emptyMap(), existsPairs = emptySet(), saves).run()
+
+			result.recommended shouldBe 1
+			saves shouldContainExactlyInAnyOrder listOf(1001L to 1003L)
+		}
+
+		it("대상이 거부하지 않아도 같은 회사 후보가 거부하면 차단된다(양방향)") {
+			val matchables: List<MatchableUser> = listOf(
+				male(1001L, now, companyName = "미플컴퍼니", refuseSameCompanyIntro = false),
+				female(1002L, now.minusMinutes(1), companyName = "미플컴퍼니", refuseSameCompanyIntro = true),
+			)
+			val saves: MutableList<Pair<Long, Long>> = mutableListOf()
+
+			val result = service(matchables, profiles = emptyMap(), existsPairs = emptySet(), saves).run()
+
+			result.recommended shouldBe 0
+			saves shouldBe emptyList()
+		}
+
+		it("같은 회사라도 양쪽 모두 거부를 해제했으면 소개된다") {
+			val matchables: List<MatchableUser> = listOf(
+				male(1001L, now, companyName = "미플컴퍼니", refuseSameCompanyIntro = false),
+				female(1002L, now.minusMinutes(1), companyName = "미플컴퍼니", refuseSameCompanyIntro = false),
+			)
+			val saves: MutableList<Pair<Long, Long>> = mutableListOf()
+
+			val result = service(matchables, profiles = emptyMap(), existsPairs = emptySet(), saves).run()
+
+			result.recommended shouldBe 1
+			saves shouldContainExactlyInAnyOrder listOf(1001L to 1002L)
 		}
 	}
 })

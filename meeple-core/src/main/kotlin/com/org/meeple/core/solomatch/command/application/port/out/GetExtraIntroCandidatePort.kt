@@ -11,6 +11,10 @@ data class ExtraIntroCandidateRow(
 	override val userId: Long,
 	override val regionId: Long,
 	override val lastLoginAt: LocalDateTime,
+	/** 회사명. 같은 회사 소개 차단 판정에 쓴다. 미인증이면 null. */
+	override val companyName: String?,
+	/** 같은 회사 소개 거부 여부. */
+	override val refuseSameCompanyIntro: Boolean,
 	val profile: MatchScoringProfile?,
 ) : ScoringCandidate
 

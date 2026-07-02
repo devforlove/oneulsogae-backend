@@ -18,4 +18,6 @@ data class MatchProfileSnapshot(
 	val nickname: String,
 	val profileImageCode: String,
 	val lastLoginAt: LocalDateTime,
+	/** 회사명. 같은 회사 소개 차단 판정에 쓴다. 회사 미인증이면 null(매칭 가능 여부와 무관한 선택 필드). */
+	val companyName: String?,
 )

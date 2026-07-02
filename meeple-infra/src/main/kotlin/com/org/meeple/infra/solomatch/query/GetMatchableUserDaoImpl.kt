@@ -27,6 +27,8 @@ class GetMatchableUserDaoImpl(
 					matchUser.gender,
 					matchUser.regionId,
 					matchUser.lastLoginAt,
+					matchUser.companyName,
+					matchUser.refuseSameCompanyIntro,
 				),
 			)
 			.from(matchUser)

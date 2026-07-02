@@ -62,6 +62,8 @@ class IntroduceExtraMatchService(
 
 		val partner: ExtraIntroCandidateRow = MatchSelector.selectBest(
 			targetProfile = requesterProfile,
+			targetCompanyName = requester.companyName,
+			targetRefusesSameCompanyIntro = requester.refuseSameCompanyIntro,
 			candidates = candidates,
 			profileOf = { row: ExtraIntroCandidateRow -> row.profile },
 			regionRankByRegionId = rankByRegion,

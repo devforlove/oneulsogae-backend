@@ -6,6 +6,7 @@ import com.org.meeple.core.solomatch.command.application.port.out.GetMatchCandid
 import com.org.meeple.core.matchuser.command.application.port.out.GetMatchUserPort
 import com.org.meeple.core.matchuser.command.application.port.out.SaveMatchUserPort
 import com.org.meeple.core.matchuser.command.domain.MatchUser
+import com.org.meeple.infra.matchuser.SameCompanyIntroPredicates
 import com.org.meeple.infra.matchuser.command.entity.MatchUserEntity
 import com.org.meeple.infra.matchuser.command.entity.QMatchUserEntity
 import com.org.meeple.infra.solomatch.command.entity.QSoloMatchMemberEntity
@@ -42,24 +43,35 @@ class MatchUserAdapter(
 	 * 찾는 성별 유저가 없는 지역은 [PopulatedRegionRegistry]로 미리 걸러 헛조회를 막는다)
 	 * 그런 지역 전체에 신선 후보가 없으면 null. (스냅샷 갱신 전 새로 유저가 생긴 지역은 다음 refresh까지 후보에서 빠질 수 있다 — 추천 생략으로 처리)
 	 */
-	override fun findOneCandidate(requesterId: Long, gender: Gender, regionId: Long, loginAfter: LocalDateTime): Long? {
+	override fun findOneCandidate(
+		requesterId: Long,
+		gender: Gender,
+		regionId: Long,
+		loginAfter: LocalDateTime,
+		requesterCompanyName: String?,
+		requesterRefusesSameCompanyIntro: Boolean,
+	): Long? {
 		val populatedNearby: List<Long> = regionProximityRegistry.nearbyRegionIds(regionId)
 			.filter { id: Long -> populatedRegionRegistry.contains(gender, id) }
 		for (candidateRegionId: Long in populatedNearby) {
-			findFreshCandidateInRegion(requesterId, gender, candidateRegionId, loginAfter)?.let { candidateId: Long -> return candidateId }
+			findFreshCandidateInRegion(requesterId, gender, candidateRegionId, loginAfter, requesterCompanyName, requesterRefusesSameCompanyIntro)
+				?.let { candidateId: Long -> return candidateId }
 		}
 		return null
 	}
 
 	/**
-	 * 한 지역([candidateRegionId]) 안에서 "반대 성별·최근 로그인·재소개 이력 없음" 후보 중 최근 로그인 1명을 조회한다.
-	 * (gender·region_id 동등 + last_login_at 정렬이 인덱스 `idx_gender_region_id_last_login_at`에 그대로 받쳐져 filesort가 없다)
+	 * 한 지역([candidateRegionId]) 안에서 "반대 성별·최근 로그인·재소개 이력 없음·같은 회사 소개 차단 아님" 후보 중 최근 로그인 1명을 조회한다.
+	 * (gender·region_id 동등 + last_login_at 정렬이 인덱스 `idx_gender_region_id_last_login_at`에 그대로 받쳐져 filesort가 없다.
+	 * 같은 회사 차단 조건은 non-sargable 필터라 인덱스 seek 뒤에 걸러진다 — 선택도가 낮아 추가 인덱스는 두지 않는다)
 	 */
 	private fun findFreshCandidateInRegion(
 		requesterId: Long,
 		gender: Gender,
 		candidateRegionId: Long,
 		loginAfter: LocalDateTime,
+		requesterCompanyName: String?,
+		requesterRefusesSameCompanyIntro: Boolean,
 	): Long? {
 		val matchUser: QMatchUserEntity = QMatchUserEntity.matchUserEntity
 
@@ -71,6 +83,7 @@ class MatchUserAdapter(
 				matchUser.regionId.eq(candidateRegionId),
 				matchUser.lastLoginAt.goe(loginAfter),
 				notIntroducedBefore(matchUser, requesterId),
+				SameCompanyIntroPredicates.notBlockedBySameCompanyIntro(matchUser, requesterCompanyName, requesterRefusesSameCompanyIntro),
 			)
 			.orderBy(matchUser.lastLoginAt.desc())
 			.limit(1)

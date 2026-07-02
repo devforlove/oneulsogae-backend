@@ -38,6 +38,8 @@ class ExtraIntroCandidateAdapter(
 				matchUser.userId,
 				matchUser.regionId,
 				matchUser.lastLoginAt,
+				matchUser.companyName,
+				matchUser.refuseSameCompanyIntro,
 				detail.birthday,
 				detail.height,
 				detail.maritalStatus,
@@ -69,6 +71,8 @@ class ExtraIntroCandidateAdapter(
 				userId = userId,
 				regionId = tuple.get(matchUser.regionId)!!,
 				lastLoginAt = tuple.get(matchUser.lastLoginAt)!!,
+				companyName = tuple.get(matchUser.companyName),
+				refuseSameCompanyIntro = tuple.get(matchUser.refuseSameCompanyIntro)!!,
 				profile = scoringProfile(tuple, userId, detail, ideal, today),
 			)
 		}

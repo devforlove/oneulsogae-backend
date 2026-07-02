@@ -32,7 +32,13 @@ class GetExtraIntroCandidatesService(
 
 		val loginAfter: LocalDateTime = timeGenerator.now().minusWeeks(RECENT_LOGIN_WEEKS)
 		val eligibleUserIds: List<Long> =
-			getExtraIntroCandidateDao.findEligibleCandidateIds(userId, requester.partnerGender(), loginAfter)
+			getExtraIntroCandidateDao.findEligibleCandidateIds(
+				requesterId = userId,
+				partnerGender = requester.partnerGender(),
+				loginAfter = loginAfter,
+				requesterCompanyName = requester.companyName,
+				requesterRefusesSameCompanyIntro = requester.refuseSameCompanyIntro,
+			)
 		if (eligibleUserIds.isEmpty()) return ExtraIntroCandidates(totalCount = 0, candidates = emptyList())
 
 		// 목록은 마스킹되어 노출되므로 무작위로 섞어 상위 일부만 표시한다. (스코어링·정렬 불필요)

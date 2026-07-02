@@ -39,6 +39,8 @@ class RecommendMatchService(
 			gender = profile.partnerGender(),
 			regionId = profile.regionId,
 			loginAfter = loginAfter,
+			requesterCompanyName = profile.companyName,
+			requesterRefusesSameCompanyIntro = profile.refuseSameCompanyIntro,
 		)
 			?: return null
 

@@ -110,6 +110,8 @@ class SoloMatchBatchService(
 
 		return MatchSelector.selectBest(
 			targetProfile = profiles[target.userId],
+			targetCompanyName = target.companyName,
+			targetRefusesSameCompanyIntro = target.refuseSameCompanyIntro,
 			candidates = pool.availableCandidates(partnerGender),
 			profileOf = { candidate: MatchableUser -> profiles[candidate.userId] },
 			regionRankByRegionId = rankByRegion,

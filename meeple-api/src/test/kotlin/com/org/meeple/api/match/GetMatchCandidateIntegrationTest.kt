@@ -44,6 +44,7 @@ class GetMatchCandidateIntegrationTest(
 
                 val candidateId: Long? = getMatchCandidatePort.findOneCandidate(
                     requesterId = 1L, gender = Gender.FEMALE, regionId = nearRegionId, loginAfter = loginAfter,
+                    requesterCompanyName = null, requesterRefusesSameCompanyIntro = true,
                 )
 
                 candidateId shouldBe nearFemaleId
@@ -61,6 +62,7 @@ class GetMatchCandidateIntegrationTest(
 
                 val candidateId: Long? = getMatchCandidatePort.findOneCandidate(
                     requesterId = 1L, gender = Gender.FEMALE, regionId = regionId, loginAfter = loginAfter,
+                    requesterCompanyName = null, requesterRefusesSameCompanyIntro = true,
                 )
 
                 candidateId shouldBe freshFemaleId
@@ -78,9 +80,59 @@ class GetMatchCandidateIntegrationTest(
 
                 val result: Long? = getMatchCandidatePort.findOneCandidate(
                     requesterId = 1L, gender = Gender.FEMALE, regionId = regionId, loginAfter = loginAfter,
+                    requesterCompanyName = null, requesterRefusesSameCompanyIntro = true,
                 )
 
                 result shouldBe candidateId
+            }
+        }
+
+        context("요청자가 같은 회사 소개를 거부하면") {
+            it("같은 회사 후보는 제외하고 다른 회사 후보를 반환한다") {
+                val regionId: Long = persistRegion("서울특별시", "강남구", 37.50, 127.00)
+                // 같은 회사(10L)가 더 최근 로그인이지만 차단으로 제외되고, 다른 회사(20L)가 선택돼야 한다
+                persistMatchUser(userId = 10L, gender = Gender.FEMALE, regionId = regionId, lastLoginAt = LocalDateTime.now(), companyName = "미플컴퍼니")
+                val otherCompanyId: Long = persistMatchUser(
+                    userId = 20L, gender = Gender.FEMALE, regionId = regionId, lastLoginAt = LocalDateTime.now().minusDays(1), companyName = "다른회사",
+                )
+                regionProximityPort.refresh()
+
+                val candidateId: Long? = getMatchCandidatePort.findOneCandidate(
+                    requesterId = 1L, gender = Gender.FEMALE, regionId = regionId, loginAfter = loginAfter,
+                    requesterCompanyName = "미플컴퍼니", requesterRefusesSameCompanyIntro = true,
+                )
+
+                candidateId shouldBe otherCompanyId
+            }
+        }
+
+        context("요청자는 거부를 해제했지만 같은 회사 후보가 거부 중이면") {
+            it("그 후보를 제외한다 (양방향 차단)") {
+                val regionId: Long = persistRegion("서울특별시", "강남구", 37.50, 127.00)
+                persistMatchUser(userId = 10L, gender = Gender.FEMALE, regionId = regionId, companyName = "미플컴퍼니", refuseSameCompanyIntro = true)
+                regionProximityPort.refresh()
+
+                getMatchCandidatePort.findOneCandidate(
+                    requesterId = 1L, gender = Gender.FEMALE, regionId = regionId, loginAfter = loginAfter,
+                    requesterCompanyName = "미플컴퍼니", requesterRefusesSameCompanyIntro = false,
+                ).shouldBeNull()
+            }
+        }
+
+        context("같은 회사라도 양쪽 모두 거부를 해제했으면") {
+            it("그 후보를 반환한다") {
+                val regionId: Long = persistRegion("서울특별시", "강남구", 37.50, 127.00)
+                val sameCompanyId: Long = persistMatchUser(
+                    userId = 10L, gender = Gender.FEMALE, regionId = regionId, companyName = "미플컴퍼니", refuseSameCompanyIntro = false,
+                )
+                regionProximityPort.refresh()
+
+                val candidateId: Long? = getMatchCandidatePort.findOneCandidate(
+                    requesterId = 1L, gender = Gender.FEMALE, regionId = regionId, loginAfter = loginAfter,
+                    requesterCompanyName = "미플컴퍼니", requesterRefusesSameCompanyIntro = false,
+                )
+
+                candidateId shouldBe sameCompanyId
             }
         }
 
@@ -93,6 +145,7 @@ class GetMatchCandidateIntegrationTest(
 
                 getMatchCandidatePort.findOneCandidate(
                     requesterId = 1L, gender = Gender.FEMALE, regionId = regionId, loginAfter = loginAfter,
+                    requesterCompanyName = null, requesterRefusesSameCompanyIntro = true,
                 ).shouldBeNull()
             }
         }
@@ -111,6 +164,7 @@ class GetMatchCandidateIntegrationTest(
 
                 val candidateId: Long? = getMatchCandidatePort.findOneCandidate(
                     requesterId = 1L, gender = Gender.FEMALE, regionId = requesterRegionId, loginAfter = loginAfter,
+                    requesterCompanyName = null, requesterRefusesSameCompanyIntro = true,
                 )
 
                 candidateId shouldBe farFemaleId
@@ -127,6 +181,7 @@ class GetMatchCandidateIntegrationTest(
 
                 getMatchCandidatePort.findOneCandidate(
                     requesterId = 1L, gender = Gender.FEMALE, regionId = regionId, loginAfter = loginAfter,
+                    requesterCompanyName = null, requesterRefusesSameCompanyIntro = true,
                 ).shouldBeNull()
             }
         }
@@ -152,9 +207,14 @@ private fun persistMatchUser(
     gender: Gender,
     regionId: Long,
     lastLoginAt: LocalDateTime = LocalDateTime.now(),
+    companyName: String? = null,
+    refuseSameCompanyIntro: Boolean = true,
 ): Long {
     IntegrationUtil.persist(
-        MatchUserEntityFixture.create(userId = userId, gender = gender, regionId = regionId, lastLoginAt = lastLoginAt),
+        MatchUserEntityFixture.create(
+            userId = userId, gender = gender, regionId = regionId, lastLoginAt = lastLoginAt,
+            companyName = companyName, refuseSameCompanyIntro = refuseSameCompanyIntro,
+        ),
     )
     return userId
 }

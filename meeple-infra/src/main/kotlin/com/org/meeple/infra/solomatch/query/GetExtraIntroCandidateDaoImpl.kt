@@ -3,6 +3,7 @@ package com.org.meeple.infra.solomatch.query
 import com.org.meeple.common.user.Gender
 import com.org.meeple.core.solomatch.query.dao.GetExtraIntroCandidateDao
 import com.org.meeple.core.solomatch.query.dto.ExtraIntroCandidate
+import com.org.meeple.infra.matchuser.SameCompanyIntroPredicates
 import com.org.meeple.infra.matchuser.command.entity.QMatchUserEntity
 import com.org.meeple.infra.region.entity.QRegionEntity
 import com.org.meeple.infra.user.command.entity.QUserDetailEntity
@@ -24,7 +25,13 @@ class GetExtraIntroCandidateDaoImpl(
 	private val entityManager: EntityManager,
 ) : GetExtraIntroCandidateDao {
 
-	override fun findEligibleCandidateIds(requesterId: Long, partnerGender: Gender, loginAfter: LocalDateTime): List<Long> {
+	override fun findEligibleCandidateIds(
+		requesterId: Long,
+		partnerGender: Gender,
+		loginAfter: LocalDateTime,
+		requesterCompanyName: String?,
+		requesterRefusesSameCompanyIntro: Boolean,
+	): List<Long> {
 		val matchUser: QMatchUserEntity = QMatchUserEntity.matchUserEntity
 		val candidateIds: List<Long> = queryFactory
 			.select(matchUser.userId)
@@ -33,6 +40,7 @@ class GetExtraIntroCandidateDaoImpl(
 				matchUser.gender.eq(partnerGender),
 				matchUser.lastLoginAt.goe(loginAfter),
 				matchUser.userId.ne(requesterId),
+				SameCompanyIntroPredicates.notBlockedBySameCompanyIntro(matchUser, requesterCompanyName, requesterRefusesSameCompanyIntro),
 			)
 			.fetch()
 

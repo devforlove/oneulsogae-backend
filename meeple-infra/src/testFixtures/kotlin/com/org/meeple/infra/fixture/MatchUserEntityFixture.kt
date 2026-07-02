@@ -22,6 +22,7 @@ object MatchUserEntityFixture {
 		nickname: String = "테스트유저",
 		profileImageCode: String = "1",
 		lastLoginAt: LocalDateTime = LocalDateTime.now(),
+		companyName: String? = null,
 		refuseSameCompanyIntro: Boolean = true,
 	): MatchUserEntity =
 		MatchUserEntity(
@@ -33,6 +34,7 @@ object MatchUserEntityFixture {
 			nickname = nickname,
 			profileImageCode = profileImageCode,
 			lastLoginAt = lastLoginAt,
+			companyName = companyName,
 			refuseSameCompanyIntro = refuseSameCompanyIntro,
 		)
 }

@@ -380,6 +380,7 @@ class UserDetailTest : DescribeSpec({
 				nickname = complete.nickname!!,
 				profileImageCode = complete.profileImageCode!!,
 				lastLoginAt = loginAt,
+				companyName = complete.companyName,
 			)
 		}
 
