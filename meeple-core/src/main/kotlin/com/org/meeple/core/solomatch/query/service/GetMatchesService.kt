@@ -8,6 +8,7 @@ import com.org.meeple.core.solomatch.query.service.port.`in`.GetMatchesUseCase
 import com.org.meeple.core.solomatch.query.dao.GetMatchWithPartnerDao
 import com.org.meeple.core.user.query.service.port.`in`.GetUserWithDetailUseCase
 import com.org.meeple.core.solomatch.query.dto.MatchWithPartner
+import com.org.meeple.core.solomatch.query.dto.MatchesWithPartner
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import java.time.LocalDateTime
@@ -42,11 +43,7 @@ class GetMatchesService(
 				domainEventPublisher.publish(MatchChecked(matchId = match.matchId, checkedByUserId = userId, partnerUserId = match.partnerUserId))
 			}
 
-		// 성사(MATCHED) → 상대 수락 대기(PARTIALLY_ACCEPTED) → 소개됨(PROPOSED) 순으로 노출하고, 같은 상태 안에서는 최신(matchId 내림차순)순으로 정렬한다.
-		return matches
-			.sortedWith(
-				compareBy<MatchWithPartner> { match: MatchWithPartner -> match.status.listPriority }
-					.thenByDescending { match: MatchWithPartner -> match.matchId },
-			)
+		// 노출 순서 규칙(상태 우선순위 → 최신순)은 일급 컬렉션이 캡슐화한다.
+		return MatchesWithPartner(matches).sortedForDisplay()
 	}
 }
