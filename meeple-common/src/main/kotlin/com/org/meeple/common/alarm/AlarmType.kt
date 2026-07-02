@@ -8,6 +8,9 @@ enum class AlarmType(val description: String) {
 	/** [1:1 매칭] 상대가 나에게 관심을 보냄. */
 	ONE_TO_ONE_INTEREST_RECEIVED("관심 받음"),
 
+	/** [1:1 매칭] 내가 관심을 보낸 매칭을 상대가 확인함. (관심을 보낸 사람에게) */
+	ONE_TO_ONE_MATCH_CHECKED("매칭 확인"),
+
 	/** [1:1 매칭] 매칭이 성사됨. */
 	ONE_TO_ONE_MATCHED("매칭 성사"),
 
@@ -48,7 +51,7 @@ enum class AlarmType(val description: String) {
 	/** 이 알람 유형이 속한 알림 설정 카테고리. (알림톡 전송 게이트가 이 값으로 사용자 설정을 평가) */
 	fun category(): NotificationCategory =
 		when (this) {
-			ONE_TO_ONE_INTEREST_RECEIVED, ONE_TO_ONE_MATCHED, ONE_TO_ONE_MATCH_ENDED, ONE_TO_ONE_NO_MATCH_TODAY ->
+			ONE_TO_ONE_INTEREST_RECEIVED, ONE_TO_ONE_MATCH_CHECKED, ONE_TO_ONE_MATCHED, ONE_TO_ONE_MATCH_ENDED, ONE_TO_ONE_NO_MATCH_TODAY ->
 				NotificationCategory.ONE_TO_ONE
 			MANY_TO_MANY_INTEREST_RECEIVED, MANY_TO_MANY_MATCHED, MANY_TO_MANY_MATCH_ENDED, MANY_TO_MANY_NO_MATCH_TODAY ->
 				NotificationCategory.MEETING

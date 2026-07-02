@@ -13,6 +13,7 @@ fun SoloMatchMemberEntity.toDomain(): MatchMember =
 		userId = userId,
 		gender = gender,
 		status = status,
+		checkedAt = checkedAt,
 		deletedAt = deletedAt,
 	)
 
@@ -27,6 +28,7 @@ fun MatchMember.toEntity(): SoloMatchMemberEntity =
 		userId = userId,
 		gender = gender,
 		status = status,
+		checkedAt = checkedAt,
 	).also {
 		if (id != 0L) it.id = id
 		deletedAt?.let { at: LocalDateTime -> it.softDelete(at) }

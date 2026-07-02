@@ -50,6 +50,9 @@ class MatchAdapter(
 		return savedEntity.toDomain(savedMembers)
 	}
 
+	override fun markMemberCheckedIfUnchecked(matchId: Long, userId: Long, checkedAt: LocalDateTime): Int =
+		matchMemberJpaRepository.markCheckedIfUnchecked(matchId, userId, checkedAt)
+
 	private fun loadMembers(matchId: Long): MatchMembers =
 		MatchMembers(matchMemberJpaRepository.findByMatchId(matchId).map { it.toDomain() })
 

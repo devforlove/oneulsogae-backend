@@ -11,6 +11,7 @@ import jakarta.persistence.Index
 import jakarta.persistence.Table
 import jakarta.persistence.UniqueConstraint
 import org.hibernate.annotations.SQLRestriction
+import java.time.LocalDateTime
 
 /**
  * 매칭(소개)에 참가한 사용자 한 명의 참가 정보 영속성 엔티티.
@@ -49,4 +50,8 @@ class SoloMatchMemberEntity(
 	@Enumerated(EnumType.STRING)
 	@Column(name = "status", nullable = false, columnDefinition = "varchar(50)")
 	var status: MatchMemberStatus = MatchMemberStatus.WAITING,
+
+	/** 이 참가자가 매칭(소개)을 확인한 시각. 목록 조회로 처음 확인될 때 채워지며, 미확인이면 null. */
+	@Column(name = "checked_at")
+	var checkedAt: LocalDateTime? = null,
 ) : BaseEntity()

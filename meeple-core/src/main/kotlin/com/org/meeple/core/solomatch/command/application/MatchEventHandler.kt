@@ -3,9 +3,12 @@ package com.org.meeple.core.solomatch.command.application
 import com.org.meeple.common.alarm.AlarmType
 import com.org.meeple.core.alarm.command.application.port.`in`.SaveAlarmUseCase
 import com.org.meeple.core.alarm.command.application.port.`in`.command.SaveAlarmCommand
+import com.org.meeple.core.common.time.TimeGenerator
 import com.org.meeple.core.user.query.service.port.`in`.GetUserDetailUseCase
+import com.org.meeple.core.solomatch.command.application.port.out.SaveMatchPort
 import com.org.meeple.core.solomatch.command.domain.event.InterestSent
 import com.org.meeple.core.solomatch.command.domain.event.MatchAccepted
+import com.org.meeple.core.solomatch.command.domain.event.MatchChecked
 import com.org.meeple.core.solomatch.command.domain.event.MatchEnded
 import org.springframework.stereotype.Component
 import org.springframework.transaction.annotation.Propagation
@@ -25,7 +28,35 @@ import org.springframework.transaction.event.TransactionalEventListener
 class MatchEventHandler(
 	private val saveAlarmUseCase: SaveAlarmUseCase,
 	private val getUserDetailUseCase: GetUserDetailUseCase,
+	private val saveMatchPort: SaveMatchPort,
+	private val timeGenerator: TimeGenerator,
 ) {
+
+	/**
+	 * 매칭 확인(상대가 관심을 보낸 매칭을 목록 조회로 처음 확인) → 확인 시각을 기록하고, 관심을 보낸 상대에게 "매칭 확인" 알람.
+	 * 확인 시각은 미기록(null)일 때만 기록하며, 이미 기록됐으면(동시 조회 등 중복 이벤트) 알람 없이 끝낸다. (중복 알람 방지)
+	 */
+	@TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
+	@Transactional(propagation = Propagation.REQUIRES_NEW)
+	fun onMatchChecked(event: MatchChecked) {
+		val updated: Int = saveMatchPort.markMemberCheckedIfUnchecked(event.matchId, event.checkedByUserId, timeGenerator.now())
+		if (updated == 0) return
+
+		val checkedByNickname: String? = getUserDetailUseCase.findByUserId(event.checkedByUserId)?.nickname
+		saveAlarmUseCase.save(
+			SaveAlarmCommand(
+				userId = event.partnerUserId,
+				type = AlarmType.ONE_TO_ONE_MATCH_CHECKED,
+				title = "매칭 확인",
+				description = checkedByNickname
+					?.let { "${it}님이 매칭을 확인했어요." }
+					?: "상대방이 매칭을 확인했어요.",
+				// 알람을 누르면 해당 매칭으로 이동한다. (프론트 라우팅에 맞춘 경로)
+				link = "/",
+				fromUserId = event.checkedByUserId,
+			),
+		)
+	}
 
 	/** 관심 보내기 → 관심을 받은 상대에게 "관심 받음" 알람. */
 	@TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)

@@ -17,6 +17,8 @@ data class MatchMember(
 	val userId: Long,
 	val gender: Gender,
 	val status: MatchMemberStatus = MatchMemberStatus.WAITING,
+	/** 이 참가자가 매칭을 확인한 시각. 미확인이면 null. (전이 로직엔 쓰지 않고, 애그리거트 저장 시 값이 유실되지 않도록 보존만 한다) */
+	val checkedAt: LocalDateTime? = null,
 	val deletedAt: LocalDateTime? = null,
 ) {
 

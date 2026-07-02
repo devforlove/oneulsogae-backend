@@ -25,6 +25,8 @@ data class MatchWithPartner(
 	val hasUserInterest: Boolean,
 	/** 상대방이 이 매칭에 관심을 보냈는지 여부. */
 	val hasPartnerInterest: Boolean,
+	/** 조회 사용자가 이 매칭을 확인한 시각. 미확인이면 null. (확인 처리 이벤트 발행 판정에 쓴다) */
+	val checkedAt: LocalDateTime?,
 	val partnerUserId: Long,
 	val nickname: String?,
 	val profileImageCode: String?,

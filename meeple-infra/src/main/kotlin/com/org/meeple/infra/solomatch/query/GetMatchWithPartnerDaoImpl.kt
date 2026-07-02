@@ -52,6 +52,7 @@ class GetMatchWithPartnerDaoImpl(
 					soloMatch.dateAcceptAmount,
 					mySoloMatchMember.status.`in`(MatchMemberStatus.APPLY, MatchMemberStatus.ACTIVE),
 					partnerSoloMatchMember.status.`in`(MatchMemberStatus.APPLY, MatchMemberStatus.ACTIVE),
+					mySoloMatchMember.checkedAt,
 					userDetail.userId,
 					userDetail.nickname,
 					userDetail.profileImageCode,
