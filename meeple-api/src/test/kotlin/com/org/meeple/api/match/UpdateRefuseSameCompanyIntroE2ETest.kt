@@ -1,5 +1,6 @@
-package com.org.meeple.api.user
+package com.org.meeple.api.match
 
+import com.org.meeple.api.user.cleanupOnboarding
 import com.org.meeple.common.integration.AbstractIntegrationSupport
 import com.org.meeple.common.integration.expect
 import com.org.meeple.common.integration.get
@@ -9,14 +10,14 @@ import com.org.meeple.infra.fixture.MatchUserEntityFixture
 import com.org.meeple.infra.user.command.entity.UserDetailEntity
 
 /**
- * `PUT /users/v1/profile/refuse-same-company-intro` E2E 테스트.
+ * `PUT /matches/v1/settings/refuse-same-company-intro` E2E 테스트.
  *
  * 같은 회사 구성원 소개 거부 플래그를 변경하는 경로를 검증한다.
  * match_user에 적재된 사용자만 변경할 수 있고(미적재는 400), 변경 결과는 프로필 조회에 반영된다.
  */
 class UpdateRefuseSameCompanyIntroE2ETest : AbstractIntegrationSupport({
 
-	describe("PUT /users/v1/profile/refuse-same-company-intro") {
+	describe("PUT /matches/v1/settings/refuse-same-company-intro") {
 
 		context("매칭 가능(match_user 적재) 사용자가 거부를 해제하면") {
 			it("성공하고 프로필 조회에 false로 반영된다 (200)") {
@@ -24,7 +25,7 @@ class UpdateRefuseSameCompanyIntroE2ETest : AbstractIntegrationSupport({
 				IntegrationUtil.persist(UserDetailEntity(userId = userId, nickname = "거부해제유저"))
 				IntegrationUtil.persist(MatchUserEntityFixture.create(userId = userId))
 
-				put("/users/v1/profile/refuse-same-company-intro") {
+				put("/matches/v1/settings/refuse-same-company-intro") {
 					bearer(accessTokenFor(userId))
 					jsonBody("""{"refuseSameCompanyIntro": false}""")
 				} expect {
@@ -47,7 +48,7 @@ class UpdateRefuseSameCompanyIntroE2ETest : AbstractIntegrationSupport({
 				IntegrationUtil.persist(UserDetailEntity(userId = userId, nickname = "재거부유저"))
 				IntegrationUtil.persist(MatchUserEntityFixture.create(userId = userId, refuseSameCompanyIntro = false))
 
-				put("/users/v1/profile/refuse-same-company-intro") {
+				put("/matches/v1/settings/refuse-same-company-intro") {
 					bearer(accessTokenFor(userId))
 					jsonBody("""{"refuseSameCompanyIntro": true}""")
 				} expect {
@@ -69,7 +70,7 @@ class UpdateRefuseSameCompanyIntroE2ETest : AbstractIntegrationSupport({
 				val userId: Long = 6103L
 				IntegrationUtil.persist(UserDetailEntity(userId = userId, nickname = "미적재유저"))
 
-				put("/users/v1/profile/refuse-same-company-intro") {
+				put("/matches/v1/settings/refuse-same-company-intro") {
 					bearer(accessTokenFor(userId))
 					jsonBody("""{"refuseSameCompanyIntro": false}""")
 				} expect {
@@ -84,7 +85,7 @@ class UpdateRefuseSameCompanyIntroE2ETest : AbstractIntegrationSupport({
 				IntegrationUtil.persist(UserDetailEntity(userId = userId, nickname = "누락유저"))
 				IntegrationUtil.persist(MatchUserEntityFixture.create(userId = userId))
 
-				put("/users/v1/profile/refuse-same-company-intro") {
+				put("/matches/v1/settings/refuse-same-company-intro") {
 					bearer(accessTokenFor(userId))
 					jsonBody("""{}""")
 				} expect {

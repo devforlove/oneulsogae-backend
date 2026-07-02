@@ -2,14 +2,12 @@ package com.org.meeple.api.user
 
 import com.org.meeple.api.match.request.UpdateProfileRequest
 import com.org.meeple.api.match.response.ProfileOptionsResponse
-import com.org.meeple.api.user.request.UpdateRefuseSameCompanyIntroRequest
 import com.org.meeple.api.user.request.UpdateSecondaryEmailRequest
 import com.org.meeple.api.user.response.UserProfileResponse
 import com.org.meeple.auth.AuthUser
 import com.org.meeple.auth.LoginUser
 import com.org.meeple.core.common.response.ApiResponse
 import com.org.meeple.core.common.time.TimeGenerator
-import com.org.meeple.core.matchuser.command.application.port.`in`.UpdateRefuseSameCompanyIntroUseCase
 import com.org.meeple.core.user.query.service.port.`in`.GetUserDetailUseCase
 import com.org.meeple.core.user.command.application.port.`in`.UpdateProfileUseCase
 import com.org.meeple.core.user.command.application.port.`in`.UpdateSecondaryEmailUseCase
@@ -29,7 +27,6 @@ class UserProfileController(
 	private val getUserDetailUseCase: GetUserDetailUseCase,
 	private val updateProfileUseCase: UpdateProfileUseCase,
 	private val updateSecondaryEmailUseCase: UpdateSecondaryEmailUseCase,
-	private val updateRefuseSameCompanyIntroUseCase: UpdateRefuseSameCompanyIntroUseCase,
 	private val timeGenerator: TimeGenerator,
 ) {
 
@@ -69,18 +66,4 @@ class UserProfileController(
 		@Valid @RequestBody request: UpdateSecondaryEmailRequest,
 	): ApiResponse<UserProfileResponse> =
 		ApiResponse.success(UserProfileResponse.of(updateSecondaryEmailUseCase.updateSecondaryEmail(user.id, request.secondaryEmail), timeGenerator.today()))
-
-	/**
-	 * 현재 로그인 사용자의 같은 회사 구성원 소개 거부 플래그를 변경한다.
-	 * 매칭 읽기 모델(match_user)에 적재되지 않은 사용자(매칭 프로필 미완성)는 400.
-	 */
-	@Operation(summary = "같은 회사 소개 거부 설정", description = "같은 회사 구성원에게 소개(추천)되는 것을 거부할지 설정한다. 매칭 프로필 미완성 사용자는 400.")
-	@PutMapping("/refuse-same-company-intro")
-	fun updateRefuseSameCompanyIntro(
-		@LoginUser user: AuthUser,
-		@Valid @RequestBody request: UpdateRefuseSameCompanyIntroRequest,
-	): ApiResponse<Unit> {
-		updateRefuseSameCompanyIntroUseCase.updateRefuseSameCompanyIntro(user.id, request.refuseSameCompanyIntro)
-		return ApiResponse.success()
-	}
 }

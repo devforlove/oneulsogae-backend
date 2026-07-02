@@ -1,4 +1,4 @@
-package com.org.meeple.api.user.request
+package com.org.meeple.api.match.request
 
 /**
  * 같은 회사 구성원 소개 거부 플래그 변경 요청 본문.
