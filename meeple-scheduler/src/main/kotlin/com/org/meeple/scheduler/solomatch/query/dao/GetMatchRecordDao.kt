@@ -20,8 +20,8 @@ interface GetMatchRecordDao {
 	fun findMatchedUserIds(): MatchedUserIds
 
 	/**
-	 * 주어진 날짜([date])에 소개된(solo_matches.introduced_date = date) 매칭의 참가자 userId 집합.
-	 * "오늘 한 번이라도 매칭된 유저"를 신규 소개에서 제외하는 데 쓴다.
+	 * 주어진 날짜([date])에 일일 배치(DAILY)로 소개된(solo_matches.introduced_date = date) 매칭의 참가자 userId 집합.
+	 * "오늘 일일 소개를 이미 받은 유저"를 신규 소개에서 제외하는 데 쓴다. (온보딩·추가소개는 일일 1회 소진으로 세지 않는다)
 	 */
 	fun findUserIdsIntroducedOn(date: LocalDate): Set<Long>
 }

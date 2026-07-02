@@ -2,6 +2,7 @@ package com.org.meeple.infra.solomatch.query
 
 import com.org.meeple.common.match.MatchMemberStatus
 import com.org.meeple.common.match.MatchStatus
+import com.org.meeple.common.match.SoloMatchType
 import com.org.meeple.core.solomatch.command.domain.MatchMembers
 import com.org.meeple.infra.solomatch.command.entity.QSoloMatchEntity
 import com.org.meeple.infra.solomatch.command.entity.QSoloMatchMemberEntity
@@ -57,7 +58,8 @@ class GetMatchRecordDaoImpl(
 		return MatchedUserIds(userIds.toSet())
 	}
 
-	// introduced_date로 그 날짜에 소개된 유저를 모은다(idx_introduced_date seek). 취소된 소개(소프트 삭제)도 "오늘 소개 1회 소진"으로 세야
+	// introduced_date로 그 날짜에 일일 배치(DAILY)로 소개된 유저를 모은다(idx_introduced_date seek 후 match_type 필터).
+	// 온보딩·추가소개(EXTRA)는 일일 소개 1회 소진으로 세지 않는다. 취소된 소개(소프트 삭제)도 "오늘 소개 1회 소진"으로 세야
 	// 같은 날 재소개를 막으므로, @SQLRestriction("deleted_at is null")을 우회하기 위해 네이티브 쿼리로 조회한다. (QueryDSL·JPQL로는 우회 불가)
 	override fun findUserIdsIntroducedOn(date: LocalDate): Set<Long> {
 		val sql: String = """
@@ -65,10 +67,12 @@ class GetMatchRecordDaoImpl(
 			FROM solo_matches s
 			JOIN solo_match_members m ON m.match_id = s.id
 			WHERE s.introduced_date = :date
+			  AND s.match_type = :matchType
 		""".trimIndent()
 		val userIds: List<*> = entityManager
 			.createNativeQuery(sql)
 			.setParameter("date", date)
+			.setParameter("matchType", SoloMatchType.DAILY.name)
 			.resultList
 		return userIds.map { (it as Number).toLong() }.toSet()
 	}
