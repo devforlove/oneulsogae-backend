@@ -4,17 +4,22 @@ import java.time.LocalDateTime
 import kotlin.random.Random
 
 /**
- * 지역 근접 순위를 최우선 계층으로 두고, 같은 계층 안에서 이상형·최근 종합 점수로
+ * 지역 근접을 최우선 계층으로 두고, 같은 계층 안에서 이상형·최근 종합 점수로
  * 후보를 정렬(동점군 무작위)하고 선택하는 순수 로직.
+ * 계층은 근접 순위 1개 단위가 아니라 [REGION_BAND_SIZE]개 지역 묶음(밴드)이다 —
+ * 가장 가까운 지역만 반복 소개되지 않도록 가까운 10개 지역 후보는 한 계층에서 점수로 섞인다.
  * 일일 배치와 실시간 추가 소개가 공유한다. 거리 근접 순위(regionRankByRegionId)는
  * 호출부가 미리 계산해 넘긴다(배치=RegionProximityPort, 추가소개=GetRegionProximityPort).
  */
 object MatchSelector {
 
+	/** 한 계층으로 묶는 근접 지역 개수. 순위 0~9 지역이 첫 밴드, 10~19가 다음 밴드가 된다. */
+	private const val REGION_BAND_SIZE: Int = 10
+
 	/**
-	 * 후보를 지역 근접 순위(가까운 순, 순위 없는 지역은 맨 뒤)로 먼저 나누고,
-	 * 같은 순위 안에서만 종합 점수순(동점군 무작위)으로 정렬해 반환한다.
-	 * 지역은 점수 가중치가 아니라 계층이라, 먼 지역 후보는 가까운 후보가 모두 소진됐을 때만 뒤따른다.
+	 * 후보를 지역 근접 밴드(가까운 [REGION_BAND_SIZE]개 지역 묶음, 순위 없는 지역은 맨 뒤)로 먼저 나누고,
+	 * 같은 밴드 안에서만 종합 점수순(동점군 무작위)으로 정렬해 반환한다.
+	 * 지역은 점수 가중치가 아니라 계층이라, 먼 밴드 후보는 가까운 밴드 후보가 모두 소진됐을 때만 뒤따른다.
 	 * 같은 회사 소개 차단([SameCompanyIntroPolicy])·결혼 여부 절대 조건([MaritalStatusIntroPolicy])
 	 * 대상 후보는 정렬 전에 제외한다.
 	 */
@@ -38,7 +43,7 @@ object MatchSelector {
 			) || MaritalStatusIntroPolicy.blocked(targetProfile, profileOf(candidate))
 		}
 		return allowed
-			.groupBy { candidate: T -> regionRankByRegionId[candidate.regionId] }
+			.groupBy { candidate: T -> regionRankByRegionId[candidate.regionId]?.div(REGION_BAND_SIZE) }
 			.entries
 			.sortedWith(compareBy(nullsLast(naturalOrder())) { entry: Map.Entry<Int?, List<T>> -> entry.key })
 			.flatMap { entry: Map.Entry<Int?, List<T>> ->

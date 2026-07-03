@@ -20,10 +20,11 @@ class MatchSelectorTest : DescribeSpec({
 
 	val now: LocalDateTime = LocalDateTime.of(2026, 7, 1, 12, 0)
 	val loginAfter: LocalDateTime = now.minusWeeks(2)
-	// 지역 근접 순위가 최우선 계층이고, 같은 순위 안에서 이상형·최근 점수로 정렬한다. 이상형은 프로필 null → 중립(1.0).
+	// 지역 근접 밴드(가까운 10개 지역 묶음)가 최우선 계층이고, 같은 밴드 안에서 이상형·최근 점수로 정렬한다.
+	// 이상형은 프로필 null → 중립(1.0). near(순위 0)·sameBand(순위 9)는 첫 밴드, far(순위 12)는 다음 밴드다.
 	val near = Cand(userId = 1L, regionId = 10L, lastLoginAt = now)
 	val far = Cand(userId = 2L, regionId = 99L, lastLoginAt = loginAfter)
-	val rank: Map<Long, Int> = mapOf(10L to 0, 99L to 1)
+	val rank: Map<Long, Int> = mapOf(10L to 0, 20L to 9, 99L to 12)
 
 	fun selectBest(
 		candidates: List<Cand>,
@@ -60,7 +61,7 @@ class MatchSelectorTest : DescribeSpec({
 		}
 	}
 
-	describe("selectBest - 지역 최우선 계층") {
+	describe("selectBest - 지역 최우선 계층(밴드)") {
 		// 지정한 값만 채운 프로필.
 		fun profile(userId: Long, religion: Religion? = null, idealReligion: Religion? = null): MatchScoringProfile =
 			MatchScoringProfile(
@@ -70,8 +71,8 @@ class MatchSelectorTest : DescribeSpec({
 				idealMaritalStatus = null, idealSmokingStatus = null, idealDrinkingStatus = null, idealReligion = idealReligion,
 			)
 
-		it("먼 지역 후보의 이상형·최근 점수가 높아도 가까운 지역 후보를 먼저 고른다") {
-			// near: 옛 로그인·이상형 불충족(점수 낮음) / far: 최근 로그인·이상형 충족(점수 높음) → 그래도 near.
+		it("먼 밴드(근접 10위 밖) 후보의 이상형·최근 점수가 높아도 가까운 밴드 후보를 먼저 고른다") {
+			// near(순위 0): 옛 로그인·이상형 불충족(점수 낮음) / far(순위 12): 최근 로그인·이상형 충족(점수 높음) → 그래도 near.
 			val profiles: Map<Long, MatchScoringProfile> = mapOf(
 				1L to profile(1L, religion = Religion.BUDDHISM),
 				2L to profile(2L, religion = Religion.NONE),
@@ -84,12 +85,27 @@ class MatchSelectorTest : DescribeSpec({
 			picked?.userId shouldBe 1L
 		}
 
+		it("같은 밴드(가까운 10개 지역) 안에서는 지역 순위가 아니라 이상형·최근 점수로 고른다") {
+			// near(순위 0): 옛 로그인·이상형 불충족 / sameBand(순위 9): 최근 로그인·이상형 충족 → 같은 밴드라 점수가 높은 sameBand.
+			val sameBand = Cand(userId = 3L, regionId = 20L, lastLoginAt = now)
+			val profiles: Map<Long, MatchScoringProfile> = mapOf(
+				1L to profile(1L, religion = Religion.BUDDHISM),
+				3L to profile(3L, religion = Religion.NONE),
+			)
+			val picked: Cand? = selectBest(
+				candidates = listOf(near.copy(lastLoginAt = loginAfter), sameBand),
+				targetProfile = profile(0L, idealReligion = Religion.NONE),
+				profileOf = { c: Cand -> profiles[c.userId] },
+			)
+			picked?.userId shouldBe 3L
+		}
+
 		it("근접 순위가 없는 지역 후보는 맨 뒤로 밀린다") {
-			val unranked = Cand(userId = 3L, regionId = 777L, lastLoginAt = now)
+			val unranked = Cand(userId = 4L, regionId = 777L, lastLoginAt = now)
 			selectBest(listOf(unranked, far))?.userId shouldBe 2L
 		}
 
-		it("가까운 지역 후보가 모두 제외되면 먼 지역 후보를 고른다") {
+		it("가까운 밴드 후보가 모두 제외되면 먼 밴드 후보를 고른다") {
 			selectBest(listOf(near, far), isExcluded = { c: Cand -> c.userId == 1L })?.userId shouldBe 2L
 		}
 	}
