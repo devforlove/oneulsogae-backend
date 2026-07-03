@@ -30,7 +30,6 @@ class SaveIdealTypeService(
 			smokingStatus = command.smokingStatus,
 			drinkingStatus = command.drinkingStatus,
 			religion = command.religion,
-			distance = command.distance,
 		) ?: UserIdealType.of(
 			userId = userId,
 			ageMin = command.ageMin,
@@ -41,7 +40,6 @@ class SaveIdealTypeService(
 			smokingStatus = command.smokingStatus,
 			drinkingStatus = command.drinkingStatus,
 			religion = command.religion,
-			distance = command.distance,
 		)
 		return saveIdealTypePort.save(idealType)
 	}

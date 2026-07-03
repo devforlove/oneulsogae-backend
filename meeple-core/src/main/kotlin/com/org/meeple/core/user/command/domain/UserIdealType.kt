@@ -1,6 +1,5 @@
 package com.org.meeple.core.user.command.domain
 
-import com.org.meeple.common.user.DistancePreference
 import com.org.meeple.common.user.DrinkingStatus
 import com.org.meeple.common.user.MaritalStatus
 import com.org.meeple.common.user.Religion
@@ -11,7 +10,7 @@ import com.org.meeple.core.user.UserErrorCode
 /**
  * 사용자 이상형(매칭 선호) 도메인 모델. [User]와 1:1이며, 매칭 후보에 바로 비교 가능한 이산 값으로 보관한다.
  * - 나이/키: 숫자 경계(min/max). 둘 다 null이면 "상관없음".
- * - 결혼/흡연/음주/종교/거리: enum. null이면 "상관없음"(해당 조건 미적용).
+ * - 결혼/흡연/음주/종교: enum. null이면 "상관없음"(해당 조건 미적용).
  * 매칭 반영은 이번 범위 밖이며, 저장/조회만 담당한다. 영속성은 [com.org.meeple.infra.user.command.entity.UserIdealTypeEntity]가 담당한다.
  */
 data class UserIdealType(
@@ -25,7 +24,6 @@ data class UserIdealType(
 	val smokingStatus: SmokingStatus? = null,
 	val drinkingStatus: DrinkingStatus? = null,
 	val religion: Religion? = null,
-	val distance: DistancePreference? = null,
 ) {
 
 	init {
@@ -63,7 +61,6 @@ data class UserIdealType(
 		smokingStatus: SmokingStatus?,
 		drinkingStatus: DrinkingStatus?,
 		religion: Religion?,
-		distance: DistancePreference?,
 	): UserIdealType =
 		copy(
 			ageMin = ageMin,
@@ -74,7 +71,6 @@ data class UserIdealType(
 			smokingStatus = smokingStatus,
 			drinkingStatus = drinkingStatus,
 			religion = religion,
-			distance = distance,
 		)
 
 	companion object {
@@ -95,7 +91,6 @@ data class UserIdealType(
 			smokingStatus: SmokingStatus?,
 			drinkingStatus: DrinkingStatus?,
 			religion: Religion?,
-			distance: DistancePreference?,
 		): UserIdealType =
 			UserIdealType(
 				userId = userId,
@@ -107,7 +102,6 @@ data class UserIdealType(
 				smokingStatus = smokingStatus,
 				drinkingStatus = drinkingStatus,
 				religion = religion,
-				distance = distance,
 			)
 	}
 }

@@ -1,6 +1,5 @@
 package com.org.meeple.api.user.request
 
-import com.org.meeple.common.user.DistancePreference
 import com.org.meeple.common.user.DrinkingStatus
 import com.org.meeple.common.user.MaritalStatus
 import com.org.meeple.common.user.Religion
@@ -27,8 +26,6 @@ data class SaveIdealTypeRequest(
 	val drinking: DrinkingStatus? = null,
 
 	val religion: Religion? = null,
-
-	val distance: DistancePreference? = null,
 ) {
 
 	fun toCommand(): SaveIdealTypeCommand =
@@ -41,6 +38,5 @@ data class SaveIdealTypeRequest(
 			smokingStatus = smoking,
 			drinkingStatus = drinking,
 			religion = religion,
-			distance = distance,
 		)
 }

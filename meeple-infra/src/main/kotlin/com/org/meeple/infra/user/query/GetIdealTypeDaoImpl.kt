@@ -25,7 +25,6 @@ class GetIdealTypeDaoImpl(
 				smokingStatus = it.smokingStatus,
 				drinkingStatus = it.drinkingStatus,
 				religion = it.religion,
-				distance = it.distance,
 			)
 		}
 }

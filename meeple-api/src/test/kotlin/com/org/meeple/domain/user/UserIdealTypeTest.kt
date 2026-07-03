@@ -1,6 +1,5 @@
 package com.org.meeple.domain.user
 
-import com.org.meeple.common.user.DistancePreference
 import com.org.meeple.common.user.MaritalStatus
 import com.org.meeple.common.user.Religion
 import com.org.meeple.common.user.SmokingStatus
@@ -25,12 +24,12 @@ class UserIdealTypeTest : DescribeSpec({
 				ageMin = null, ageMax = null,
 				heightMin = null, heightMax = null,
 				maritalStatus = null, smokingStatus = null,
-				drinkingStatus = null, religion = null, distance = null,
+				drinkingStatus = null, religion = null,
 			)
 
 			idealType.userId shouldBe 1L
 			idealType.ageMin.shouldBeNull()
-			idealType.distance.shouldBeNull()
+			idealType.religion.shouldBeNull()
 		}
 
 		it("정상 범위·enum이면 그대로 채워진다") {
@@ -39,12 +38,12 @@ class UserIdealTypeTest : DescribeSpec({
 				ageMin = 27, ageMax = 35,
 				heightMin = 160, heightMax = 180,
 				maritalStatus = MaritalStatus.SINGLE, smokingStatus = SmokingStatus.NON_SMOKER,
-				drinkingStatus = null, religion = Religion.NONE, distance = DistancePreference.SAME_REGION,
+				drinkingStatus = null, religion = Religion.NONE,
 			)
 
 			idealType.ageMin shouldBe 27
 			idealType.ageMax shouldBe 35
-			idealType.distance shouldBe DistancePreference.SAME_REGION
+			idealType.religion shouldBe Religion.NONE
 		}
 
 		it("나이 최소가 최대보다 크면 INVALID_IDEAL_TYPE_RANGE를 던진다") {
@@ -54,7 +53,7 @@ class UserIdealTypeTest : DescribeSpec({
 					ageMin = 40, ageMax = 20,
 					heightMin = null, heightMax = null,
 					maritalStatus = null, smokingStatus = null,
-					drinkingStatus = null, religion = null, distance = null,
+					drinkingStatus = null, religion = null,
 				)
 			}
 			ex.errorCode shouldBe UserErrorCode.INVALID_IDEAL_TYPE_RANGE
@@ -67,7 +66,7 @@ class UserIdealTypeTest : DescribeSpec({
 					ageMin = 30, ageMax = null,
 					heightMin = null, heightMax = null,
 					maritalStatus = null, smokingStatus = null,
-					drinkingStatus = null, religion = null, distance = null,
+					drinkingStatus = null, religion = null,
 				)
 			}.errorCode shouldBe UserErrorCode.INVALID_IDEAL_TYPE_RANGE
 		}
@@ -79,7 +78,7 @@ class UserIdealTypeTest : DescribeSpec({
 					ageMin = 10, ageMax = 30,
 					heightMin = null, heightMax = null,
 					maritalStatus = null, smokingStatus = null,
-					drinkingStatus = null, religion = null, distance = null,
+					drinkingStatus = null, religion = null,
 				)
 			}.errorCode shouldBe UserErrorCode.INVALID_IDEAL_TYPE_RANGE
 		}
@@ -91,7 +90,7 @@ class UserIdealTypeTest : DescribeSpec({
 					ageMin = 20, ageMax = 70,
 					heightMin = null, heightMax = null,
 					maritalStatus = null, smokingStatus = null,
-					drinkingStatus = null, religion = null, distance = null,
+					drinkingStatus = null, religion = null,
 				)
 			}.errorCode shouldBe UserErrorCode.INVALID_IDEAL_TYPE_RANGE
 		}
@@ -103,7 +102,7 @@ class UserIdealTypeTest : DescribeSpec({
 					ageMin = null, ageMax = null,
 					heightMin = 150, heightMax = 200,
 					maritalStatus = null, smokingStatus = null,
-					drinkingStatus = null, religion = null, distance = null,
+					drinkingStatus = null, religion = null,
 				)
 			}.errorCode shouldBe UserErrorCode.INVALID_IDEAL_TYPE_RANGE
 		}
@@ -115,7 +114,7 @@ class UserIdealTypeTest : DescribeSpec({
 					ageMin = null, ageMax = null,
 					heightMin = 180, heightMax = 160,
 					maritalStatus = null, smokingStatus = null,
-					drinkingStatus = null, religion = null, distance = null,
+					drinkingStatus = null, religion = null,
 				)
 			}.errorCode shouldBe UserErrorCode.INVALID_IDEAL_TYPE_RANGE
 		}
@@ -132,13 +131,13 @@ class UserIdealTypeTest : DescribeSpec({
 				ageMin = 27, ageMax = 35,
 				heightMin = null, heightMax = null,
 				maritalStatus = MaritalStatus.SINGLE, smokingStatus = null,
-				drinkingStatus = null, religion = null, distance = DistancePreference.ADJACENT_REGION,
+				drinkingStatus = null, religion = null,
 			)
 
 			updated.id shouldBe 99L
 			updated.userId shouldBe 1L
 			updated.ageMin shouldBe 27
-			updated.distance shouldBe DistancePreference.ADJACENT_REGION
+			updated.maritalStatus shouldBe MaritalStatus.SINGLE
 		}
 
 		it("교체 값이 잘못된 범위면 INVALID_IDEAL_TYPE_RANGE를 던진다") {
@@ -149,7 +148,7 @@ class UserIdealTypeTest : DescribeSpec({
 					ageMin = 50, ageMax = 40,
 					heightMin = null, heightMax = null,
 					maritalStatus = null, smokingStatus = null,
-					drinkingStatus = null, religion = null, distance = null,
+					drinkingStatus = null, religion = null,
 				)
 			}.errorCode shouldBe UserErrorCode.INVALID_IDEAL_TYPE_RANGE
 		}

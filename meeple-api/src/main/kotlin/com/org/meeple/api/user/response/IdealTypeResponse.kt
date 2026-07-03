@@ -1,6 +1,5 @@
 package com.org.meeple.api.user.response
 
-import com.org.meeple.common.user.DistancePreference
 import com.org.meeple.common.user.DrinkingStatus
 import com.org.meeple.common.user.MaritalStatus
 import com.org.meeple.common.user.Religion
@@ -19,7 +18,6 @@ data class IdealTypeResponse(
 	val smoking: SmokingStatus?,
 	val drinking: DrinkingStatus?,
 	val religion: Religion?,
-	val distance: DistancePreference?,
 ) {
 	companion object {
 
@@ -33,7 +31,6 @@ data class IdealTypeResponse(
 				smoking = view.smokingStatus,
 				drinking = view.drinkingStatus,
 				religion = view.religion,
-				distance = view.distance,
 			)
 
 		/** 명령(command) 결과 도메인 매핑. (저장 후 갱신된 [UserIdealType] 렌더링) */
@@ -45,12 +42,11 @@ data class IdealTypeResponse(
 				smoking = domain.smokingStatus,
 				drinking = domain.drinkingStatus,
 				religion = domain.religion,
-				distance = domain.distance,
 			)
 
 		/** 미설정 사용자 응답. 전 항목 null("상관없음"). */
 		fun empty(): IdealTypeResponse =
-			IdealTypeResponse(null, null, null, null, null, null, null)
+			IdealTypeResponse(null, null, null, null, null, null)
 
 		private fun range(min: Int?, max: Int?): List<Int>? =
 			if (min != null && max != null) listOf(min, max) else null

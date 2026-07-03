@@ -1,6 +1,5 @@
 package com.org.meeple.core.user.command.application.port.`in`.command
 
-import com.org.meeple.common.user.DistancePreference
 import com.org.meeple.common.user.DrinkingStatus
 import com.org.meeple.common.user.MaritalStatus
 import com.org.meeple.common.user.Religion
@@ -16,5 +15,4 @@ data class SaveIdealTypeCommand(
 	val smokingStatus: SmokingStatus?,
 	val drinkingStatus: DrinkingStatus?,
 	val religion: Religion?,
-	val distance: DistancePreference?,
 )

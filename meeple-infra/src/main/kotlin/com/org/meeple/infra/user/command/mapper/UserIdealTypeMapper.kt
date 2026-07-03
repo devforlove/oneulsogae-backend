@@ -16,7 +16,6 @@ fun UserIdealTypeEntity.toDomain(): UserIdealType =
 		smokingStatus = smokingStatus,
 		drinkingStatus = drinkingStatus,
 		religion = religion,
-		distance = distance,
 	)
 
 /**
@@ -34,5 +33,4 @@ fun UserIdealType.toEntity(): UserIdealTypeEntity =
 		smokingStatus = smokingStatus,
 		drinkingStatus = drinkingStatus,
 		religion = religion,
-		distance = distance,
 	).also { if (id != 0L) it.id = id }

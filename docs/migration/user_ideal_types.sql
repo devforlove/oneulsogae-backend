@@ -11,7 +11,6 @@ CREATE TABLE user_ideal_types (
     smoking_status  VARCHAR(50) NULL,
     drinking_status VARCHAR(50) NULL,
     religion        VARCHAR(50) NULL,
-    distance        VARCHAR(50) NULL,
     created_at      DATETIME(6) NOT NULL,
     updated_at      DATETIME(6) NOT NULL,
     deleted_at      DATETIME(6) NULL,

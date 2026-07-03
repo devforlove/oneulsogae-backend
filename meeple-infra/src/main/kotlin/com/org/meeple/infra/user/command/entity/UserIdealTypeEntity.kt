@@ -1,6 +1,5 @@
 package com.org.meeple.infra.user.command.entity
 
-import com.org.meeple.common.user.DistancePreference
 import com.org.meeple.common.user.DrinkingStatus
 import com.org.meeple.common.user.MaritalStatus
 import com.org.meeple.common.user.Religion
@@ -61,8 +60,4 @@ class UserIdealTypeEntity(
 	@Enumerated(EnumType.STRING)
 	@Column(name = "religion", columnDefinition = "varchar(50)")
 	var religion: Religion? = null,
-
-	@Enumerated(EnumType.STRING)
-	@Column(name = "distance", columnDefinition = "varchar(50)")
-	var distance: DistancePreference? = null,
 ) : BaseEntity()

@@ -27,7 +27,7 @@ class IdealTypeE2ETest : AbstractIntegrationSupport({
 					body("success", true)
 					body("data.ageRange", nullValue())
 					body("data.maritalStatus", nullValue())
-					body("data.distance", nullValue())
+					body("data.religion", nullValue())
 				}
 			}
 		}
@@ -56,8 +56,7 @@ class IdealTypeE2ETest : AbstractIntegrationSupport({
 						  "maritalStatus": "SINGLE",
 						  "smoking": "NON_SMOKER",
 						  "drinking": "SOMETIMES",
-						  "religion": null,
-						  "distance": "SAME_REGION"
+						  "religion": null
 						}
 						""".trimIndent(),
 					)
@@ -66,7 +65,6 @@ class IdealTypeE2ETest : AbstractIntegrationSupport({
 					body("success", true)
 					body("data.ageRange", contains(27, 35))
 					body("data.maritalStatus", "SINGLE")
-					body("data.distance", "SAME_REGION")
 				}
 
 				get("/users/v1/ideal-type") {
@@ -78,7 +76,6 @@ class IdealTypeE2ETest : AbstractIntegrationSupport({
 					body("data.smoking", "NON_SMOKER")
 					body("data.drinking", "SOMETIMES")
 					body("data.religion", nullValue())
-					body("data.distance", "SAME_REGION")
 				}
 			}
 		}
@@ -89,18 +86,18 @@ class IdealTypeE2ETest : AbstractIntegrationSupport({
 
 				put("/users/v1/ideal-type") {
 					bearer(accessTokenFor(userId))
-					jsonBody("""{ "ageRange": [20, 30], "distance": "SAME_REGION" }""")
+					jsonBody("""{ "ageRange": [20, 30], "maritalStatus": "SINGLE" }""")
 				} expect {
 					status(200)
 				}
 
 				put("/users/v1/ideal-type") {
 					bearer(accessTokenFor(userId))
-					jsonBody("""{ "ageRange": [40, 50], "distance": "ADJACENT_REGION" }""")
+					jsonBody("""{ "ageRange": [40, 50], "maritalStatus": "DIVORCED" }""")
 				} expect {
 					status(200)
 					body("data.ageRange", contains(40, 50))
-					body("data.distance", "ADJACENT_REGION")
+					body("data.maritalStatus", "DIVORCED")
 				}
 
 				get("/users/v1/ideal-type") {
@@ -108,7 +105,7 @@ class IdealTypeE2ETest : AbstractIntegrationSupport({
 				} expect {
 					status(200)
 					body("data.ageRange", contains(40, 50))
-					body("data.distance", "ADJACENT_REGION")
+					body("data.maritalStatus", "DIVORCED")
 				}
 			}
 		}
