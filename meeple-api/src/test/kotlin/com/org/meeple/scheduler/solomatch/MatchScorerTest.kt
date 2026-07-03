@@ -50,28 +50,34 @@ class MatchScorerTest : DescribeSpec({
         }
 
         it("한 방향만 평가: 대상 이상형 1개 조건을 후보가 충족하고 후보는 이상형 없음 → (1.0+1.0)/2 = 1.0") {
-            val target: MatchScoringProfile = profile(idealMaritalStatus = MaritalStatus.SINGLE)
-            val candidate: MatchScoringProfile = profile(maritalStatus = MaritalStatus.SINGLE)
+            val target: MatchScoringProfile = profile(idealSmokingStatus = SmokingStatus.NON_SMOKER)
+            val candidate: MatchScoringProfile = profile(smokingStatus = SmokingStatus.NON_SMOKER)
             MatchScorer.mutualIdealFit(target, candidate) shouldBe 1.0
         }
 
         it("대상 이상형 1개 조건을 후보가 불충족, 후보는 이상형 없음 → (0.0+1.0)/2 = 0.5") {
-            val target: MatchScoringProfile = profile(idealMaritalStatus = MaritalStatus.SINGLE)
-            val candidate: MatchScoringProfile = profile(maritalStatus = MaritalStatus.DIVORCED)
+            val target: MatchScoringProfile = profile(idealSmokingStatus = SmokingStatus.NON_SMOKER)
+            val candidate: MatchScoringProfile = profile(smokingStatus = SmokingStatus.SMOKER)
             MatchScorer.mutualIdealFit(target, candidate) shouldBe 0.5
         }
 
         it("지정 조건 2개 중 1개만 충족 → 방향 점수 0.5") {
             val target: MatchScoringProfile = profile(
-                idealMaritalStatus = MaritalStatus.SINGLE,
+                idealSmokingStatus = SmokingStatus.NON_SMOKER,
                 idealReligion = Religion.NONE,
             )
             val candidate: MatchScoringProfile = profile(
-                maritalStatus = MaritalStatus.SINGLE,   // 충족
-                religion = Religion.BUDDHISM,            // 불충족
+                smokingStatus = SmokingStatus.NON_SMOKER,   // 충족
+                religion = Religion.BUDDHISM,                // 불충족
             )
             // 대상→후보 = 1/2 = 0.5, 후보→대상 = 이상형 없음 = 1.0 → (0.5+1.0)/2 = 0.75
             MatchScorer.mutualIdealFit(target, candidate) shouldBe 0.75
+        }
+
+        it("결혼 여부 이상형은 절대 조건(필터)이므로 점수에 반영하지 않는다") {
+            // idealMaritalStatus만 지정 → 점수상 지정 조건 없음 = 1.0. (충족/불충족 여부와 무관)
+            val target: MatchScoringProfile = profile(idealMaritalStatus = MaritalStatus.SINGLE)
+            MatchScorer.mutualIdealFit(target, profile(maritalStatus = MaritalStatus.DIVORCED)) shouldBe 1.0
         }
 
         it("나이 범위: 경계 포함이면 충족") {
@@ -88,10 +94,10 @@ class MatchScorerTest : DescribeSpec({
 
         it("양방향 모두 충족하면 1.0") {
             val target: MatchScoringProfile = profile(
-                age = 30, idealMaritalStatus = MaritalStatus.SINGLE,
+                age = 30, idealSmokingStatus = SmokingStatus.NON_SMOKER,
             )
             val candidate: MatchScoringProfile = profile(
-                maritalStatus = MaritalStatus.SINGLE, idealAgeMin = 28, idealAgeMax = 32,
+                smokingStatus = SmokingStatus.NON_SMOKER, idealAgeMin = 28, idealAgeMax = 32,
             )
             MatchScorer.mutualIdealFit(target, candidate) shouldBe 1.0
         }

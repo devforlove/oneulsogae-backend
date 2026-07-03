@@ -1,5 +1,6 @@
 package com.org.meeple.common.match.selection
 
+import com.org.meeple.common.user.MaritalStatus
 import io.kotest.core.spec.style.DescribeSpec
 import io.kotest.matchers.nulls.shouldBeNull
 import io.kotest.matchers.shouldBe
@@ -27,14 +28,16 @@ class MatchSelectorTest : DescribeSpec({
 		candidates: List<Cand>,
 		targetCompanyName: String? = null,
 		targetRefusesSameCompanyIntro: Boolean = true,
+		targetProfile: MatchScoringProfile? = null,
+		profileOf: (Cand) -> MatchScoringProfile? = { null },
 		isExcluded: (Cand) -> Boolean = { false },
 	): Cand? =
 		MatchSelector.selectBest(
-			targetProfile = null,
+			targetProfile = targetProfile,
 			targetCompanyName = targetCompanyName,
 			targetRefusesSameCompanyIntro = targetRefusesSameCompanyIntro,
 			candidates = candidates,
-			profileOf = { null },
+			profileOf = profileOf,
 			regionRankByRegionId = rank,
 			regionCount = 2,
 			now = now,
@@ -94,6 +97,57 @@ class MatchSelectorTest : DescribeSpec({
 				candidates = listOf(near.copy(companyName = "미플컴퍼니")),
 				targetCompanyName = null,
 				targetRefusesSameCompanyIntro = true,
+			)
+			picked?.userId shouldBe 1L
+		}
+	}
+
+	describe("selectBest - 결혼 여부 절대 조건") {
+		// 지정한 결혼 여부 속성/이상형만 채운 프로필.
+		fun profile(userId: Long, maritalStatus: MaritalStatus? = null, idealMaritalStatus: MaritalStatus? = null): MatchScoringProfile =
+			MatchScoringProfile(
+				userId = userId, age = null, height = null, maritalStatus = maritalStatus,
+				smokingStatus = null, drinkingStatus = null, religion = null,
+				idealAgeMin = null, idealAgeMax = null, idealHeightMin = null, idealHeightMax = null,
+				idealMaritalStatus = idealMaritalStatus, idealSmokingStatus = null, idealDrinkingStatus = null, idealReligion = null,
+			)
+
+		it("대상이 미혼을 지정하면 돌싱 후보는 점수가 높아도 제외되고 다음 후보를 고른다") {
+			val profiles: Map<Long, MatchScoringProfile> = mapOf(
+				1L to profile(1L, maritalStatus = MaritalStatus.DIVORCED),
+				2L to profile(2L, maritalStatus = MaritalStatus.SINGLE),
+			)
+			val picked: Cand? = selectBest(
+				candidates = listOf(near, far),
+				targetProfile = profile(0L, idealMaritalStatus = MaritalStatus.SINGLE),
+				profileOf = { c: Cand -> profiles[c.userId] },
+			)
+			picked?.userId shouldBe 2L
+		}
+
+		it("후보가 지정한 결혼 여부 이상형을 대상이 충족하지 못해도 제외된다(양방향)") {
+			val picked: Cand? = selectBest(
+				candidates = listOf(near),
+				targetProfile = profile(0L, maritalStatus = MaritalStatus.DIVORCED),
+				profileOf = { _: Cand -> profile(1L, idealMaritalStatus = MaritalStatus.SINGLE) },
+			)
+			picked.shouldBeNull()
+		}
+
+		it("결혼 여부를 지정했는데 상대 프로필이 없으면(미상) 제외된다") {
+			val picked: Cand? = selectBest(
+				candidates = listOf(near),
+				targetProfile = profile(0L, idealMaritalStatus = MaritalStatus.SINGLE),
+				profileOf = { _: Cand -> null },
+			)
+			picked.shouldBeNull()
+		}
+
+		it("어느 쪽도 결혼 여부를 지정하지 않으면 차단 없이 고른다") {
+			val picked: Cand? = selectBest(
+				candidates = listOf(near),
+				targetProfile = profile(0L, maritalStatus = MaritalStatus.DIVORCED),
+				profileOf = { _: Cand -> profile(1L, maritalStatus = MaritalStatus.SINGLE) },
 			)
 			picked?.userId shouldBe 1L
 		}

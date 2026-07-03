@@ -8,6 +8,7 @@ import kotlin.random.Random
  * 매칭의 이상형 우선순위 점수 계산기(순수). 이상형은 필터가 아니라 우선순위이므로,
  * 부합하지 않아도 점수만 낮아진다. 이상형 부합(양방향)·거리·최근을 0~1로 정규화해 가중 합산한다.
  * 일일 배치와 실시간 추가 소개가 공유한다.
+ * (단, 결혼 여부(미혼/돌싱) 이상형은 점수가 아니라 절대 조건 — [MaritalStatusIntroPolicy]가 필터로 처리한다)
  */
 object MatchScorer {
 
@@ -68,9 +69,6 @@ object MatchScorer {
 			if (preference.idealHeightMin != null && preference.idealHeightMax != null) {
 				val height: Int? = other?.height
 				add(height != null && height in preference.idealHeightMin..preference.idealHeightMax)
-			}
-			if (preference.idealMaritalStatus != null) {
-				add(other?.maritalStatus == preference.idealMaritalStatus)
 			}
 			if (preference.idealSmokingStatus != null) {
 				add(other?.smokingStatus == preference.idealSmokingStatus)

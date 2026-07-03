@@ -2,6 +2,7 @@ package com.org.meeple.scheduler.solomatch
 
 import com.org.meeple.common.user.Gender
 import com.org.meeple.common.user.MaritalStatus
+import com.org.meeple.common.user.Religion
 import com.org.meeple.common.match.selection.MatchScoringProfile
 import com.org.meeple.scheduler.common.command.application.port.out.NoIntroductionAlarmPort
 import com.org.meeple.scheduler.common.command.application.port.out.RegionProximityPort
@@ -69,12 +70,18 @@ class SoloMatchBatchServiceTest : DescribeSpec({
 		)
 
 	// 지정한 이상형/속성만 채운 프로필.
-	fun profile(userId: Long, maritalStatus: MaritalStatus? = null, idealMaritalStatus: MaritalStatus? = null): MatchScoringProfile =
+	fun profile(
+		userId: Long,
+		maritalStatus: MaritalStatus? = null,
+		idealMaritalStatus: MaritalStatus? = null,
+		religion: Religion? = null,
+		idealReligion: Religion? = null,
+	): MatchScoringProfile =
 		MatchScoringProfile(
 			userId = userId, age = null, height = null, maritalStatus = maritalStatus,
-			smokingStatus = null, drinkingStatus = null, religion = null,
+			smokingStatus = null, drinkingStatus = null, religion = religion,
 			idealAgeMin = null, idealAgeMax = null, idealHeightMin = null, idealHeightMax = null,
-			idealMaritalStatus = idealMaritalStatus, idealSmokingStatus = null, idealDrinkingStatus = null, idealReligion = null,
+			idealMaritalStatus = idealMaritalStatus, idealSmokingStatus = null, idealDrinkingStatus = null, idealReligion = idealReligion,
 		)
 
 	fun male(userId: Long, lastLoginAt: LocalDateTime, companyName: String? = null, refuseSameCompanyIntro: Boolean = true): MatchableUser =
@@ -85,16 +92,16 @@ class SoloMatchBatchServiceTest : DescribeSpec({
 	describe("run - 이상형 우선순위") {
 
 		it("거리·최근이 같으면 이상형이 더 맞는 후보를 우선 소개한다") {
-			// 대상 1001(남, 가장 최근)의 이상형: 미혼. 1002는 미혼(부합), 1003은 돌싱(불충족).
+			// 대상 1001(남, 가장 최근)의 이상형: 무교. 1002는 무교(부합), 1003은 불교(불충족).
 			val matchables: List<MatchableUser> = listOf(
 				male(1001L, now),
 				female(1002L, now.minusMinutes(1)),
 				female(1003L, now.minusMinutes(1)),
 			)
 			val profiles: Map<Long, MatchScoringProfile> = mapOf(
-				1001L to profile(1001L, idealMaritalStatus = MaritalStatus.SINGLE),
-				1002L to profile(1002L, maritalStatus = MaritalStatus.SINGLE),
-				1003L to profile(1003L, maritalStatus = MaritalStatus.DIVORCED),
+				1001L to profile(1001L, idealReligion = Religion.NONE),
+				1002L to profile(1002L, religion = Religion.NONE),
+				1003L to profile(1003L, religion = Religion.BUDDHISM),
 			)
 			val saves: MutableList<Pair<Long, Long>> = mutableListOf()
 
@@ -105,7 +112,22 @@ class SoloMatchBatchServiceTest : DescribeSpec({
 		}
 
 		it("이상형이 전혀 안 맞아도 다른 후보가 없으면 소개한다(필터 아님)") {
-			// 대상 1001 이상형: 미혼. 유일 후보 1003은 돌싱(불충족)이지만 그래도 소개돼야 한다.
+			// 대상 1001 이상형: 무교. 유일 후보 1003은 불교(불충족)이지만 그래도 소개돼야 한다.
+			val matchables: List<MatchableUser> = listOf(male(1001L, now), female(1003L, now.minusMinutes(1)))
+			val profiles: Map<Long, MatchScoringProfile> = mapOf(
+				1001L to profile(1001L, idealReligion = Religion.NONE),
+				1003L to profile(1003L, religion = Religion.BUDDHISM),
+			)
+			val saves: MutableList<Pair<Long, Long>> = mutableListOf()
+
+			val result = service(matchables, profiles, existsPairs = emptySet(), saves).run()
+
+			result.recommended shouldBe 1
+			saves shouldContainExactlyInAnyOrder listOf(1001L to 1003L)
+		}
+
+		it("결혼 여부 이상형이 안 맞는 후보는 유일 후보라도 소개하지 않는다(절대 조건)") {
+			// 대상 1001 이상형: 미혼. 유일 후보 1003은 돌싱 → 점수와 무관하게 제외돼 소개가 없다.
 			val matchables: List<MatchableUser> = listOf(male(1001L, now), female(1003L, now.minusMinutes(1)))
 			val profiles: Map<Long, MatchScoringProfile> = mapOf(
 				1001L to profile(1001L, idealMaritalStatus = MaritalStatus.SINGLE),
@@ -115,8 +137,8 @@ class SoloMatchBatchServiceTest : DescribeSpec({
 
 			val result = service(matchables, profiles, existsPairs = emptySet(), saves).run()
 
-			result.recommended shouldBe 1
-			saves shouldContainExactlyInAnyOrder listOf(1001L to 1003L)
+			result.recommended shouldBe 0
+			saves shouldContainExactlyInAnyOrder emptyList()
 		}
 
 		it("재소개 이력이 있는 최고점 후보는 건너뛰고 다음 후보를 소개한다") {
@@ -127,9 +149,9 @@ class SoloMatchBatchServiceTest : DescribeSpec({
 				female(1003L, now.minusMinutes(2)),
 			)
 			val profiles: Map<Long, MatchScoringProfile> = mapOf(
-				1001L to profile(1001L, idealMaritalStatus = MaritalStatus.SINGLE),
-				1002L to profile(1002L, maritalStatus = MaritalStatus.SINGLE),
-				1003L to profile(1003L, maritalStatus = MaritalStatus.DIVORCED),
+				1001L to profile(1001L, idealReligion = Religion.NONE),
+				1002L to profile(1002L, religion = Religion.NONE),
+				1003L to profile(1003L, religion = Religion.BUDDHISM),
 			)
 			val saves: MutableList<Pair<Long, Long>> = mutableListOf()
 
