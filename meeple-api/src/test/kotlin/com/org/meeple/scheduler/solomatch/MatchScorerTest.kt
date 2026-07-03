@@ -103,18 +103,6 @@ class MatchScorerTest : DescribeSpec({
         }
     }
 
-    describe("distanceScore") {
-        it("같은 지역(rank 0)이면 1.0, 가장 먼 지역이면 0.0") {
-            MatchScorer.distanceScore(rank = 0, regionCount = 5) shouldBe 1.0
-            MatchScorer.distanceScore(rank = 4, regionCount = 5) shouldBe 0.0
-            MatchScorer.distanceScore(rank = 2, regionCount = 5) shouldBe 0.5
-        }
-        it("근접 목록에 없는 지역(rank null)은 0.0, 지역이 1개 이하면 1.0") {
-            MatchScorer.distanceScore(rank = null, regionCount = 5) shouldBe 0.0
-            MatchScorer.distanceScore(rank = 0, regionCount = 1) shouldBe 1.0
-        }
-    }
-
     describe("recencyScore") {
         val loginAfter: LocalDateTime = LocalDateTime.of(2026, 6, 17, 12, 0)   // now - 2주
         val now: LocalDateTime = LocalDateTime.of(2026, 7, 1, 12, 0)
@@ -126,9 +114,9 @@ class MatchScorerTest : DescribeSpec({
     }
 
     describe("combinedScore") {
-        it("이상형 0.4 / 거리 0.4 / 최근 0.2 가중합") {
-            MatchScorer.combinedScore(idealFit = 1.0, distanceScore = 0.5, recencyScore = 0.0) shouldBe (0.6 plusOrMinus 1e-9)
-            MatchScorer.combinedScore(idealFit = 0.0, distanceScore = 0.0, recencyScore = 1.0) shouldBe (0.2 plusOrMinus 1e-9)
+        it("이상형 0.7 / 최근 0.3 가중합 (지역은 점수가 아니라 계층)") {
+            MatchScorer.combinedScore(idealFit = 1.0, recencyScore = 0.0) shouldBe (0.7 plusOrMinus 1e-9)
+            MatchScorer.combinedScore(idealFit = 0.0, recencyScore = 1.0) shouldBe (0.3 plusOrMinus 1e-9)
         }
     }
 

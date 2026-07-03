@@ -67,7 +67,6 @@ class IntroduceExtraMatchService(
 			candidates = candidates,
 			profileOf = { row: ExtraIntroCandidateRow -> row.profile },
 			regionRankByRegionId = rankByRegion,
-			regionCount = nearby.size,
 			now = now,
 			loginAfter = loginAfter,
 			random = random,

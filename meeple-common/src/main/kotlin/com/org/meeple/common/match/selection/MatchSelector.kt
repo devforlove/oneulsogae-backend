@@ -4,14 +4,17 @@ import java.time.LocalDateTime
 import kotlin.random.Random
 
 /**
- * 이상형·거리·최근 종합 점수로 후보를 정렬(동점군 무작위)하고 선택하는 순수 로직.
+ * 지역 근접 순위를 최우선 계층으로 두고, 같은 계층 안에서 이상형·최근 종합 점수로
+ * 후보를 정렬(동점군 무작위)하고 선택하는 순수 로직.
  * 일일 배치와 실시간 추가 소개가 공유한다. 거리 근접 순위(regionRankByRegionId)는
  * 호출부가 미리 계산해 넘긴다(배치=RegionProximityPort, 추가소개=GetRegionProximityPort).
  */
 object MatchSelector {
 
 	/**
-	 * 후보를 종합 점수순(동점군 무작위)으로 정렬해 반환한다. (조회 상위 N 등 재소개 필터가 필요 없을 때)
+	 * 후보를 지역 근접 순위(가까운 순, 순위 없는 지역은 맨 뒤)로 먼저 나누고,
+	 * 같은 순위 안에서만 종합 점수순(동점군 무작위)으로 정렬해 반환한다.
+	 * 지역은 점수 가중치가 아니라 계층이라, 먼 지역 후보는 가까운 후보가 모두 소진됐을 때만 뒤따른다.
 	 * 같은 회사 소개 차단([SameCompanyIntroPolicy])·결혼 여부 절대 조건([MaritalStatusIntroPolicy])
 	 * 대상 후보는 정렬 전에 제외한다.
 	 */
@@ -22,7 +25,6 @@ object MatchSelector {
 		candidates: List<T>,
 		profileOf: (T) -> MatchScoringProfile?,
 		regionRankByRegionId: Map<Long, Int>,
-		regionCount: Int,
 		now: LocalDateTime,
 		loginAfter: LocalDateTime,
 		random: Random,
@@ -35,10 +37,16 @@ object MatchSelector {
 				candidateRefusesSameCompanyIntro = candidate.refuseSameCompanyIntro,
 			) || MaritalStatusIntroPolicy.blocked(targetProfile, profileOf(candidate))
 		}
-		val scored: List<Pair<T, Double>> = allowed.map { candidate: T ->
-			candidate to score(candidate, targetProfile, profileOf, regionRankByRegionId, regionCount, now, loginAfter)
-		}
-		return MatchScorer.orderByScore(scored, random)
+		return allowed
+			.groupBy { candidate: T -> regionRankByRegionId[candidate.regionId] }
+			.entries
+			.sortedWith(compareBy(nullsLast(naturalOrder())) { entry: Map.Entry<Int?, List<T>> -> entry.key })
+			.flatMap { entry: Map.Entry<Int?, List<T>> ->
+				val scored: List<Pair<T, Double>> = entry.value.map { candidate: T ->
+					candidate to score(candidate, targetProfile, profileOf, now, loginAfter)
+				}
+				MatchScorer.orderByScore(scored, random)
+			}
 	}
 
 	/**
@@ -52,27 +60,23 @@ object MatchSelector {
 		candidates: List<T>,
 		profileOf: (T) -> MatchScoringProfile?,
 		regionRankByRegionId: Map<Long, Int>,
-		regionCount: Int,
 		now: LocalDateTime,
 		loginAfter: LocalDateTime,
 		random: Random,
 		isExcluded: (T) -> Boolean,
 	): T? =
-		orderByScore(targetProfile, targetCompanyName, targetRefusesSameCompanyIntro, candidates, profileOf, regionRankByRegionId, regionCount, now, loginAfter, random)
+		orderByScore(targetProfile, targetCompanyName, targetRefusesSameCompanyIntro, candidates, profileOf, regionRankByRegionId, now, loginAfter, random)
 			.firstOrNull { candidate: T -> !isExcluded(candidate) }
 
 	private fun <T : ScoringCandidate> score(
 		candidate: T,
 		targetProfile: MatchScoringProfile?,
 		profileOf: (T) -> MatchScoringProfile?,
-		regionRankByRegionId: Map<Long, Int>,
-		regionCount: Int,
 		now: LocalDateTime,
 		loginAfter: LocalDateTime,
 	): Double {
 		val idealFit: Double = MatchScorer.mutualIdealFit(targetProfile, profileOf(candidate))
-		val distanceScore: Double = MatchScorer.distanceScore(regionRankByRegionId[candidate.regionId], regionCount)
 		val recencyScore: Double = MatchScorer.recencyScore(candidate.lastLoginAt, loginAfter, now)
-		return MatchScorer.combinedScore(idealFit, distanceScore, recencyScore)
+		return MatchScorer.combinedScore(idealFit, recencyScore)
 	}
 }

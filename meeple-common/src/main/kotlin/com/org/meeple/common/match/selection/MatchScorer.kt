@@ -6,15 +6,15 @@ import kotlin.random.Random
 
 /**
  * 매칭의 이상형 우선순위 점수 계산기(순수). 이상형은 필터가 아니라 우선순위이므로,
- * 부합하지 않아도 점수만 낮아진다. 이상형 부합(양방향)·거리·최근을 0~1로 정규화해 가중 합산한다.
+ * 부합하지 않아도 점수만 낮아진다. 이상형 부합(양방향)·최근을 0~1로 정규화해 가중 합산한다.
  * 일일 배치와 실시간 추가 소개가 공유한다.
- * (단, 결혼 여부(미혼/돌싱) 이상형은 점수가 아니라 절대 조건 — [MaritalStatusIntroPolicy]가 필터로 처리한다)
+ * (결혼 여부(미혼/돌싱) 이상형은 점수가 아니라 절대 조건 — [MaritalStatusIntroPolicy]가 필터로 처리한다.
+ * 지역도 점수가 아니라 최우선 계층 — [MatchSelector]가 근접 순위로 먼저 나눈 뒤 이 점수로 정렬한다)
  */
 object MatchScorer {
 
-	private const val IDEAL_WEIGHT: Double = 0.4
-	private const val DISTANCE_WEIGHT: Double = 0.4
-	private const val RECENCY_WEIGHT: Double = 0.2
+	private const val IDEAL_WEIGHT: Double = 0.7
+	private const val RECENCY_WEIGHT: Double = 0.3
 
 	/** 종합 점수 버킷 크기. 같은 버킷(≈동점)은 무작위로 섞는다. */
 	private const val BUCKET_SIZE: Double = 0.05
@@ -26,13 +26,6 @@ object MatchScorer {
 	fun mutualIdealFit(target: MatchScoringProfile?, candidate: MatchScoringProfile?): Double =
 		(directionFit(target, candidate) + directionFit(candidate, target)) / 2.0
 
-	/** 근접 순위 [rank](같은 지역=0, 없으면 null)를 0~1 점수로. 같은 지역=1.0, 가장 먼 지역=0.0, 목록 밖=0.0. */
-	fun distanceScore(rank: Int?, regionCount: Int): Double {
-		if (rank == null) return 0.0
-		if (regionCount <= 1) return 1.0
-		return 1.0 - rank.toDouble() / (regionCount - 1)
-	}
-
 	/** 2주 창(loginAfter~now)에서 [lastLoginAt]의 최근성 0~1. now=1.0, 창 시작=0.0. */
 	fun recencyScore(lastLoginAt: LocalDateTime, loginAfter: LocalDateTime, now: LocalDateTime): Double {
 		val windowSeconds: Long = Duration.between(loginAfter, now).seconds
@@ -41,9 +34,9 @@ object MatchScorer {
 		return (elapsedSeconds.toDouble() / windowSeconds).coerceIn(0.0, 1.0)
 	}
 
-	/** 세 요소를 가중 합산한 종합 점수(0~1). 이상형 0.4 / 거리 0.4 / 최근 0.2. */
-	fun combinedScore(idealFit: Double, distanceScore: Double, recencyScore: Double): Double =
-		IDEAL_WEIGHT * idealFit + DISTANCE_WEIGHT * distanceScore + RECENCY_WEIGHT * recencyScore
+	/** 두 요소를 가중 합산한 종합 점수(0~1). 이상형 0.7 / 최근 0.3. */
+	fun combinedScore(idealFit: Double, recencyScore: Double): Double =
+		IDEAL_WEIGHT * idealFit + RECENCY_WEIGHT * recencyScore
 
 	/**
 	 * 후보를 종합 점수 내림차순으로 정렬하되, [BUCKET_SIZE] 단위 버킷 안은 [random]으로 섞는다.

@@ -26,8 +26,8 @@ import kotlin.random.Random
  *
  * "2주 내 활성 + 오늘 미매칭 + 성사 상태 아님" 유저를 한 번 적재해 [MatchPool]을 만들고,
  * 스코어링 프로필([GetMatchScoringProfileDao])을 1회 적재한다. 대상마다 가용 반대 성별 후보 전체를
- * 이상형·거리·최근 종합 점수([MatchSelector])로 정렬해, 재소개 이력([GetMatchRecordDao.existsByPair])이 없는
- * 최고점 후보와 PROPOSED 소개를 만든다. 이상형은 필터가 아니라 우선순위라 안 맞아도 후보가 있으면 소개한다.
+ * 지역 근접 순위 최우선 + 이상형·최근 종합 점수([MatchSelector])로 정렬해, 재소개 이력([GetMatchRecordDao.existsByPair])이 없는
+ * 최상위 후보와 PROPOSED 소개를 만든다. 이상형은 필터가 아니라 우선순위라 안 맞아도 후보가 있으면 소개한다.
  * 한 사용자의 실패가 다른 사용자에 전파되지 않도록 대상 단위로 격리하고, 예외만 failed로 집계한다.
  */
 @Service
@@ -93,8 +93,8 @@ class SoloMatchBatchService(
 	}
 
 	/**
-	 * [target]의 가용 반대 성별 후보 전체를 이상형·거리·최근 종합 점수로 정렬해,
-	 * 재소개 이력이 없는 최고점 후보를 돌려준다. (없으면 null) 점수 동점군은 무작위로 섞는다.
+	 * [target]의 가용 반대 성별 후보 전체를 지역 근접 순위 최우선, 같은 순위 안에서 이상형·최근
+	 * 종합 점수로 정렬해, 재소개 이력이 없는 최상위 후보를 돌려준다. (없으면 null) 점수 동점군은 무작위로 섞는다.
 	 */
 	private fun findBestFreshPartner(
 		target: MatchableUser,
@@ -104,7 +104,7 @@ class SoloMatchBatchService(
 		loginAfter: LocalDateTime,
 	): MatchableUser? {
 		val partnerGender: Gender = target.gender.opposite()
-		// 대상 지역 기준 근접 순위(같은 지역=0). 좌표 없는 지역이면 빈 리스트라 거리 점수는 전원 0이 된다.
+		// 대상 지역 기준 근접 순위(같은 지역=0). 좌표 없는 지역이면 빈 리스트라 전원 순위 없음 = 한 계층으로 묶인다.
 		val nearby: List<Long> = regionProximityPort.nearbyRegionIds(target.regionId)
 		val rankByRegion: Map<Long, Int> = nearby.withIndex().associate { (index: Int, regionId: Long) -> regionId to index }
 
@@ -115,7 +115,6 @@ class SoloMatchBatchService(
 			candidates = pool.availableCandidates(partnerGender),
 			profileOf = { candidate: MatchableUser -> profiles[candidate.userId] },
 			regionRankByRegionId = rankByRegion,
-			regionCount = nearby.size,
 			now = now,
 			loginAfter = loginAfter,
 			random = random,
