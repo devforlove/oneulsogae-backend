@@ -18,11 +18,15 @@ import com.org.meeple.infra.teammatch.command.entity.QTeamMemberEntity
 import com.org.meeple.infra.teammatch.command.entity.TeamMemberEntity
 import com.org.meeple.infra.user.command.entity.QUserDetailEntity
 import io.kotest.matchers.shouldBe
+import io.kotest.core.annotation.Ignored
 
 /**
  * `POST /teams/v1/{teamId}/acceptance` E2E 테스트. (초대 수락)
  * 초대받은 사용자가 수락하면 본인이 ACTIVE가 되고 전원 ACTIVE이므로 팀이 ACTIVE로 전이한다.
  */
+// [미팅 기능 미노출] 팀 매칭 컨트롤러(@RestController)가 주석 처리되어 엔드포인트가 404를 반환하므로 이 스펙을 비활성화한다.
+// 기능 노출 시 컨트롤러 복구와 함께 @Ignored를 제거한다.
+@Ignored
 class AcceptTeamInvitationE2ETest : AbstractIntegrationSupport({
 
 	fun persistMatchUser(userId: Long, gender: Gender) {

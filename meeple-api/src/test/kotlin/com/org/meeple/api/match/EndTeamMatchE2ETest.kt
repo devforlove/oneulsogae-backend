@@ -33,6 +33,7 @@ import com.org.meeple.infra.teammatch.command.entity.TeamMemberEntity
 import io.kotest.matchers.shouldBe
 import java.time.LocalDate
 import java.time.LocalDateTime
+import io.kotest.core.annotation.Ignored
 
 /**
  * `DELETE /team-matches/v1/{teamMatchId}` E2E 테스트. (팀 매칭 종료 엔드포인트)
@@ -42,6 +43,9 @@ import java.time.LocalDateTime
  * 상대 팀까지 모두 나간 마지막 종료에서는 team_matches 헤더와 참가 팀 전원이 CLOSED·소프트 삭제되고 알림은 가지 않는다.
  * 실제 서버(RANDOM_PORT) + Testcontainers(MySQL/Redis, 분산 락 포함)를 기동하고 HTTP를 호출한다.
  */
+// [미팅 기능 미노출] 팀 매칭 컨트롤러(@RestController)가 주석 처리되어 엔드포인트가 404를 반환하므로 이 스펙을 비활성화한다.
+// 기능 노출 시 컨트롤러 복구와 함께 @Ignored를 제거한다.
+@Ignored
 class EndTeamMatchE2ETest : AbstractIntegrationSupport({
 
 	// 같은 성별 두 명으로 ACTIVE 팀을 만들고 teamId를 돌려준다.

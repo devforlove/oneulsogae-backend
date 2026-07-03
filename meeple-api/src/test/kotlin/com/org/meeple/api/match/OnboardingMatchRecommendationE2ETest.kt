@@ -45,7 +45,9 @@ import java.time.LocalDateTime
  * 회사 이메일 인증으로 온보딩이 완료될 때 1:1 매칭 소개([RecommendMatch])와 팀 추천([RecommendTeam])이 함께 동작하는지 검증하는 E2E 테스트.
  *
  * 인증이 완료되면 같은 트랜잭션에서 매칭 읽기 모델(match_user)이 동기 적재된 뒤,
- * 가까운 반대 성별 후보로 1:1 소개(solo_matches, PROPOSED·ONBOARDING)를, 가까운 반대 성별 ACTIVE 팀으로 추천(recommended_teams)을 적재한다.
+ * 가까운 반대 성별 후보로 1:1 소개(solo_matches, PROPOSED·ONBOARDING)를 적재한다.
+ * [미팅 기능 미노출] 팀 추천(recommended_teams) 적재는 온보딩 호출이 주석 처리되어 현재 동작하지 않으며,
+ * 여기서는 "적재되지 않음"을 검증한다. (기능 노출 시 원래 검증으로 복구)
  * 지역 매칭 스냅샷(근접·유저/팀 분포)은 기동 시 1회 적재되므로, 테스트에서 지역·후보·팀을 넣은 뒤 [RegionProximityPort.refresh]로 함께 갱신한다.
  */
 class OnboardingMatchRecommendationE2ETest : AbstractIntegrationSupport() {
@@ -174,7 +176,7 @@ class OnboardingMatchRecommendationE2ETest : AbstractIntegrationSupport() {
 			}
 
 			context("가까운 반대 성별 ACTIVE 팀(=여성 팀원)이 있으면") {
-				it("1:1 소개와 팀 추천을 함께 적재한다") {
+				it("1:1 소개만 적재된다 (팀 추천은 미팅 기능 미노출로 비활성화)") {
 					val regionId: Long = IntegrationUtil.persist(
 						RegionEntityFixture.create(sido = "서울특별시", sigungu = "강남구", latitude = 37.5172, longitude = 127.0473),
 					).id!!
@@ -190,15 +192,15 @@ class OnboardingMatchRecommendationE2ETest : AbstractIntegrationSupport() {
 
 					verifyCompanyEmail(me)
 
-					// 팀 추천이 적재됐다.
-					recommendedTeamIdOf(me) shouldBe teamId
-					// 같은 인증으로 1:1 소개도 적재됐다. (상대는 팀의 여성 팀원 중 하나 — 로그인 시각 동점이라 둘 중 하나)
+					// [미팅 기능 미노출] 온보딩 팀 추천 호출이 주석 처리되어 추천이 적재되지 않아야 한다.
+					recommendedTeamIdOf(me).shouldBeNull()
+					// 1:1 소개는 그대로 적재됐다. (상대는 팀의 여성 팀원 중 하나 — 로그인 시각 동점이라 둘 중 하나)
 					proposedOnboardingPartnerOf(me) shouldBeIn listOf(8201L, 8202L)
 				}
 			}
 
 			context("회사 도메인 매핑이 없어 COMPANY_NOT_RESOLVED로 확정돼도") {
-				it("회사 이메일 인증을 마친 사용자이므로 1:1 소개와 팀 추천이 ACTIVE와 똑같이 적재된다") {
+				it("회사 이메일 인증을 마친 사용자이므로 1:1 소개가 ACTIVE와 똑같이 적재된다 (팀 추천은 미팅 기능 미노출로 비활성화)") {
 					val regionId: Long = IntegrationUtil.persist(
 						RegionEntityFixture.create(sido = "서울특별시", sigungu = "강남구", latitude = 37.5172, longitude = 127.0473),
 					).id!!
@@ -214,8 +216,9 @@ class OnboardingMatchRecommendationE2ETest : AbstractIntegrationSupport() {
 
 					verifyCompanyEmail(me, companyResolved = false)
 
-					// COMPANY_NOT_RESOLVED여도 match_user가 적재돼 팀 추천과 1:1 소개가 함께 적재된다.
-					recommendedTeamIdOf(me) shouldBe teamId
+					// COMPANY_NOT_RESOLVED여도 match_user가 적재돼 1:1 소개가 적재된다.
+					// [미팅 기능 미노출] 온보딩 팀 추천 호출이 주석 처리되어 추천은 적재되지 않아야 한다.
+					recommendedTeamIdOf(me).shouldBeNull()
 					proposedOnboardingPartnerOf(me) shouldBeIn listOf(8302L, 8303L)
 				}
 			}

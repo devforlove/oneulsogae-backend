@@ -25,7 +25,10 @@ import org.springframework.web.bind.annotation.RestController
  * - GET  /meeting-tab: 미팅탭 화면 데이터를 한 번에 조회한다.
  */
 @Tag(name = "팀 매칭(소개)", description = "결성된 두 팀의 매칭에 관심을 보내고 성사시키는 엔드포인트. 미팅탭 화면 집계도 제공한다.")
-@RestController
+// [미팅 기능 미노출] 미팅(2:2 팀 매칭) 기능은 구현은 완료됐지만 출시 시점에는 노출하지 않는다.
+// @RestController를 주석 처리해 빈 등록을 막아 /team-matches/v1 전체 엔드포인트(관심 보내기·매칭 종료·미팅탭)가
+// 열리지 않게 한다. (호출 시 404) 노출 시 TeamController 상단 주석의 복구 목록을 함께 해제한다.
+// @RestController
 @RequestMapping("/team-matches/v1")
 class TeamMatchController(
 	private val sendTeamInterestUseCase: SendTeamInterestUseCase,

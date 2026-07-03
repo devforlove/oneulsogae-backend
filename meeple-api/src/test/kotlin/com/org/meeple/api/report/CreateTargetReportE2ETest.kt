@@ -3,15 +3,16 @@ package com.org.meeple.api.report
 import com.org.meeple.common.integration.AbstractIntegrationSupport
 import com.org.meeple.common.integration.expect
 import com.org.meeple.common.integration.post
+import com.org.meeple.common.match.TeamStatus
 import com.org.meeple.common.report.ReportType
 import com.org.meeple.common.user.Gender
 import com.org.meeple.infra.fixture.IntegrationUtil
-import com.org.meeple.infra.fixture.MatchUserEntityFixture
 import com.org.meeple.infra.fixture.UserEntityFixture
 import com.org.meeple.infra.report.command.entity.QReportEntity
 import com.org.meeple.infra.report.command.entity.ReportEntity
 import com.org.meeple.infra.teammatch.command.entity.QTeamEntity
 import com.org.meeple.infra.teammatch.command.entity.QTeamMemberEntity
+import com.org.meeple.infra.teammatch.command.entity.TeamEntity
 import com.org.meeple.infra.user.command.entity.QUserEntity
 import io.kotest.matchers.nulls.shouldBeNull
 import io.kotest.matchers.shouldBe
@@ -27,19 +28,12 @@ class CreateTargetReportE2ETest : AbstractIntegrationSupport({
 	fun persistUser(providerId: String): Long =
 		IntegrationUtil.persist(UserEntityFixture.create(providerId = providerId)).id!!
 
-	fun persistMatchUser(userId: Long, gender: Gender) {
-		IntegrationUtil.persist(MatchUserEntityFixture.create(userId = userId, gender = gender))
-	}
-
 	// 초대중(INVITING) 팀을 만들고 teamId를 돌려준다.
-	fun invitingTeam(ownerId: Long, invitedUserId: Long): Long {
-		persistMatchUser(ownerId, Gender.MALE)
-		persistMatchUser(invitedUserId, Gender.MALE)
-		return post("/teams/v1/invitation") {
-			bearer(accessTokenFor(ownerId))
-			jsonBody("""{"invitedUserId": $invitedUserId, "regionId": 1, "name": "우리팀", "introduction": "함께 즐겁게 활동할 팀이에요"}""")
-		}.extract().path<Int>("data.teamId").toLong()
-	}
+	// [미팅 기능 미노출] 팀 엔드포인트(POST /teams/v1/invitation)가 비활성화되어 API 대신 엔티티를 직접 적재한다.
+	fun invitingTeam(): Long =
+		IntegrationUtil.persist(
+			TeamEntity(name = "우리팀", gender = Gender.MALE, regionId = 1L, introduction = "함께 즐겁게 활동할 팀이에요", status = TeamStatus.INVITING),
+		).id!!
 
 	fun reportOf(fromUserId: Long): ReportEntity? {
 		val report: QReportEntity = QReportEntity.reportEntity
@@ -73,7 +67,7 @@ class CreateTargetReportE2ETest : AbstractIntegrationSupport({
 		context("TEAM 대상을 신고하면") {
 			it("targetId를 to_team_id로 채워 저장한다 (200)") {
 				val reporter = 9101L
-				val teamId: Long = invitingTeam(ownerId = 9102L, invitedUserId = 9103L)
+				val teamId: Long = invitingTeam()
 
 				post("/reports/v1/targets") {
 					bearer(accessTokenFor(reporter))

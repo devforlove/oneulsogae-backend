@@ -7,7 +7,7 @@ import com.org.meeple.core.coin.command.application.port.`in`.command.AcquireCoi
 import com.org.meeple.core.common.error.BusinessException
 import com.org.meeple.core.common.event.MatchProfileSnapshot
 import com.org.meeple.core.solomatch.command.application.port.`in`.RecommendMatchUseCase
-import com.org.meeple.core.teammatch.command.application.port.`in`.RecommendTeamUseCase
+// import com.org.meeple.core.teammatch.command.application.port.`in`.RecommendTeamUseCase   // [미팅 기능 미노출] 팀 추천 호출 비활성화
 import com.org.meeple.core.matchuser.command.application.port.`in`.SyncMatchUserUseCase
 import com.org.meeple.core.user.UserErrorCode
 import com.org.meeple.core.common.time.TimeGenerator
@@ -47,7 +47,7 @@ class VerifyCompanyEmailService(
 	private val syncMatchUserUseCase: SyncMatchUserUseCase,
 	private val acquireCoinUseCase: AcquireCoinUseCase,
 	private val recommendMatchUseCase: RecommendMatchUseCase,
-	private val recommendTeamUseCase: RecommendTeamUseCase,
+	// private val recommendTeamUseCase: RecommendTeamUseCase,   // [미팅 기능 미노출] 팀 추천 호출 비활성화
 ) : VerifyCompanyEmailUseCase {
 
 	@Transactional
@@ -79,7 +79,9 @@ class VerifyCompanyEmailService(
 				AcquireCoinCommand(CoinPolicy.SIGNUP_REWARD_COIN_AMOUNT, CoinGetType.SIGNUP),
 			)
 			recommendMatchUseCase.recommend(verification.userId)
-			recommendTeamUseCase.recommend(verification.userId)
+			// [미팅 기능 미노출] 미팅(2:2 팀 매칭) 기능은 출시 시점에 노출하지 않으므로 온보딩 직후
+			// 첫 팀 추천 적재를 호출하지 않는다. (노출 시 아래 호출 주석을 해제한다)
+			// recommendTeamUseCase.recommend(verification.userId)
 		}
 
 		// 막 온보딩됐다면 프론트가 가입 축하 팝업을 띄울 수 있도록 지급 코인 수량을 신호로 함께 내려준다.

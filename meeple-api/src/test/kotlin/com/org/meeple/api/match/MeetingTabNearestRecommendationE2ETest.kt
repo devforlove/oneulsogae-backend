@@ -38,6 +38,7 @@ import org.hamcrest.Matchers.nullValue
 import org.springframework.beans.factory.annotation.Autowired
 import java.time.LocalDate
 import java.time.LocalDateTime
+import io.kotest.core.annotation.Ignored
 
 /**
  * 회사 이메일 인증으로 온보딩이 완료될 때 가까운 추천 팀을 적재하는 E2E 테스트.
@@ -45,6 +46,9 @@ import java.time.LocalDateTime
  * 인증이 완료되면 match_user가 적재·커밋된 뒤(AFTER_COMMIT), 유저와 가장 가까운 반대 성별 ACTIVE 팀을 추천(recommended_teams)으로 적재한다.
  * 지역 매칭 스냅샷(근접·유저 분포·팀 분포)은 기동 시 1회 적재되므로, 테스트에서 지역·팀을 넣은 뒤 [RegionProximityPort.refresh]로 함께 갱신한다.
  */
+// [미팅 기능 미노출] 팀 매칭 컨트롤러(@RestController)가 주석 처리되어 엔드포인트가 404를 반환하므로 이 스펙을 비활성화한다.
+// 기능 노출 시 컨트롤러 복구와 함께 @Ignored를 제거한다.
+@Ignored
 class MeetingTabNearestRecommendationE2ETest : AbstractIntegrationSupport() {
 
 	@Autowired

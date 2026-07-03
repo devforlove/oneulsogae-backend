@@ -16,6 +16,7 @@ import com.org.meeple.infra.user.command.entity.QUserDetailEntity
 import org.hamcrest.Matchers.containsInAnyOrder
 import org.hamcrest.Matchers.hasSize
 import java.time.LocalDate
+import io.kotest.core.annotation.Ignored
 
 /**
  * `GET /teams/v1/invitable-users` E2E 테스트. (초대 가능 유저 닉네임 검색)
@@ -25,6 +26,9 @@ import java.time.LocalDate
 private val BIRTHDAY: LocalDate = LocalDate.of(1996, 1, 1)
 private val EXPECTED_AGE: Int = BIRTHDAY.ageAt(LocalDate.now())
 
+// [미팅 기능 미노출] 팀 매칭 컨트롤러(@RestController)가 주석 처리되어 엔드포인트가 404를 반환하므로 이 스펙을 비활성화한다.
+// 기능 노출 시 컨트롤러 복구와 함께 @Ignored를 제거한다.
+@Ignored
 class SearchInvitableUsersE2ETest : AbstractIntegrationSupport({
 
 	// 매칭 읽기 모델(match_user, 성별 보유) 행을 저장한다.

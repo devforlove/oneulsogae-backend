@@ -33,11 +33,15 @@ import org.hamcrest.Matchers.nullValue
 import org.hamcrest.Matchers.startsWith
 import java.time.LocalDate
 import java.time.LocalDateTime
+import io.kotest.core.annotation.Ignored
 
 /**
  * `GET /team-matches/v1/meeting-tab` E2E 테스트. (미팅탭 화면 집계)
  * 추천 팀 목록(recommendedTeams, 없으면 빈 리스트) + 받은 초대 개수(receivedInvitationCount) + 내 결성 팀(myTeam, 없으면 null)을 한 번에 반환한다.
  */
+// [미팅 기능 미노출] 팀 매칭 컨트롤러(@RestController)가 주석 처리되어 엔드포인트가 404를 반환하므로 이 스펙을 비활성화한다.
+// 기능 노출 시 컨트롤러 복구와 함께 @Ignored를 제거한다.
+@Ignored
 class GetMeetingTabE2ETest : AbstractIntegrationSupport({
 
 	fun persistMatchUser(

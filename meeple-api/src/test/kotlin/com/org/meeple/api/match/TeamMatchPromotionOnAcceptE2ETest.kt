@@ -24,11 +24,15 @@ import com.org.meeple.infra.teammatch.command.entity.TeamMatchEntity
 import io.kotest.matchers.shouldBe
 import java.time.LocalDate
 import java.time.LocalDateTime
+import io.kotest.core.annotation.Ignored
 
 /**
  * `POST /teams/v1/{teamId}/acceptance` 수락으로 팀이 결성(ACTIVE)될 때,
  * 두 구성원에게 개인 추천됐던 팀(recommended_teams)이 결성된 팀과의 PROPOSED 팀 매칭으로 승격되는지 검증한다.
  */
+// [미팅 기능 미노출] 팀 매칭 컨트롤러(@RestController)가 주석 처리되어 엔드포인트가 404를 반환하므로 이 스펙을 비활성화한다.
+// 기능 노출 시 컨트롤러 복구와 함께 @Ignored를 제거한다.
+@Ignored
 class TeamMatchPromotionOnAcceptE2ETest : AbstractIntegrationSupport({
 
 	fun persistMatchUser(userId: Long, gender: Gender) {

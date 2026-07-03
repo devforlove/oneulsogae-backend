@@ -13,7 +13,9 @@ class TeamMatchBatchScheduler(
 	private val teamMatchBatchJob: TeamMatchBatchJob,
 ) {
 
-	@Scheduled(cron = "\${meeple.match.team-match-batch.cron}", zone = "Asia/Seoul")
+	// [미팅 기능 미노출] 미팅(2:2 팀 매칭) 기능은 출시 시점에 노출하지 않으므로 일일 팀 매칭 배치의
+	// 크론 트리거를 주석 처리한다. (배치 로직 자체는 유지 — 노출 시 @Scheduled 주석만 해제하면 된다)
+	// @Scheduled(cron = "\${meeple.match.team-match-batch.cron}", zone = "Asia/Seoul")
 	fun runTeamMatch() {
 		teamMatchBatchJob.run()
 	}

@@ -33,6 +33,7 @@ import io.kotest.matchers.longs.shouldBeGreaterThan
 import io.kotest.matchers.shouldBe
 import java.time.LocalDate
 import java.time.LocalDateTime
+import io.kotest.core.annotation.Ignored
 
 /**
  * 팀 해체(구성원 단위) 시 매칭 정리·채팅 차단·알림 E2E. (두 단계)
@@ -40,6 +41,9 @@ import java.time.LocalDateTime
  * - 2단계(마지막 구성원 탈퇴): 우리 팀이 매칭에서 빠짐(matched_team DEACTIVE, 상대 팀은 유지). 떠난 본인 chatroom_member DEACTIVE,
  *   방에 남는 상대 팀에 "상대 팀이 매칭을 종료했어요" 안내 + '매칭 종료' 알림.
  */
+// [미팅 기능 미노출] 팀 매칭 컨트롤러(@RestController)가 주석 처리되어 엔드포인트가 404를 반환하므로 이 스펙을 비활성화한다.
+// 기능 노출 시 컨트롤러 복구와 함께 @Ignored를 제거한다.
+@Ignored
 class DisbandTeamMatchTeardownE2ETest : AbstractIntegrationSupport({
 
 	fun persistMatchUser(userId: Long, gender: Gender) {

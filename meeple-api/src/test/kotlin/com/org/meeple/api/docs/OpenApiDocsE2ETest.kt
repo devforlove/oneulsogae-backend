@@ -5,6 +5,7 @@ import com.org.meeple.common.integration.expect
 import com.org.meeple.common.integration.get
 import io.kotest.matchers.string.shouldNotContain
 import org.hamcrest.Matchers.hasKey
+import org.hamcrest.Matchers.not
 import org.hamcrest.Matchers.startsWith
 
 /**
@@ -20,7 +21,11 @@ class OpenApiDocsE2ETest : AbstractIntegrationSupport({
 				get("/v3/api-docs") expect {
 					status(200)
 					body("openapi", startsWith("3"))
-					body("paths", hasKey("/teams/v1/invitation"))
+					// [미팅 기능 미노출] 팀 엔드포인트가 비활성화되어 노출 중인 경로로 검증한다. (노출 시 /teams/v1/invitation으로 복구)
+					body("paths", hasKey("/users/v1/ideal-type"))
+					// [미팅 기능 미노출] 팀 매칭 컨트롤러가 실제로 등록되지 않았는지 함께 검증한다. (노출 시 이 두 줄 제거)
+					body("paths", not(hasKey("/teams/v1/invitation")))
+					body("paths", not(hasKey("/team-matches/v1/meeting-tab")))
 				}
 			}
 		}
