@@ -30,6 +30,10 @@ dependencies {
 	testImplementation("org.testcontainers:testcontainers-mysql")
 	// Redis는 공식 모듈이 아니라 커뮤니티 모듈(com.redis). Spring Boot BOM이 버전 관리
 	testImplementation("com.redis:testcontainers-redis")
+	// S3 연결 검증: LocalStack Testcontainer + AWS SDK(테스트에서 S3Client 타입 참조). infra의 s3는 implementation이라 test로 전파되지 않음.
+	testImplementation("org.testcontainers:testcontainers-localstack")
+	testImplementation(platform("software.amazon.awssdk:bom:2.46.21"))
+	testImplementation("software.amazon.awssdk:s3")
 
 	// 배치 통합테스트에서 배치가 적재한 Redis 풀 키를 정리하기 위한 StringRedisTemplate 컴파일 접근. (런타임 빈은 컨텍스트가 제공)
 	testImplementation("org.springframework.boot:spring-boot-starter-data-redis")

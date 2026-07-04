@@ -22,6 +22,13 @@ dependencies {
 	implementation("org.redisson:redisson:3.50.0")
 	runtimeOnly("com.mysql:mysql-connector-j")
 
+	// AWS S3(파일 스토리지) 클라이언트. 로컬은 LocalStack, 운영은 실제 S3에 접속한다.
+	// Spring Boot BOM이 AWS SDK를 관리하지 않아 자체 BOM으로 버전을 정렬한다.
+	implementation(platform("software.amazon.awssdk:bom:2.46.21"))
+	implementation("software.amazon.awssdk:s3")
+	// 동기 S3 클라이언트용 경량 HTTP 구현(JDK HttpURLConnection 기반). 명시하지 않으면 런타임에 HTTP 구현을 못 찾는다.
+	implementation("software.amazon.awssdk:url-connection-client")
+
 	// QueryDSL: 엔티티로부터 Q클래스 생성 + 코어/JPA 타입.
 	// Spring Boot 4(Jakarta 3.2/Hibernate 7) 호환을 위해 OpenFeign 포크를 사용한다.
 	// 운영(api main)에 노출되지 않도록 implementation으로 둔다(소비자 컴파일 클래스패스에 비노출).

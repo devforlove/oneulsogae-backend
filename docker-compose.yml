@@ -22,6 +22,26 @@ services:
     volumes:
       - meeple-redis-data:/data
 
+  # 로컬 S3 에뮬레이터. 실제 AWS S3와 동일한 API를 4566 포트로 제공한다. (운영은 실제 S3)
+  # 커뮤니티(무료) 이미지로 3.8을 고정한다. CalVer(2026.x) 이미지는 라이선스 토큰을 요구해 S3만 쓰는 로컬엔 부적합하다.
+  localstack:
+    image: localstack/localstack:3.8
+    container_name: meeple-localstack
+    environment:
+      # S3만 띄운다. (다른 AWS 서비스는 불필요)
+      SERVICES: s3
+      AWS_DEFAULT_REGION: ap-northeast-2
+      # LocalStack은 자격증명을 실제로 검증하지 않는다. 앱(application-local.yml)의 더미 값과 맞춰 둔다.
+      AWS_ACCESS_KEY_ID: test
+      AWS_SECRET_ACCESS_KEY: test
+    ports:
+      - "4566:4566"
+    volumes:
+      # 기동 완료(ready) 직후 실행돼 개발용 버킷을 만드는 초기화 스크립트.
+      - ./docker/localstack/init/ready.d:/etc/localstack/init/ready.d
+      - meeple-localstack-data:/var/lib/localstack
+
 volumes:
   meeple-mysql-data:
   meeple-redis-data:
+  meeple-localstack-data:
