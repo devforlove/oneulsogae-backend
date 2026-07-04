@@ -1,9 +1,9 @@
 package com.org.meeple.infra.report.query
 
-import com.org.meeple.core.report.query.dao.GetAdminReportDao
-import com.org.meeple.core.report.query.dto.AdminReportDetailView
-import com.org.meeple.core.report.query.dto.AdminReportSummaryView
-import com.org.meeple.core.report.query.dto.AdminReportSummaryViews
+import com.org.meeple.admin.report.query.dao.GetAdminReportDao
+import com.org.meeple.admin.report.query.dto.AdminReportDetailView
+import com.org.meeple.admin.report.query.dto.AdminReportSummaryView
+import com.org.meeple.admin.report.query.dto.AdminReportSummaryViews
 import com.org.meeple.infra.report.command.entity.QReportEntity
 import com.org.meeple.infra.user.command.entity.QUserDetailEntity
 import com.org.meeple.infra.user.command.entity.QUserEntity

@@ -3,8 +3,8 @@ package com.org.meeple.infra.admin.query
 import com.org.meeple.common.coin.CoinGetType
 import com.org.meeple.common.match.MatchStatus
 import com.org.meeple.common.report.ReportStatus
-import com.org.meeple.core.admin.query.dao.GetAdminDashboardDao
-import com.org.meeple.core.admin.query.dto.AdminDashboardView
+import com.org.meeple.admin.dashboard.query.dao.GetAdminDashboardDao
+import com.org.meeple.admin.dashboard.query.dto.AdminDashboardView
 import com.org.meeple.infra.coin.command.entity.QCoinHistoryEntity
 import com.org.meeple.infra.report.command.entity.QReportEntity
 import com.org.meeple.infra.solomatch.command.entity.QSoloMatchEntity
