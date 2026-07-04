@@ -3,6 +3,7 @@ package com.org.meeple.config
 import com.org.meeple.auth.JsonAuthenticationEntryPoint
 import com.org.meeple.auth.jwt.TokenAuthenticationFilter
 import com.org.meeple.auth.oauth.CustomOAuth2UserService
+import com.org.meeple.auth.oauth.LoginOriginCookieFilter
 import com.org.meeple.auth.oauth.OAuth2FailureHandler
 import com.org.meeple.auth.oauth.OAuth2SuccessHandler
 import org.springframework.context.annotation.Bean
@@ -12,6 +13,7 @@ import org.springframework.security.config.annotation.web.builders.WebSecurity
 import org.springframework.security.config.annotation.web.configuration.WebSecurityCustomizer
 import org.springframework.security.config.http.SessionCreationPolicy
 import org.springframework.security.web.SecurityFilterChain
+import org.springframework.security.oauth2.client.web.OAuth2AuthorizationRequestRedirectFilter
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter
 import org.springframework.web.cors.CorsConfiguration
 import org.springframework.web.cors.CorsConfigurationSource
@@ -35,6 +37,7 @@ class SecurityConfig(
 	fun securityFilterChain(
 		http: HttpSecurity,
 		tokenAuthenticationFilter: TokenAuthenticationFilter,
+		loginOriginCookieFilter: LoginOriginCookieFilter,
 		jsonAuthenticationEntryPoint: JsonAuthenticationEntryPoint,
 	): SecurityFilterChain =
 		http
@@ -71,6 +74,8 @@ class SecurityConfig(
 			}
 			// JWT 인가 필터: 인증된 요청의 토큰을 검증해 SecurityContext를 채운다.
 			.addFilterBefore(tokenAuthenticationFilter, UsernamePasswordAuthenticationFilter::class.java)
+			// 로그인 시작 요청의 출처(origin=admin)를 쿠키로 보존한다. (인가 요청 리다이렉트가 응답을 끝내기 전에 실려야 한다)
+			.addFilterBefore(loginOriginCookieFilter, OAuth2AuthorizationRequestRedirectFilter::class.java)
 			.build()
 
 	private fun corsConfigurationSource(): CorsConfigurationSource {

@@ -57,7 +57,8 @@ app:
     redirect-uri: ${OAUTH2_REDIRECT_URI:http://localhost:3000/oauth/redirect}
     # 로그인 실패(이메일 누락/중복 등) 시 리다이렉트할 프론트엔드 base. 뒤에 `/error?code={코드}`가 붙는다. (예: http://localhost:3000/error?code=USER-009)
     failure-redirect-uri: ${OAUTH2_FAILURE_REDIRECT_URI:http://localhost:3000}
-    # ROLE_ADMIN 유저의 로그인 성공 시 리다이렉트할 어드민 프론트엔드 URI.
+    # 어드민 프론트에서 시작한(?origin=admin) 로그인 성공 시 리다이렉트할 어드민 프론트엔드 URI.
+    # ROLE_ADMIN이 아니면 이 URI에 ?error=ACCESS_DENIED가 붙어 복귀한다.
     admin-redirect-uri: ${OAUTH2_ADMIN_REDIRECT_URI:http://localhost:3001/oauth/redirect}
   # 인증 토큰 쿠키. local은 host-only/비-secure, 운영은 .도메인 공유 + secure 필요.
   auth:

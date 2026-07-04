@@ -8,6 +8,9 @@ data class OAuth2Properties(
 	val redirectUri: String,
 	/** 로그인 실패 시 리다이렉트할 프론트엔드 base. 뒤에 `/error?code={코드}`가 붙는다. (예: `{base}/error?code=USER-009`) */
 	val failureRedirectUri: String,
-	/** ROLE_ADMIN 유저의 로그인 성공 시 리다이렉트할 어드민 프론트엔드 URI. */
+	/**
+	 * 어드민 프론트에서 시작한(`/oauth2/authorization/{provider}?origin=admin`) 로그인 성공 시
+	 * 리다이렉트할 어드민 프론트엔드 URI. ROLE_ADMIN이 아니면 이 URI에 `?error=ACCESS_DENIED`가 붙는다.
+	 */
 	val adminRedirectUri: String,
 )
