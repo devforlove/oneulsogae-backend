@@ -1,7 +1,7 @@
-package com.org.meeple.core.report.query.service.port.`in`
+package com.org.meeple.admin.report.query.service.port.`in`
 
-import com.org.meeple.core.report.query.dto.AdminReportDetailView
-import com.org.meeple.core.report.query.dto.AdminReportPage
+import com.org.meeple.admin.report.query.dto.AdminReportDetailView
+import com.org.meeple.admin.report.query.dto.AdminReportPage
 
 /** 어드민 신고 목록 조회 유스케이스. */
 interface GetAdminReportsUseCase {

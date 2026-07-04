@@ -1,11 +1,11 @@
-package com.org.meeple.core.report.query.service
+package com.org.meeple.admin.report.query.service
 
-import com.org.meeple.core.common.error.BusinessException
-import com.org.meeple.core.report.ReportErrorCode
-import com.org.meeple.core.report.query.dao.GetAdminReportDao
-import com.org.meeple.core.report.query.dto.AdminReportDetailView
-import com.org.meeple.core.report.query.dto.AdminReportPage
-import com.org.meeple.core.report.query.service.port.`in`.GetAdminReportsUseCase
+import com.org.meeple.admin.common.error.AdminErrorCode
+import com.org.meeple.admin.common.error.AdminException
+import com.org.meeple.admin.report.query.dao.GetAdminReportDao
+import com.org.meeple.admin.report.query.dto.AdminReportDetailView
+import com.org.meeple.admin.report.query.dto.AdminReportPage
+import com.org.meeple.admin.report.query.service.port.`in`.GetAdminReportsUseCase
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 
@@ -30,7 +30,7 @@ class GetAdminReportsService(
 
 	override fun getReport(id: Long): AdminReportDetailView =
 		getAdminReportDao.findDetailById(id)
-			?: throw BusinessException(ReportErrorCode.REPORT_NOT_FOUND, "신고를 찾을 수 없습니다: $id")
+			?: throw AdminException(AdminErrorCode.REPORT_NOT_FOUND, "신고를 찾을 수 없습니다: $id")
 
 	companion object {
 		private const val MAX_PAGE_SIZE: Int = 100

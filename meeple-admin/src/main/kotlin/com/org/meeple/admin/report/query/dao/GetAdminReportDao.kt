@@ -1,7 +1,7 @@
-package com.org.meeple.core.report.query.dao
+package com.org.meeple.admin.report.query.dao
 
-import com.org.meeple.core.report.query.dto.AdminReportDetailView
-import com.org.meeple.core.report.query.dto.AdminReportSummaryViews
+import com.org.meeple.admin.report.query.dto.AdminReportDetailView
+import com.org.meeple.admin.report.query.dto.AdminReportSummaryViews
 
 /** 어드민 신고 조회 dao(query out-port). 유저 신고(toUserId 존재)만 다룬다. */
 interface GetAdminReportDao {
