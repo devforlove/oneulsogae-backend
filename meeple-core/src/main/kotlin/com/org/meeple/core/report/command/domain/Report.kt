@@ -1,5 +1,6 @@
 package com.org.meeple.core.report.command.domain
 
+import com.org.meeple.common.report.ReportStatus
 import com.org.meeple.common.report.ReportTargetType
 import com.org.meeple.common.report.ReportType
 
@@ -15,6 +16,7 @@ data class Report(
 	val toTeamId: Long? = null,
 	val toUserId: Long? = null,
 	val description: String? = null,
+	val status: ReportStatus = ReportStatus.PENDING,
 ) {
 	companion object {
 		/**

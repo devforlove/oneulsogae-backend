@@ -1,5 +1,6 @@
 package com.org.meeple.infra.report.command.entity
 
+import com.org.meeple.common.report.ReportStatus
 import com.org.meeple.common.report.ReportType
 import com.org.meeple.infra.common.BaseEntity
 import jakarta.persistence.Column
@@ -35,4 +36,8 @@ class ReportEntity(
 
 	@Column(name = "description", length = 1000)
 	val description: String? = null,
+
+	@Enumerated(EnumType.STRING)
+	@Column(name = "status", nullable = false, columnDefinition = "varchar(50) not null default 'PENDING'")
+	val status: ReportStatus = ReportStatus.PENDING,
 ) : BaseEntity()

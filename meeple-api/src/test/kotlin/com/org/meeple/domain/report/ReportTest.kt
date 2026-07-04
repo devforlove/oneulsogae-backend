@@ -1,5 +1,6 @@
 package com.org.meeple.domain.report
 
+import com.org.meeple.common.report.ReportStatus
 import com.org.meeple.common.report.ReportTargetType
 import com.org.meeple.common.report.ReportType
 import com.org.meeple.core.report.command.domain.Report
@@ -37,6 +38,19 @@ class ReportTest : DescribeSpec({
 
 				report.toTeamId shouldBe 200L
 				report.toUserId.shouldBeNull()
+			}
+		}
+
+		context("처리 상태는") {
+			it("생성 시 PENDING(접수)이다") {
+				val report: Report = Report.create(
+					type = ReportType.ETC,
+					fromUserId = 1L,
+					targetType = ReportTargetType.USER,
+					targetId = 100L,
+				)
+
+				report.status shouldBe ReportStatus.PENDING
 			}
 		}
 	}

@@ -12,6 +12,7 @@ fun ReportEntity.toDomain(): Report =
 		toTeamId = toTeamId,
 		toUserId = toUserId,
 		description = description,
+		status = status,
 	)
 
 fun Report.toEntity(): ReportEntity =
@@ -22,4 +23,5 @@ fun Report.toEntity(): ReportEntity =
 		toTeamId = toTeamId,
 		toUserId = toUserId,
 		description = description,
+		status = status,
 	).also { if (id != 0L) it.id = id }
