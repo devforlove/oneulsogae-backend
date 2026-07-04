@@ -220,10 +220,13 @@ class RunSoloMatchBatchIntegrationTest(
 			}
 		}
 
-		context("가까운 지역과 먼 지역에 후보가 있으면") {
+		context("가까운 지역과 먼 지역(밴드 밖)에 후보가 있으면") {
 			it("가까운 지역 후보와 소개한다") {
 				val nearRegionId: Long = persistRegion("서울특별시", "강남구", 37.50, 127.00)
 				val farRegionId: Long = persistRegion("부산광역시", "해운대구", 35.16, 129.16)
+				// 근접 순위 10개 지역이 한 밴드(같은 계층)로 묶이므로, 부산이 밴드 밖(순위 10 이상)이 되도록
+				// 강남과 부산 사이에 후보 없는 채움 지역 10개를 둔다. (같은 밴드면 점수 동점 셔플로 결과가 갈린다)
+				repeat(10) { index: Int -> persistRegion("경기도", "채움시$index", 37.40 - index * 0.01, 127.00) }
 				// 남성이 가장 최근 로그인 → ORDER BY last_login_at DESC 기준으로 먼저 처리됨 → 근접 지역 여성과 매칭
 				val now: LocalDateTime = LocalDateTime.now()
 				val maleId: Long = persistMatchableUser(userId = 1001L, gender = Gender.MALE, regionId = nearRegionId, lastLoginAt = now)
