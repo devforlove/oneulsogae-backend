@@ -1,6 +1,6 @@
-package com.org.meeple.core.admin.query.dao
+package com.org.meeple.admin.dashboard.query.dao
 
-import com.org.meeple.core.admin.query.dto.AdminDashboardView
+import com.org.meeple.admin.dashboard.query.dto.AdminDashboardView
 import java.time.LocalDateTime
 
 /** 어드민 대시보드 지표 조회 dao. 구현은 infra가 담당한다. */

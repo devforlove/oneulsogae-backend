@@ -1,9 +1,9 @@
-package com.org.meeple.core.admin.query.service
+package com.org.meeple.admin.dashboard.query.service
 
-import com.org.meeple.core.admin.query.dao.GetAdminDashboardDao
-import com.org.meeple.core.admin.query.dto.AdminDashboardView
-import com.org.meeple.core.admin.query.service.port.`in`.GetAdminDashboardUseCase
-import com.org.meeple.core.common.time.TimeGenerator
+import com.org.meeple.admin.common.time.TimeGenerator
+import com.org.meeple.admin.dashboard.query.dao.GetAdminDashboardDao
+import com.org.meeple.admin.dashboard.query.dto.AdminDashboardView
+import com.org.meeple.admin.dashboard.query.service.port.`in`.GetAdminDashboardUseCase
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 

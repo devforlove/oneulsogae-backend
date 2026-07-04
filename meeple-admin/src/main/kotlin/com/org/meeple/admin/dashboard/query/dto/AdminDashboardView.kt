@@ -1,4 +1,4 @@
-package com.org.meeple.core.admin.query.dto
+package com.org.meeple.admin.dashboard.query.dto
 
 /**
  * 어드민 대시보드 read model.
