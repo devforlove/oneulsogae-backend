@@ -3,6 +3,12 @@ spring:
     name: meeple-api
   profiles:
     default: local
+  servlet:
+    multipart:
+      # 직장 서류 이미지 업로드 한도. 도메인 제한(10MB)보다 약간 높게 잡아, 10~11MB는 컨트롤러까지 도달해
+      # 도메인이 친절한 413(IMAGE_TOO_LARGE)을 내고, 그 이상만 MaxUploadSizeExceeded로 걸러지게 한다.
+      max-file-size: 11MB
+      max-request-size: 12MB
   jpa:
     # OSIV(Open Session In View)는 요청 전체 동안 영속성 컨텍스트/DB 커넥션을 붙잡아, 트래픽이 몰리면
     # 커넥션 풀 고갈·지연을 유발한다. 트랜잭션 경계 밖 지연 로딩을 차단해 조기에 드러내도록 끈다.

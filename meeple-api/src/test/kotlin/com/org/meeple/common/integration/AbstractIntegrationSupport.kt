@@ -5,6 +5,7 @@ import com.org.meeple.MeepleApiApplication
 import com.org.meeple.auth.PrincipalDetails
 import com.org.meeple.auth.jwt.TokenProvider
 import com.org.meeple.common.config.TestDatabaseContainersConfig
+import com.org.meeple.common.config.TestFileStorageConfig
 import com.org.meeple.common.config.TestRedisContainersConfig
 import com.org.meeple.common.config.TestRegionShufflerConfig
 import com.org.meeple.common.config.TestWireMockConfig
@@ -61,6 +62,7 @@ import org.springframework.security.core.authority.SimpleGrantedAuthority
 	TestRedisContainersConfig::class,
 	TestWireMockConfig::class,
 	TestRegionShufflerConfig::class,
+	TestFileStorageConfig::class,
 	IntegrationUtil::class,
 )
 abstract class AbstractIntegrationSupport(
