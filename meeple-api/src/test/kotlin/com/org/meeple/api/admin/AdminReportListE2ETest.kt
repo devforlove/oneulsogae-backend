@@ -22,11 +22,9 @@ class AdminReportListE2ETest : AbstractIntegrationSupport({
 	describe("GET /admin/v1/reports") {
 
 		it("유저 신고만 최신순으로 페이징 조회한다 (팀 신고 제외)") {
-			// 신고자(1)·대상(2) 유저와 프로필(닉네임) 준비.
-			IntegrationUtil.persist(UserEntityFixture.create(providerId = "rep-reporter", email = "reporter@test.com"))
-			IntegrationUtil.persist(UserEntityFixture.create(providerId = "rep-target", email = "target@test.com"))
-			val reporterId: Long = 1L
-			val targetId: Long = 2L
+			// 신고자·대상 유저와 프로필(닉네임) 준비. persist 반환값에서 실제 PK를 캡처한다.
+			val reporterId: Long = IntegrationUtil.persist(UserEntityFixture.create(providerId = "rep-reporter", email = "reporter@test.com")).id!!
+			val targetId: Long = IntegrationUtil.persist(UserEntityFixture.create(providerId = "rep-target", email = "target@test.com")).id!!
 			IntegrationUtil.persist(UserDetailEntityFixture.create(userId = reporterId, nickname = "신고자닉"))
 			IntegrationUtil.persist(UserDetailEntityFixture.create(userId = targetId, nickname = "대상닉"))
 
@@ -49,13 +47,14 @@ class AdminReportListE2ETest : AbstractIntegrationSupport({
 				body("data.content[0].reporterNickname", "신고자닉")
 				body("data.content[0].reporterEmail", "reporter@test.com")
 				body("data.content[0].targetNickname", "대상닉")
-				body("data.content[0].targetUserId", 2)
+				body("data.content[0].targetUserId", targetId.toInt())
 			}
 		}
 
 		it("size로 페이지 크기를 제한한다") {
-			IntegrationUtil.persist(UserEntityFixture.create(providerId = "pg-1"))
-			(1..3).forEach { IntegrationUtil.persist(ReportEntityFixture.create(fromUserId = 1L, toUserId = 2L)) }
+			val reporterId: Long = IntegrationUtil.persist(UserEntityFixture.create(providerId = "pg-1")).id!!
+			val targetId: Long = IntegrationUtil.persist(UserEntityFixture.create(providerId = "pg-2")).id!!
+			(1..3).forEach { IntegrationUtil.persist(ReportEntityFixture.create(fromUserId = reporterId, toUserId = targetId)) }
 
 			get("/admin/v1/reports?page=0&size=2") {
 				bearer(adminAccessTokenFor(9901L))

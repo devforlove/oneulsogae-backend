@@ -21,15 +21,16 @@ class AdminReportDetailE2ETest : AbstractIntegrationSupport({
 	describe("GET /admin/v1/reports/{id}") {
 
 		it("유저 신고 상세를 반환한다 (200)") {
-			IntegrationUtil.persist(UserEntityFixture.create(providerId = "d-reporter", email = "r@test.com"))
-			IntegrationUtil.persist(UserEntityFixture.create(providerId = "d-target", email = "t@test.com"))
-			IntegrationUtil.persist(UserDetailEntityFixture.create(userId = 1L, nickname = "신고자"))
-			IntegrationUtil.persist(UserDetailEntityFixture.create(userId = 2L, nickname = "대상"))
+			// 신고자·대상 유저를 persist하고 반환값에서 실제 PK를 캡처한다.
+			val reporterId: Long = IntegrationUtil.persist(UserEntityFixture.create(providerId = "d-reporter", email = "r@test.com")).id!!
+			val targetId: Long = IntegrationUtil.persist(UserEntityFixture.create(providerId = "d-target", email = "t@test.com")).id!!
+			IntegrationUtil.persist(UserDetailEntityFixture.create(userId = reporterId, nickname = "신고자"))
+			IntegrationUtil.persist(UserDetailEntityFixture.create(userId = targetId, nickname = "대상"))
 			val id: Long = IntegrationUtil.persist(
 				ReportEntityFixture.create(
 					type = ReportType.FRAUD_IMPERSONATION,
-					fromUserId = 1L,
-					toUserId = 2L,
+					fromUserId = reporterId,
+					toUserId = targetId,
 					description = "사칭 신고 상세 사유",
 				),
 			).id!!
@@ -58,8 +59,9 @@ class AdminReportDetailE2ETest : AbstractIntegrationSupport({
 		}
 
 		it("팀 신고 id면 404다 (유저 신고만 조회)") {
+			val reporterId: Long = IntegrationUtil.persist(UserEntityFixture.create(providerId = "team-reporter")).id!!
 			val teamReportId: Long = IntegrationUtil.persist(
-				ReportEntityFixture.create(type = ReportType.ETC, fromUserId = 1L, toUserId = null),
+				ReportEntityFixture.create(type = ReportType.ETC, fromUserId = reporterId, toUserId = null),
 			).id!!
 
 			get("/admin/v1/reports/$teamReportId") {
