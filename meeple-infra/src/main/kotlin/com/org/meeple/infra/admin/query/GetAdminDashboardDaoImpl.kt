@@ -1,9 +1,14 @@
 package com.org.meeple.infra.admin.query
 
 import com.org.meeple.common.coin.CoinGetType
+import com.org.meeple.common.match.MatchStatus
+import com.org.meeple.common.report.ReportStatus
 import com.org.meeple.core.admin.query.dao.GetAdminDashboardDao
 import com.org.meeple.core.admin.query.dto.AdminDashboardView
 import com.org.meeple.infra.coin.command.entity.QCoinHistoryEntity
+import com.org.meeple.infra.report.command.entity.QReportEntity
+import com.org.meeple.infra.solomatch.command.entity.QSoloMatchEntity
+import com.org.meeple.infra.teammatch.command.entity.QTeamMatchEntity
 import com.org.meeple.infra.user.command.entity.QUserEntity
 import com.querydsl.jpa.impl.JPAQueryFactory
 import org.springframework.stereotype.Component
@@ -49,11 +54,39 @@ class GetAdminDashboardDaoImpl(
 			)
 			.fetchOne() ?: 0L
 
+		val soloMatch: QSoloMatchEntity = QSoloMatchEntity.soloMatchEntity
+		val teamMatch: QTeamMatchEntity = QTeamMatchEntity.teamMatchEntity
+		val report: QReportEntity = QReportEntity.reportEntity
+
+		// 진행중 = 아직 종료되지 않은 상태. (MatchStatus.isClosed()의 반대 — MATCHED·CLOSED 제외)
+		val ongoingStatuses: List<MatchStatus> = listOf(MatchStatus.PROPOSED, MatchStatus.PARTIALLY_ACCEPTED)
+
+		val ongoingSoloMatches: Long = queryFactory
+			.select(soloMatch.count())
+			.from(soloMatch)
+			.where(soloMatch.status.`in`(ongoingStatuses))
+			.fetchOne() ?: 0L
+
+		val ongoingTeamMatches: Long = queryFactory
+			.select(teamMatch.count())
+			.from(teamMatch)
+			.where(teamMatch.status.`in`(ongoingStatuses))
+			.fetchOne() ?: 0L
+
+		val pendingReports: Long = queryFactory
+			.select(report.count())
+			.from(report)
+			.where(report.status.eq(ReportStatus.PENDING))
+			.fetchOne() ?: 0L
+
 		return AdminDashboardView(
 			totalUsers = totalUsers,
 			todaySignups = todaySignups,
 			todayActiveUsers = todayActiveUsers,
 			todayCoinPurchaseAmount = todayCoinPurchaseAmount,
+			ongoingSoloMatches = ongoingSoloMatches,
+			ongoingTeamMatches = ongoingTeamMatches,
+			pendingReports = pendingReports,
 		)
 	}
 }

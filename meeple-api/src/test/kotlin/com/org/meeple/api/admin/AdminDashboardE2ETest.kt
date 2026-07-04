@@ -4,10 +4,18 @@ import com.org.meeple.common.coin.CoinGetType
 import com.org.meeple.common.integration.AbstractIntegrationSupport
 import com.org.meeple.common.integration.expect
 import com.org.meeple.common.integration.get
+import com.org.meeple.common.match.MatchStatus
+import com.org.meeple.common.report.ReportStatus
 import com.org.meeple.infra.fixture.CoinHistoryEntityFixture
 import com.org.meeple.infra.fixture.IntegrationUtil
+import com.org.meeple.infra.fixture.ReportEntityFixture
+import com.org.meeple.infra.fixture.SoloMatchEntityFixture
+import com.org.meeple.infra.fixture.TeamMatchEntityFixture
 import com.org.meeple.infra.fixture.UserEntityFixture
 import com.org.meeple.infra.coin.command.entity.QCoinHistoryEntity
+import com.org.meeple.infra.report.command.entity.QReportEntity
+import com.org.meeple.infra.solomatch.command.entity.QSoloMatchEntity
+import com.org.meeple.infra.teammatch.command.entity.QTeamMatchEntity
 import com.org.meeple.infra.user.command.entity.QUserEntity
 import com.querydsl.jpa.impl.JPAQueryFactory
 import java.time.LocalDateTime
@@ -39,6 +47,18 @@ class AdminDashboardE2ETest : AbstractIntegrationSupport({
 			IntegrationUtil.persist(CoinHistoryEntityFixture.create(userId = 1L, amount = 50, coinGetType = CoinGetType.PURCHASE, occurredAt = yesterday))
 			IntegrationUtil.persist(CoinHistoryEntityFixture.create(userId = 1L, amount = 10, coinGetType = CoinGetType.DAILY, occurredAt = now))
 
+			// 진행중 매치는 PROPOSED·PARTIALLY_ACCEPTED만 센다. (MATCHED·CLOSED 제외)
+			IntegrationUtil.persist(SoloMatchEntityFixture.create(memberKey = "d-1", status = MatchStatus.PROPOSED))
+			IntegrationUtil.persist(SoloMatchEntityFixture.create(memberKey = "d-2", status = MatchStatus.PARTIALLY_ACCEPTED))
+			IntegrationUtil.persist(SoloMatchEntityFixture.create(memberKey = "d-3", status = MatchStatus.MATCHED))
+			IntegrationUtil.persist(TeamMatchEntityFixture.create(memberKey = "d-4", status = MatchStatus.PROPOSED))
+			IntegrationUtil.persist(TeamMatchEntityFixture.create(memberKey = "d-5", status = MatchStatus.CLOSED))
+
+			// 미처리 신고는 status = PENDING만 센다.
+			IntegrationUtil.persist(ReportEntityFixture.create(fromUserId = 1L))
+			IntegrationUtil.persist(ReportEntityFixture.create(fromUserId = 2L))
+			IntegrationUtil.persist(ReportEntityFixture.create(fromUserId = 3L, status = ReportStatus.RESOLVED))
+
 			get("/admin/v1/dashboard") {
 				bearer(adminAccessTokenFor(9901L))
 			} expect {
@@ -48,11 +68,17 @@ class AdminDashboardE2ETest : AbstractIntegrationSupport({
 				body("data.todaySignups", 2)
 				body("data.todayActiveUsers", 1)
 				body("data.todayCoinPurchaseAmount", 100)
+				body("data.ongoingSoloMatches", 2)
+				body("data.ongoingTeamMatches", 1)
+				body("data.pendingReports", 2)
 			}
 		}
 	}
 
 	afterTest {
+		IntegrationUtil.deleteAll(QSoloMatchEntity.soloMatchEntity)
+		IntegrationUtil.deleteAll(QTeamMatchEntity.teamMatchEntity)
+		IntegrationUtil.deleteAll(QReportEntity.reportEntity)
 		IntegrationUtil.deleteAll(QCoinHistoryEntity.coinHistoryEntity)
 		IntegrationUtil.deleteAll(QUserEntity.userEntity)
 	}
