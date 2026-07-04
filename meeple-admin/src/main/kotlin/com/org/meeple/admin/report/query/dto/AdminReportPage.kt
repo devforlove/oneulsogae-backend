@@ -1,4 +1,4 @@
-package com.org.meeple.core.report.query.dto
+package com.org.meeple.admin.report.query.dto
 
 /**
  * 어드민 신고 목록 한 페이지(read model). offset(page·size) 페이징 결과.

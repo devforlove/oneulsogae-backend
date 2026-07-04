@@ -1,4 +1,4 @@
-package com.org.meeple.core.report.query.dto
+package com.org.meeple.admin.report.query.dto
 
 import com.org.meeple.common.report.ReportStatus
 import com.org.meeple.common.report.ReportType

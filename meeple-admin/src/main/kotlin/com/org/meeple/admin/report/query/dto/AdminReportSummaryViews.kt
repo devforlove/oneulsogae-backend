@@ -1,4 +1,4 @@
-package com.org.meeple.core.report.query.dto
+package com.org.meeple.admin.report.query.dto
 
 /** 어드민 신고 목록 read model 일급 컬렉션. */
 data class AdminReportSummaryViews(
