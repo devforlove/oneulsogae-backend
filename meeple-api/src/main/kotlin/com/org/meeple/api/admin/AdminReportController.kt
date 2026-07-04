@@ -1,11 +1,13 @@
 package com.org.meeple.api.admin
 
+import com.org.meeple.api.admin.response.AdminReportDetailResponse
 import com.org.meeple.api.admin.response.AdminReportPageResponse
 import com.org.meeple.core.common.response.ApiResponse
 import com.org.meeple.core.report.query.service.port.`in`.GetAdminReportsUseCase
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.tags.Tag
 import org.springframework.web.bind.annotation.GetMapping
+import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RequestParam
 import org.springframework.web.bind.annotation.RestController
@@ -28,4 +30,11 @@ class AdminReportController(
 		@RequestParam(defaultValue = "20") size: Int,
 	): ApiResponse<AdminReportPageResponse> =
 		ApiResponse.success(AdminReportPageResponse.of(getAdminReportsUseCase.getReports(page, size)))
+
+	@Operation(summary = "신고 상세 조회", description = "유저 신고 상세를 id로 조회한다. 없거나 팀 신고면 404.")
+	@GetMapping("/{id}")
+	fun report(
+		@PathVariable id: Long,
+	): ApiResponse<AdminReportDetailResponse> =
+		ApiResponse.success(AdminReportDetailResponse.of(getAdminReportsUseCase.getReport(id)))
 }

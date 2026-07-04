@@ -1,5 +1,6 @@
 package com.org.meeple.core.report.query.dao
 
+import com.org.meeple.core.report.query.dto.AdminReportDetailView
 import com.org.meeple.core.report.query.dto.AdminReportSummaryViews
 
 /** 어드민 신고 조회 dao(query out-port). 유저 신고(toUserId 존재)만 다룬다. */
@@ -10,4 +11,7 @@ interface GetAdminReportDao {
 
 	/** (soft delete 제외) 유저 신고 전체 개수. (페이징 메타데이터 계산용) */
 	fun count(): Long
+
+	/** 유저 신고 상세를 id로 조회한다. 없거나 팀 신고면 null. */
+	fun findDetailById(id: Long): AdminReportDetailView?
 }
