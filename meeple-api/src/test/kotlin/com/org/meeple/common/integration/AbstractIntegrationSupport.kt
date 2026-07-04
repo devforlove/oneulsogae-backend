@@ -100,6 +100,10 @@ abstract class AbstractIntegrationSupport(
 	internal fun accessTokenFor(userId: Long, email: String = "user$userId@test.com"): String =
 		tokenFor(userId, email, "ROLE_USER")
 
+	/** ROLE_ADMIN 권한의 accessToken을 발급한다. (어드민 인가 규칙 검증용) */
+	internal fun adminAccessTokenFor(userId: Long, email: String = "admin$userId@test.com"): String =
+		tokenFor(userId, email, "ROLE_ADMIN")
+
 	private fun tokenFor(userId: Long, email: String, role: String): String {
 		val authorities: List<SimpleGrantedAuthority> = listOf(SimpleGrantedAuthority(role))
 		val principal = PrincipalDetails(email = email, id = userId, authorities = authorities)

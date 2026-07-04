@@ -3,10 +3,12 @@ package com.org.meeple.auth.oauth
 import com.org.meeple.auth.jwt.IssuedTokens
 import com.org.meeple.auth.jwt.RefreshTokenService
 import com.org.meeple.auth.jwt.TokenCookieFactory
+import com.org.meeple.common.user.Role
 import jakarta.servlet.http.HttpServletRequest
 import jakarta.servlet.http.HttpServletResponse
 import org.springframework.http.HttpHeaders
 import org.springframework.security.core.Authentication
+import org.springframework.security.core.GrantedAuthority
 import org.springframework.security.web.authentication.SimpleUrlAuthenticationSuccessHandler
 import org.springframework.stereotype.Component
 
@@ -28,6 +30,14 @@ class OAuth2SuccessHandler(
 		response.addHeader(HttpHeaders.SET_COOKIE, tokenCookieFactory.accessTokenCookie(tokens.accessToken).toString())
 		response.addHeader(HttpHeaders.SET_COOKIE, tokenCookieFactory.refreshTokenCookie(tokens.refreshToken).toString())
 
-		redirectStrategy.sendRedirect(request, response, oAuth2Properties.redirectUri)
+		redirectStrategy.sendRedirect(request, response, redirectUriFor(authentication))
 	}
+
+	/** ROLE_ADMIN 유저는 어드민 프론트로, 그 외는 앱 프론트로 리다이렉트한다. */
+	private fun redirectUriFor(authentication: Authentication): String =
+		if (authentication.authorities.any { authority: GrantedAuthority -> authority.authority == Role.ADMIN.authority() }) {
+			oAuth2Properties.adminRedirectUri
+		} else {
+			oAuth2Properties.redirectUri
+		}
 }
