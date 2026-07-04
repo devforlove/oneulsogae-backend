@@ -1,6 +1,6 @@
 package com.org.meeple.api.admin.response
 
-import com.org.meeple.core.report.query.dto.AdminReportSummaryView
+import com.org.meeple.admin.report.query.dto.AdminReportSummaryView
 import java.time.LocalDateTime
 
 /** 어드민 신고 목록 항목 응답. enum은 코드(name)와 한글 라벨(description)을 함께 노출한다. */

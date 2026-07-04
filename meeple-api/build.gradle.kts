@@ -9,6 +9,7 @@ dependencies {
 	implementation(project(":meeple-infra"))
 	implementation(project(":meeple-chatting"))
 	implementation(project(":meeple-scheduler"))
+	implementation(project(":meeple-admin"))
 	// 인증 검증 커널(TokenProvider/PrincipalDetails). 발급·로그인·SecurityConfig는 api가 이 모듈을 호출해 수행한다.
 	implementation(project(":meeple-auth"))
 
