@@ -24,6 +24,7 @@ import java.time.LocalDateTime
 	name = "inquiries",
 	indexes = [
 		Index(name = "idx_user_id", columnList = "user_id"),
+		Index(name = "idx_inquiries_status_created_at", columnList = "status, created_at, id"),
 	],
 )
 class InquiryEntity(
