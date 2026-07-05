@@ -1,6 +1,9 @@
 package com.org.meeple.admin.companyverification.query.service
 
+import com.org.meeple.admin.common.error.AdminErrorCode
+import com.org.meeple.admin.common.error.AdminException
 import com.org.meeple.admin.companyverification.query.dao.GetAdminCompanyVerificationDao
+import com.org.meeple.admin.companyverification.query.dto.AdminCompanyVerificationDetailView
 import com.org.meeple.admin.companyverification.query.dto.AdminCompanyVerificationPage
 import com.org.meeple.admin.companyverification.query.dto.AdminCompanyVerificationView
 import com.org.meeple.admin.companyverification.query.dto.AdminCompanyVerificationViews
@@ -42,6 +45,15 @@ class GetAdminCompanyVerificationsService(
 			size = pageSize,
 			totalElements = getAdminCompanyVerificationDao.count(status),
 		)
+	}
+
+	override fun getVerification(id: Long): AdminCompanyVerificationDetailView {
+		val view: AdminCompanyVerificationDetailView = getAdminCompanyVerificationDao.findDetailById(id)
+			?: throw AdminException(
+				AdminErrorCode.COMPANY_IMAGE_VERIFICATION_NOT_FOUND,
+				"직장 인증을 찾을 수 없습니다: $id",
+			)
+		return view.copy(imageUrl = companyVerificationImageUrlPort.presignedGetUrl(view.imageKey))
 	}
 
 	companion object {

@@ -1,5 +1,6 @@
 package com.org.meeple.admin.companyverification.query.dao
 
+import com.org.meeple.admin.companyverification.query.dto.AdminCompanyVerificationDetailView
 import com.org.meeple.admin.companyverification.query.dto.AdminCompanyVerificationViews
 import com.org.meeple.common.user.CompanyImageVerificationStatus
 
@@ -11,4 +12,7 @@ interface GetAdminCompanyVerificationDao {
 
 	/** (soft delete 제외) [status](없으면 전체) 조건 전체 개수. (페이징 메타데이터 계산용) */
 	fun count(status: CompanyImageVerificationStatus?): Long
+
+	/** 인증 상세를 [id]로 조회한다. 없거나 soft-delete면 null. */
+	fun findDetailById(id: Long): AdminCompanyVerificationDetailView?
 }
