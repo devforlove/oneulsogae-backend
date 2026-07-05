@@ -9,6 +9,7 @@ import com.org.meeple.infra.fixture.GatheringEntityFixture
 import com.org.meeple.infra.fixture.IntegrationUtil
 import com.org.meeple.infra.gathering.command.entity.QGatheringEntity
 import org.hamcrest.Matchers.hasSize
+import org.hamcrest.Matchers.notNullValue
 
 /**
  * 어드민 모임 조회 API E2E 테스트.
@@ -37,6 +38,8 @@ class AdminGatheringQueryE2ETest : AbstractIntegrationSupport({
 				body("data.content[0].title", "둘째 모임")
 				body("data.content[0].type", "COOKING")
 				body("data.content[0].status", "RECRUITING")
+				// 대표 이미지는 목록 행에도 노출한다.
+				body("data.content[0].imageUrl", notNullValue())
 				// 목록 행에 소개·참가비 상세는 없다.
 				body("data.content[0].description", null)
 				body("data.content[0].maleFee", null)
@@ -117,6 +120,7 @@ class AdminGatheringQueryE2ETest : AbstractIntegrationSupport({
 				GatheringEntityFixture.create(
 					title = "상세 모임",
 					description = "상세 소개",
+					imageUrl = "https://cdn.test.com/detail.png",
 					region = "서울 마포구",
 					maleFee = 10000,
 					femaleFee = 8000,
@@ -134,6 +138,7 @@ class AdminGatheringQueryE2ETest : AbstractIntegrationSupport({
 				body("data.id", id.toInt())
 				body("data.title", "상세 모임")
 				body("data.description", "상세 소개")
+				body("data.imageUrl", "https://cdn.test.com/detail.png")
 				body("data.region", "서울 마포구")
 				body("data.maleFee", 10000)
 				body("data.femaleFee", 8000)

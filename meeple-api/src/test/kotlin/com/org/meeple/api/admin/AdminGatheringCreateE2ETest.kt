@@ -26,7 +26,8 @@ class AdminGatheringCreateE2ETest : AbstractIntegrationSupport({
 					jsonBody(
 						"""
 						{
-							"type": "PARTY", "title": "주말 파티", "description": "함께 즐겨요", "region": "서울 강남구",
+							"type": "PARTY", "title": "주말 파티", "description": "함께 즐겨요",
+							"imageUrl": "https://cdn.test.com/party.png", "region": "서울 강남구",
 							"gatheringAt": "2999-12-31T18:00:00", "capacity": 4,
 							"maleFee": 10000, "femaleFee": 8000,
 							"earlyBirdMaleFee": 7000, "earlyBirdFemaleFee": 5000,
@@ -51,6 +52,7 @@ class AdminGatheringCreateE2ETest : AbstractIntegrationSupport({
 				saved.status shouldBe GatheringStatus.RECRUITING
 				saved.type shouldBe GatheringType.PARTY
 				saved.title shouldBe "주말 파티"
+				saved.imageUrl shouldBe "https://cdn.test.com/party.png"
 				saved.region shouldBe "서울 강남구"
 				saved.capacity shouldBe 4
 				saved.maleFee shouldBe 10000

@@ -8,6 +8,7 @@ data class CreateAdminGatheringCommand(
 	val type: GatheringType,
 	val title: String,
 	val description: String?,
+	val imageUrl: String?,
 	val region: String,
 	val gatheringAt: LocalDateTime,
 	val capacity: Int,

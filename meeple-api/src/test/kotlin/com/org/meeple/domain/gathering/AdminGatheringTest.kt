@@ -24,6 +24,7 @@ class AdminGatheringTest : DescribeSpec({
 				type = GatheringType.PARTY,
 				title = "주말 파티",
 				description = "함께 즐겨요",
+				imageUrl = "https://cdn.test.com/party.png",
 				region = "서울 강남구",
 				gatheringAt = future,
 				capacity = 4,
@@ -35,6 +36,7 @@ class AdminGatheringTest : DescribeSpec({
 
 			gathering.status shouldBe GatheringStatus.RECRUITING
 			gathering.type shouldBe GatheringType.PARTY
+			gathering.imageUrl shouldBe "https://cdn.test.com/party.png"
 			gathering.region shouldBe "서울 강남구"
 			gathering.fee shouldBe fee
 			gathering.earlyBirdFee shouldBe GatheringFee(male = 7000, female = 5000)
@@ -43,7 +45,7 @@ class AdminGatheringTest : DescribeSpec({
 
 		it("제목이 공백이면 GATHERING_INVALID_TITLE을 던진다") {
 			val exception: AdminException = shouldThrow {
-				AdminGathering.create(GatheringType.PARTY, "  ", null, "서울", future, 4, fee, null, null, now)
+				AdminGathering.create(GatheringType.PARTY, "  ", null, null, "서울", future, 4, fee, null, null, now)
 			}
 
 			exception.errorCode shouldBe AdminErrorCode.GATHERING_INVALID_TITLE
@@ -51,7 +53,7 @@ class AdminGatheringTest : DescribeSpec({
 
 		it("제목이 100자를 초과하면 GATHERING_TITLE_TOO_LONG을 던진다") {
 			val exception: AdminException = shouldThrow {
-				AdminGathering.create(GatheringType.PARTY, "가".repeat(101), null, "서울", future, 4, fee, null, null, now)
+				AdminGathering.create(GatheringType.PARTY, "가".repeat(101), null, null, "서울", future, 4, fee, null, null, now)
 			}
 
 			exception.errorCode shouldBe AdminErrorCode.GATHERING_TITLE_TOO_LONG
@@ -59,7 +61,7 @@ class AdminGatheringTest : DescribeSpec({
 
 		it("소개가 1000자를 초과하면 GATHERING_DESCRIPTION_TOO_LONG을 던진다") {
 			val exception: AdminException = shouldThrow {
-				AdminGathering.create(GatheringType.PARTY, "파티", "가".repeat(1001), "서울", future, 4, fee, null, null, now)
+				AdminGathering.create(GatheringType.PARTY, "파티", "가".repeat(1001), null, "서울", future, 4, fee, null, null, now)
 			}
 
 			exception.errorCode shouldBe AdminErrorCode.GATHERING_DESCRIPTION_TOO_LONG
@@ -67,7 +69,7 @@ class AdminGatheringTest : DescribeSpec({
 
 		it("지역이 공백이면 GATHERING_INVALID_REGION을 던진다") {
 			val exception: AdminException = shouldThrow {
-				AdminGathering.create(GatheringType.PARTY, "파티", null, "  ", future, 4, fee, null, null, now)
+				AdminGathering.create(GatheringType.PARTY, "파티", null, null, "  ", future, 4, fee, null, null, now)
 			}
 
 			exception.errorCode shouldBe AdminErrorCode.GATHERING_INVALID_REGION
@@ -75,7 +77,7 @@ class AdminGatheringTest : DescribeSpec({
 
 		it("정원이 2 미만이면 GATHERING_INVALID_CAPACITY를 던진다") {
 			val exception: AdminException = shouldThrow {
-				AdminGathering.create(GatheringType.PARTY, "파티", null, "서울", future, 1, fee, null, null, now)
+				AdminGathering.create(GatheringType.PARTY, "파티", null, null, "서울", future, 1, fee, null, null, now)
 			}
 
 			exception.errorCode shouldBe AdminErrorCode.GATHERING_INVALID_CAPACITY
@@ -83,7 +85,7 @@ class AdminGatheringTest : DescribeSpec({
 
 		it("모임 일시가 현재와 같거나 이전이면 GATHERING_INVALID_GATHERING_AT을 던진다") {
 			val exception: AdminException = shouldThrow {
-				AdminGathering.create(GatheringType.PARTY, "파티", null, "서울", now, 4, fee, null, null, now)
+				AdminGathering.create(GatheringType.PARTY, "파티", null, null, "서울", now, 4, fee, null, null, now)
 			}
 
 			exception.errorCode shouldBe AdminErrorCode.GATHERING_INVALID_GATHERING_AT
@@ -94,6 +96,7 @@ class AdminGatheringTest : DescribeSpec({
 				type = GatheringType.ONE_ON_ONE_ROTATION,
 				title = "가".repeat(100),
 				description = "가".repeat(1000),
+				imageUrl = null,
 				region = "서울",
 				gatheringAt = now.plusSeconds(1),
 				capacity = 2,

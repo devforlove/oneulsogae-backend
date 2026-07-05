@@ -26,6 +26,7 @@ class CreateAdminGatheringService(
 				type = command.type,
 				title = command.title,
 				description = command.description,
+				imageUrl = command.imageUrl,
 				region = command.region,
 				gatheringAt = command.gatheringAt,
 				capacity = command.capacity,

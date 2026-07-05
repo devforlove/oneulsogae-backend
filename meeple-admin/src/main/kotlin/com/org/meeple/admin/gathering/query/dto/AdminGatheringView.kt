@@ -9,6 +9,7 @@ data class AdminGatheringView(
 	val id: Long,
 	val type: GatheringType,
 	val title: String,
+	val imageUrl: String?,
 	val region: String,
 	val gatheringAt: LocalDateTime,
 	val capacity: Int,

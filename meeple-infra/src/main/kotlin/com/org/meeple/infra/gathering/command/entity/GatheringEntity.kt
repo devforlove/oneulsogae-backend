@@ -47,6 +47,10 @@ class GatheringEntity(
 	@Column(name = "description", length = 1000)
 	var description: String? = null,
 
+	/** 모임 대표 이미지 URL. 없으면 null. */
+	@Column(name = "image_url", length = 512)
+	var imageUrl: String? = null,
+
 	/** 모임 활동지역(자유 텍스트). 예: "서울 강남구". */
 	@Column(name = "region", nullable = false, length = 100)
 	var region: String,
