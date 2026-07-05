@@ -6,19 +6,35 @@ import com.org.meeple.common.gathering.GatheringStatus
 
 /**
  * 모임 상태 전이 판정용 최소 도메인 모델(명령 측). 상태 전이에 필요한 id·status만 담는다.
- * (활성화 등은 전체 모임을 로드하지 않고 이 모델로 규칙만 판정한다)
+ * (상태 변경은 전체 모임을 로드하지 않고 이 모델로 규칙만 판정한다)
  */
 data class AdminGatheringStatus(
 	val id: Long,
 	val status: GatheringStatus,
 ) {
 	/**
-	 * 활성화 가능 여부를 판정한다. 준비중(DRAFT)이 아니면(이미 활성화됐거나 마감/종료/취소) GATHERING_NOT_ACTIVATABLE.
-	 * (활성화 시 저장 상태는 [GatheringStatus.RECRUITING]으로 전이한다 — 전이 대상이 상수라 이 판정만 도메인이 책임진다)
+	 * [target] 상태로의 전이가 가능한지 판정한다. (활성화·취소만 지원)
+	 * - RECRUITING(활성화): 준비중(DRAFT)에서만.
+	 * - CANCELED(취소): 준비중·모집중·모집마감에서. (종료·이미 취소된 모임은 불가)
+	 * - 그 외 target: 이 경로에서 지원하지 않음.
+	 * 불가하면 GATHERING_INVALID_STATUS_TRANSITION을 던진다.
 	 */
-	fun validateActivatable() {
-		if (status != GatheringStatus.DRAFT) {
-			throw AdminException(AdminErrorCode.GATHERING_NOT_ACTIVATABLE, "준비중 상태만 활성화할 수 있습니다: $status")
+	fun changeTo(target: GatheringStatus) {
+		val allowed: Boolean = when (target) {
+			GatheringStatus.RECRUITING -> status == GatheringStatus.DRAFT
+			GatheringStatus.CANCELED -> status in CANCELABLE_FROM
+			else -> false
 		}
+		if (!allowed) {
+			throw AdminException(
+				AdminErrorCode.GATHERING_INVALID_STATUS_TRANSITION,
+				"모임 상태를 $status 에서 $target (으)로 전이할 수 없습니다: $id",
+			)
+		}
+	}
+
+	companion object {
+		private val CANCELABLE_FROM: Set<GatheringStatus> =
+			setOf(GatheringStatus.DRAFT, GatheringStatus.RECRUITING, GatheringStatus.CLOSED)
 	}
 }

@@ -242,21 +242,41 @@ class AdminGatheringTest : DescribeSpec({
 		}
 	}
 
-	describe("AdminGatheringStatus.validateActivatable") {
+	describe("AdminGatheringStatus.changeTo") {
 
-		it("준비중(DRAFT)이면 활성화 가능(예외 없음)") {
-			AdminGatheringStatus(id = 1L, status = GatheringStatus.DRAFT).validateActivatable()
+		it("활성화: 준비중(DRAFT)에서 RECRUITING으로 전이 가능") {
+			AdminGatheringStatus(id = 1L, status = GatheringStatus.DRAFT).changeTo(GatheringStatus.RECRUITING)
 		}
 
-		it("준비중이 아니면 GATHERING_NOT_ACTIVATABLE을 던진다") {
-			listOf(
-				GatheringStatus.RECRUITING,
-				GatheringStatus.CLOSED,
-				GatheringStatus.FINISHED,
-				GatheringStatus.CANCELED,
-			).forEach { status: GatheringStatus ->
-				shouldThrow<AdminException> { AdminGatheringStatus(id = 1L, status = status).validateActivatable() }
-					.errorCode shouldBe AdminErrorCode.GATHERING_NOT_ACTIVATABLE
+		it("활성화: 준비중이 아니면 GATHERING_INVALID_STATUS_TRANSITION") {
+			listOf(GatheringStatus.RECRUITING, GatheringStatus.CLOSED, GatheringStatus.FINISHED, GatheringStatus.CANCELED)
+				.forEach { status: GatheringStatus ->
+					shouldThrow<AdminException> {
+						AdminGatheringStatus(id = 1L, status = status).changeTo(GatheringStatus.RECRUITING)
+					}.errorCode shouldBe AdminErrorCode.GATHERING_INVALID_STATUS_TRANSITION
+				}
+		}
+
+		it("취소: 준비중·모집중·모집마감에서 CANCELED로 전이 가능") {
+			listOf(GatheringStatus.DRAFT, GatheringStatus.RECRUITING, GatheringStatus.CLOSED)
+				.forEach { status: GatheringStatus ->
+					AdminGatheringStatus(id = 1L, status = status).changeTo(GatheringStatus.CANCELED)
+				}
+		}
+
+		it("취소: 종료·이미 취소된 모임은 GATHERING_INVALID_STATUS_TRANSITION") {
+			listOf(GatheringStatus.FINISHED, GatheringStatus.CANCELED).forEach { status: GatheringStatus ->
+				shouldThrow<AdminException> {
+					AdminGatheringStatus(id = 1L, status = status).changeTo(GatheringStatus.CANCELED)
+				}.errorCode shouldBe AdminErrorCode.GATHERING_INVALID_STATUS_TRANSITION
+			}
+		}
+
+		it("지원하지 않는 목표 상태(FINISHED·CLOSED·DRAFT)는 GATHERING_INVALID_STATUS_TRANSITION") {
+			listOf(GatheringStatus.FINISHED, GatheringStatus.CLOSED, GatheringStatus.DRAFT).forEach { target: GatheringStatus ->
+				shouldThrow<AdminException> {
+					AdminGatheringStatus(id = 1L, status = GatheringStatus.DRAFT).changeTo(target)
+				}.errorCode shouldBe AdminErrorCode.GATHERING_INVALID_STATUS_TRANSITION
 			}
 		}
 	}

@@ -1,9 +1,10 @@
 package com.org.meeple.api.admin
 
-import com.org.meeple.admin.gathering.command.application.port.`in`.ActivateGatheringUseCase
+import com.org.meeple.admin.gathering.command.application.port.`in`.ChangeGatheringStatusUseCase
 import com.org.meeple.admin.gathering.command.application.port.`in`.CreateAdminGatheringUseCase
 import com.org.meeple.admin.gathering.command.application.port.`in`.UpdateAdminGatheringUseCase
 import com.org.meeple.admin.gathering.query.service.port.`in`.GetAdminGatheringsUseCase
+import com.org.meeple.api.admin.request.ChangeGatheringStatusRequest
 import com.org.meeple.api.admin.request.CreateAdminGatheringRequest
 import com.org.meeple.api.admin.request.UpdateAdminGatheringRequest
 import com.org.meeple.api.admin.response.AdminGatheringDetailResponse
@@ -19,6 +20,7 @@ import org.springframework.http.MediaType
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.PostMapping
+import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RequestParam
 import org.springframework.web.bind.annotation.RequestPart
@@ -31,7 +33,7 @@ import org.springframework.web.multipart.MultipartFile
  * - GET /{id}: 상세(소개·참가비 상세 포함). 없으면 404(GATHER-008).
  * - POST /: 종류·제목·소개·지역·일시·인원·참가비(성별·티어)로 모임 생성. (운영 생성 → user_id null, 준비중으로 시작)
  * - POST /{id}: 모임 전체 데이터 수정(교체). 이미지 파트가 없으면 기존 이미지 유지. 없으면 404(GATHER-008).
- * - POST /{id}/activate: 준비중 모임을 활성화(모집중 전이). 없으면 404(GATHER-008), 준비중이 아니면 409(GATHER-013).
+ * - POST /{id}/status: 상태 변경(활성화 RECRUITING·취소 CANCELED). 없으면 404(GATHER-008), 전이 불가면 409(GATHER-013).
  */
 @Tag(name = "어드민 모임", description = "어드민 백오피스 모임 조회·등록. ROLE_ADMIN 토큰만 접근할 수 있다.")
 @RestController
@@ -39,7 +41,7 @@ import org.springframework.web.multipart.MultipartFile
 class AdminGatheringController(
 	private val createAdminGatheringUseCase: CreateAdminGatheringUseCase,
 	private val updateAdminGatheringUseCase: UpdateAdminGatheringUseCase,
-	private val activateGatheringUseCase: ActivateGatheringUseCase,
+	private val changeGatheringStatusUseCase: ChangeGatheringStatusUseCase,
 	private val getAdminGatheringsUseCase: GetAdminGatheringsUseCase,
 ) {
 
@@ -108,14 +110,16 @@ class AdminGatheringController(
 	}
 
 	@Operation(
-		summary = "모임 활성화",
-		description = "준비중(DRAFT) 모임을 활성화해 모집중(RECRUITING)으로 전이한다. 없으면 404(GATHER-008), 준비중이 아니면 409(GATHER-013).",
+		summary = "모임 상태 변경",
+		description = "모임 상태를 전이한다. status=RECRUITING이면 활성화(준비중→모집중), status=CANCELED면 취소(준비중·모집중·모집마감→취소). " +
+			"없으면 404(GATHER-008), 전이 불가면 409(GATHER-013).",
 	)
-	@PostMapping("/{id}/activate")
-	fun activate(
+	@PostMapping("/{id}/status")
+	fun changeStatus(
 		@PathVariable id: Long,
+		@RequestBody @Valid request: ChangeGatheringStatusRequest,
 	): ApiResponse<Unit> {
-		activateGatheringUseCase.activate(id)
+		changeGatheringStatusUseCase.changeStatus(id, request.status!!)
 		return ApiResponse.success()
 	}
 }

@@ -1,6 +1,6 @@
 package com.org.meeple.infra.gathering.command.adapter
 
-import com.org.meeple.admin.gathering.command.application.port.out.ActivateAdminGatheringPort
+import com.org.meeple.admin.gathering.command.application.port.out.ChangeAdminGatheringStatusPort
 import com.org.meeple.admin.gathering.command.application.port.out.GetAdminGatheringPort
 import com.org.meeple.admin.gathering.command.application.port.out.LoadAdminGatheringPort
 import com.org.meeple.admin.gathering.command.application.port.out.SaveAdminGatheringPort
@@ -16,7 +16,7 @@ import org.springframework.stereotype.Component
 
 /**
  * [com.org.meeple.infra.gathering.command.entity.GatheringEntity]의 command 영속성 어댑터. (엔티티당 어댑터 하나)
- * 저장([SaveAdminGatheringPort])·상태 로드([GetAdminGatheringPort])·활성화([ActivateAdminGatheringPort])·
+ * 저장([SaveAdminGatheringPort])·상태 로드([GetAdminGatheringPort])·상태 전이([ChangeAdminGatheringStatusPort])·
  * 전체 로드([LoadAdminGatheringPort])·전체 수정([UpdateAdminGatheringPort]) out-port를 함께 구현한다.
  */
 @Component
@@ -24,7 +24,7 @@ class GatheringAdapter(
 	private val gatheringJpaRepository: GatheringJpaRepository,
 ) : SaveAdminGatheringPort,
 	GetAdminGatheringPort,
-	ActivateAdminGatheringPort,
+	ChangeAdminGatheringStatusPort,
 	LoadAdminGatheringPort,
 	UpdateAdminGatheringPort {
 
@@ -36,11 +36,11 @@ class GatheringAdapter(
 			.map { entity: GatheringEntity -> AdminGatheringStatus(id = entity.id ?: 0, status = entity.status) }
 			.orElse(null)
 
-	// 기존 행을 로드해 status를 모집중(RECRUITING)으로 전이해 저장한다. (다른 필드 보존)
-	override fun activate(id: Long) {
+	// 기존 행을 로드해 status를 [status]로 전이해 저장한다. (다른 필드 보존)
+	override fun changeStatus(id: Long, status: GatheringStatus) {
 		val entity: GatheringEntity = gatheringJpaRepository.findById(id)
 			.orElseThrow { IllegalStateException("모임을 찾을 수 없습니다: $id") }
-		entity.status = GatheringStatus.RECRUITING
+		entity.status = status
 		gatheringJpaRepository.save(entity)
 	}
 
