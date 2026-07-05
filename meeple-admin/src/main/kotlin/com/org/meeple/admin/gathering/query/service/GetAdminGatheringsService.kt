@@ -7,6 +7,8 @@ import com.org.meeple.admin.gathering.query.dto.AdminGatheringDetailView
 import com.org.meeple.admin.gathering.query.dto.AdminGatheringPage
 import com.org.meeple.admin.gathering.query.dto.AdminGatheringViews
 import com.org.meeple.admin.gathering.query.service.port.`in`.GetAdminGatheringsUseCase
+import com.org.meeple.common.gathering.GatheringStatus
+import com.org.meeple.common.gathering.GatheringType
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 
@@ -21,16 +23,16 @@ class GetAdminGatheringsService(
 	private val getAdminGatheringDao: GetAdminGatheringDao,
 ) : GetAdminGatheringsUseCase {
 
-	override fun getGatherings(page: Int, size: Int): AdminGatheringPage {
+	override fun getGatherings(page: Int, size: Int, status: GatheringStatus?, type: GatheringType?): AdminGatheringPage {
 		val pageNumber: Int = page.coerceAtLeast(0)
 		val pageSize: Int = size.coerceIn(1, MAX_PAGE_SIZE)
 		val offset: Long = pageNumber.toLong() * pageSize
-		val gatherings: AdminGatheringViews = getAdminGatheringDao.findPage(offset, pageSize)
+		val gatherings: AdminGatheringViews = getAdminGatheringDao.findPage(offset, pageSize, status, type)
 		return AdminGatheringPage(
 			content = gatherings,
 			page = pageNumber,
 			size = pageSize,
-			totalElements = getAdminGatheringDao.count(),
+			totalElements = getAdminGatheringDao.count(status, type),
 		)
 	}
 
