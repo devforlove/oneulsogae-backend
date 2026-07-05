@@ -14,5 +14,6 @@ enum class GatheringErrorCode(
 	DESCRIPTION_TOO_LONG("GATHER-003", "모임 소개는 1000자 이하여야 합니다.", HttpStatus.BAD_REQUEST),
 	INVALID_CAPACITY("GATHER-004", "모임 정원은 최소 2명 이상이어야 합니다.", HttpStatus.BAD_REQUEST),
 	INVALID_GATHERING_AT("GATHER-005", "모임 일시는 현재 이후여야 합니다.", HttpStatus.BAD_REQUEST),
-	INVALID_FEE("GATHER-006", "참가비는 0원 이상이어야 합니다.", HttpStatus.BAD_REQUEST),
+	INVALID_FEE("GATHER-006", "참가비는 0원 이상이어야 하며, 남/녀를 함께 입력해야 합니다.", HttpStatus.BAD_REQUEST),
+	INVALID_REGION("GATHER-007", "모임 지역은 필수입니다.", HttpStatus.BAD_REQUEST),
 }

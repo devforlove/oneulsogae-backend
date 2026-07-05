@@ -47,9 +47,9 @@ class GatheringEntity(
 	@Column(name = "description", length = 1000)
 	var description: String? = null,
 
-	/** 모임 활동지역 id(regions FK). 표시용 지역명은 응답 시 regions join으로 내려준다. */
-	@Column(name = "region_id", nullable = false)
-	var regionId: Long,
+	/** 모임 활동지역(자유 텍스트). 예: "서울 강남구". */
+	@Column(name = "region", nullable = false, length = 100)
+	var region: String,
 
 	/** 모임 일시. */
 	@Column(name = "gathering_at", nullable = false)
@@ -59,9 +59,29 @@ class GatheringEntity(
 	@Column(name = "capacity", nullable = false)
 	var capacity: Int,
 
-	/** 참가비(원). 0이면 무료. */
-	@Column(name = "fee", nullable = false)
-	var fee: Int,
+	/** 정상가 - 남성 참가비(원). 0이면 무료. */
+	@Column(name = "male_fee", nullable = false)
+	var maleFee: Int,
+
+	/** 정상가 - 여성 참가비(원). 0이면 무료. */
+	@Column(name = "female_fee", nullable = false)
+	var femaleFee: Int,
+
+	/** 얼리버드 특가 - 남성 참가비(원). 특가가 없는 모임은 null. */
+	@Column(name = "early_bird_male_fee")
+	var earlyBirdMaleFee: Int? = null,
+
+	/** 얼리버드 특가 - 여성 참가비(원). 특가가 없는 모임은 null. */
+	@Column(name = "early_bird_female_fee")
+	var earlyBirdFemaleFee: Int? = null,
+
+	/** 할인가 - 남성 참가비(원). 할인이 없는 모임은 null. */
+	@Column(name = "discount_male_fee")
+	var discountMaleFee: Int? = null,
+
+	/** 할인가 - 여성 참가비(원). 할인이 없는 모임은 null. */
+	@Column(name = "discount_female_fee")
+	var discountFemaleFee: Int? = null,
 
 	/** 모임 진행 상태. 모집중으로 시작한다. */
 	@Enumerated(EnumType.STRING)

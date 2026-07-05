@@ -1,6 +1,7 @@
 package com.org.meeple.infra.gathering.command.mapper
 
 import com.org.meeple.core.gathering.command.domain.Gathering
+import com.org.meeple.core.gathering.command.domain.GatheringFee
 import com.org.meeple.infra.gathering.command.entity.GatheringEntity
 
 fun GatheringEntity.toDomain(): Gathering =
@@ -10,10 +11,12 @@ fun GatheringEntity.toDomain(): Gathering =
 		userId = userId,
 		title = title,
 		description = description,
-		regionId = regionId,
+		region = region,
 		gatheringAt = gatheringAt,
 		capacity = capacity,
-		fee = fee,
+		fee = GatheringFee(maleFee, femaleFee),
+		earlyBirdFee = GatheringFee.optional(earlyBirdMaleFee, earlyBirdFemaleFee),
+		discountFee = GatheringFee.optional(discountMaleFee, discountFemaleFee),
 		status = status,
 	)
 
@@ -23,9 +26,14 @@ fun Gathering.toEntity(): GatheringEntity =
 		userId = userId,
 		title = title,
 		description = description,
-		regionId = regionId,
+		region = region,
 		gatheringAt = gatheringAt,
 		capacity = capacity,
-		fee = fee,
+		maleFee = fee.male,
+		femaleFee = fee.female,
+		earlyBirdMaleFee = earlyBirdFee?.male,
+		earlyBirdFemaleFee = earlyBirdFee?.female,
+		discountMaleFee = discountFee?.male,
+		discountFemaleFee = discountFee?.female,
 		status = status,
 	).also { if (id != 0L) it.id = id }

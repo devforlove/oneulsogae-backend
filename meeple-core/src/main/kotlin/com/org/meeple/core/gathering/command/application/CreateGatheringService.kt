@@ -5,6 +5,7 @@ import com.org.meeple.core.gathering.command.application.port.`in`.CreateGatheri
 import com.org.meeple.core.gathering.command.application.port.`in`.command.CreateGatheringCommand
 import com.org.meeple.core.gathering.command.application.port.out.SaveGatheringPort
 import com.org.meeple.core.gathering.command.domain.Gathering
+import com.org.meeple.core.gathering.command.domain.GatheringFee
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 
@@ -22,10 +23,12 @@ class CreateGatheringService(
 				type = command.type,
 				title = command.title,
 				description = command.description,
-				regionId = command.regionId,
+				region = command.region,
 				gatheringAt = command.gatheringAt,
 				capacity = command.capacity,
-				fee = command.fee,
+				fee = GatheringFee(command.maleFee, command.femaleFee),
+				earlyBirdFee = GatheringFee.optional(command.earlyBirdMaleFee, command.earlyBirdFemaleFee),
+				discountFee = GatheringFee.optional(command.discountMaleFee, command.discountFemaleFee),
 				now = timeGenerator.now(),
 			),
 		)
