@@ -27,4 +27,5 @@ enum class AdminErrorCode(
 	GATHERING_INVALID_GATHERING_AT("GATHER-005", "모임 일시는 현재 이후여야 합니다.", HttpStatus.BAD_REQUEST),
 	GATHERING_INVALID_FEE("GATHER-006", "참가비는 0원 이상이어야 하며, 남/녀를 함께 입력해야 합니다.", HttpStatus.BAD_REQUEST),
 	GATHERING_INVALID_REGION("GATHER-007", "모임 지역은 필수입니다.", HttpStatus.BAD_REQUEST),
+	GATHERING_NOT_FOUND("GATHER-008", "모임을 찾을 수 없습니다.", HttpStatus.NOT_FOUND),
 }
