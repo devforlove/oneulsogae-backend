@@ -4,6 +4,7 @@ import com.org.meeple.admin.common.error.AdminErrorCode
 import com.org.meeple.admin.common.error.AdminException
 import com.org.meeple.admin.gathering.command.domain.AdminGathering
 import com.org.meeple.admin.gathering.command.domain.GatheringFee
+import com.org.meeple.admin.gathering.command.domain.GatheringImage
 import com.org.meeple.common.gathering.GatheringStatus
 import com.org.meeple.common.gathering.GatheringType
 import io.kotest.assertions.throwables.shouldThrow
@@ -24,7 +25,7 @@ class AdminGatheringTest : DescribeSpec({
 				type = GatheringType.PARTY,
 				title = "주말 파티",
 				description = "함께 즐겨요",
-				imageUrl = "https://cdn.test.com/party.png",
+				imageKey = "gatherings/party.png",
 				region = "서울 강남구",
 				gatheringAt = future,
 				capacity = 4,
@@ -36,7 +37,7 @@ class AdminGatheringTest : DescribeSpec({
 
 			gathering.status shouldBe GatheringStatus.RECRUITING
 			gathering.type shouldBe GatheringType.PARTY
-			gathering.imageUrl shouldBe "https://cdn.test.com/party.png"
+			gathering.imageKey shouldBe "gatherings/party.png"
 			gathering.region shouldBe "서울 강남구"
 			gathering.fee shouldBe fee
 			gathering.earlyBirdFee shouldBe GatheringFee(male = 7000, female = 5000)
@@ -96,7 +97,7 @@ class AdminGatheringTest : DescribeSpec({
 				type = GatheringType.ONE_ON_ONE_ROTATION,
 				title = "가".repeat(100),
 				description = "가".repeat(1000),
-				imageUrl = null,
+				imageKey = null,
 				region = "서울",
 				gatheringAt = now.plusSeconds(1),
 				capacity = 2,
@@ -137,6 +138,34 @@ class AdminGatheringTest : DescribeSpec({
 				.errorCode shouldBe AdminErrorCode.GATHERING_INVALID_FEE
 			shouldThrow<AdminException> { GatheringFee.optional(male = null, female = 3000) }
 				.errorCode shouldBe AdminErrorCode.GATHERING_INVALID_FEE
+		}
+	}
+
+	describe("GatheringImage.validate") {
+
+		it("JPEG·PNG는 통과한다") {
+			GatheringImage.validate("image/jpeg", 1024)
+			GatheringImage.validate("image/png", 1024)
+		}
+
+		it("허용하지 않는 형식(gif)이면 GATHERING_INVALID_IMAGE_TYPE을 던진다") {
+			shouldThrow<AdminException> { GatheringImage.validate("image/gif", 1024) }
+				.errorCode shouldBe AdminErrorCode.GATHERING_INVALID_IMAGE_TYPE
+		}
+
+		it("빈 파일(size 0)이면 GATHERING_INVALID_IMAGE_TYPE을 던진다") {
+			shouldThrow<AdminException> { GatheringImage.validate("image/png", 0) }
+				.errorCode shouldBe AdminErrorCode.GATHERING_INVALID_IMAGE_TYPE
+		}
+
+		it("5MB를 초과하면 GATHERING_IMAGE_TOO_LARGE를 던진다") {
+			shouldThrow<AdminException> { GatheringImage.validate("image/png", 5L * 1024 * 1024 + 1) }
+				.errorCode shouldBe AdminErrorCode.GATHERING_IMAGE_TOO_LARGE
+		}
+
+		it("extensionOf는 콘텐츠 타입에 맞는 확장자를 준다") {
+			GatheringImage.extensionOf("image/jpeg") shouldBe "jpg"
+			GatheringImage.extensionOf("image/png") shouldBe "png"
 		}
 	}
 })

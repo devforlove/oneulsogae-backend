@@ -21,9 +21,6 @@ data class CreateAdminGatheringRequest(
 	@field:Size(max = 1000, message = "모임 소개는 1000자 이하여야 합니다.")
 	val description: String? = null,
 
-	@field:Size(max = 512, message = "대표 이미지 URL은 512자 이하여야 합니다.")
-	val imageUrl: String? = null,
-
 	@field:NotBlank(message = "모임 지역은 필수입니다.")
 	@field:Size(max = 100, message = "모임 지역은 100자 이하여야 합니다.")
 	val region: String? = null,
@@ -59,12 +56,15 @@ data class CreateAdminGatheringRequest(
 	@field:PositiveOrZero(message = "참가비는 0원 이상이어야 합니다.")
 	val discountFemaleFee: Int? = null,
 ) {
-	fun toCommand(): CreateAdminGatheringCommand =
+	/** 대표 이미지(선택)는 컨트롤러가 MultipartFile에서 뽑아 넘긴다. (없으면 [imageContent]가 null) */
+	fun toCommand(imageContent: ByteArray?, imageContentType: String?, imageSize: Long): CreateAdminGatheringCommand =
 		CreateAdminGatheringCommand(
 			type = type!!,
 			title = title!!,
 			description = description,
-			imageUrl = imageUrl,
+			imageContent = imageContent,
+			imageContentType = imageContentType,
+			imageSize = imageSize,
 			region = region!!,
 			gatheringAt = gatheringAt!!,
 			capacity = capacity!!,

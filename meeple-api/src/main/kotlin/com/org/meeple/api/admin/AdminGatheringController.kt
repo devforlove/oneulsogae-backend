@@ -12,13 +12,15 @@ import com.org.meeple.core.common.response.ApiResponse
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.tags.Tag
 import jakarta.validation.Valid
+import org.springframework.http.MediaType
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.PostMapping
-import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RequestParam
+import org.springframework.web.bind.annotation.RequestPart
 import org.springframework.web.bind.annotation.RestController
+import org.springframework.web.multipart.MultipartFile
 
 /**
  * 어드민 모임 엔드포인트. `/admin` 하위는 SecurityConfig의 hasRole(ADMIN)으로 보호된다.
@@ -60,11 +62,20 @@ class AdminGatheringController(
 
 	@Operation(
 		summary = "모임 생성",
-		description = "종류·제목·소개·지역·일시·정원·참가비(정상가 남/녀 필수, 얼리버드·할인가 남/녀 선택)로 모임을 등록한다. 운영이 만든 모임으로 저장된다.",
+		description = "multipart/form-data로 등록한다. request 파트(application/json)에 종류·제목·소개·지역·일시·정원·참가비" +
+			"(정상가 남/녀 필수, 얼리버드·할인가 남/녀 선택)를, image 파트(선택)에 대표 이미지(JPEG·PNG, 최대 5MB)를 담는다. " +
+			"이미지는 비공개로 저장되고 조회 시 presigned URL로 내려간다. 운영이 만든 모임으로 저장된다.",
 	)
-	@PostMapping
+	@PostMapping(consumes = [MediaType.MULTIPART_FORM_DATA_VALUE])
 	fun create(
-		@RequestBody @Valid request: CreateAdminGatheringRequest,
-	): ApiResponse<CreateAdminGatheringResponse> =
-		ApiResponse.success(CreateAdminGatheringResponse.of(createAdminGatheringUseCase.create(request.toCommand())))
+		@RequestPart("request") @Valid request: CreateAdminGatheringRequest,
+		@RequestPart(value = "image", required = false) image: MultipartFile?,
+	): ApiResponse<CreateAdminGatheringResponse> {
+		val command = request.toCommand(
+			imageContent = image?.bytes,
+			imageContentType = image?.contentType,
+			imageSize = image?.size ?: 0,
+		)
+		return ApiResponse.success(CreateAdminGatheringResponse.of(createAdminGatheringUseCase.create(command)))
+	}
 }

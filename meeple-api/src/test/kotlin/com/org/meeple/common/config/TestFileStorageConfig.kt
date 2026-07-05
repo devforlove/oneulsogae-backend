@@ -1,6 +1,8 @@
 package com.org.meeple.common.config
 
 import com.org.meeple.admin.companyverification.query.service.port.out.CompanyVerificationImageUrlPort
+import com.org.meeple.admin.gathering.command.application.port.out.UploadGatheringImagePort
+import com.org.meeple.admin.gathering.query.service.port.out.GatheringImageUrlPort
 import com.org.meeple.core.user.command.application.port.out.FileStoragePort
 import org.springframework.boot.test.context.TestConfiguration
 import org.springframework.context.annotation.Bean
@@ -26,4 +28,14 @@ class TestFileStorageConfig {
 	@Primary
 	fun fakeCompanyVerificationImageUrlPort(): CompanyVerificationImageUrlPort =
 		CompanyVerificationImageUrlPort { imageKey: String -> "https://presigned.test/$imageKey" }
+
+	@Bean
+	@Primary
+	fun fakeUploadGatheringImagePort(): UploadGatheringImagePort =
+		UploadGatheringImagePort { key: String, _: ByteArray, _: String -> key }
+
+	@Bean
+	@Primary
+	fun fakeGatheringImageUrlPort(): GatheringImageUrlPort =
+		GatheringImageUrlPort { imageKey: String -> "https://presigned.test/$imageKey" }
 }

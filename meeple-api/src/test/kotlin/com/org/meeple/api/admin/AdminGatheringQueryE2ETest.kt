@@ -120,7 +120,7 @@ class AdminGatheringQueryE2ETest : AbstractIntegrationSupport({
 				GatheringEntityFixture.create(
 					title = "상세 모임",
 					description = "상세 소개",
-					imageUrl = "https://cdn.test.com/detail.png",
+					imageKey = "gatherings/detail.png",
 					region = "서울 마포구",
 					maleFee = 10000,
 					femaleFee = 8000,
@@ -138,7 +138,8 @@ class AdminGatheringQueryE2ETest : AbstractIntegrationSupport({
 				body("data.id", id.toInt())
 				body("data.title", "상세 모임")
 				body("data.description", "상세 소개")
-				body("data.imageUrl", "https://cdn.test.com/detail.png")
+				// dao가 채운 image_key를 서비스가 presigned URL로 변환해 내려준다. (테스트 페이크: https://presigned.test/{key})
+				body("data.imageUrl", "https://presigned.test/gatherings/detail.png")
 				body("data.region", "서울 마포구")
 				body("data.maleFee", 10000)
 				body("data.femaleFee", 8000)
@@ -148,7 +149,9 @@ class AdminGatheringQueryE2ETest : AbstractIntegrationSupport({
 		}
 
 		it("얼리버드·할인가가 없는 모임은 해당 필드가 null이다 (200)") {
-			val id: Long = IntegrationUtil.persist(GatheringEntityFixture.create(title = "특가 없는 모임")).id!!
+			val id: Long = IntegrationUtil.persist(
+				GatheringEntityFixture.create(title = "특가 없는 모임", imageKey = null),
+			).id!!
 
 			get("/admin/v1/gatherings/$id") {
 				bearer(adminAccessTokenFor(9901L))
@@ -156,6 +159,8 @@ class AdminGatheringQueryE2ETest : AbstractIntegrationSupport({
 				status(200)
 				body("data.earlyBirdMaleFee", null)
 				body("data.discountMaleFee", null)
+				// 대표 이미지가 없으면 imageUrl도 null.
+				body("data.imageUrl", null)
 			}
 		}
 
