@@ -44,4 +44,5 @@ enum class UserErrorCode(
 	EMPTY_IMAGE("USER-020", "이미지 파일이 비어 있습니다.", HttpStatus.BAD_REQUEST),
 	INVALID_IMAGE_TYPE("USER-021", "지원하지 않는 파일 형식입니다. JPEG·PNG·PDF만 업로드할 수 있습니다.", HttpStatus.BAD_REQUEST),
 	IMAGE_TOO_LARGE("USER-022", "파일이 너무 큽니다. 최대 10MB까지 업로드할 수 있습니다.", HttpStatus.PAYLOAD_TOO_LARGE),
+	INVALID_COMPANY_NAME("USER-023", "회사명을 입력해 주세요. (최대 50자)", HttpStatus.BAD_REQUEST),
 }

@@ -8,6 +8,9 @@ dependencies {
 	implementation("org.springframework.boot:spring-boot-starter-validation")
 	implementation("org.springframework:spring-tx")
 	implementation("org.springframework:spring-web")
+	// MissingServletRequestParameterException(ServletRequestBindingException)이 jakarta.servlet.ServletException을 상속해 컴파일에 필요.
+	// 런타임 서블릿 컨테이너는 meeple-api의 spring-boot-starter-web이 제공하므로 compileOnly로 둔다.
+	compileOnly("jakarta.servlet:jakarta.servlet-api")
 	// @DistributedLock AOP 위빙(@Aspect/@Around)을 위한 aspectjweaver + @EnableAspectJAutoProxy 자동설정.
 	// 락 동작 자체는 core의 out-port(DistributedLockPort)로 추상화하고 구현은 infra(Redisson)에 둔다.
 	implementation("org.springframework.boot:spring-boot-starter-aspectj")

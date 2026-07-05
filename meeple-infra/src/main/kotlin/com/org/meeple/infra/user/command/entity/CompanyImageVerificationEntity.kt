@@ -34,4 +34,10 @@ class CompanyImageVerificationEntity(
 	@Enumerated(EnumType.STRING)
 	@Column(name = "status", nullable = false, columnDefinition = "varchar(20)")
 	var status: CompanyImageVerificationStatus = CompanyImageVerificationStatus.PENDING,
+
+	@Column(name = "company_name", length = 100)
+	var companyName: String? = null,
+
+	@Column(name = "rejection_reason", length = 500)
+	var rejectionReason: String? = null,
 ) : BaseEntity()

@@ -10,6 +10,7 @@ import org.springframework.http.ResponseEntity
 import org.springframework.http.converter.HttpMessageNotReadableException
 import org.springframework.validation.FieldError
 import org.springframework.web.bind.MethodArgumentNotValidException
+import org.springframework.web.bind.MissingServletRequestParameterException
 import org.springframework.web.bind.annotation.ExceptionHandler
 import org.springframework.web.bind.annotation.RestControllerAdvice
 import org.springframework.web.method.annotation.HandlerMethodValidationException
@@ -117,6 +118,16 @@ class GlobalExceptionHandler {
 		return ResponseEntity
 			.status(HttpStatus.BAD_REQUEST)
 			.body(ApiResponse.error(ErrorResponse("INVALID_REQUEST", "요청 본문을 해석할 수 없습니다.")))
+	}
+
+	/** 필수 @RequestParam 누락 처리. (컨트롤러 검증에 닿지 못하고 바인딩 단계에서 오르는 예외) */
+	@ExceptionHandler(MissingServletRequestParameterException::class)
+	fun handleMissingParameter(e: MissingServletRequestParameterException): ResponseEntity<ApiResponse<Nothing>> {
+		// 클라이언트 입력 오류(4xx)는 처리된 예외이므로 info로 남긴다.
+		log.info("MissingServletRequestParameterException: {}", e.message)
+		return ResponseEntity
+			.status(HttpStatus.BAD_REQUEST)
+			.body(ApiResponse.error(ErrorResponse("INVALID_REQUEST", "필수 요청 파라미터가 누락되었습니다: ${e.parameterName}")))
 	}
 
 	@ExceptionHandler(Exception::class)

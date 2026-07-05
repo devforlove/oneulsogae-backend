@@ -37,7 +37,9 @@ class SubmitCompanyImageVerificationService(
 		val key: String = objectKey(user.id, contentType)
 		fileStoragePort.upload(key, command.content, contentType)
 
-		return saveCompanyImageVerificationPort.save(CompanyImageVerification.create(userId = user.id, imageKey = key))
+		return saveCompanyImageVerificationPort.save(
+			CompanyImageVerification.create(userId = user.id, imageKey = key, companyName = command.companyName),
+		)
 	}
 
 	/** 사용자별 폴더 아래 충돌 없는 오브젝트 키를 만든다. (예: company-image-verifications/42/{uuid}.jpg) */

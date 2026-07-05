@@ -10,6 +10,8 @@ fun CompanyImageVerificationEntity.toDomain(): CompanyImageVerification =
 		userId = userId,
 		imageKey = imageKey,
 		status = status,
+		companyName = companyName,
+		rejectionReason = rejectionReason,
 	)
 
 /**
@@ -21,4 +23,6 @@ fun CompanyImageVerification.toEntity(): CompanyImageVerificationEntity =
 		userId = userId,
 		imageKey = imageKey,
 		status = status,
+		companyName = companyName,
+		rejectionReason = rejectionReason,
 	).also { if (id != 0L) it.id = id }

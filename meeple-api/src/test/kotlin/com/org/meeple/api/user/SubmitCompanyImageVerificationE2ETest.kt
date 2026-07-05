@@ -37,6 +37,7 @@ class SubmitCompanyImageVerificationE2ETest : AbstractIntegrationSupport({
 				RestAssured.given()
 					.header("Authorization", "Bearer ${accessTokenFor(userId)}")
 					.multiPart("image", "resume.jpg", "fake-image-bytes".toByteArray(), "image/jpeg")
+					.multiPart("companyName", "미플", "text/plain;charset=UTF-8")
 					.post("/users/v1/company-image/verifications")
 					.then()
 					.statusCode(200)
@@ -47,6 +48,7 @@ class SubmitCompanyImageVerificationE2ETest : AbstractIntegrationSupport({
 				saved.status shouldBe CompanyImageVerificationStatus.PENDING
 				saved.imageKey.shouldNotBeNull()
 				saved.imageKey shouldStartWith "company-image-verifications/$userId/"
+				saved.companyName shouldBe "미플"
 			}
 		}
 
@@ -57,6 +59,7 @@ class SubmitCompanyImageVerificationE2ETest : AbstractIntegrationSupport({
 				RestAssured.given()
 					.header("Authorization", "Bearer ${accessTokenFor(userId)}")
 					.multiPart("image", "anim.gif", "gif-bytes".toByteArray(), "image/gif")
+					.multiPart("companyName", "미플")
 					.post("/users/v1/company-image/verifications")
 					.then()
 					.statusCode(400)
@@ -74,6 +77,7 @@ class SubmitCompanyImageVerificationE2ETest : AbstractIntegrationSupport({
 				RestAssured.given()
 					.header("Authorization", "Bearer ${accessTokenFor(userId)}")
 					.multiPart("image", "empty.png", ByteArray(0), "image/png")
+					.multiPart("companyName", "미플")
 					.post("/users/v1/company-image/verifications")
 					.then()
 					.statusCode(400)
@@ -85,9 +89,23 @@ class SubmitCompanyImageVerificationE2ETest : AbstractIntegrationSupport({
 			it("401을 반환한다") {
 				RestAssured.given()
 					.multiPart("image", "resume.jpg", "fake".toByteArray(), "image/jpeg")
+					.multiPart("companyName", "미플")
 					.post("/users/v1/company-image/verifications")
 					.then()
 					.statusCode(401)
+			}
+		}
+
+		context("회사명 없이 업로드하면") {
+			it("400을 반환한다") {
+				val userId: Long = persistUser("company-image-noname")
+
+				RestAssured.given()
+					.header("Authorization", "Bearer ${accessTokenFor(userId)}")
+					.multiPart("image", "resume.jpg", "fake-image-bytes".toByteArray(), "image/jpeg")
+					.post("/users/v1/company-image/verifications")
+					.then()
+					.statusCode(400)
 			}
 		}
 	}

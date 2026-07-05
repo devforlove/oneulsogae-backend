@@ -13,10 +13,14 @@ object CompanyImageVerificationEntityFixture {
 		userId: Long = 1L,
 		imageKey: String = "company-image-verifications/1/test-object.jpg",
 		status: CompanyImageVerificationStatus = CompanyImageVerificationStatus.PENDING,
+		companyName: String? = "테스트회사",
+		rejectionReason: String? = null,
 	): CompanyImageVerificationEntity =
 		CompanyImageVerificationEntity(
 			userId = userId,
 			imageKey = imageKey,
 			status = status,
+			companyName = companyName,
+			rejectionReason = rejectionReason,
 		)
 }

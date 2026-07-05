@@ -36,11 +36,13 @@ class UserCompanyImageVerificationController(
 	fun submitCompanyImageVerification(
 		@LoginUser user: AuthUser,
 		@RequestParam("image") image: MultipartFile,
+		@RequestParam("companyName") companyName: String,
 	): ApiResponse<CompanyImageVerificationResponse> {
 		val command = SubmitCompanyImageVerificationCommand(
 			content = image.bytes,
 			contentType = image.contentType,
 			size = image.size,
+			companyName = companyName,
 		)
 		return ApiResponse.success(
 			CompanyImageVerificationResponse.of(submitCompanyImageVerificationUseCase.submit(user.id, command)),
