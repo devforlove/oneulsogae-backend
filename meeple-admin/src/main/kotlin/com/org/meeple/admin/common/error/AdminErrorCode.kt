@@ -17,4 +17,5 @@ enum class AdminErrorCode(
 	COMPANY_IMAGE_VERIFICATION_NOT_FOUND("COMPANY-IMAGE-001", "직장 인증을 찾을 수 없습니다.", HttpStatus.NOT_FOUND),
 	NOTICE_NOT_FOUND("NOTICE-001", "공지를 찾을 수 없습니다.", HttpStatus.NOT_FOUND),
 	INQUIRY_NOT_FOUND("INQUIRY-001", "문의를 찾을 수 없습니다.", HttpStatus.NOT_FOUND),
+	INQUIRY_ALREADY_ANSWERED("INQUIRY-002", "이미 답변된 문의입니다.", HttpStatus.CONFLICT),
 }
