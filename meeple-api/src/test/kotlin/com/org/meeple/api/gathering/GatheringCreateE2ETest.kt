@@ -22,7 +22,7 @@ class GatheringCreateE2ETest : AbstractIntegrationSupport({
 				val response = post("/gatherings/v1") {
 					bearer(accessTokenFor(userId))
 					jsonBody(
-						"""{"type": "PARTY", "title": "주말 파티", "description": "함께 즐겨요", "gatheringAt": "2999-12-31T18:00:00", "capacity": 4}""",
+						"""{"type": "PARTY", "title": "주말 파티", "description": "함께 즐겨요", "regionId": 10, "gatheringAt": "2999-12-31T18:00:00", "capacity": 4, "fee": 10000}""",
 					)
 				}
 				response expect {
@@ -41,7 +41,9 @@ class GatheringCreateE2ETest : AbstractIntegrationSupport({
 				saved.status shouldBe GatheringStatus.RECRUITING
 				saved.type shouldBe GatheringType.PARTY
 				saved.title shouldBe "주말 파티"
+				saved.regionId shouldBe 10L
 				saved.capacity shouldBe 4
+				saved.fee shouldBe 10000
 			}
 		}
 
@@ -50,7 +52,7 @@ class GatheringCreateE2ETest : AbstractIntegrationSupport({
 				post("/gatherings/v1") {
 					bearer(accessTokenFor(2002L))
 					jsonBody(
-						"""{"type": "COOKING", "title": "쿠킹", "gatheringAt": "2999-12-31T18:00:00", "capacity": 1}""",
+						"""{"type": "COOKING", "title": "쿠킹", "regionId": 10, "gatheringAt": "2999-12-31T18:00:00", "capacity": 1, "fee": 0}""",
 					)
 				} expect {
 					status(400)
@@ -63,7 +65,7 @@ class GatheringCreateE2ETest : AbstractIntegrationSupport({
 			it("401을 반환한다") {
 				post("/gatherings/v1") {
 					jsonBody(
-						"""{"type": "PARTY", "title": "파티", "gatheringAt": "2999-12-31T18:00:00", "capacity": 4}""",
+						"""{"type": "PARTY", "title": "파티", "regionId": 10, "gatheringAt": "2999-12-31T18:00:00", "capacity": 4, "fee": 0}""",
 					)
 				} expect {
 					status(401)

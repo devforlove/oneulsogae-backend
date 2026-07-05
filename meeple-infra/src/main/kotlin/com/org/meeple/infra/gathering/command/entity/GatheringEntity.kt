@@ -47,6 +47,10 @@ class GatheringEntity(
 	@Column(name = "description", length = 1000)
 	var description: String? = null,
 
+	/** 모임 활동지역 id(regions FK). 표시용 지역명은 응답 시 regions join으로 내려준다. */
+	@Column(name = "region_id", nullable = false)
+	var regionId: Long,
+
 	/** 모임 일시. */
 	@Column(name = "gathering_at", nullable = false)
 	var gatheringAt: LocalDateTime,
@@ -54,6 +58,10 @@ class GatheringEntity(
 	/** 정원(최대 참가 인원). */
 	@Column(name = "capacity", nullable = false)
 	var capacity: Int,
+
+	/** 참가비(원). 0이면 무료. */
+	@Column(name = "fee", nullable = false)
+	var fee: Int,
 
 	/** 모임 진행 상태. 모집중으로 시작한다. */
 	@Enumerated(EnumType.STRING)

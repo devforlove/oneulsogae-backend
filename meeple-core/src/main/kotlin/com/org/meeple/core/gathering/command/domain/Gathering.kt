@@ -22,8 +22,10 @@ data class Gathering(
 	val userId: Long?,
 	val title: String,
 	val description: String?,
+	val regionId: Long,
 	val gatheringAt: LocalDateTime,
 	val capacity: Int,
+	val fee: Int,
 	val status: GatheringStatus = GatheringStatus.RECRUITING,
 ) {
 	companion object {
@@ -37,18 +39,22 @@ data class Gathering(
 			type: GatheringType,
 			title: String,
 			description: String?,
+			regionId: Long,
 			gatheringAt: LocalDateTime,
 			capacity: Int,
+			fee: Int,
 			now: LocalDateTime,
 		): Gathering {
-			validateGathering(title, description, capacity, gatheringAt, now)
+			validateGathering(title, description, capacity, fee, gatheringAt, now)
 			return Gathering(
 				type = type,
 				userId = userId,
 				title = title,
 				description = description,
+				regionId = regionId,
 				gatheringAt = gatheringAt,
 				capacity = capacity,
+				fee = fee,
 			)
 		}
 
@@ -56,6 +62,7 @@ data class Gathering(
 			title: String,
 			description: String?,
 			capacity: Int,
+			fee: Int,
 			gatheringAt: LocalDateTime,
 			now: LocalDateTime,
 		) {
@@ -70,6 +77,9 @@ data class Gathering(
 			}
 			if (capacity < MIN_CAPACITY) {
 				throw BusinessException(GatheringErrorCode.INVALID_CAPACITY)
+			}
+			if (fee < 0) {
+				throw BusinessException(GatheringErrorCode.INVALID_FEE)
 			}
 			if (!gatheringAt.isAfter(now)) {
 				throw BusinessException(GatheringErrorCode.INVALID_GATHERING_AT)

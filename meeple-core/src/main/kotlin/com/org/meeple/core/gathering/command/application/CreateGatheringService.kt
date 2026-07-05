@@ -22,8 +22,10 @@ class CreateGatheringService(
 				type = command.type,
 				title = command.title,
 				description = command.description,
+				regionId = command.regionId,
 				gatheringAt = command.gatheringAt,
 				capacity = command.capacity,
+				fee = command.fee,
 				now = timeGenerator.now(),
 			),
 		)

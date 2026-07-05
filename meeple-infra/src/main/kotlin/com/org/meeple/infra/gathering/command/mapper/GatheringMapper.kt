@@ -10,8 +10,10 @@ fun GatheringEntity.toDomain(): Gathering =
 		userId = userId,
 		title = title,
 		description = description,
+		regionId = regionId,
 		gatheringAt = gatheringAt,
 		capacity = capacity,
+		fee = fee,
 		status = status,
 	)
 
@@ -21,7 +23,9 @@ fun Gathering.toEntity(): GatheringEntity =
 		userId = userId,
 		title = title,
 		description = description,
+		regionId = regionId,
 		gatheringAt = gatheringAt,
 		capacity = capacity,
+		fee = fee,
 		status = status,
 	).also { if (id != 0L) it.id = id }

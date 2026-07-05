@@ -23,14 +23,18 @@ class GatheringTest : DescribeSpec({
 				type = GatheringType.PARTY,
 				title = "주말 파티",
 				description = "함께 즐겨요",
+				regionId = 10L,
 				gatheringAt = future,
 				capacity = 4,
+				fee = 10000,
 				now = now,
 			)
 
 			gathering.status shouldBe GatheringStatus.RECRUITING
 			gathering.type shouldBe GatheringType.PARTY
 			gathering.userId shouldBe 1L
+			gathering.regionId shouldBe 10L
+			gathering.fee shouldBe 10000
 		}
 
 		it("userId가 null이면 운영 생성 모임으로 만들어진다") {
@@ -39,8 +43,10 @@ class GatheringTest : DescribeSpec({
 				type = GatheringType.COOKING,
 				title = "쿠킹 클래스",
 				description = null,
+				regionId = 10L,
 				gatheringAt = future,
 				capacity = 6,
+				fee = 0,
 				now = now,
 			)
 
@@ -50,7 +56,7 @@ class GatheringTest : DescribeSpec({
 
 		it("제목이 공백이면 INVALID_TITLE을 던진다") {
 			val exception: BusinessException = shouldThrow {
-				Gathering.create(1L, GatheringType.PARTY, "  ", null, future, 4, now)
+				Gathering.create(1L, GatheringType.PARTY, "  ", null, 10L, future, 4, 0, now)
 			}
 
 			exception.errorCode shouldBe GatheringErrorCode.INVALID_TITLE
@@ -58,7 +64,7 @@ class GatheringTest : DescribeSpec({
 
 		it("제목이 100자를 초과하면 TITLE_TOO_LONG을 던진다") {
 			val exception: BusinessException = shouldThrow {
-				Gathering.create(1L, GatheringType.PARTY, "가".repeat(101), null, future, 4, now)
+				Gathering.create(1L, GatheringType.PARTY, "가".repeat(101), null, 10L, future, 4, 0, now)
 			}
 
 			exception.errorCode shouldBe GatheringErrorCode.TITLE_TOO_LONG
@@ -66,7 +72,7 @@ class GatheringTest : DescribeSpec({
 
 		it("소개가 1000자를 초과하면 DESCRIPTION_TOO_LONG을 던진다") {
 			val exception: BusinessException = shouldThrow {
-				Gathering.create(1L, GatheringType.PARTY, "파티", "가".repeat(1001), future, 4, now)
+				Gathering.create(1L, GatheringType.PARTY, "파티", "가".repeat(1001), 10L, future, 4, 0, now)
 			}
 
 			exception.errorCode shouldBe GatheringErrorCode.DESCRIPTION_TOO_LONG
@@ -74,32 +80,43 @@ class GatheringTest : DescribeSpec({
 
 		it("정원이 2 미만이면 INVALID_CAPACITY를 던진다") {
 			val exception: BusinessException = shouldThrow {
-				Gathering.create(1L, GatheringType.PARTY, "파티", null, future, 1, now)
+				Gathering.create(1L, GatheringType.PARTY, "파티", null, 10L, future, 1, 0, now)
 			}
 
 			exception.errorCode shouldBe GatheringErrorCode.INVALID_CAPACITY
 		}
 
+		it("참가비가 0 미만이면 INVALID_FEE를 던진다") {
+			val exception: BusinessException = shouldThrow {
+				Gathering.create(1L, GatheringType.PARTY, "파티", null, 10L, future, 4, -1, now)
+			}
+
+			exception.errorCode shouldBe GatheringErrorCode.INVALID_FEE
+		}
+
 		it("모임 일시가 현재와 같거나 이전이면 INVALID_GATHERING_AT을 던진다") {
 			val exception: BusinessException = shouldThrow {
-				Gathering.create(1L, GatheringType.PARTY, "파티", null, now, 4, now)
+				Gathering.create(1L, GatheringType.PARTY, "파티", null, 10L, now, 4, 0, now)
 			}
 
 			exception.errorCode shouldBe GatheringErrorCode.INVALID_GATHERING_AT
 		}
 
-		it("경계값(정원 2·제목 100자·현재 직후 일시)은 통과한다") {
+		it("경계값(정원 2·참가비 0·제목 100자·현재 직후 일시)은 통과한다") {
 			val gathering: Gathering = Gathering.create(
 				userId = 1L,
 				type = GatheringType.ONE_ON_ONE_ROTATION,
 				title = "가".repeat(100),
 				description = "가".repeat(1000),
+				regionId = 10L,
 				gatheringAt = now.plusSeconds(1),
 				capacity = 2,
+				fee = 0,
 				now = now,
 			)
 
 			gathering.capacity shouldBe 2
+			gathering.fee shouldBe 0
 			gathering.title.length shouldBe 100
 		}
 	}

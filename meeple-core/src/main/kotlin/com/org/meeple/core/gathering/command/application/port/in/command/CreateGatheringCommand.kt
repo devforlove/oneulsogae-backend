@@ -8,6 +8,8 @@ data class CreateGatheringCommand(
 	val type: GatheringType,
 	val title: String,
 	val description: String?,
+	val regionId: Long,
 	val gatheringAt: LocalDateTime,
 	val capacity: Int,
+	val fee: Int,
 )
