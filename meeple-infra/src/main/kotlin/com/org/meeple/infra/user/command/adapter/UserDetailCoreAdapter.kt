@@ -1,9 +1,11 @@
 package com.org.meeple.infra.user.command.adapter
 
+import com.org.meeple.admin.companyverification.command.application.port.out.UpdateUserCompanyNamePort
 import com.org.meeple.core.user.command.application.port.out.AnonymizeUserDetailPort
 import com.org.meeple.core.user.command.application.port.out.GetUserDetailPort
 import com.org.meeple.core.user.command.application.port.out.SaveUserDetailPort
 import com.org.meeple.core.user.command.domain.UserDetail
+import com.org.meeple.infra.user.command.entity.UserDetailEntity
 import com.org.meeple.infra.user.command.mapper.toDomain
 import com.org.meeple.infra.user.command.mapper.toEntity
 import com.org.meeple.infra.user.command.repository.UserDetailJpaRepository
@@ -18,7 +20,7 @@ import org.springframework.stereotype.Component
 @Component
 class UserDetailCoreAdapter(
 	private val userDetailJpaRepository: UserDetailJpaRepository,
-) : GetUserDetailPort, SaveUserDetailPort, AnonymizeUserDetailPort {
+) : GetUserDetailPort, SaveUserDetailPort, AnonymizeUserDetailPort, UpdateUserCompanyNamePort {
 
 	override fun findByUserId(userId: Long): UserDetail? =
 		userDetailJpaRepository.findByUserId(userId)?.toDomain()
@@ -37,6 +39,14 @@ class UserDetailCoreAdapter(
 		val entity = userDetailJpaRepository.findByUserId(userId) ?: return
 		entity.anonymize()
 		entity.softDelete(at)
+		userDetailJpaRepository.save(entity)
+	}
+
+	// admin 심사 승인: 어드민이 기입한 회사명을 프로필에 확정한다. (정상 유저에겐 user_details 행이 항상 존재)
+	override fun updateCompanyName(userId: Long, companyName: String) {
+		val entity: UserDetailEntity = userDetailJpaRepository.findByUserId(userId)
+			?: throw IllegalStateException("사용자 프로필을 찾을 수 없습니다: $userId")
+		entity.companyName = companyName
 		userDetailJpaRepository.save(entity)
 	}
 }
