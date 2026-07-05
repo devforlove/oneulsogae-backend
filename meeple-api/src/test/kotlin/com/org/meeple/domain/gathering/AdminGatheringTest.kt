@@ -128,6 +128,63 @@ class AdminGatheringTest : DescribeSpec({
 		}
 	}
 
+	describe("AdminGathering.update") {
+
+		val existing: AdminGathering = AdminGathering(
+			id = 5L,
+			type = GatheringType.PARTY,
+			title = "옛 제목",
+			description = "옛 소개",
+			imageKey = "gatherings/old.png",
+			region = "서울",
+			gatheringAt = future,
+			minParticipants = 2,
+			maxParticipants = 4,
+			fee = fee,
+			earlyBirdFee = null,
+			earlyBirdCapacity = null,
+			discountFee = null,
+			status = GatheringStatus.RECRUITING,
+		)
+
+		it("전체 데이터를 교체하되 id·status는 보존한다") {
+			val updated: AdminGathering = existing.update(
+				type = GatheringType.COOKING,
+				title = "새 제목",
+				description = "새 소개",
+				imageKey = "gatherings/new.png",
+				region = "부산",
+				gatheringAt = future.plusDays(1),
+				minParticipants = 3,
+				maxParticipants = 8,
+				fee = GatheringFee(male = 20000, female = 15000),
+				earlyBirdFee = earlyBird,
+				earlyBirdCapacity = 5,
+				discountFee = null,
+				now = now,
+			)
+
+			updated.id shouldBe 5L
+			updated.status shouldBe GatheringStatus.RECRUITING
+			updated.type shouldBe GatheringType.COOKING
+			updated.title shouldBe "새 제목"
+			updated.region shouldBe "부산"
+			updated.maxParticipants shouldBe 8
+			updated.imageKey shouldBe "gatherings/new.png"
+			updated.earlyBirdCapacity shouldBe 5
+		}
+
+		it("생성과 동일한 규칙으로 검증한다 (최소 인원 2 미만이면 예외)") {
+			shouldThrow<AdminException> {
+				existing.update(
+					type = GatheringType.PARTY, title = "제목", description = null, imageKey = null, region = "서울",
+					gatheringAt = future, minParticipants = 1, maxParticipants = 4, fee = fee,
+					earlyBirdFee = null, earlyBirdCapacity = null, discountFee = null, now = now,
+				)
+			}.errorCode shouldBe AdminErrorCode.GATHERING_INVALID_MIN_PARTICIPANTS
+		}
+	}
+
 	describe("GatheringFee") {
 
 		it("남/녀 참가비가 0원 이상이면 생성된다") {

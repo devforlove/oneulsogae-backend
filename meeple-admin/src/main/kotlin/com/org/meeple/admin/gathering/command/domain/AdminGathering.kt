@@ -37,6 +37,44 @@ data class AdminGathering(
 	// 등록 직후는 준비중(DRAFT). 활성화해야 모집중(RECRUITING)이 된다.
 	val status: GatheringStatus = GatheringStatus.DRAFT,
 ) {
+
+	/**
+	 * 모임 전체 데이터를 교체한다. (id·status·생성 시각은 보존) [imageKey]는 서비스가 미리 확정한 값이다
+	 * (새 이미지가 오면 새 키, 없으면 기존 키 유지). 생성과 동일한 규칙으로 입력을 검증한다.
+	 */
+	fun update(
+		type: GatheringType,
+		title: String,
+		description: String?,
+		imageKey: String?,
+		region: String,
+		gatheringAt: LocalDateTime,
+		minParticipants: Int,
+		maxParticipants: Int,
+		fee: GatheringFee,
+		earlyBirdFee: GatheringFee?,
+		earlyBirdCapacity: Int?,
+		discountFee: GatheringFee?,
+		now: LocalDateTime,
+	): AdminGathering {
+		validateGathering(title, description, region, minParticipants, maxParticipants, gatheringAt, now)
+		validateEarlyBirdCapacity(earlyBirdFee, earlyBirdCapacity, maxParticipants)
+		return copy(
+			type = type,
+			title = title,
+			description = description,
+			imageKey = imageKey,
+			region = region,
+			gatheringAt = gatheringAt,
+			minParticipants = minParticipants,
+			maxParticipants = maxParticipants,
+			fee = fee,
+			earlyBirdFee = earlyBirdFee,
+			earlyBirdCapacity = earlyBirdCapacity,
+			discountFee = discountFee,
+		)
+	}
+
 	companion object {
 
 		/**

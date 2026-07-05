@@ -2,8 +2,10 @@ package com.org.meeple.api.admin
 
 import com.org.meeple.admin.gathering.command.application.port.`in`.ActivateGatheringUseCase
 import com.org.meeple.admin.gathering.command.application.port.`in`.CreateAdminGatheringUseCase
+import com.org.meeple.admin.gathering.command.application.port.`in`.UpdateAdminGatheringUseCase
 import com.org.meeple.admin.gathering.query.service.port.`in`.GetAdminGatheringsUseCase
 import com.org.meeple.api.admin.request.CreateAdminGatheringRequest
+import com.org.meeple.api.admin.request.UpdateAdminGatheringRequest
 import com.org.meeple.api.admin.response.AdminGatheringDetailResponse
 import com.org.meeple.api.admin.response.AdminGatheringPageResponse
 import com.org.meeple.api.admin.response.CreateAdminGatheringResponse
@@ -28,6 +30,7 @@ import org.springframework.web.multipart.MultipartFile
  * - GET /: 최신순 page·size 페이징 목록 (소개·참가비 상세 제외).
  * - GET /{id}: 상세(소개·참가비 상세 포함). 없으면 404(GATHER-008).
  * - POST /: 종류·제목·소개·지역·일시·인원·참가비(성별·티어)로 모임 생성. (운영 생성 → user_id null, 준비중으로 시작)
+ * - POST /{id}: 모임 전체 데이터 수정(교체). 이미지 파트가 없으면 기존 이미지 유지. 없으면 404(GATHER-008).
  * - POST /{id}/activate: 준비중 모임을 활성화(모집중 전이). 없으면 404(GATHER-008), 준비중이 아니면 409(GATHER-013).
  */
 @Tag(name = "어드민 모임", description = "어드민 백오피스 모임 조회·등록. ROLE_ADMIN 토큰만 접근할 수 있다.")
@@ -35,6 +38,7 @@ import org.springframework.web.multipart.MultipartFile
 @RequestMapping("/admin/v1/gatherings")
 class AdminGatheringController(
 	private val createAdminGatheringUseCase: CreateAdminGatheringUseCase,
+	private val updateAdminGatheringUseCase: UpdateAdminGatheringUseCase,
 	private val activateGatheringUseCase: ActivateGatheringUseCase,
 	private val getAdminGatheringsUseCase: GetAdminGatheringsUseCase,
 ) {
@@ -80,6 +84,27 @@ class AdminGatheringController(
 			imageSize = image?.size ?: 0,
 		)
 		return ApiResponse.success(CreateAdminGatheringResponse.of(createAdminGatheringUseCase.create(command)))
+	}
+
+	@Operation(
+		summary = "모임 수정",
+		description = "multipart/form-data로 모임 전체 데이터를 수정(교체)한다. request 파트(application/json)에 생성과 동일한 필드를, " +
+			"image 파트(선택)에 새 대표 이미지를 담는다. image 파트가 없으면 기존 대표 이미지를 유지한다. " +
+			"상태(status)는 바뀌지 않는다. 없으면 404(GATHER-008).",
+	)
+	@PostMapping("/{id}", consumes = [MediaType.MULTIPART_FORM_DATA_VALUE])
+	fun update(
+		@PathVariable id: Long,
+		@RequestPart("request") @Valid request: UpdateAdminGatheringRequest,
+		@RequestPart(value = "image", required = false) image: MultipartFile?,
+	): ApiResponse<Unit> {
+		val command = request.toCommand(
+			imageContent = image?.bytes,
+			imageContentType = image?.contentType,
+			imageSize = image?.size ?: 0,
+		)
+		updateAdminGatheringUseCase.update(id, command)
+		return ApiResponse.success()
 	}
 
 	@Operation(
