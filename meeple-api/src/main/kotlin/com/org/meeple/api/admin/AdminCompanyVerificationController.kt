@@ -1,12 +1,14 @@
 package com.org.meeple.api.admin
 
 import com.org.meeple.admin.companyverification.query.service.port.`in`.GetAdminCompanyVerificationsUseCase
+import com.org.meeple.api.admin.response.AdminCompanyVerificationDetailResponse
 import com.org.meeple.api.admin.response.AdminCompanyVerificationPageResponse
 import com.org.meeple.common.user.CompanyImageVerificationStatus
 import com.org.meeple.core.common.response.ApiResponse
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.tags.Tag
 import org.springframework.web.bind.annotation.GetMapping
+import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RequestParam
 import org.springframework.web.bind.annotation.RestController
@@ -34,6 +36,20 @@ class AdminCompanyVerificationController(
 		ApiResponse.success(
 			AdminCompanyVerificationPageResponse.of(
 				getAdminCompanyVerificationsUseCase.getVerifications(page, size, status),
+			),
+		)
+
+	@Operation(
+		summary = "회사 이미지 인증 상세 조회",
+		description = "직장 서류 인증 한 건을 id로 조회한다. 없으면 404(COMPANY-IMAGE-001). imageUrl은 일정 시간 유효한 열람용 presigned URL이다.",
+	)
+	@GetMapping("/{id}")
+	fun verification(
+		@PathVariable id: Long,
+	): ApiResponse<AdminCompanyVerificationDetailResponse> =
+		ApiResponse.success(
+			AdminCompanyVerificationDetailResponse.of(
+				getAdminCompanyVerificationsUseCase.getVerification(id),
 			),
 		)
 }
