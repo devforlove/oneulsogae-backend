@@ -12,4 +12,6 @@ dependencies {
 	implementation("org.springframework:spring-tx")
 	// AdminErrorCode가 HttpStatus를 담는다. (core가 ErrorCode에 HttpStatus를 쓰는 것과 동일 — core 의존이 아니라 spring-web 라이브러리 의존)
 	implementation("org.springframework:spring-web")
+	// AdminExceptionHandler 로깅용. (구현체는 구동 앱이 제공, 여기선 API만 컴파일 타임에 필요)
+	implementation("org.slf4j:slf4j-api")
 }
