@@ -18,6 +18,8 @@ data class AdminCompanyVerificationDetailResponse(
 	val companyName: String?,
 	val companyEmail: String?,
 	val job: String?,
+	val requestedCompanyName: String?,
+	val rejectionReason: String?,
 	val imageUrl: String?,
 ) {
 	companion object {
@@ -33,6 +35,8 @@ data class AdminCompanyVerificationDetailResponse(
 				companyName = view.companyName,
 				companyEmail = view.companyEmail,
 				job = view.job,
+				requestedCompanyName = view.requestedCompanyName,
+				rejectionReason = view.rejectionReason,
 				imageUrl = view.imageUrl,
 			)
 	}

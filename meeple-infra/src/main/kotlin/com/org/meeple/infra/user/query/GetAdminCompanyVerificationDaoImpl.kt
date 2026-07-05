@@ -85,6 +85,8 @@ class GetAdminCompanyVerificationDaoImpl(
 					detail.companyName,
 					detail.companyEmail,
 					detail.job,
+					verification.companyName,
+					verification.rejectionReason,
 				),
 			)
 			.from(verification)
