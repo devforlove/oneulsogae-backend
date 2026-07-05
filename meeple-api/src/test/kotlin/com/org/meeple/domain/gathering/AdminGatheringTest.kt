@@ -3,6 +3,7 @@ package com.org.meeple.domain.gathering
 import com.org.meeple.admin.common.error.AdminErrorCode
 import com.org.meeple.admin.common.error.AdminException
 import com.org.meeple.admin.gathering.command.domain.AdminGathering
+import com.org.meeple.admin.gathering.command.domain.AdminGatheringStatus
 import com.org.meeple.admin.gathering.command.domain.GatheringFee
 import com.org.meeple.admin.gathering.command.domain.GatheringImage
 import com.org.meeple.common.gathering.GatheringStatus
@@ -21,7 +22,7 @@ class AdminGatheringTest : DescribeSpec({
 
 	describe("AdminGathering.create") {
 
-		it("정상 입력이면 RECRUITING 상태로 생성된다") {
+		it("정상 입력이면 DRAFT(준비중) 상태로 생성된다") {
 			val gathering: AdminGathering = AdminGathering.create(
 				type = GatheringType.PARTY,
 				title = "주말 파티",
@@ -38,7 +39,7 @@ class AdminGatheringTest : DescribeSpec({
 				now = now,
 			)
 
-			gathering.status shouldBe GatheringStatus.RECRUITING
+			gathering.status shouldBe GatheringStatus.DRAFT
 			gathering.minParticipants shouldBe 2
 			gathering.maxParticipants shouldBe 4
 			gathering.earlyBirdFee shouldBe earlyBird
@@ -181,6 +182,25 @@ class AdminGatheringTest : DescribeSpec({
 		it("extensionOf는 콘텐츠 타입에 맞는 확장자를 준다") {
 			GatheringImage.extensionOf("image/jpeg") shouldBe "jpg"
 			GatheringImage.extensionOf("image/png") shouldBe "png"
+		}
+	}
+
+	describe("AdminGatheringStatus.validateActivatable") {
+
+		it("준비중(DRAFT)이면 활성화 가능(예외 없음)") {
+			AdminGatheringStatus(id = 1L, status = GatheringStatus.DRAFT).validateActivatable()
+		}
+
+		it("준비중이 아니면 GATHERING_NOT_ACTIVATABLE을 던진다") {
+			listOf(
+				GatheringStatus.RECRUITING,
+				GatheringStatus.CLOSED,
+				GatheringStatus.FINISHED,
+				GatheringStatus.CANCELED,
+			).forEach { status: GatheringStatus ->
+				shouldThrow<AdminException> { AdminGatheringStatus(id = 1L, status = status).validateActivatable() }
+					.errorCode shouldBe AdminErrorCode.GATHERING_NOT_ACTIVATABLE
+			}
 		}
 	}
 })

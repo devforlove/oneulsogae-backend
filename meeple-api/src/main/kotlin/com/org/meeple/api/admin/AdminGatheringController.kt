@@ -1,5 +1,6 @@
 package com.org.meeple.api.admin
 
+import com.org.meeple.admin.gathering.command.application.port.`in`.ActivateGatheringUseCase
 import com.org.meeple.admin.gathering.command.application.port.`in`.CreateAdminGatheringUseCase
 import com.org.meeple.admin.gathering.query.service.port.`in`.GetAdminGatheringsUseCase
 import com.org.meeple.api.admin.request.CreateAdminGatheringRequest
@@ -26,13 +27,15 @@ import org.springframework.web.multipart.MultipartFile
  * 어드민 모임 엔드포인트. `/admin` 하위는 SecurityConfig의 hasRole(ADMIN)으로 보호된다.
  * - GET /: 최신순 page·size 페이징 목록 (소개·참가비 상세 제외).
  * - GET /{id}: 상세(소개·참가비 상세 포함). 없으면 404(GATHER-008).
- * - POST /: 종류·제목·소개·지역·일시·정원·참가비(성별·티어)로 모임 생성. (운영 생성 → user_id null)
+ * - POST /: 종류·제목·소개·지역·일시·인원·참가비(성별·티어)로 모임 생성. (운영 생성 → user_id null, 준비중으로 시작)
+ * - POST /{id}/activate: 준비중 모임을 활성화(모집중 전이). 없으면 404(GATHER-008), 준비중이 아니면 409(GATHER-013).
  */
 @Tag(name = "어드민 모임", description = "어드민 백오피스 모임 조회·등록. ROLE_ADMIN 토큰만 접근할 수 있다.")
 @RestController
 @RequestMapping("/admin/v1/gatherings")
 class AdminGatheringController(
 	private val createAdminGatheringUseCase: CreateAdminGatheringUseCase,
+	private val activateGatheringUseCase: ActivateGatheringUseCase,
 	private val getAdminGatheringsUseCase: GetAdminGatheringsUseCase,
 ) {
 
@@ -77,5 +80,17 @@ class AdminGatheringController(
 			imageSize = image?.size ?: 0,
 		)
 		return ApiResponse.success(CreateAdminGatheringResponse.of(createAdminGatheringUseCase.create(command)))
+	}
+
+	@Operation(
+		summary = "모임 활성화",
+		description = "준비중(DRAFT) 모임을 활성화해 모집중(RECRUITING)으로 전이한다. 없으면 404(GATHER-008), 준비중이 아니면 409(GATHER-013).",
+	)
+	@PostMapping("/{id}/activate")
+	fun activate(
+		@PathVariable id: Long,
+	): ApiResponse<Unit> {
+		activateGatheringUseCase.activate(id)
+		return ApiResponse.success()
 	}
 }

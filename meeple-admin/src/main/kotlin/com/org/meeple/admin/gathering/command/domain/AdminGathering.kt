@@ -18,7 +18,7 @@ private const val MIN_PARTICIPANTS: Int = 2
  * 참가비는 성별로 나뉜 값 객체([GatheringFee])로 표현한다: 정상가([fee], 필수),
  * 얼리버드 특가([earlyBirdFee], 선택)·할인가([discountFee], 선택)는 해당 특가가 있는 모임만 값을 가진다.
  * 얼리버드 특가가 있으면 적용 인원 수([earlyBirdCapacity])도 함께 가진다. (특가 가격과 인원은 세트)
- * 생성 시 status는 RECRUITING(모집중)이다. 영속성은 [com.org.meeple.infra.gathering.command.entity.GatheringEntity]가 담당한다.
+ * 생성 시 status는 DRAFT(준비중)이고, 활성화해야 RECRUITING(모집중)이 된다. 영속성은 [com.org.meeple.infra.gathering.command.entity.GatheringEntity]가 담당한다.
  */
 data class AdminGathering(
 	val id: Long = 0,
@@ -34,14 +34,15 @@ data class AdminGathering(
 	val earlyBirdFee: GatheringFee?,
 	val earlyBirdCapacity: Int?,
 	val discountFee: GatheringFee?,
-	val status: GatheringStatus = GatheringStatus.RECRUITING,
+	// 등록 직후는 준비중(DRAFT). 활성화해야 모집중(RECRUITING)이 된다.
+	val status: GatheringStatus = GatheringStatus.DRAFT,
 ) {
 	companion object {
 
 		/**
 		 * [type]·[title]·[description]·[imageKey]·[region]·[gatheringAt]·인원([minParticipants]·[maxParticipants])·
 		 * 참가비([fee]·[earlyBirdFee]·[earlyBirdCapacity]·[discountFee])로 모임을 만든다.
-		 * 입력을 검증한 뒤 모집중(RECRUITING)으로 만든다. [now]는 모임 일시가 미래인지 판정하는 기준 시각이다.
+		 * 입력을 검증한 뒤 준비중(DRAFT)으로 만든다. [now]는 모임 일시가 미래인지 판정하는 기준 시각이다.
 		 */
 		fun create(
 			type: GatheringType,

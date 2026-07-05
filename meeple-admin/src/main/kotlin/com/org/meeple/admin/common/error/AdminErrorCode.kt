@@ -32,4 +32,5 @@ enum class AdminErrorCode(
 	GATHERING_IMAGE_TOO_LARGE("GATHER-010", "모임 대표 이미지는 5MB 이하여야 합니다.", HttpStatus.BAD_REQUEST),
 	GATHERING_INVALID_MAX_PARTICIPANTS("GATHER-011", "모임 최대 인원은 최소 인원 이상이어야 합니다.", HttpStatus.BAD_REQUEST),
 	GATHERING_INVALID_EARLY_BIRD_CAPACITY("GATHER-012", "얼리버드 적용 인원은 얼리버드 가격과 함께 1명 이상 최대 인원 이하로 입력해야 합니다.", HttpStatus.BAD_REQUEST),
+	GATHERING_NOT_ACTIVATABLE("GATHER-013", "준비중 상태의 모임만 활성화할 수 있습니다.", HttpStatus.CONFLICT),
 }

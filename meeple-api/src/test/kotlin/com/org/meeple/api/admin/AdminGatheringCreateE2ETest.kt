@@ -38,7 +38,7 @@ class AdminGatheringCreateE2ETest : AbstractIntegrationSupport({
 	describe("POST /admin/v1/gatherings") {
 
 		context("어드민이 유효한 모임을 이미지와 함께 생성하면") {
-			it("운영 생성(user_id null)·이미지 키와 함께 저장하고 gatheringId를 반환한다 (200)") {
+			it("운영 생성(user_id null)·준비중(DRAFT)·이미지 키와 함께 저장하고 gatheringId를 반환한다 (200)") {
 				val gatheringId: Long = RestAssured.given()
 					.header("Authorization", "Bearer ${adminAccessTokenFor(9901L)}")
 					.multiPart("request", validRequest, "application/json; charset=UTF-8")
@@ -52,7 +52,7 @@ class AdminGatheringCreateE2ETest : AbstractIntegrationSupport({
 
 				val saved: GatheringEntity = savedById(gatheringId)
 				saved.userId shouldBe null
-				saved.status shouldBe GatheringStatus.RECRUITING
+				saved.status shouldBe GatheringStatus.DRAFT
 				saved.type shouldBe GatheringType.PARTY
 				saved.title shouldBe "주말 파티"
 				saved.region shouldBe "서울 강남구"
