@@ -120,6 +120,29 @@ class AdminCompanyVerificationReviewE2ETest : AbstractIntegrationSupport({
 
 			verificationById(id).status shouldBe CompanyImageVerificationStatus.REJECTED
 		}
+
+		it("반려 시 사유를 저장한다 (200)") {
+			val userId: Long = IntegrationUtil.persist(UserEntityFixture.create(providerId = "civ-reject-reason")).id!!
+			val id: Long = IntegrationUtil.persist(
+				CompanyImageVerificationEntityFixture.create(
+					userId = userId,
+					imageKey = "reject-reason-key",
+					status = CompanyImageVerificationStatus.PENDING,
+				),
+			).id!!
+
+			post("/admin/v1/company-image-verifications/$id/reject") {
+				bearer(adminAccessTokenFor(9901L))
+				jsonBody("""{"reason":"서류가 불명확합니다"}""")
+			} expect {
+				status(200)
+				body("success", true)
+			}
+
+			val rejected: CompanyImageVerificationEntity = verificationById(id)
+			rejected.status shouldBe CompanyImageVerificationStatus.REJECTED
+			rejected.rejectionReason shouldBe "서류가 불명확합니다"
+		}
 	}
 
 	afterTest {

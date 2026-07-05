@@ -61,6 +61,30 @@ class AdminCompanyVerificationDetailE2ETest : AbstractIntegrationSupport({
 			}
 		}
 
+		it("제출 희망 회사명과 반려 사유를 노출한다") {
+			val userId: Long = IntegrationUtil.persist(
+				UserEntityFixture.create(providerId = "civ-detail-extra", email = "cde@test.com"),
+			).id!!
+			IntegrationUtil.persist(UserDetailEntityFixture.create(userId = userId, nickname = "인증유저"))
+			val id: Long = IntegrationUtil.persist(
+				CompanyImageVerificationEntityFixture.create(
+					userId = userId,
+					imageKey = "extra-key",
+					status = CompanyImageVerificationStatus.REJECTED,
+					companyName = "지원회사",
+					rejectionReason = "서류 재제출 필요",
+				),
+			).id!!
+
+			get("/admin/v1/company-image-verifications/$id") {
+				bearer(adminAccessTokenFor(9901L))
+			} expect {
+				status(200)
+				body("data.requestedCompanyName", "지원회사")
+				body("data.rejectionReason", "서류 재제출 필요")
+			}
+		}
+
 		it("없는 id면 404다 (COMPANY-IMAGE-001)") {
 			get("/admin/v1/company-image-verifications/999999") {
 				bearer(adminAccessTokenFor(9901L))
