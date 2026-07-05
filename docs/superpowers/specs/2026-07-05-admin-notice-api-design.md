@@ -64,10 +64,10 @@
 - `command/application/port/in/command/CreateAdminNoticeCommand.kt` — `title: String, description: String`
 - `command/application/CreateAdminNoticeService.kt` — `@Service @Transactional`, 도메인 생성 후 `SaveAdminNoticePort.save()`
 - `command/application/port/out/SaveAdminNoticePort.kt` — `fun save(notice: AdminNotice)`
-- `command/domain/AdminNotice.kt` — 도메인 모델. `companion object { fun create(title, description): AdminNotice }` + `validateNotice(...)`(title/description 공백·길이 검증, 위반 시 `AdminException(AdminErrorCode.INVALID_NOTICE)`). 길이 규칙은 엔티티 제약(`title` 200, `description` 2000)에 맞춘다.
+- `command/domain/AdminNotice.kt` — 최소 도메인 모델. `companion object { fun create(title, description): AdminNotice }`. 기존 core `Notice`와 동일하게 도메인 검증은 두지 않는다(입력 검증은 요청 DTO에서 처리).
 
 **Common**
-- `common/error/AdminErrorCode.kt`에 `NOTICE_NOT_FOUND`(404), `INVALID_NOTICE`(400) 추가.
+- `common/error/AdminErrorCode.kt`에 `NOTICE_NOT_FOUND`(404) 추가.
 
 ### meeple-infra
 
@@ -99,7 +99,7 @@
 ## 에러 처리
 
 - 상세 조회 대상 없음: `AdminErrorCode.NOTICE_NOT_FOUND` (404).
-- 추가 입력 검증: `AdminNotice.validateNotice`에서 title/description 공백·길이 위반 시 `AdminException(AdminErrorCode.INVALID_NOTICE)` (400).
+- 추가 입력 검증: 요청 DTO `CreateAdminNoticeRequest`의 `@NotBlank`/`@Size`(title 200, description 2000)로 처리. 위반 시 전역 검증 핸들러가 400 반환(기존 `CreateNoticeRequest`와 동일).
 - 인가: `/admin/**` 경로로 `hasRole("ADMIN")` 자동 처리(설계 대상 아님).
 
 ## 인덱스 고려
@@ -109,9 +109,9 @@
 ## 테스트
 
 - **E2E** (`meeple-api`, `AbstractIntegrationSupport` 상속): `AdminNoticeE2ETest`
-  - 목록 페이징(정렬·페이지 필드), 상세 조회, 추가 후 재조회, 존재하지 않는 id 404, 비어드민 접근 차단(권한).
-  - 픽스처는 infra `testFixtures`의 `NoticeEntity` 픽스처 사용(없으면 추가).
-- **도메인 유닛** (Kotest): `AdminNotice` — `create` 정상, 공백/길이 초과 검증 실패.
+  - 목록 페이징(정렬·페이지 필드), 상세 조회, 추가 후 재조회, 존재하지 않는 id 404, 잘못된 입력 400, 비어드민 접근 차단(권한).
+  - 픽스처는 infra `testFixtures`의 기존 `NoticeEntityFixture` 사용.
+- **도메인 유닛** (Kotest): `AdminNoticePage` — 페이징 메타데이터(`totalPages`/`hasNext`) 계산 검증 (기존 `NoticePageTest` 미러).
 
 ## 범위 밖 (하지 않음)
 
