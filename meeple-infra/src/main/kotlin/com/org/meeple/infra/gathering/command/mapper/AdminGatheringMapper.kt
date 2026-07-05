@@ -1,14 +1,13 @@
 package com.org.meeple.infra.gathering.command.mapper
 
-import com.org.meeple.core.gathering.command.domain.Gathering
-import com.org.meeple.core.gathering.command.domain.GatheringFee
+import com.org.meeple.admin.gathering.command.domain.AdminGathering
+import com.org.meeple.admin.gathering.command.domain.GatheringFee
 import com.org.meeple.infra.gathering.command.entity.GatheringEntity
 
-fun GatheringEntity.toDomain(): Gathering =
-	Gathering(
+fun GatheringEntity.toDomain(): AdminGathering =
+	AdminGathering(
 		id = id ?: 0,
 		type = type,
-		userId = userId,
 		title = title,
 		description = description,
 		region = region,
@@ -20,10 +19,11 @@ fun GatheringEntity.toDomain(): Gathering =
 		status = status,
 	)
 
-fun Gathering.toEntity(): GatheringEntity =
+fun AdminGathering.toEntity(): GatheringEntity =
 	GatheringEntity(
 		type = type,
-		userId = userId,
+		// 운영(어드민) 생성이므로 생성자 user_id는 null이다.
+		userId = null,
 		title = title,
 		description = description,
 		region = region,

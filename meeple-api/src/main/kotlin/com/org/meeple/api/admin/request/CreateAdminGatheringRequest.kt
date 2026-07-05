@@ -1,7 +1,7 @@
-package com.org.meeple.api.gathering.request
+package com.org.meeple.api.admin.request
 
+import com.org.meeple.admin.gathering.command.application.port.`in`.command.CreateAdminGatheringCommand
 import com.org.meeple.common.gathering.GatheringType
-import com.org.meeple.core.gathering.command.application.port.`in`.command.CreateGatheringCommand
 import jakarta.validation.constraints.Future
 import jakarta.validation.constraints.Min
 import jakarta.validation.constraints.NotBlank
@@ -10,7 +10,7 @@ import jakarta.validation.constraints.PositiveOrZero
 import jakarta.validation.constraints.Size
 import java.time.LocalDateTime
 
-data class CreateGatheringRequest(
+data class CreateAdminGatheringRequest(
 	@field:NotNull(message = "모임 종류는 필수입니다.")
 	val type: GatheringType? = null,
 
@@ -56,9 +56,8 @@ data class CreateGatheringRequest(
 	@field:PositiveOrZero(message = "참가비는 0원 이상이어야 합니다.")
 	val discountFemaleFee: Int? = null,
 ) {
-	fun toCommand(userId: Long?): CreateGatheringCommand =
-		CreateGatheringCommand(
-			userId = userId,
+	fun toCommand(): CreateAdminGatheringCommand =
+		CreateAdminGatheringCommand(
 			type = type!!,
 			title = title!!,
 			description = description,

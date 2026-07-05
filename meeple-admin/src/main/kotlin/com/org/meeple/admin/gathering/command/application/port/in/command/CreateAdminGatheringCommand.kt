@@ -1,10 +1,10 @@
-package com.org.meeple.core.gathering.command.application.port.`in`.command
+package com.org.meeple.admin.gathering.command.application.port.`in`.command
 
 import com.org.meeple.common.gathering.GatheringType
 import java.time.LocalDateTime
 
-data class CreateGatheringCommand(
-	val userId: Long?,
+/** 어드민 모임 생성 입력. (운영 생성이므로 생성자 userId는 없음 — 저장 시 null) */
+data class CreateAdminGatheringCommand(
 	val type: GatheringType,
 	val title: String,
 	val description: String?,
