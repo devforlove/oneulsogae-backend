@@ -1,14 +1,19 @@
 package com.org.meeple.api.admin
 
+import com.org.meeple.admin.inquiry.command.application.port.`in`.AnswerInquiryUseCase
 import com.org.meeple.admin.inquiry.query.service.port.`in`.GetAdminInquiriesUseCase
+import com.org.meeple.api.admin.request.AnswerInquiryRequest
 import com.org.meeple.api.admin.response.AdminInquiryDetailResponse
 import com.org.meeple.api.admin.response.AdminInquiryPageResponse
 import com.org.meeple.common.inquiry.InquiryStatus
 import com.org.meeple.core.common.response.ApiResponse
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.tags.Tag
+import jakarta.validation.Valid
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PathVariable
+import org.springframework.web.bind.annotation.PostMapping
+import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RequestParam
 import org.springframework.web.bind.annotation.RestController
@@ -23,6 +28,7 @@ import org.springframework.web.bind.annotation.RestController
 @RequestMapping("/admin/v1/inquiries")
 class AdminInquiryController(
 	private val getAdminInquiriesUseCase: GetAdminInquiriesUseCase,
+	private val answerInquiryUseCase: AnswerInquiryUseCase,
 ) {
 
 	@Operation(
@@ -46,4 +52,17 @@ class AdminInquiryController(
 		@PathVariable id: Long,
 	): ApiResponse<AdminInquiryDetailResponse> =
 		ApiResponse.success(AdminInquiryDetailResponse.of(getAdminInquiriesUseCase.getInquiry(id)))
+
+	@Operation(
+		summary = "문의 답변",
+		description = "PENDING 문의에 답변한다(status=ANSWERED 전이). 없으면 404(INQUIRY-001), 이미 답변됐으면 409(INQUIRY-002), 답변이 비면 400.",
+	)
+	@PostMapping("/{id}/answer")
+	fun answer(
+		@PathVariable id: Long,
+		@RequestBody @Valid request: AnswerInquiryRequest,
+	): ApiResponse<Unit> {
+		answerInquiryUseCase.answer(request.toCommand(id))
+		return ApiResponse.success()
+	}
 }

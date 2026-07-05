@@ -5,6 +5,7 @@ import com.org.meeple.common.inquiry.InquiryStatus
 import com.org.meeple.common.integration.AbstractIntegrationSupport
 import com.org.meeple.common.integration.expect
 import com.org.meeple.common.integration.get
+import com.org.meeple.common.integration.post
 import com.org.meeple.infra.fixture.InquiryEntityFixture
 import com.org.meeple.infra.fixture.IntegrationUtil
 import com.org.meeple.infra.inquiry.command.entity.QInquiryEntity
@@ -108,6 +109,68 @@ class AdminInquiryE2ETest : AbstractIntegrationSupport({
 				status(404)
 				body("success", false)
 				body("error.code", "INQUIRY-001")
+			}
+		}
+	}
+
+	describe("POST /admin/v1/inquiries/{id}/answer") {
+
+		it("PENDING 문의에 답변하면 상세가 ANSWERED로 바뀐다 (200)") {
+			val id: Long = IntegrationUtil.persist(
+				InquiryEntityFixture.create(message = "답변 대상", status = InquiryStatus.PENDING),
+			).id!!
+
+			post("/admin/v1/inquiries/$id/answer") {
+				bearer(adminAccessTokenFor(9901L))
+				jsonBody("""{"answer":"안녕하세요, 확인 후 답변드립니다."}""")
+			} expect {
+				status(200)
+				body("success", true)
+			}
+
+			get("/admin/v1/inquiries/$id") {
+				bearer(adminAccessTokenFor(9901L))
+			} expect {
+				status(200)
+				body("data.status", "ANSWERED")
+				body("data.answer", "안녕하세요, 확인 후 답변드립니다.")
+				body("data.answeredAt", org.hamcrest.Matchers.notNullValue())
+			}
+		}
+
+		it("이미 답변된 문의면 409다 (INQUIRY-002)") {
+			val id: Long = IntegrationUtil.persist(
+				InquiryEntityFixture.create(status = InquiryStatus.ANSWERED, answer = "기존 답변"),
+			).id!!
+
+			post("/admin/v1/inquiries/$id/answer") {
+				bearer(adminAccessTokenFor(9901L))
+				jsonBody("""{"answer":"두 번째 답변"}""")
+			} expect {
+				status(409)
+				body("success", false)
+				body("error.code", "INQUIRY-002")
+			}
+		}
+
+		it("없는 id면 404다 (INQUIRY-001)") {
+			post("/admin/v1/inquiries/999999/answer") {
+				bearer(adminAccessTokenFor(9901L))
+				jsonBody("""{"answer":"답변"}""")
+			} expect {
+				status(404)
+				body("error.code", "INQUIRY-001")
+			}
+		}
+
+		it("답변이 비면 400이다") {
+			val id: Long = IntegrationUtil.persist(InquiryEntityFixture.create()).id!!
+
+			post("/admin/v1/inquiries/$id/answer") {
+				bearer(adminAccessTokenFor(9901L))
+				jsonBody("""{"answer":""}""")
+			} expect {
+				status(400)
 			}
 		}
 	}
