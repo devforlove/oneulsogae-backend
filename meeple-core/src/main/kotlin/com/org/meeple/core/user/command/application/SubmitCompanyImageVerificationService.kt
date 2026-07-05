@@ -31,7 +31,9 @@ class SubmitCompanyImageVerificationService(
 		val user: User = getUserPort.findById(userId)
 			?: throw BusinessException(UserErrorCode.USER_NOT_FOUND, "사용자를 찾을 수 없습니다: $userId")
 
+		// 잘못된 입력이 S3에 올라가지 않도록 업로드 전에 파일·회사명을 모두 검증한다. (검증 실패로 롤백돼도 S3 고아 객체가 남지 않게)
 		CompanyImageVerification.validateUpload(command.contentType, command.size)
+		CompanyImageVerification.validateCompanyName(command.companyName)
 		val contentType: String = command.contentType!!
 
 		val key: String = objectKey(user.id, contentType)
