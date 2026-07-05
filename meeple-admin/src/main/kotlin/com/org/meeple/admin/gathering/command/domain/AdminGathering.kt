@@ -8,14 +8,16 @@ import java.time.LocalDateTime
 
 private const val TITLE_MAX_LENGTH: Int = 100
 private const val DESCRIPTION_MAX_LENGTH: Int = 1000
-private const val MIN_CAPACITY: Int = 2
+private const val MIN_PARTICIPANTS: Int = 2
 
 /**
  * 어드민(운영)이 등록하는 모임 도메인 모델(명령 측).
  * (admin은 core에 의존하지 않으므로 core Gathering을 쓰지 않고 자체 모델을 둔다)
  * 운영이 만든 모임이므로 생성자(userId)는 두지 않는다. 영속성에서 user_id는 null(운영 생성)로 저장된다.
+ * 인원은 [minParticipants](최소 성사 인원)·[maxParticipants](정원)로 표현한다.
  * 참가비는 성별로 나뉜 값 객체([GatheringFee])로 표현한다: 정상가([fee], 필수),
  * 얼리버드 특가([earlyBirdFee], 선택)·할인가([discountFee], 선택)는 해당 특가가 있는 모임만 값을 가진다.
+ * 얼리버드 특가가 있으면 적용 인원 수([earlyBirdCapacity])도 함께 가진다. (특가 가격과 인원은 세트)
  * 생성 시 status는 RECRUITING(모집중)이다. 영속성은 [com.org.meeple.infra.gathering.command.entity.GatheringEntity]가 담당한다.
  */
 data class AdminGathering(
@@ -26,16 +28,19 @@ data class AdminGathering(
 	val imageKey: String?,
 	val region: String,
 	val gatheringAt: LocalDateTime,
-	val capacity: Int,
+	val minParticipants: Int,
+	val maxParticipants: Int,
 	val fee: GatheringFee,
 	val earlyBirdFee: GatheringFee?,
+	val earlyBirdCapacity: Int?,
 	val discountFee: GatheringFee?,
 	val status: GatheringStatus = GatheringStatus.RECRUITING,
 ) {
 	companion object {
 
 		/**
-		 * [type]·[title]·[description]·[region]·[gatheringAt]·[capacity]·참가비([fee]·[earlyBirdFee]·[discountFee])로 모임을 만든다.
+		 * [type]·[title]·[description]·[imageKey]·[region]·[gatheringAt]·인원([minParticipants]·[maxParticipants])·
+		 * 참가비([fee]·[earlyBirdFee]·[earlyBirdCapacity]·[discountFee])로 모임을 만든다.
 		 * 입력을 검증한 뒤 모집중(RECRUITING)으로 만든다. [now]는 모임 일시가 미래인지 판정하는 기준 시각이다.
 		 */
 		fun create(
@@ -45,13 +50,16 @@ data class AdminGathering(
 			imageKey: String?,
 			region: String,
 			gatheringAt: LocalDateTime,
-			capacity: Int,
+			minParticipants: Int,
+			maxParticipants: Int,
 			fee: GatheringFee,
 			earlyBirdFee: GatheringFee?,
+			earlyBirdCapacity: Int?,
 			discountFee: GatheringFee?,
 			now: LocalDateTime,
 		): AdminGathering {
-			validateGathering(title, description, region, capacity, gatheringAt, now)
+			validateGathering(title, description, region, minParticipants, maxParticipants, gatheringAt, now)
+			validateEarlyBirdCapacity(earlyBirdFee, earlyBirdCapacity, maxParticipants)
 			return AdminGathering(
 				type = type,
 				title = title,
@@ -59,9 +67,11 @@ data class AdminGathering(
 				imageKey = imageKey,
 				region = region,
 				gatheringAt = gatheringAt,
-				capacity = capacity,
+				minParticipants = minParticipants,
+				maxParticipants = maxParticipants,
 				fee = fee,
 				earlyBirdFee = earlyBirdFee,
+				earlyBirdCapacity = earlyBirdCapacity,
 				discountFee = discountFee,
 			)
 		}
@@ -70,7 +80,8 @@ data class AdminGathering(
 			title: String,
 			description: String?,
 			region: String,
-			capacity: Int,
+			minParticipants: Int,
+			maxParticipants: Int,
 			gatheringAt: LocalDateTime,
 			now: LocalDateTime,
 		) {
@@ -86,11 +97,28 @@ data class AdminGathering(
 			if (region.isBlank()) {
 				throw AdminException(AdminErrorCode.GATHERING_INVALID_REGION)
 			}
-			if (capacity < MIN_CAPACITY) {
-				throw AdminException(AdminErrorCode.GATHERING_INVALID_CAPACITY)
+			if (minParticipants < MIN_PARTICIPANTS) {
+				throw AdminException(AdminErrorCode.GATHERING_INVALID_MIN_PARTICIPANTS)
+			}
+			if (maxParticipants < minParticipants) {
+				throw AdminException(AdminErrorCode.GATHERING_INVALID_MAX_PARTICIPANTS)
 			}
 			if (!gatheringAt.isAfter(now)) {
 				throw AdminException(AdminErrorCode.GATHERING_INVALID_GATHERING_AT)
+			}
+		}
+
+		// 얼리버드 특가 가격과 적용 인원은 세트다: 둘 다 있거나 둘 다 없어야 하고, 있으면 인원은 1..최대인원 범위여야 한다.
+		private fun validateEarlyBirdCapacity(
+			earlyBirdFee: GatheringFee?,
+			earlyBirdCapacity: Int?,
+			maxParticipants: Int,
+		) {
+			if ((earlyBirdFee == null) != (earlyBirdCapacity == null)) {
+				throw AdminException(AdminErrorCode.GATHERING_INVALID_EARLY_BIRD_CAPACITY)
+			}
+			if (earlyBirdCapacity != null && (earlyBirdCapacity < 1 || earlyBirdCapacity > maxParticipants)) {
+				throw AdminException(AdminErrorCode.GATHERING_INVALID_EARLY_BIRD_CAPACITY)
 			}
 		}
 	}

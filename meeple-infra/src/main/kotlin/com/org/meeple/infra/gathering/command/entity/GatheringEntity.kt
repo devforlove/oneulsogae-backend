@@ -59,9 +59,13 @@ class GatheringEntity(
 	@Column(name = "gathering_at", nullable = false)
 	var gatheringAt: LocalDateTime,
 
-	/** 정원(최대 참가 인원). */
-	@Column(name = "capacity", nullable = false)
-	var capacity: Int,
+	/** 최소 참가 인원(모임 성사 기준). */
+	@Column(name = "min_participants", nullable = false)
+	var minParticipants: Int,
+
+	/** 최대 참가 인원(정원). */
+	@Column(name = "max_participants", nullable = false)
+	var maxParticipants: Int,
 
 	/** 정상가 - 남성 참가비(원). 0이면 무료. */
 	@Column(name = "male_fee", nullable = false)
@@ -78,6 +82,10 @@ class GatheringEntity(
 	/** 얼리버드 특가 - 여성 참가비(원). 특가가 없는 모임은 null. */
 	@Column(name = "early_bird_female_fee")
 	var earlyBirdFemaleFee: Int? = null,
+
+	/** 얼리버드 특가를 적용하는 인원 수. 특가가 없는 모임은 null. (얼리버드 가격과 함께 존재) */
+	@Column(name = "early_bird_capacity")
+	var earlyBirdCapacity: Int? = null,
 
 	/** 할인가 - 남성 참가비(원). 할인이 없는 모임은 null. */
 	@Column(name = "discount_male_fee")

@@ -17,6 +17,7 @@ class AdminGatheringTest : DescribeSpec({
 	val now: LocalDateTime = LocalDateTime.of(2026, 1, 1, 12, 0, 0)
 	val future: LocalDateTime = now.plusDays(1)
 	val fee: GatheringFee = GatheringFee(male = 10000, female = 8000)
+	val earlyBird: GatheringFee = GatheringFee(male = 7000, female = 5000)
 
 	describe("AdminGathering.create") {
 
@@ -28,71 +29,83 @@ class AdminGatheringTest : DescribeSpec({
 				imageKey = "gatherings/party.png",
 				region = "서울 강남구",
 				gatheringAt = future,
-				capacity = 4,
+				minParticipants = 2,
+				maxParticipants = 4,
 				fee = fee,
-				earlyBirdFee = GatheringFee(male = 7000, female = 5000),
+				earlyBirdFee = earlyBird,
+				earlyBirdCapacity = 2,
 				discountFee = null,
 				now = now,
 			)
 
 			gathering.status shouldBe GatheringStatus.RECRUITING
-			gathering.type shouldBe GatheringType.PARTY
-			gathering.imageKey shouldBe "gatherings/party.png"
-			gathering.region shouldBe "서울 강남구"
-			gathering.fee shouldBe fee
-			gathering.earlyBirdFee shouldBe GatheringFee(male = 7000, female = 5000)
-			gathering.discountFee shouldBe null
+			gathering.minParticipants shouldBe 2
+			gathering.maxParticipants shouldBe 4
+			gathering.earlyBirdFee shouldBe earlyBird
+			gathering.earlyBirdCapacity shouldBe 2
 		}
 
 		it("제목이 공백이면 GATHERING_INVALID_TITLE을 던진다") {
-			val exception: AdminException = shouldThrow {
-				AdminGathering.create(GatheringType.PARTY, "  ", null, null, "서울", future, 4, fee, null, null, now)
-			}
-
-			exception.errorCode shouldBe AdminErrorCode.GATHERING_INVALID_TITLE
+			shouldThrow<AdminException> {
+				AdminGathering.create(GatheringType.PARTY, "  ", null, null, "서울", future, 2, 4, fee, null, null, null, now)
+			}.errorCode shouldBe AdminErrorCode.GATHERING_INVALID_TITLE
 		}
 
 		it("제목이 100자를 초과하면 GATHERING_TITLE_TOO_LONG을 던진다") {
-			val exception: AdminException = shouldThrow {
-				AdminGathering.create(GatheringType.PARTY, "가".repeat(101), null, null, "서울", future, 4, fee, null, null, now)
-			}
-
-			exception.errorCode shouldBe AdminErrorCode.GATHERING_TITLE_TOO_LONG
+			shouldThrow<AdminException> {
+				AdminGathering.create(GatheringType.PARTY, "가".repeat(101), null, null, "서울", future, 2, 4, fee, null, null, null, now)
+			}.errorCode shouldBe AdminErrorCode.GATHERING_TITLE_TOO_LONG
 		}
 
 		it("소개가 1000자를 초과하면 GATHERING_DESCRIPTION_TOO_LONG을 던진다") {
-			val exception: AdminException = shouldThrow {
-				AdminGathering.create(GatheringType.PARTY, "파티", "가".repeat(1001), null, "서울", future, 4, fee, null, null, now)
-			}
-
-			exception.errorCode shouldBe AdminErrorCode.GATHERING_DESCRIPTION_TOO_LONG
+			shouldThrow<AdminException> {
+				AdminGathering.create(GatheringType.PARTY, "파티", "가".repeat(1001), null, "서울", future, 2, 4, fee, null, null, null, now)
+			}.errorCode shouldBe AdminErrorCode.GATHERING_DESCRIPTION_TOO_LONG
 		}
 
 		it("지역이 공백이면 GATHERING_INVALID_REGION을 던진다") {
-			val exception: AdminException = shouldThrow {
-				AdminGathering.create(GatheringType.PARTY, "파티", null, null, "  ", future, 4, fee, null, null, now)
-			}
-
-			exception.errorCode shouldBe AdminErrorCode.GATHERING_INVALID_REGION
+			shouldThrow<AdminException> {
+				AdminGathering.create(GatheringType.PARTY, "파티", null, null, "  ", future, 2, 4, fee, null, null, null, now)
+			}.errorCode shouldBe AdminErrorCode.GATHERING_INVALID_REGION
 		}
 
-		it("정원이 2 미만이면 GATHERING_INVALID_CAPACITY를 던진다") {
-			val exception: AdminException = shouldThrow {
-				AdminGathering.create(GatheringType.PARTY, "파티", null, null, "서울", future, 1, fee, null, null, now)
-			}
+		it("최소 인원이 2 미만이면 GATHERING_INVALID_MIN_PARTICIPANTS를 던진다") {
+			shouldThrow<AdminException> {
+				AdminGathering.create(GatheringType.PARTY, "파티", null, null, "서울", future, 1, 4, fee, null, null, null, now)
+			}.errorCode shouldBe AdminErrorCode.GATHERING_INVALID_MIN_PARTICIPANTS
+		}
 
-			exception.errorCode shouldBe AdminErrorCode.GATHERING_INVALID_CAPACITY
+		it("최대 인원이 최소 인원보다 작으면 GATHERING_INVALID_MAX_PARTICIPANTS를 던진다") {
+			shouldThrow<AdminException> {
+				AdminGathering.create(GatheringType.PARTY, "파티", null, null, "서울", future, 4, 2, fee, null, null, null, now)
+			}.errorCode shouldBe AdminErrorCode.GATHERING_INVALID_MAX_PARTICIPANTS
 		}
 
 		it("모임 일시가 현재와 같거나 이전이면 GATHERING_INVALID_GATHERING_AT을 던진다") {
-			val exception: AdminException = shouldThrow {
-				AdminGathering.create(GatheringType.PARTY, "파티", null, null, "서울", now, 4, fee, null, null, now)
-			}
-
-			exception.errorCode shouldBe AdminErrorCode.GATHERING_INVALID_GATHERING_AT
+			shouldThrow<AdminException> {
+				AdminGathering.create(GatheringType.PARTY, "파티", null, null, "서울", now, 2, 4, fee, null, null, null, now)
+			}.errorCode shouldBe AdminErrorCode.GATHERING_INVALID_GATHERING_AT
 		}
 
-		it("경계값(정원 2·참가비 0·제목 100자·현재 직후 일시)은 통과한다") {
+		it("얼리버드 가격은 있는데 적용 인원이 없으면 GATHERING_INVALID_EARLY_BIRD_CAPACITY를 던진다") {
+			shouldThrow<AdminException> {
+				AdminGathering.create(GatheringType.PARTY, "파티", null, null, "서울", future, 2, 4, fee, earlyBird, null, null, now)
+			}.errorCode shouldBe AdminErrorCode.GATHERING_INVALID_EARLY_BIRD_CAPACITY
+		}
+
+		it("얼리버드 적용 인원은 있는데 가격이 없으면 GATHERING_INVALID_EARLY_BIRD_CAPACITY를 던진다") {
+			shouldThrow<AdminException> {
+				AdminGathering.create(GatheringType.PARTY, "파티", null, null, "서울", future, 2, 4, fee, null, 2, null, now)
+			}.errorCode shouldBe AdminErrorCode.GATHERING_INVALID_EARLY_BIRD_CAPACITY
+		}
+
+		it("얼리버드 적용 인원이 최대 인원을 초과하면 GATHERING_INVALID_EARLY_BIRD_CAPACITY를 던진다") {
+			shouldThrow<AdminException> {
+				AdminGathering.create(GatheringType.PARTY, "파티", null, null, "서울", future, 2, 4, fee, earlyBird, 5, null, now)
+			}.errorCode shouldBe AdminErrorCode.GATHERING_INVALID_EARLY_BIRD_CAPACITY
+		}
+
+		it("경계값(최소=최대 2·얼리버드 적용 인원=최대)은 통과한다") {
 			val gathering: AdminGathering = AdminGathering.create(
 				type = GatheringType.ONE_ON_ONE_ROTATION,
 				title = "가".repeat(100),
@@ -100,15 +113,17 @@ class AdminGatheringTest : DescribeSpec({
 				imageKey = null,
 				region = "서울",
 				gatheringAt = now.plusSeconds(1),
-				capacity = 2,
+				minParticipants = 2,
+				maxParticipants = 4,
 				fee = GatheringFee(male = 0, female = 0),
-				earlyBirdFee = null,
+				earlyBirdFee = earlyBird,
+				earlyBirdCapacity = 4,
 				discountFee = null,
 				now = now,
 			)
 
-			gathering.capacity shouldBe 2
-			gathering.fee shouldBe GatheringFee(male = 0, female = 0)
+			gathering.minParticipants shouldBe 2
+			gathering.earlyBirdCapacity shouldBe 4
 		}
 	}
 

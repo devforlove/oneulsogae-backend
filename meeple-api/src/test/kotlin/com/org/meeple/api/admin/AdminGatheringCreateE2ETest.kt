@@ -23,9 +23,9 @@ class AdminGatheringCreateE2ETest : AbstractIntegrationSupport({
 		"""
 		{
 			"type": "PARTY", "title": "주말 파티", "description": "함께 즐겨요", "region": "서울 강남구",
-			"gatheringAt": "2999-12-31T18:00:00", "capacity": 4,
+			"gatheringAt": "2999-12-31T18:00:00", "minParticipants": 2, "maxParticipants": 4,
 			"maleFee": 10000, "femaleFee": 8000,
-			"earlyBirdMaleFee": 7000, "earlyBirdFemaleFee": 5000,
+			"earlyBirdMaleFee": 7000, "earlyBirdFemaleFee": 5000, "earlyBirdCapacity": 2,
 			"discountMaleFee": 9000, "discountFemaleFee": 7000
 		}
 		""".trimIndent()
@@ -56,8 +56,11 @@ class AdminGatheringCreateE2ETest : AbstractIntegrationSupport({
 				saved.type shouldBe GatheringType.PARTY
 				saved.title shouldBe "주말 파티"
 				saved.region shouldBe "서울 강남구"
+				saved.minParticipants shouldBe 2
+				saved.maxParticipants shouldBe 4
 				saved.maleFee shouldBe 10000
 				saved.earlyBirdMaleFee shouldBe 7000
+				saved.earlyBirdCapacity shouldBe 2
 				// 페이크 스토리지가 넘긴 key를 그대로 저장 → gatherings/{uuid}.png 형태.
 				saved.imageKey!! shouldStartWith "gatherings/"
 			}
@@ -91,10 +94,10 @@ class AdminGatheringCreateE2ETest : AbstractIntegrationSupport({
 			}
 		}
 
-		context("정원이 2 미만이면") {
+		context("최소 인원이 2 미만이면") {
 			it("400을 반환한다") {
 				val body: String =
-					"""{"type": "COOKING", "title": "쿠킹", "region": "서울", "gatheringAt": "2999-12-31T18:00:00", "capacity": 1, "maleFee": 0, "femaleFee": 0}"""
+					"""{"type": "COOKING", "title": "쿠킹", "region": "서울", "gatheringAt": "2999-12-31T18:00:00", "minParticipants": 1, "maxParticipants": 4, "maleFee": 0, "femaleFee": 0}"""
 				RestAssured.given()
 					.header("Authorization", "Bearer ${adminAccessTokenFor(9901L)}")
 					.multiPart("request", body, "application/json; charset=UTF-8")
@@ -108,7 +111,7 @@ class AdminGatheringCreateE2ETest : AbstractIntegrationSupport({
 		context("얼리버드 특가를 남/녀 한쪽만 입력하면") {
 			it("400(GATHER-006)을 반환한다") {
 				val body: String =
-					"""{"type": "PARTY", "title": "파티", "region": "서울", "gatheringAt": "2999-12-31T18:00:00", "capacity": 4, "maleFee": 10000, "femaleFee": 8000, "earlyBirdMaleFee": 7000}"""
+					"""{"type": "PARTY", "title": "파티", "region": "서울", "gatheringAt": "2999-12-31T18:00:00", "minParticipants": 2, "maxParticipants": 4, "maleFee": 10000, "femaleFee": 8000, "earlyBirdMaleFee": 7000}"""
 				RestAssured.given()
 					.header("Authorization", "Bearer ${adminAccessTokenFor(9901L)}")
 					.multiPart("request", body, "application/json; charset=UTF-8")

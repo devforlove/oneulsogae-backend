@@ -14,7 +14,8 @@ data class AdminGatheringResponse(
 	val imageUrl: String?,
 	val region: String,
 	val gatheringAt: LocalDateTime,
-	val capacity: Int,
+	val minParticipants: Int,
+	val maxParticipants: Int,
 	val status: GatheringStatus,
 	val createdAt: LocalDateTime?,
 ) {
@@ -27,7 +28,8 @@ data class AdminGatheringResponse(
 				imageUrl = view.imageUrl,
 				region = view.region,
 				gatheringAt = view.gatheringAt,
-				capacity = view.capacity,
+				minParticipants = view.minParticipants,
+				maxParticipants = view.maxParticipants,
 				status = view.status,
 				createdAt = view.createdAt,
 			)

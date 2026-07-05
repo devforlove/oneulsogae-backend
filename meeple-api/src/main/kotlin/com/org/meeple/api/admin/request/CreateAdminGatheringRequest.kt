@@ -29,9 +29,13 @@ data class CreateAdminGatheringRequest(
 	@field:Future(message = "모임 일시는 현재 이후여야 합니다.")
 	val gatheringAt: LocalDateTime? = null,
 
-	@field:NotNull(message = "모임 정원은 필수입니다.")
-	@field:Min(value = 2, message = "모임 정원은 최소 2명 이상이어야 합니다.")
-	val capacity: Int? = null,
+	@field:NotNull(message = "모임 최소 인원은 필수입니다.")
+	@field:Min(value = 2, message = "모임 최소 인원은 2명 이상이어야 합니다.")
+	val minParticipants: Int? = null,
+
+	@field:NotNull(message = "모임 최대 인원은 필수입니다.")
+	@field:Min(value = 2, message = "모임 최대 인원은 2명 이상이어야 합니다.")
+	val maxParticipants: Int? = null,
 
 	// 정상가(남/녀, 필수)
 	@field:NotNull(message = "남성 참가비는 필수입니다.")
@@ -48,6 +52,9 @@ data class CreateAdminGatheringRequest(
 
 	@field:PositiveOrZero(message = "참가비는 0원 이상이어야 합니다.")
 	val earlyBirdFemaleFee: Int? = null,
+
+	@field:Min(value = 1, message = "얼리버드 적용 인원은 1명 이상이어야 합니다.")
+	val earlyBirdCapacity: Int? = null,
 
 	// 할인가(남/녀, 선택 — 남/녀를 함께 입력한다)
 	@field:PositiveOrZero(message = "참가비는 0원 이상이어야 합니다.")
@@ -67,11 +74,13 @@ data class CreateAdminGatheringRequest(
 			imageSize = imageSize,
 			region = region!!,
 			gatheringAt = gatheringAt!!,
-			capacity = capacity!!,
+			minParticipants = minParticipants!!,
+			maxParticipants = maxParticipants!!,
 			maleFee = maleFee!!,
 			femaleFee = femaleFee!!,
 			earlyBirdMaleFee = earlyBirdMaleFee,
 			earlyBirdFemaleFee = earlyBirdFemaleFee,
+			earlyBirdCapacity = earlyBirdCapacity,
 			discountMaleFee = discountMaleFee,
 			discountFemaleFee = discountFemaleFee,
 		)

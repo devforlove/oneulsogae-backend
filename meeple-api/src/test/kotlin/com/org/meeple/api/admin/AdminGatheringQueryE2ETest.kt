@@ -38,6 +38,9 @@ class AdminGatheringQueryE2ETest : AbstractIntegrationSupport({
 				body("data.content[0].title", "둘째 모임")
 				body("data.content[0].type", "COOKING")
 				body("data.content[0].status", "RECRUITING")
+				// 인원(최소·최대)은 목록 행에도 노출한다.
+				body("data.content[0].minParticipants", 2)
+				body("data.content[0].maxParticipants", 4)
 				// 대표 이미지는 목록 행에도 노출한다.
 				body("data.content[0].imageUrl", notNullValue())
 				// 목록 행에 소개·참가비 상세는 없다.
@@ -122,10 +125,13 @@ class AdminGatheringQueryE2ETest : AbstractIntegrationSupport({
 					description = "상세 소개",
 					imageKey = "gatherings/detail.png",
 					region = "서울 마포구",
+					minParticipants = 3,
+					maxParticipants = 8,
 					maleFee = 10000,
 					femaleFee = 8000,
 					earlyBirdMaleFee = 7000,
 					earlyBirdFemaleFee = 5000,
+					earlyBirdCapacity = 5,
 					discountMaleFee = 9000,
 					discountFemaleFee = 7000,
 				),
@@ -141,9 +147,12 @@ class AdminGatheringQueryE2ETest : AbstractIntegrationSupport({
 				// dao가 채운 image_key를 서비스가 presigned URL로 변환해 내려준다. (테스트 페이크: https://presigned.test/{key})
 				body("data.imageUrl", "https://presigned.test/gatherings/detail.png")
 				body("data.region", "서울 마포구")
+				body("data.minParticipants", 3)
+				body("data.maxParticipants", 8)
 				body("data.maleFee", 10000)
 				body("data.femaleFee", 8000)
 				body("data.earlyBirdMaleFee", 7000)
+				body("data.earlyBirdCapacity", 5)
 				body("data.discountFemaleFee", 7000)
 			}
 		}

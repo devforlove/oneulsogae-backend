@@ -17,13 +17,15 @@ data class CreateAdminGatheringCommand(
 	val imageSize: Long,
 	val region: String,
 	val gatheringAt: LocalDateTime,
-	val capacity: Int,
+	val minParticipants: Int,
+	val maxParticipants: Int,
 	// 정상가(남/녀, 필수)
 	val maleFee: Int,
 	val femaleFee: Int,
-	// 얼리버드 특가(남/녀, 선택)
+	// 얼리버드 특가(남/녀, 선택) — 가격이 있으면 적용 인원(earlyBirdCapacity)도 함께
 	val earlyBirdMaleFee: Int?,
 	val earlyBirdFemaleFee: Int?,
+	val earlyBirdCapacity: Int?,
 	// 할인가(남/녀, 선택)
 	val discountMaleFee: Int?,
 	val discountFemaleFee: Int?,
