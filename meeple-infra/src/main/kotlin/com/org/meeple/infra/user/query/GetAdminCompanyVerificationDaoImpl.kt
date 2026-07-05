@@ -1,6 +1,7 @@
 package com.org.meeple.infra.user.query
 
 import com.org.meeple.admin.companyverification.query.dao.GetAdminCompanyVerificationDao
+import com.org.meeple.admin.companyverification.query.dto.AdminCompanyVerificationDetailView
 import com.org.meeple.admin.companyverification.query.dto.AdminCompanyVerificationView
 import com.org.meeple.admin.companyverification.query.dto.AdminCompanyVerificationViews
 import com.org.meeple.common.user.CompanyImageVerificationStatus
@@ -63,6 +64,34 @@ class GetAdminCompanyVerificationDaoImpl(
 			.from(verification)
 			.where(statusEq(verification, status))
 			.fetchOne() ?: 0L
+	}
+
+	override fun findDetailById(id: Long): AdminCompanyVerificationDetailView? {
+		val verification: QCompanyImageVerificationEntity = QCompanyImageVerificationEntity.companyImageVerificationEntity
+		val detail: QUserDetailEntity = QUserDetailEntity.userDetailEntity
+		val user: QUserEntity = QUserEntity.userEntity
+
+		return queryFactory
+			.select(
+				Projections.constructor(
+					AdminCompanyVerificationDetailView::class.java,
+					verification.id,
+					verification.userId,
+					detail.nickname,
+					user.email,
+					verification.status,
+					verification.createdAt,
+					verification.imageKey,
+					detail.companyName,
+					detail.companyEmail,
+					detail.job,
+				),
+			)
+			.from(verification)
+			.leftJoin(detail).on(detail.userId.eq(verification.userId))
+			.leftJoin(user).on(user.id.eq(verification.userId))
+			.where(verification.id.eq(id))
+			.fetchOne()
 	}
 
 	/** status가 있으면 동등 조건, 없으면 null(=where 무시). */
