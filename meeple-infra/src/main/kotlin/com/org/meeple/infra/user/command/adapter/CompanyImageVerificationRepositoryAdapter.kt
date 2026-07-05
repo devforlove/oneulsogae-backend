@@ -31,11 +31,12 @@ class CompanyImageVerificationRepositoryAdapter(
 			.map { entity: CompanyImageVerificationEntity -> entity.toAdminDomain() }
 			.orElse(null)
 
-	// admin 심사: 기존 행을 로드해 status만 바꿔 저장한다. (imageKey/userId 보존)
+	// admin 심사: 기존 행을 로드해 status·rejectionReason을 반영해 저장한다. (imageKey/userId/companyName 보존)
 	override fun save(verification: AdminCompanyImageVerification): AdminCompanyImageVerification {
 		val entity: CompanyImageVerificationEntity = companyImageVerificationJpaRepository.findById(verification.id)
 			.orElseThrow { IllegalStateException("직장 인증을 찾을 수 없습니다: ${verification.id}") }
 		entity.status = verification.status
+		entity.rejectionReason = verification.rejectionReason
 		return companyImageVerificationJpaRepository.save(entity).toAdminDomain()
 	}
 
@@ -44,5 +45,6 @@ class CompanyImageVerificationRepositoryAdapter(
 			id = id ?: 0,
 			userId = userId,
 			status = status,
+			rejectionReason = rejectionReason,
 		)
 }

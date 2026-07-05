@@ -40,12 +40,12 @@ class ReviewCompanyImageVerificationService(
 		updateUserCompanyNamePort.updateCompanyName(verification.userId, companyName)
 	}
 
-	override fun reject(id: Long) {
+	override fun reject(id: Long, reason: String?) {
 		val verification: AdminCompanyImageVerification = getCompanyImageVerificationPort.findById(id)
 			?: throw AdminException(
 				AdminErrorCode.COMPANY_IMAGE_VERIFICATION_NOT_FOUND,
 				"직장 인증을 찾을 수 없습니다: $id",
 			)
-		saveCompanyImageVerificationPort.save(verification.reject())
+		saveCompanyImageVerificationPort.save(verification.reject(reason))
 	}
 }

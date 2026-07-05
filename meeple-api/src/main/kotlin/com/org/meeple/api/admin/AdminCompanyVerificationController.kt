@@ -3,6 +3,7 @@ package com.org.meeple.api.admin
 import com.org.meeple.admin.companyverification.command.application.port.`in`.ReviewCompanyImageVerificationUseCase
 import com.org.meeple.admin.companyverification.query.service.port.`in`.GetAdminCompanyVerificationsUseCase
 import com.org.meeple.api.admin.request.AdminApproveCompanyVerificationRequest
+import com.org.meeple.api.admin.request.AdminRejectCompanyVerificationRequest
 import com.org.meeple.api.admin.response.AdminCompanyVerificationDetailResponse
 import com.org.meeple.api.admin.response.AdminCompanyVerificationPageResponse
 import com.org.meeple.common.user.CompanyImageVerificationStatus
@@ -74,13 +75,14 @@ class AdminCompanyVerificationController(
 
 	@Operation(
 		summary = "회사 이미지 인증 반려",
-		description = "인증을 반려(REJECTED)한다. 없으면 404(COMPANY-IMAGE-001).",
+		description = "인증을 반려(REJECTED)하고 사유(선택)를 저장한다. 없으면 404(COMPANY-IMAGE-001).",
 	)
 	@PostMapping("/{id}/reject")
 	fun reject(
 		@PathVariable id: Long,
+		@RequestBody(required = false) @Valid request: AdminRejectCompanyVerificationRequest?,
 	): ApiResponse<Unit> {
-		reviewCompanyImageVerificationUseCase.reject(id)
+		reviewCompanyImageVerificationUseCase.reject(id, request?.reason)
 		return ApiResponse.success()
 	}
 }

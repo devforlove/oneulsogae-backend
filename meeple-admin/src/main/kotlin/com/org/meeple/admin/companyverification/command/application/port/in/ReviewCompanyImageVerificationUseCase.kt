@@ -6,6 +6,6 @@ interface ReviewCompanyImageVerificationUseCase {
 	/** 인증을 승인(APPROVED)하고 해당 유저의 회사명을 [companyName]으로 확정한다. */
 	fun approve(id: Long, companyName: String)
 
-	/** 인증을 반려(REJECTED)한다. */
-	fun reject(id: Long)
+	/** 인증을 반려(REJECTED)하고 사유([reason], 선택)를 남긴다. */
+	fun reject(id: Long, reason: String?)
 }
