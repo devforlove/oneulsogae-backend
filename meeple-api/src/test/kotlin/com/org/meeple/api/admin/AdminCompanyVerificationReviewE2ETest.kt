@@ -72,6 +72,22 @@ class AdminCompanyVerificationReviewE2ETest : AbstractIntegrationSupport({
 			}
 		}
 
+		it("회사명이 50자를 넘으면 400이다") {
+			val userId: Long = IntegrationUtil.persist(UserEntityFixture.create(providerId = "civ-long")).id!!
+			val id: Long = IntegrationUtil.persist(
+				CompanyImageVerificationEntityFixture.create(userId = userId, imageKey = "long-key"),
+			).id!!
+			val tooLong: String = "가".repeat(51)
+
+			post("/admin/v1/company-image-verifications/$id/approve") {
+				bearer(adminAccessTokenFor(9901L))
+				jsonBody("""{"companyName":"$tooLong"}""")
+			} expect {
+				status(400)
+				body("success", false)
+			}
+		}
+
 		it("없는 id면 404다 (COMPANY-IMAGE-001)") {
 			post("/admin/v1/company-image-verifications/999999/approve") {
 				bearer(adminAccessTokenFor(9901L))
