@@ -6,8 +6,11 @@ import com.org.meeple.common.integration.post
 import com.org.meeple.common.user.CompanyImageVerificationStatus
 import com.org.meeple.infra.fixture.CompanyImageVerificationEntityFixture
 import com.org.meeple.infra.fixture.IntegrationUtil
+import com.org.meeple.infra.fixture.MatchUserEntityFixture
 import com.org.meeple.infra.fixture.UserDetailEntityFixture
 import com.org.meeple.infra.fixture.UserEntityFixture
+import com.org.meeple.infra.matchuser.command.entity.MatchUserEntity
+import com.org.meeple.infra.matchuser.command.entity.QMatchUserEntity
 import com.org.meeple.infra.user.command.entity.CompanyImageVerificationEntity
 import com.org.meeple.infra.user.command.entity.QCompanyImageVerificationEntity
 import com.org.meeple.infra.user.command.entity.QUserDetailEntity
@@ -30,6 +33,11 @@ class AdminCompanyVerificationReviewE2ETest : AbstractIntegrationSupport({
 	fun detailByUserId(userId: Long): UserDetailEntity {
 		val d: QUserDetailEntity = QUserDetailEntity.userDetailEntity
 		return IntegrationUtil.getQuery().selectFrom(d).where(d.userId.eq(userId)).fetchOne()!!
+	}
+
+	fun matchUserByUserId(userId: Long): MatchUserEntity {
+		val m: QMatchUserEntity = QMatchUserEntity.matchUserEntity
+		return IntegrationUtil.getQuery().selectFrom(m).where(m.userId.eq(userId)).fetchOne()!!
 	}
 
 	describe("POST /admin/v1/company-image-verifications/{id}/approve") {
@@ -55,6 +63,29 @@ class AdminCompanyVerificationReviewE2ETest : AbstractIntegrationSupport({
 
 			verificationById(id).status shouldBe CompanyImageVerificationStatus.APPROVED
 			detailByUserId(userId).companyName shouldBe "미플"
+		}
+
+		it("승인 시 match_user 회사명도 함께 갱신한다") {
+			val userId: Long = IntegrationUtil.persist(UserEntityFixture.create(providerId = "civ-matchuser")).id!!
+			IntegrationUtil.persist(UserDetailEntityFixture.create(userId = userId, nickname = "인증유저", companyName = null))
+			IntegrationUtil.persist(MatchUserEntityFixture.create(userId = userId, companyName = "이전회사"))
+			val id: Long = IntegrationUtil.persist(
+				CompanyImageVerificationEntityFixture.create(
+					userId = userId,
+					imageKey = "matchuser-key",
+					status = CompanyImageVerificationStatus.PENDING,
+				),
+			).id!!
+
+			post("/admin/v1/company-image-verifications/$id/approve") {
+				bearer(adminAccessTokenFor(9901L))
+				jsonBody("""{"companyName":"미플"}""")
+			} expect {
+				status(200)
+			}
+
+			detailByUserId(userId).companyName shouldBe "미플"
+			matchUserByUserId(userId).companyName shouldBe "미플"
 		}
 
 		it("공백 회사명이면 400이다") {
@@ -147,6 +178,7 @@ class AdminCompanyVerificationReviewE2ETest : AbstractIntegrationSupport({
 
 	afterTest {
 		IntegrationUtil.deleteAll(QCompanyImageVerificationEntity.companyImageVerificationEntity)
+		IntegrationUtil.deleteAll(QMatchUserEntity.matchUserEntity)
 		IntegrationUtil.deleteAll(QUserDetailEntity.userDetailEntity)
 		IntegrationUtil.deleteAll(QUserEntity.userEntity)
 	}
