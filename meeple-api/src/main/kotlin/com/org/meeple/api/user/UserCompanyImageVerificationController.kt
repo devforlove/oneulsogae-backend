@@ -30,7 +30,7 @@ class UserCompanyImageVerificationController(
 	/** 직장 서류 이미지(JPEG·PNG·PDF, 최대 10MB)를 업로드해 심사를 접수한다. */
 	@Operation(
 		summary = "직장 서류 이미지 인증 제출",
-		description = "재직증명서 등 직장 서류 이미지를 multipart/form-data(파트명 image)로 업로드한다. 파일은 S3에 비공개 저장되고, company_image_verifications에 오브젝트 키·심사 상태(PENDING)가 기록된다.",
+		description = "재직증명서 등 직장 서류 이미지를 multipart/form-data(파트명 image)로 업로드하고, 인증받고자 하는 회사명을 파트명 companyName(필수·최대 50자)으로 함께 보낸다. 파일은 S3에 비공개 저장되고, company_image_verifications에 오브젝트 키·희망 회사명·심사 상태(PENDING)가 기록된다.",
 	)
 	@PostMapping("/company-image/verifications", consumes = [MediaType.MULTIPART_FORM_DATA_VALUE])
 	fun submitCompanyImageVerification(
