@@ -38,6 +38,10 @@ class CompanyImageVerificationEntity(
 	@Column(name = "company_name", length = 100)
 	var companyName: String? = null,
 
+	/** 제출 시점의 유저 프로필 회사명 스냅샷. 승인으로 프로필이 덮어써져도 심사 상세에서 이전 회사명을 안정적으로 보여준다. */
+	@Column(name = "previous_company_name", length = 100)
+	var previousCompanyName: String? = null,
+
 	@Column(name = "rejection_reason", length = 500)
 	var rejectionReason: String? = null,
 ) : BaseEntity()

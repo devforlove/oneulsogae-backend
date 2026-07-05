@@ -14,6 +14,7 @@ object CompanyImageVerificationEntityFixture {
 		imageKey: String = "company-image-verifications/1/test-object.jpg",
 		status: CompanyImageVerificationStatus = CompanyImageVerificationStatus.PENDING,
 		companyName: String? = "테스트회사",
+		previousCompanyName: String? = null,
 		rejectionReason: String? = null,
 	): CompanyImageVerificationEntity =
 		CompanyImageVerificationEntity(
@@ -21,6 +22,7 @@ object CompanyImageVerificationEntityFixture {
 			imageKey = imageKey,
 			status = status,
 			companyName = companyName,
+			previousCompanyName = previousCompanyName,
 			rejectionReason = rejectionReason,
 		)
 }

@@ -5,6 +5,7 @@ import com.org.meeple.core.user.UserErrorCode
 import com.org.meeple.core.user.command.application.port.`in`.SubmitCompanyImageVerificationUseCase
 import com.org.meeple.core.user.command.application.port.`in`.command.SubmitCompanyImageVerificationCommand
 import com.org.meeple.core.user.command.application.port.out.FileStoragePort
+import com.org.meeple.core.user.command.application.port.out.GetUserDetailPort
 import com.org.meeple.core.user.command.application.port.out.GetUserPort
 import com.org.meeple.core.user.command.application.port.out.SaveCompanyImageVerificationPort
 import com.org.meeple.core.user.command.domain.CompanyImageVerification
@@ -22,6 +23,7 @@ import java.util.UUID
 @Service
 class SubmitCompanyImageVerificationService(
 	private val getUserPort: GetUserPort,
+	private val getUserDetailPort: GetUserDetailPort,
 	private val fileStoragePort: FileStoragePort,
 	private val saveCompanyImageVerificationPort: SaveCompanyImageVerificationPort,
 ) : SubmitCompanyImageVerificationUseCase {
@@ -36,11 +38,19 @@ class SubmitCompanyImageVerificationService(
 		CompanyImageVerification.validateCompanyName(command.companyName)
 		val contentType: String = command.contentType!!
 
+		// 승인 시 프로필 회사명이 덮어써지므로, 제출 시점의 프로필 회사명을 이전 회사명으로 스냅샷해 심사 상세에서 보여준다.
+		val previousCompanyName: String? = getUserDetailPort.findByUserId(user.id)?.companyName
+
 		val key: String = objectKey(user.id, contentType)
 		fileStoragePort.upload(key, command.content, contentType)
 
 		return saveCompanyImageVerificationPort.save(
-			CompanyImageVerification.create(userId = user.id, imageKey = key, companyName = command.companyName),
+			CompanyImageVerification.create(
+				userId = user.id,
+				imageKey = key,
+				companyName = command.companyName,
+				previousCompanyName = previousCompanyName,
+			),
 		)
 	}
 

@@ -32,7 +32,8 @@ class AdminCompanyVerificationDetailE2ETest : AbstractIntegrationSupport({
 					nickname = "인증유저",
 					job = "백엔드 개발자",
 					companyEmail = "hr@meeple.com",
-					companyName = "미플",
+					// 승인으로 프로필 회사명이 새 값으로 덮어써진 상태를 흉내낸다. 이전 회사명은 여기서 읽으면 안 된다.
+					companyName = "승인후회사",
 				),
 			)
 			val id: Long = IntegrationUtil.persist(
@@ -40,6 +41,7 @@ class AdminCompanyVerificationDetailE2ETest : AbstractIntegrationSupport({
 					userId = userId,
 					imageKey = "detail-key",
 					status = CompanyImageVerificationStatus.APPROVED,
+					previousCompanyName = "이전회사",
 				),
 			).id!!
 
@@ -54,7 +56,8 @@ class AdminCompanyVerificationDetailE2ETest : AbstractIntegrationSupport({
 				body("data.statusLabel", "승인")
 				body("data.nickname", "인증유저")
 				body("data.email", "civd@test.com")
-				body("data.companyName", "미플")
+				// 승인으로 프로필이 덮어써져도 상세는 엔티티 스냅샷의 이전 회사명을 보여준다.
+				body("data.previousCompanyName", "이전회사")
 				body("data.companyEmail", "hr@meeple.com")
 				body("data.job", "백엔드 개발자")
 				body("data.imageUrl", "https://presigned.test/detail-key")

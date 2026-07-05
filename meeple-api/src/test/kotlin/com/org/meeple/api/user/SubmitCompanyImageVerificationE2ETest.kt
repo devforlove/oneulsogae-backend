@@ -3,9 +3,11 @@ package com.org.meeple.api.user
 import com.org.meeple.common.integration.AbstractIntegrationSupport
 import com.org.meeple.common.user.CompanyImageVerificationStatus
 import com.org.meeple.infra.fixture.IntegrationUtil
+import com.org.meeple.infra.fixture.UserDetailEntityFixture
 import com.org.meeple.infra.fixture.UserEntityFixture
 import com.org.meeple.infra.user.command.entity.CompanyImageVerificationEntity
 import com.org.meeple.infra.user.command.entity.QCompanyImageVerificationEntity
+import com.org.meeple.infra.user.command.entity.QUserDetailEntity
 import com.org.meeple.infra.user.command.entity.QUserEntity
 import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
@@ -49,6 +51,25 @@ class SubmitCompanyImageVerificationE2ETest : AbstractIntegrationSupport({
 				saved.imageKey.shouldNotBeNull()
 				saved.imageKey shouldStartWith "company-image-verifications/$userId/"
 				saved.companyName shouldBe "미플"
+			}
+		}
+
+		context("프로필에 회사명이 있는 유저가 업로드하면") {
+			it("제출 시점의 프로필 회사명을 이전 회사명으로 스냅샷한다") {
+				val userId: Long = persistUser("company-image-prev")
+				IntegrationUtil.persist(UserDetailEntityFixture.create(userId = userId, companyName = "이전회사"))
+
+				RestAssured.given()
+					.header("Authorization", "Bearer ${accessTokenFor(userId)}")
+					.multiPart("image", "resume.jpg", "fake-image-bytes".toByteArray(), "image/jpeg")
+					.multiPart("companyName", "미플", "text/plain;charset=UTF-8")
+					.post("/users/v1/company-image/verifications")
+					.then()
+					.statusCode(200)
+
+				val saved: CompanyImageVerificationEntity = latestVerificationOf(userId)!!
+				saved.companyName shouldBe "미플"
+				saved.previousCompanyName shouldBe "이전회사"
 			}
 		}
 
@@ -112,6 +133,7 @@ class SubmitCompanyImageVerificationE2ETest : AbstractIntegrationSupport({
 
 	afterTest {
 		IntegrationUtil.deleteAll(QCompanyImageVerificationEntity.companyImageVerificationEntity)
+		IntegrationUtil.deleteAll(QUserDetailEntity.userDetailEntity)
 		IntegrationUtil.deleteAll(QUserEntity.userEntity)
 	}
 })

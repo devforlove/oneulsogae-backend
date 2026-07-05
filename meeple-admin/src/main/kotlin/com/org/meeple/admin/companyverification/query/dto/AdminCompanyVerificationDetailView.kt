@@ -4,8 +4,8 @@ import com.org.meeple.common.user.CompanyImageVerificationStatus
 import java.time.LocalDateTime
 
 /**
- * 어드민 회사 이미지 인증 상세 read model. 목록 필드 + 사용자가 주장한 직장 정보(companyName·companyEmail·job) +
- * 유저가 제출 시 기입한 희망 회사명([requestedCompanyName])·어드민 반려 사유([rejectionReason]).
+ * 어드민 회사 이미지 인증 상세 read model. 목록 필드 + 사용자가 주장한 직장 정보(companyEmail·job) +
+ * 제출 시점의 이전 회사명([previousCompanyName])·유저가 제출 시 기입한 희망 회사명([requestedCompanyName])·어드민 반려 사유([rejectionReason]).
  * dao는 [imageKey]까지 채우고 [imageUrl]은 null로 둔다. 서비스가 presign 결과로 [imageUrl]을 채운다.
  * (QueryDSL Projections.constructor가 imageUrl 없이 투영할 수 있도록 12-arg 보조 생성자를 둔다)
  */
@@ -17,8 +17,8 @@ data class AdminCompanyVerificationDetailView(
 	val status: CompanyImageVerificationStatus,
 	val createdAt: LocalDateTime?,
 	val imageKey: String,
-	/** user_details 프로필 회사명. */
-	val companyName: String?,
+	/** 제출 시점에 스냅샷한 이전(기존 프로필) 회사명. (company_image_verifications.previous_company_name) */
+	val previousCompanyName: String?,
 	val companyEmail: String?,
 	val job: String?,
 	/** 유저가 제출 시 기입한 희망 회사명. (company_image_verifications.company_name) */
@@ -36,10 +36,10 @@ data class AdminCompanyVerificationDetailView(
 		status: CompanyImageVerificationStatus,
 		createdAt: LocalDateTime?,
 		imageKey: String,
-		companyName: String?,
+		previousCompanyName: String?,
 		companyEmail: String?,
 		job: String?,
 		requestedCompanyName: String?,
 		rejectionReason: String?,
-	) : this(id, userId, nickname, email, status, createdAt, imageKey, companyName, companyEmail, job, requestedCompanyName, rejectionReason, null)
+	) : this(id, userId, nickname, email, status, createdAt, imageKey, previousCompanyName, companyEmail, job, requestedCompanyName, rejectionReason, null)
 }

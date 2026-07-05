@@ -4,7 +4,7 @@ import com.org.meeple.admin.companyverification.query.dto.AdminCompanyVerificati
 import java.time.LocalDateTime
 
 /**
- * 어드민 회사 이미지 인증 상세 응답. 목록 필드 + 사용자가 주장한 직장 정보(companyName·companyEmail·job).
+ * 어드민 회사 이미지 인증 상세 응답. 목록 필드 + 이전 회사명(previousCompanyName) + 사용자가 주장한 직장 정보(companyEmail·job).
  * status는 코드(name)와 한글 라벨(description)을 함께 노출하고, 서류는 열람용 presigned URL([imageUrl])만 노출한다.
  */
 data class AdminCompanyVerificationDetailResponse(
@@ -15,7 +15,7 @@ data class AdminCompanyVerificationDetailResponse(
 	val createdAt: LocalDateTime?,
 	val nickname: String?,
 	val email: String?,
-	val companyName: String?,
+	val previousCompanyName: String?,
 	val companyEmail: String?,
 	val job: String?,
 	val requestedCompanyName: String?,
@@ -32,7 +32,7 @@ data class AdminCompanyVerificationDetailResponse(
 				createdAt = view.createdAt,
 				nickname = view.nickname,
 				email = view.email,
-				companyName = view.companyName,
+				previousCompanyName = view.previousCompanyName,
 				companyEmail = view.companyEmail,
 				job = view.job,
 				requestedCompanyName = view.requestedCompanyName,

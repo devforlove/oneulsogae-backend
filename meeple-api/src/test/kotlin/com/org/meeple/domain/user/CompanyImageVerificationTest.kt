@@ -15,33 +15,41 @@ import io.kotest.matchers.shouldBe
 class CompanyImageVerificationTest : DescribeSpec({
 
 	describe("create") {
-		it("제출은 심사 대기(PENDING)로 시작하고 희망 회사명을 담는다") {
+		it("제출은 심사 대기(PENDING)로 시작하고 희망 회사명·이전 회사명을 담는다") {
 			val verification: CompanyImageVerification =
-				CompanyImageVerification.create(userId = 1L, imageKey = "k/1/a.jpg", companyName = "미플")
+				CompanyImageVerification.create(userId = 1L, imageKey = "k/1/a.jpg", companyName = "미플", previousCompanyName = "이전회사")
 
 			verification.userId shouldBe 1L
 			verification.imageKey shouldBe "k/1/a.jpg"
 			verification.companyName shouldBe "미플"
+			verification.previousCompanyName shouldBe "이전회사"
 			verification.status shouldBe CompanyImageVerificationStatus.PENDING
 			verification.rejectionReason shouldBe null
 		}
 
+		it("이전 회사명이 없으면 null로 담는다") {
+			val verification: CompanyImageVerification =
+				CompanyImageVerification.create(userId = 1L, imageKey = "k/1/a.jpg", companyName = "미플", previousCompanyName = null)
+
+			verification.previousCompanyName shouldBe null
+		}
+
 		it("imageKey가 비면 생성할 수 없다") {
 			shouldThrow<IllegalArgumentException> {
-				CompanyImageVerification.create(userId = 1L, imageKey = " ", companyName = "미플")
+				CompanyImageVerification.create(userId = 1L, imageKey = " ", companyName = "미플", previousCompanyName = null)
 			}
 		}
 
 		it("회사명이 비면 INVALID_COMPANY_NAME을 던진다") {
 			val exception: BusinessException = shouldThrow<BusinessException> {
-				CompanyImageVerification.create(userId = 1L, imageKey = "k/1/a.jpg", companyName = " ")
+				CompanyImageVerification.create(userId = 1L, imageKey = "k/1/a.jpg", companyName = " ", previousCompanyName = null)
 			}
 			exception.errorCode shouldBe UserErrorCode.INVALID_COMPANY_NAME
 		}
 
 		it("회사명이 50자를 넘으면 INVALID_COMPANY_NAME을 던진다") {
 			val exception: BusinessException = shouldThrow<BusinessException> {
-				CompanyImageVerification.create(userId = 1L, imageKey = "k/1/a.jpg", companyName = "가".repeat(51))
+				CompanyImageVerification.create(userId = 1L, imageKey = "k/1/a.jpg", companyName = "가".repeat(51), previousCompanyName = null)
 			}
 			exception.errorCode shouldBe UserErrorCode.INVALID_COMPANY_NAME
 		}

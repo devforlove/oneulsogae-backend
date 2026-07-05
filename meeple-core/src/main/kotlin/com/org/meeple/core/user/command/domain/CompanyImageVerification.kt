@@ -18,6 +18,8 @@ data class CompanyImageVerification(
 	val status: CompanyImageVerificationStatus = CompanyImageVerificationStatus.PENDING,
 	/** 유저가 제출 시 기입한 희망 회사명. (어드민 심사 근거) */
 	val companyName: String? = null,
+	/** 제출 시점의 유저 프로필 회사명 스냅샷. 승인으로 프로필이 덮어써져도 심사 상세에서 이전 회사명을 보여주기 위해 보관한다. */
+	val previousCompanyName: String? = null,
 	/** 어드민 반려 사유. 반려 시에만 채워진다. */
 	val rejectionReason: String? = null,
 ) {
@@ -37,10 +39,23 @@ data class CompanyImageVerification(
 		/** 제출 희망 회사명의 최대 길이. (회사명 직접입력·어드민 승인 DTO와 동일 상한) */
 		const val MAX_COMPANY_NAME_LENGTH: Int = 50
 
-		/** 신규 제출(심사 대기)을 생성한다. 희망 회사명([companyName])을 검증해 담는다. */
-		fun create(userId: Long, imageKey: String, companyName: String): CompanyImageVerification {
+		/**
+		 * 신규 제출(심사 대기)을 생성한다. 희망 회사명([companyName])을 검증해 담고,
+		 * 제출 시점의 프로필 회사명([previousCompanyName])을 이전 회사명으로 스냅샷한다. (프로필 미기입 시 null)
+		 */
+		fun create(
+			userId: Long,
+			imageKey: String,
+			companyName: String,
+			previousCompanyName: String?,
+		): CompanyImageVerification {
 			validateCompanyName(companyName)
-			return CompanyImageVerification(userId = userId, imageKey = imageKey, companyName = companyName)
+			return CompanyImageVerification(
+				userId = userId,
+				imageKey = imageKey,
+				companyName = companyName,
+				previousCompanyName = previousCompanyName,
+			)
 		}
 
 		/** 제출 희망 회사명 검증. 공백이거나 [MAX_COMPANY_NAME_LENGTH]자를 넘으면 [UserErrorCode.INVALID_COMPANY_NAME]. */

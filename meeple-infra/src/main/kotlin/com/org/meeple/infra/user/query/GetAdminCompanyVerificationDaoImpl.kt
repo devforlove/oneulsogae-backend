@@ -82,7 +82,7 @@ class GetAdminCompanyVerificationDaoImpl(
 					verification.status,
 					verification.createdAt,
 					verification.imageKey,
-					detail.companyName,
+					verification.previousCompanyName,
 					detail.companyEmail,
 					detail.job,
 					verification.companyName,
