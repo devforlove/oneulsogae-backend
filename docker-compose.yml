@@ -23,9 +23,10 @@ services:
       - meeple-redis-data:/data
 
   # 로컬 S3 에뮬레이터. 실제 AWS S3와 동일한 API를 4566 포트로 제공한다. (운영은 실제 S3)
-  # 커뮤니티(무료) 이미지로 3.8을 고정한다. CalVer(2026.x) 이미지는 라이선스 토큰을 요구해 S3만 쓰는 로컬엔 부적합하다.
+  # 커뮤니티 LocalStack은 상태 영속성이 Pro 전용이라 재시작 시 S3 객체가 사라진다.
+  # 이를 보완한 드롭인 이미지(gresau/localstack-persist)를 쓴다. 태그는 LocalStack 버전(3.x)을 따라간다.
   localstack:
-    image: localstack/localstack:3.8
+    image: gresau/localstack-persist:3
     container_name: meeple-localstack
     environment:
       # S3만 띄운다. (다른 AWS 서비스는 불필요)
@@ -39,7 +40,8 @@ services:
     volumes:
       # 기동 완료(ready) 직후 실행돼 개발용 버킷을 만드는 초기화 스크립트.
       - ./docker/localstack/init/ready.d:/etc/localstack/init/ready.d
-      - meeple-localstack-data:/var/lib/localstack
+      # 이 이미지는 S3 객체·리소스 상태를 /persisted-data에 저장한다. 볼륨으로 재시작 간 유지.
+      - meeple-localstack-data:/persisted-data
 
 volumes:
   meeple-mysql-data:
