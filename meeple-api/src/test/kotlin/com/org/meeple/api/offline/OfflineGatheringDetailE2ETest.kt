@@ -78,33 +78,58 @@ class OfflineGatheringDetailE2ETest : AbstractIntegrationSupport({
 				body("data.maxParticipants", 8)
 				// 상태(status)는 응답에 포함하지 않는다.
 				body("data.status", null)
-				// 일정 목록은 시작 시각 오름차순으로 내려오고, 참가비는 각 일정에 실린다.
-				body("data.schedules", hasSize<Any>(2))
-				body("data.schedules.status", contains("SCHEDULED", "COMPLETED"))
+				// 비로그인이라 각 일정이 남/녀 두 아이템으로 펼쳐진다. (일정 시작 오름차순, 같은 일정은 남성→여성)
+				body("data.schedules", hasSize<Any>(4))
+				body("data.schedules.gender", contains("MALE", "FEMALE", "MALE", "FEMALE"))
+				// 첫 일정(2999-01-01) 남성 아이템 — 해당 성별의 참가비만 담는다.
+				body("data.schedules[0].gender", "MALE")
+				body("data.schedules[0].genderDescription", "남성")
 				body("data.schedules[0].startAt", "2999-01-01T18:00:00")
 				body("data.schedules[0].statusDescription", "예정")
-				body("data.schedules[0].maleFee", 10000)
-				body("data.schedules[0].earlyBirdMaleFee", 7000)
+				body("data.schedules[0].fee", 10000)
+				body("data.schedules[0].earlyBirdFee", 7000)
 				body("data.schedules[0].earlyBirdCapacity", 5)
 				body("data.schedules[0].earlyBirdRemaining", 5)
-				body("data.schedules[0].discountMaleFee", 9000)
+				body("data.schedules[0].discountFee", 9000)
+				// 같은 일정의 여성 아이템 — 여성 참가비.
+				body("data.schedules[1].gender", "FEMALE")
+				body("data.schedules[1].fee", 8000)
+				body("data.schedules[1].earlyBirdFee", 5000)
+				body("data.schedules[1].discountFee", 7000)
+				// 두 번째 일정(2999-06-01, 특가 없음) 남성 아이템.
+				body("data.schedules[2].gender", "MALE")
+				body("data.schedules[2].statusDescription", "종료")
+				body("data.schedules[2].fee", 10000)
+				body("data.schedules[2].earlyBirdFee", null)
 				// 비로그인 조회이므로 조회자 성별은 null이다.
 				body("data.viewerGender", null)
 			}
 		}
 
-		it("로그인한 상태로 조회하면 조회자 성별(viewerGender)을 함께 내려준다") {
+		it("로그인 조회는 viewerGender와 그 성별 일정 아이템만 내려준다") {
 			val userId = 7001L
 			IntegrationUtil.persist(UserDetailEntityFixture.create(userId = userId, gender = Gender.MALE))
 			val id: Long = IntegrationUtil.persist(
 				GatheringEntityFixture.create(title = "성별 확인 모임", status = GatheringStatus.RECRUITING),
 			).id!!
+			IntegrationUtil.persist(
+				GatheringScheduleEntityFixture.create(
+					gatheringId = id,
+					startAt = LocalDateTime.of(2999, 1, 1, 18, 0, 0),
+					maleFee = 10000,
+					femaleFee = 8000,
+				),
+			)
 
 			get("/offline/v1/gatherings/$id") {
 				bearer(accessTokenFor(userId))
 			} expect {
 				status(200)
 				body("data.viewerGender", "MALE")
+				// 로그인 성별(MALE) 아이템만 — 일정 1건이라 아이템도 1개.
+				body("data.schedules", hasSize<Any>(1))
+				body("data.schedules[0].gender", "MALE")
+				body("data.schedules[0].fee", 10000)
 			}
 		}
 
