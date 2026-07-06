@@ -27,6 +27,8 @@ fun GatheringSchedule.toEntity(): GatheringScheduleEntity =
 		earlyBirdMaleFee = earlyBirdFee?.male,
 		earlyBirdFemaleFee = earlyBirdFee?.female,
 		earlyBirdCapacity = earlyBirdCapacity,
+		// 저장 시 남은 개수는 정원(earlyBirdCapacity)으로 초기화한다.
+		earlyBirdRemaining = earlyBirdCapacity,
 		discountMaleFee = discountFee?.male,
 		discountFemaleFee = discountFee?.female,
 		status = status,

@@ -60,6 +60,10 @@ class GatheringScheduleEntity(
 	@Column(name = "early_bird_capacity")
 	var earlyBirdCapacity: Int? = null,
 
+	/** 얼리버드 특가의 남은 개수. 저장 시 [earlyBirdCapacity]로 초기화하고, 얼리버드 참가가 발생하면 차감한다. 특가가 없는 일정은 null. */
+	@Column(name = "early_bird_remaining")
+	var earlyBirdRemaining: Int? = null,
+
 	/** 할인가 - 남성 참가비(원). 할인이 없는 일정은 null. */
 	@Column(name = "discount_male_fee")
 	var discountMaleFee: Int? = null,

@@ -64,6 +64,8 @@ class AdminGatheringScheduleE2ETest : AbstractIntegrationSupport({
 				saved.femaleFee shouldBe 8000
 				saved.earlyBirdMaleFee shouldBe 7000
 				saved.earlyBirdCapacity shouldBe 2
+				// 저장 시 남은 개수는 정원(earlyBirdCapacity)으로 초기화된다.
+				saved.earlyBirdRemaining shouldBe 2
 				saved.discountMaleFee shouldBe 9000
 			}
 		}
@@ -85,6 +87,7 @@ class AdminGatheringScheduleE2ETest : AbstractIntegrationSupport({
 				saved.endAt shouldBe null
 				saved.earlyBirdMaleFee shouldBe null
 				saved.earlyBirdCapacity shouldBe null
+				saved.earlyBirdRemaining shouldBe null
 			}
 		}
 

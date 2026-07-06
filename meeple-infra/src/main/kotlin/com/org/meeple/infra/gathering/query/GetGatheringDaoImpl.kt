@@ -79,6 +79,7 @@ class GetGatheringDaoImpl(
 					schedule.earlyBirdMaleFee,
 					schedule.earlyBirdFemaleFee,
 					schedule.earlyBirdCapacity,
+					schedule.earlyBirdRemaining,
 					schedule.discountMaleFee,
 					schedule.discountFemaleFee,
 					schedule.status,

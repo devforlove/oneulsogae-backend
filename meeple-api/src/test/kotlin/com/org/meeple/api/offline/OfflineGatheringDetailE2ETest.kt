@@ -86,6 +86,7 @@ class OfflineGatheringDetailE2ETest : AbstractIntegrationSupport({
 				body("data.schedules[0].maleFee", 10000)
 				body("data.schedules[0].earlyBirdMaleFee", 7000)
 				body("data.schedules[0].earlyBirdCapacity", 5)
+				body("data.schedules[0].earlyBirdRemaining", 5)
 				body("data.schedules[0].discountMaleFee", 9000)
 				// 비로그인 조회이므로 조회자 성별은 null이다.
 				body("data.viewerGender", null)

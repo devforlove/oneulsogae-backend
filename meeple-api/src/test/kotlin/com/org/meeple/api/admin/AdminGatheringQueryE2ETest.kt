@@ -178,6 +178,7 @@ class AdminGatheringQueryE2ETest : AbstractIntegrationSupport({
 				body("data.schedules[0].femaleFee", 8000)
 				body("data.schedules[0].earlyBirdMaleFee", 7000)
 				body("data.schedules[0].earlyBirdCapacity", 5)
+				body("data.schedules[0].earlyBirdRemaining", 5)
 				body("data.schedules[0].discountFemaleFee", 7000)
 			}
 		}
