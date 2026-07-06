@@ -22,16 +22,13 @@ data class GatheringSchedule(
 
 	/**
 	 * [target] 상태로 전이한 새 일정을 돌려준다. 전이 규칙:
-	 * - SCHEDULED → ONGOING·CANCELED
-	 * - ONGOING → COMPLETED·CANCELED
+	 * - SCHEDULED → COMPLETED·CANCELED
 	 * - COMPLETED·CANCELED → (종결, 전이 불가)
 	 * 불가하면 GATHERING_SCHEDULE_INVALID_STATUS_TRANSITION을 던진다.
 	 */
 	fun changeStatus(target: GatheringScheduleStatus): GatheringSchedule {
 		val allowed: Boolean = when (status) {
 			GatheringScheduleStatus.SCHEDULED ->
-				target == GatheringScheduleStatus.ONGOING || target == GatheringScheduleStatus.CANCELED
-			GatheringScheduleStatus.ONGOING ->
 				target == GatheringScheduleStatus.COMPLETED || target == GatheringScheduleStatus.CANCELED
 			GatheringScheduleStatus.COMPLETED, GatheringScheduleStatus.CANCELED -> false
 		}

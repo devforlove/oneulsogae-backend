@@ -142,33 +142,17 @@ class AdminGatheringScheduleE2ETest : AbstractIntegrationSupport({
 
 	describe("POST /admin/v1/gatherings/{gatheringId}/schedules/{scheduleId}/status") {
 
-		context("예정(SCHEDULED) 일정에 status=ONGOING이면") {
-			it("진행중으로 전이한다 (200)") {
-				val gatheringId: Long = persistGathering()
-				val scheduleId: Long = persistSchedule(gatheringId, GatheringScheduleStatus.SCHEDULED)
-
-				post("/admin/v1/gatherings/$gatheringId/schedules/$scheduleId/status") {
-					bearer(adminAccessTokenFor(9901L))
-					jsonBody("""{"status": "ONGOING"}""")
-				} expect {
-					status(200)
-					body("success", true)
-				}
-
-				savedById(scheduleId).status shouldBe GatheringScheduleStatus.ONGOING
-			}
-		}
-
-		context("진행중 일정에 status=COMPLETED이면") {
+		context("예정(SCHEDULED) 일정에 status=COMPLETED이면") {
 			it("종료로 전이한다 (200)") {
 				val gatheringId: Long = persistGathering()
-				val scheduleId: Long = persistSchedule(gatheringId, GatheringScheduleStatus.ONGOING)
+				val scheduleId: Long = persistSchedule(gatheringId, GatheringScheduleStatus.SCHEDULED)
 
 				post("/admin/v1/gatherings/$gatheringId/schedules/$scheduleId/status") {
 					bearer(adminAccessTokenFor(9901L))
 					jsonBody("""{"status": "COMPLETED"}""")
 				} expect {
 					status(200)
+					body("success", true)
 				}
 
 				savedById(scheduleId).status shouldBe GatheringScheduleStatus.COMPLETED
@@ -191,31 +175,31 @@ class AdminGatheringScheduleE2ETest : AbstractIntegrationSupport({
 			}
 		}
 
-		context("예정 일정에 중간 단계를 건너뛴 status=COMPLETED이면") {
-			it("409(GATHER-017)를 반환하고 상태를 바꾸지 않는다") {
-				val gatheringId: Long = persistGathering()
-				val scheduleId: Long = persistSchedule(gatheringId, GatheringScheduleStatus.SCHEDULED)
-
-				post("/admin/v1/gatherings/$gatheringId/schedules/$scheduleId/status") {
-					bearer(adminAccessTokenFor(9901L))
-					jsonBody("""{"status": "COMPLETED"}""")
-				} expect {
-					status(409)
-					body("error.code", "GATHER-017")
-				}
-
-				savedById(scheduleId).status shouldBe GatheringScheduleStatus.SCHEDULED
-			}
-		}
-
 		context("이미 종료된 일정을 전이하려 하면") {
-			it("409(GATHER-017)를 반환한다") {
+			it("409(GATHER-017)를 반환하고 상태를 바꾸지 않는다") {
 				val gatheringId: Long = persistGathering()
 				val scheduleId: Long = persistSchedule(gatheringId, GatheringScheduleStatus.COMPLETED)
 
 				post("/admin/v1/gatherings/$gatheringId/schedules/$scheduleId/status") {
 					bearer(adminAccessTokenFor(9901L))
 					jsonBody("""{"status": "CANCELED"}""")
+				} expect {
+					status(409)
+					body("error.code", "GATHER-017")
+				}
+
+				savedById(scheduleId).status shouldBe GatheringScheduleStatus.COMPLETED
+			}
+		}
+
+		context("이미 취소된 일정을 전이하려 하면") {
+			it("409(GATHER-017)를 반환한다") {
+				val gatheringId: Long = persistGathering()
+				val scheduleId: Long = persistSchedule(gatheringId, GatheringScheduleStatus.CANCELED)
+
+				post("/admin/v1/gatherings/$gatheringId/schedules/$scheduleId/status") {
+					bearer(adminAccessTokenFor(9901L))
+					jsonBody("""{"status": "COMPLETED"}""")
 				} expect {
 					status(409)
 					body("error.code", "GATHER-017")
@@ -231,7 +215,7 @@ class AdminGatheringScheduleE2ETest : AbstractIntegrationSupport({
 
 				post("/admin/v1/gatherings/$gatheringId/schedules/$scheduleId/status") {
 					bearer(adminAccessTokenFor(9901L))
-					jsonBody("""{"status": "ONGOING"}""")
+					jsonBody("""{"status": "COMPLETED"}""")
 				} expect {
 					status(404)
 					body("error.code", "GATHER-014")
@@ -245,7 +229,7 @@ class AdminGatheringScheduleE2ETest : AbstractIntegrationSupport({
 
 				post("/admin/v1/gatherings/$gatheringId/schedules/999999/status") {
 					bearer(adminAccessTokenFor(9901L))
-					jsonBody("""{"status": "ONGOING"}""")
+					jsonBody("""{"status": "COMPLETED"}""")
 				} expect {
 					status(404)
 					body("error.code", "GATHER-014")

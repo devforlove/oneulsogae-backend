@@ -146,7 +146,7 @@ class AdminGatheringQueryE2ETest : AbstractIntegrationSupport({
 				GatheringScheduleEntityFixture.create(
 					gatheringId = id,
 					startAt = LocalDateTime.of(2999, 6, 1, 18, 0, 0),
-					status = GatheringScheduleStatus.ONGOING,
+					status = GatheringScheduleStatus.COMPLETED,
 				),
 			)
 			IntegrationUtil.persist(
@@ -176,7 +176,7 @@ class AdminGatheringQueryE2ETest : AbstractIntegrationSupport({
 				body("data.discountFemaleFee", 7000)
 				// 일정 목록은 시작 시각 오름차순으로 내려온다.
 				body("data.schedules", hasSize<Any>(2))
-				body("data.schedules.status", contains("SCHEDULED", "ONGOING"))
+				body("data.schedules.status", contains("SCHEDULED", "COMPLETED"))
 				body("data.schedules[0].startAt", "2999-01-01T18:00:00")
 				body("data.schedules[0].statusDescription", "예정")
 			}

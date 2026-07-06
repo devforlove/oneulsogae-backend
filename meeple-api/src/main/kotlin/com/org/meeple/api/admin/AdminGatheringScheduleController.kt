@@ -45,7 +45,7 @@ class AdminGatheringScheduleController(
 
 	@Operation(
 		summary = "모임 일정 상태 변경",
-		description = "일정 상태를 전이한다. 예정→진행중·취소, 진행중→종료·취소가 가능하다. " +
+		description = "일정 상태를 전이한다. 예정→종료·취소가 가능하다. " +
 			"일정이 없거나 해당 모임 소속이 아니면 404(GATHER-014), 전이 불가면 409(GATHER-017).",
 	)
 	@PostMapping("/{scheduleId}/status")

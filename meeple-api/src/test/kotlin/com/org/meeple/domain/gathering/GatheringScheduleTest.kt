@@ -72,10 +72,10 @@ class GatheringScheduleTest : DescribeSpec({
 		fun scheduleWith(status: GatheringScheduleStatus): GatheringSchedule =
 			GatheringSchedule(id = 1L, gatheringId = 1L, startAt = start, endAt = end, status = status)
 
-		it("예정 → 진행중으로 전이한다") {
+		it("예정 → 종료로 전이한다") {
 			scheduleWith(GatheringScheduleStatus.SCHEDULED)
-				.changeStatus(GatheringScheduleStatus.ONGOING)
-				.status shouldBe GatheringScheduleStatus.ONGOING
+				.changeStatus(GatheringScheduleStatus.COMPLETED)
+				.status shouldBe GatheringScheduleStatus.COMPLETED
 		}
 
 		it("예정 → 취소로 전이한다") {
@@ -84,33 +84,15 @@ class GatheringScheduleTest : DescribeSpec({
 				.status shouldBe GatheringScheduleStatus.CANCELED
 		}
 
-		it("진행중 → 종료로 전이한다") {
-			scheduleWith(GatheringScheduleStatus.ONGOING)
-				.changeStatus(GatheringScheduleStatus.COMPLETED)
-				.status shouldBe GatheringScheduleStatus.COMPLETED
-		}
-
-		it("진행중 → 취소로 전이한다") {
-			scheduleWith(GatheringScheduleStatus.ONGOING)
-				.changeStatus(GatheringScheduleStatus.CANCELED)
-				.status shouldBe GatheringScheduleStatus.CANCELED
-		}
-
-		it("예정 → 종료(중간 단계 생략)는 전이할 수 없다") {
-			shouldThrow<AdminException> {
-				scheduleWith(GatheringScheduleStatus.SCHEDULED).changeStatus(GatheringScheduleStatus.COMPLETED)
-			}.errorCode shouldBe AdminErrorCode.GATHERING_SCHEDULE_INVALID_STATUS_TRANSITION
-		}
-
 		it("종료된 일정은 전이할 수 없다") {
 			shouldThrow<AdminException> {
-				scheduleWith(GatheringScheduleStatus.COMPLETED).changeStatus(GatheringScheduleStatus.ONGOING)
+				scheduleWith(GatheringScheduleStatus.COMPLETED).changeStatus(GatheringScheduleStatus.CANCELED)
 			}.errorCode shouldBe AdminErrorCode.GATHERING_SCHEDULE_INVALID_STATUS_TRANSITION
 		}
 
 		it("취소된 일정은 전이할 수 없다") {
 			shouldThrow<AdminException> {
-				scheduleWith(GatheringScheduleStatus.CANCELED).changeStatus(GatheringScheduleStatus.ONGOING)
+				scheduleWith(GatheringScheduleStatus.CANCELED).changeStatus(GatheringScheduleStatus.COMPLETED)
 			}.errorCode shouldBe AdminErrorCode.GATHERING_SCHEDULE_INVALID_STATUS_TRANSITION
 		}
 	}

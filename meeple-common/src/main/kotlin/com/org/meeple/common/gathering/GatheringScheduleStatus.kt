@@ -6,9 +6,6 @@ enum class GatheringScheduleStatus(val description: String) {
 	/** 예정. 일정 생성 직후의 초기 상태. (아직 시작 전) */
 	SCHEDULED("예정"),
 
-	/** 진행중. 일정이 시작되어 진행되는 중인 상태. */
-	ONGOING("진행중"),
-
 	/** 종료. 일정이 정상적으로 끝난 상태. */
 	COMPLETED("종료"),
 
