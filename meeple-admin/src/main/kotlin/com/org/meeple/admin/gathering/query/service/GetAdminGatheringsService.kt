@@ -45,7 +45,10 @@ class GetAdminGatheringsService(
 	override fun getGathering(id: Long): AdminGatheringDetailView {
 		val view: AdminGatheringDetailView = getAdminGatheringDao.findDetailById(id)
 			?: throw AdminException(AdminErrorCode.GATHERING_NOT_FOUND, "모임을 찾을 수 없습니다: $id")
-		return view.copy(imageUrl = presignedUrlOf(view.imageKey))
+		return view.copy(
+			imageUrl = presignedUrlOf(view.imageKey),
+			schedules = getAdminGatheringDao.findSchedulesByGatheringId(id),
+		)
 	}
 
 	// 대표 이미지가 없으면 null, 있으면 열람용 presigned URL.

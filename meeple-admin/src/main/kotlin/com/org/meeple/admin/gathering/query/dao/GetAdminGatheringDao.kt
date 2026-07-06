@@ -1,6 +1,7 @@
 package com.org.meeple.admin.gathering.query.dao
 
 import com.org.meeple.admin.gathering.query.dto.AdminGatheringDetailView
+import com.org.meeple.admin.gathering.query.dto.AdminGatheringScheduleView
 import com.org.meeple.admin.gathering.query.dto.AdminGatheringViews
 import com.org.meeple.common.gathering.GatheringStatus
 import com.org.meeple.common.gathering.GatheringType
@@ -16,4 +17,7 @@ interface GetAdminGatheringDao {
 
 	/** 모임 상세를 [id]로 조회한다. 없거나 soft-delete면 null. */
 	fun findDetailById(id: Long): AdminGatheringDetailView?
+
+	/** [gatheringId] 모임의 일정 목록을 시작 시각 오름차순으로 조회한다. (soft delete 제외) */
+	fun findSchedulesByGatheringId(gatheringId: Long): List<AdminGatheringScheduleView>
 }

@@ -1,15 +1,20 @@
 package com.org.meeple.api.admin
 
+import com.org.meeple.common.gathering.GatheringScheduleStatus
 import com.org.meeple.common.gathering.GatheringStatus
 import com.org.meeple.common.gathering.GatheringType
 import com.org.meeple.common.integration.AbstractIntegrationSupport
 import com.org.meeple.common.integration.expect
 import com.org.meeple.common.integration.get
 import com.org.meeple.infra.fixture.GatheringEntityFixture
+import com.org.meeple.infra.fixture.GatheringScheduleEntityFixture
 import com.org.meeple.infra.fixture.IntegrationUtil
 import com.org.meeple.infra.gathering.command.entity.QGatheringEntity
+import com.org.meeple.infra.gathering.command.entity.QGatheringScheduleEntity
+import org.hamcrest.Matchers.contains
 import org.hamcrest.Matchers.hasSize
 import org.hamcrest.Matchers.notNullValue
+import java.time.LocalDateTime
 
 /**
  * 어드민 모임 조회 API E2E 테스트.
@@ -136,6 +141,21 @@ class AdminGatheringQueryE2ETest : AbstractIntegrationSupport({
 					discountFemaleFee = 7000,
 				),
 			).id!!
+			// 일정 2건(시작 시각 다르게)을 넣어 시작 시각 오름차순으로 내려오는지 확인한다.
+			IntegrationUtil.persist(
+				GatheringScheduleEntityFixture.create(
+					gatheringId = id,
+					startAt = LocalDateTime.of(2999, 6, 1, 18, 0, 0),
+					status = GatheringScheduleStatus.ONGOING,
+				),
+			)
+			IntegrationUtil.persist(
+				GatheringScheduleEntityFixture.create(
+					gatheringId = id,
+					startAt = LocalDateTime.of(2999, 1, 1, 18, 0, 0),
+					status = GatheringScheduleStatus.SCHEDULED,
+				),
+			)
 
 			get("/admin/v1/gatherings/$id") {
 				bearer(adminAccessTokenFor(9901L))
@@ -154,10 +174,15 @@ class AdminGatheringQueryE2ETest : AbstractIntegrationSupport({
 				body("data.earlyBirdMaleFee", 7000)
 				body("data.earlyBirdCapacity", 5)
 				body("data.discountFemaleFee", 7000)
+				// 일정 목록은 시작 시각 오름차순으로 내려온다.
+				body("data.schedules", hasSize<Any>(2))
+				body("data.schedules.status", contains("SCHEDULED", "ONGOING"))
+				body("data.schedules[0].startAt", "2999-01-01T18:00:00")
+				body("data.schedules[0].statusDescription", "예정")
 			}
 		}
 
-		it("얼리버드·할인가가 없는 모임은 해당 필드가 null이다 (200)") {
+		it("얼리버드·할인가가 없는 모임은 해당 필드가 null이고, 일정이 없으면 빈 배열이다 (200)") {
 			val id: Long = IntegrationUtil.persist(
 				GatheringEntityFixture.create(title = "특가 없는 모임", imageKey = null),
 			).id!!
@@ -170,6 +195,8 @@ class AdminGatheringQueryE2ETest : AbstractIntegrationSupport({
 				body("data.discountMaleFee", null)
 				// 대표 이미지가 없으면 imageUrl도 null.
 				body("data.imageUrl", null)
+				// 일정이 없으면 빈 배열.
+				body("data.schedules", hasSize<Any>(0))
 			}
 		}
 
@@ -185,6 +212,7 @@ class AdminGatheringQueryE2ETest : AbstractIntegrationSupport({
 	}
 
 	afterTest {
+		IntegrationUtil.deleteAll(QGatheringScheduleEntity.gatheringScheduleEntity)
 		IntegrationUtil.deleteAll(QGatheringEntity.gatheringEntity)
 	}
 })

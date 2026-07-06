@@ -2,11 +2,13 @@ package com.org.meeple.infra.gathering.query
 
 import com.org.meeple.admin.gathering.query.dao.GetAdminGatheringDao
 import com.org.meeple.admin.gathering.query.dto.AdminGatheringDetailView
+import com.org.meeple.admin.gathering.query.dto.AdminGatheringScheduleView
 import com.org.meeple.admin.gathering.query.dto.AdminGatheringView
 import com.org.meeple.admin.gathering.query.dto.AdminGatheringViews
 import com.org.meeple.common.gathering.GatheringStatus
 import com.org.meeple.common.gathering.GatheringType
 import com.org.meeple.infra.gathering.command.entity.QGatheringEntity
+import com.org.meeple.infra.gathering.command.entity.QGatheringScheduleEntity
 import com.querydsl.core.types.Projections
 import com.querydsl.core.types.dsl.BooleanExpression
 import com.querydsl.jpa.impl.JPAQueryFactory
@@ -86,6 +88,24 @@ class GetAdminGatheringDaoImpl(
 			.from(gathering)
 			.where(gathering.id.eq(id))
 			.fetchOne()
+	}
+
+	override fun findSchedulesByGatheringId(gatheringId: Long): List<AdminGatheringScheduleView> {
+		val schedule: QGatheringScheduleEntity = QGatheringScheduleEntity.gatheringScheduleEntity
+		return queryFactory
+			.select(
+				Projections.constructor(
+					AdminGatheringScheduleView::class.java,
+					schedule.id,
+					schedule.startAt,
+					schedule.endAt,
+					schedule.status,
+				),
+			)
+			.from(schedule)
+			.where(schedule.gatheringId.eq(gatheringId))
+			.orderBy(schedule.startAt.asc())
+			.fetch()
 	}
 
 	// status가 null이면 null을 반환 → QueryDSL where가 해당 조건을 무시(필터 미적용).
