@@ -19,13 +19,6 @@ object GatheringEntityFixture {
 		region: String = "서울 강남구",
 		minParticipants: Int = 2,
 		maxParticipants: Int = 4,
-		maleFee: Int = 10000,
-		femaleFee: Int = 8000,
-		earlyBirdMaleFee: Int? = null,
-		earlyBirdFemaleFee: Int? = null,
-		earlyBirdCapacity: Int? = null,
-		discountMaleFee: Int? = null,
-		discountFemaleFee: Int? = null,
 		status: GatheringStatus = GatheringStatus.RECRUITING,
 	): GatheringEntity =
 		GatheringEntity(
@@ -37,13 +30,6 @@ object GatheringEntityFixture {
 			region = region,
 			minParticipants = minParticipants,
 			maxParticipants = maxParticipants,
-			maleFee = maleFee,
-			femaleFee = femaleFee,
-			earlyBirdMaleFee = earlyBirdMaleFee,
-			earlyBirdFemaleFee = earlyBirdFemaleFee,
-			earlyBirdCapacity = earlyBirdCapacity,
-			discountMaleFee = discountMaleFee,
-			discountFemaleFee = discountFemaleFee,
 			status = status,
 		)
 }

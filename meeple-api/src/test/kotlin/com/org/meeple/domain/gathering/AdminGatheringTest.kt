@@ -14,9 +14,6 @@ import io.kotest.matchers.shouldBe
 
 class AdminGatheringTest : DescribeSpec({
 
-	val fee: GatheringFee = GatheringFee(male = 10000, female = 8000)
-	val earlyBird: GatheringFee = GatheringFee(male = 7000, female = 5000)
-
 	describe("AdminGathering.create") {
 
 		it("정상 입력이면 DRAFT(준비중) 상태로 생성된다") {
@@ -28,74 +25,50 @@ class AdminGatheringTest : DescribeSpec({
 				region = "서울 강남구",
 				minParticipants = 2,
 				maxParticipants = 4,
-				fee = fee,
-				earlyBirdFee = earlyBird,
-				earlyBirdCapacity = 2,
-				discountFee = null,
 			)
 
 			gathering.status shouldBe GatheringStatus.DRAFT
 			gathering.minParticipants shouldBe 2
 			gathering.maxParticipants shouldBe 4
-			gathering.earlyBirdFee shouldBe earlyBird
-			gathering.earlyBirdCapacity shouldBe 2
 		}
 
 		it("제목이 공백이면 GATHERING_INVALID_TITLE을 던진다") {
 			shouldThrow<AdminException> {
-				AdminGathering.create(GatheringType.PARTY, "  ", null, null, "서울", 2, 4, fee, null, null, null)
+				AdminGathering.create(GatheringType.PARTY, "  ", null, null, "서울", 2, 4)
 			}.errorCode shouldBe AdminErrorCode.GATHERING_INVALID_TITLE
 		}
 
 		it("제목이 100자를 초과하면 GATHERING_TITLE_TOO_LONG을 던진다") {
 			shouldThrow<AdminException> {
-				AdminGathering.create(GatheringType.PARTY, "가".repeat(101), null, null, "서울", 2, 4, fee, null, null, null)
+				AdminGathering.create(GatheringType.PARTY, "가".repeat(101), null, null, "서울", 2, 4)
 			}.errorCode shouldBe AdminErrorCode.GATHERING_TITLE_TOO_LONG
 		}
 
 		it("소개가 1000자를 초과하면 GATHERING_DESCRIPTION_TOO_LONG을 던진다") {
 			shouldThrow<AdminException> {
-				AdminGathering.create(GatheringType.PARTY, "파티", "가".repeat(1001), null, "서울", 2, 4, fee, null, null, null)
+				AdminGathering.create(GatheringType.PARTY, "파티", "가".repeat(1001), null, "서울", 2, 4)
 			}.errorCode shouldBe AdminErrorCode.GATHERING_DESCRIPTION_TOO_LONG
 		}
 
 		it("지역이 공백이면 GATHERING_INVALID_REGION을 던진다") {
 			shouldThrow<AdminException> {
-				AdminGathering.create(GatheringType.PARTY, "파티", null, null, "  ", 2, 4, fee, null, null, null)
+				AdminGathering.create(GatheringType.PARTY, "파티", null, null, "  ", 2, 4)
 			}.errorCode shouldBe AdminErrorCode.GATHERING_INVALID_REGION
 		}
 
 		it("최소 인원이 2 미만이면 GATHERING_INVALID_MIN_PARTICIPANTS를 던진다") {
 			shouldThrow<AdminException> {
-				AdminGathering.create(GatheringType.PARTY, "파티", null, null, "서울", 1, 4, fee, null, null, null)
+				AdminGathering.create(GatheringType.PARTY, "파티", null, null, "서울", 1, 4)
 			}.errorCode shouldBe AdminErrorCode.GATHERING_INVALID_MIN_PARTICIPANTS
 		}
 
 		it("최대 인원이 최소 인원보다 작으면 GATHERING_INVALID_MAX_PARTICIPANTS를 던진다") {
 			shouldThrow<AdminException> {
-				AdminGathering.create(GatheringType.PARTY, "파티", null, null, "서울", 4, 2, fee, null, null, null)
+				AdminGathering.create(GatheringType.PARTY, "파티", null, null, "서울", 4, 2)
 			}.errorCode shouldBe AdminErrorCode.GATHERING_INVALID_MAX_PARTICIPANTS
 		}
 
-		it("얼리버드 가격은 있는데 적용 인원이 없으면 GATHERING_INVALID_EARLY_BIRD_CAPACITY를 던진다") {
-			shouldThrow<AdminException> {
-				AdminGathering.create(GatheringType.PARTY, "파티", null, null, "서울", 2, 4, fee, earlyBird, null, null)
-			}.errorCode shouldBe AdminErrorCode.GATHERING_INVALID_EARLY_BIRD_CAPACITY
-		}
-
-		it("얼리버드 적용 인원은 있는데 가격이 없으면 GATHERING_INVALID_EARLY_BIRD_CAPACITY를 던진다") {
-			shouldThrow<AdminException> {
-				AdminGathering.create(GatheringType.PARTY, "파티", null, null, "서울", 2, 4, fee, null, 2, null)
-			}.errorCode shouldBe AdminErrorCode.GATHERING_INVALID_EARLY_BIRD_CAPACITY
-		}
-
-		it("얼리버드 적용 인원이 최대 인원을 초과하면 GATHERING_INVALID_EARLY_BIRD_CAPACITY를 던진다") {
-			shouldThrow<AdminException> {
-				AdminGathering.create(GatheringType.PARTY, "파티", null, null, "서울", 2, 4, fee, earlyBird, 5, null)
-			}.errorCode shouldBe AdminErrorCode.GATHERING_INVALID_EARLY_BIRD_CAPACITY
-		}
-
-		it("경계값(최소=최대 2·얼리버드 적용 인원=최대)은 통과한다") {
+		it("경계값(최소=최대 2)은 통과한다") {
 			val gathering: AdminGathering = AdminGathering.create(
 				type = GatheringType.ONE_ON_ONE_ROTATION,
 				title = "가".repeat(100),
@@ -103,15 +76,11 @@ class AdminGatheringTest : DescribeSpec({
 				imageKey = null,
 				region = "서울",
 				minParticipants = 2,
-				maxParticipants = 4,
-				fee = GatheringFee(male = 0, female = 0),
-				earlyBirdFee = earlyBird,
-				earlyBirdCapacity = 4,
-				discountFee = null,
+				maxParticipants = 2,
 			)
 
 			gathering.minParticipants shouldBe 2
-			gathering.earlyBirdCapacity shouldBe 4
+			gathering.maxParticipants shouldBe 2
 		}
 	}
 
@@ -126,10 +95,6 @@ class AdminGatheringTest : DescribeSpec({
 			region = "서울",
 			minParticipants = 2,
 			maxParticipants = 4,
-			fee = fee,
-			earlyBirdFee = null,
-			earlyBirdCapacity = null,
-			discountFee = null,
 			status = GatheringStatus.RECRUITING,
 		)
 
@@ -142,10 +107,6 @@ class AdminGatheringTest : DescribeSpec({
 				region = "부산",
 				minParticipants = 3,
 				maxParticipants = 8,
-				fee = GatheringFee(male = 20000, female = 15000),
-				earlyBirdFee = earlyBird,
-				earlyBirdCapacity = 5,
-				discountFee = null,
 			)
 
 			updated.id shouldBe 5L
@@ -155,15 +116,13 @@ class AdminGatheringTest : DescribeSpec({
 			updated.region shouldBe "부산"
 			updated.maxParticipants shouldBe 8
 			updated.imageKey shouldBe "gatherings/new.png"
-			updated.earlyBirdCapacity shouldBe 5
 		}
 
 		it("생성과 동일한 규칙으로 검증한다 (최소 인원 2 미만이면 예외)") {
 			shouldThrow<AdminException> {
 				existing.update(
 					type = GatheringType.PARTY, title = "제목", description = null, imageKey = null, region = "서울",
-					minParticipants = 1, maxParticipants = 4, fee = fee,
-					earlyBirdFee = null, earlyBirdCapacity = null, discountFee = null,
+					minParticipants = 1, maxParticipants = 4,
 				)
 			}.errorCode shouldBe AdminErrorCode.GATHERING_INVALID_MIN_PARTICIPANTS
 		}

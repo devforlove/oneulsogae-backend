@@ -58,13 +58,6 @@ class GetGatheringDaoImpl(
 					gathering.region,
 					gathering.minParticipants,
 					gathering.maxParticipants,
-					gathering.maleFee,
-					gathering.femaleFee,
-					gathering.earlyBirdMaleFee,
-					gathering.earlyBirdFemaleFee,
-					gathering.earlyBirdCapacity,
-					gathering.discountMaleFee,
-					gathering.discountFemaleFee,
 				),
 			)
 			.from(gathering)
@@ -81,6 +74,13 @@ class GetGatheringDaoImpl(
 					schedule.id,
 					schedule.startAt,
 					schedule.endAt,
+					schedule.maleFee,
+					schedule.femaleFee,
+					schedule.earlyBirdMaleFee,
+					schedule.earlyBirdFemaleFee,
+					schedule.earlyBirdCapacity,
+					schedule.discountMaleFee,
+					schedule.discountFemaleFee,
 					schedule.status,
 				),
 			)

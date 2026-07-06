@@ -62,34 +62,6 @@ class GatheringEntity(
 	@Column(name = "max_participants", nullable = false)
 	var maxParticipants: Int,
 
-	/** 정상가 - 남성 참가비(원). 0이면 무료. */
-	@Column(name = "male_fee", nullable = false)
-	var maleFee: Int,
-
-	/** 정상가 - 여성 참가비(원). 0이면 무료. */
-	@Column(name = "female_fee", nullable = false)
-	var femaleFee: Int,
-
-	/** 얼리버드 특가 - 남성 참가비(원). 특가가 없는 모임은 null. */
-	@Column(name = "early_bird_male_fee")
-	var earlyBirdMaleFee: Int? = null,
-
-	/** 얼리버드 특가 - 여성 참가비(원). 특가가 없는 모임은 null. */
-	@Column(name = "early_bird_female_fee")
-	var earlyBirdFemaleFee: Int? = null,
-
-	/** 얼리버드 특가를 적용하는 인원 수. 특가가 없는 모임은 null. (얼리버드 가격과 함께 존재) */
-	@Column(name = "early_bird_capacity")
-	var earlyBirdCapacity: Int? = null,
-
-	/** 할인가 - 남성 참가비(원). 할인이 없는 모임은 null. */
-	@Column(name = "discount_male_fee")
-	var discountMaleFee: Int? = null,
-
-	/** 할인가 - 여성 참가비(원). 할인이 없는 모임은 null. */
-	@Column(name = "discount_female_fee")
-	var discountFemaleFee: Int? = null,
-
 	/** 모임 진행 상태. 모집중으로 시작한다. */
 	@Enumerated(EnumType.STRING)
 	@Column(name = "status", nullable = false, columnDefinition = "varchar(50)")

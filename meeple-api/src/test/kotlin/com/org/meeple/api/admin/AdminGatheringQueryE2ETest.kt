@@ -123,7 +123,7 @@ class AdminGatheringQueryE2ETest : AbstractIntegrationSupport({
 
 	describe("GET /admin/v1/gatherings/{id}") {
 
-		it("모임 상세를 소개·참가비 상세와 함께 반환한다 (200)") {
+		it("모임 상세를 소개·일정(참가비 포함) 목록과 함께 반환한다 (200)") {
 			val id: Long = IntegrationUtil.persist(
 				GatheringEntityFixture.create(
 					title = "상세 모임",
@@ -132,16 +132,9 @@ class AdminGatheringQueryE2ETest : AbstractIntegrationSupport({
 					region = "서울 마포구",
 					minParticipants = 3,
 					maxParticipants = 8,
-					maleFee = 10000,
-					femaleFee = 8000,
-					earlyBirdMaleFee = 7000,
-					earlyBirdFemaleFee = 5000,
-					earlyBirdCapacity = 5,
-					discountMaleFee = 9000,
-					discountFemaleFee = 7000,
 				),
 			).id!!
-			// 일정 2건(시작 시각 다르게)을 넣어 시작 시각 오름차순으로 내려오는지 확인한다.
+			// 일정 2건(시작 시각 다르게)을 넣어 시작 시각 오름차순으로 내려오는지 + 참가비가 일정에 실리는지 확인한다.
 			IntegrationUtil.persist(
 				GatheringScheduleEntityFixture.create(
 					gatheringId = id,
@@ -153,6 +146,13 @@ class AdminGatheringQueryE2ETest : AbstractIntegrationSupport({
 				GatheringScheduleEntityFixture.create(
 					gatheringId = id,
 					startAt = LocalDateTime.of(2999, 1, 1, 18, 0, 0),
+					maleFee = 10000,
+					femaleFee = 8000,
+					earlyBirdMaleFee = 7000,
+					earlyBirdFemaleFee = 5000,
+					earlyBirdCapacity = 5,
+					discountMaleFee = 9000,
+					discountFemaleFee = 7000,
 					status = GatheringScheduleStatus.SCHEDULED,
 				),
 			)
@@ -169,30 +169,28 @@ class AdminGatheringQueryE2ETest : AbstractIntegrationSupport({
 				body("data.region", "서울 마포구")
 				body("data.minParticipants", 3)
 				body("data.maxParticipants", 8)
-				body("data.maleFee", 10000)
-				body("data.femaleFee", 8000)
-				body("data.earlyBirdMaleFee", 7000)
-				body("data.earlyBirdCapacity", 5)
-				body("data.discountFemaleFee", 7000)
-				// 일정 목록은 시작 시각 오름차순으로 내려온다.
+				// 일정 목록은 시작 시각 오름차순으로 내려오고, 참가비는 각 일정에 실린다.
 				body("data.schedules", hasSize<Any>(2))
 				body("data.schedules.status", contains("SCHEDULED", "COMPLETED"))
 				body("data.schedules[0].startAt", "2999-01-01T18:00:00")
 				body("data.schedules[0].statusDescription", "예정")
+				body("data.schedules[0].maleFee", 10000)
+				body("data.schedules[0].femaleFee", 8000)
+				body("data.schedules[0].earlyBirdMaleFee", 7000)
+				body("data.schedules[0].earlyBirdCapacity", 5)
+				body("data.schedules[0].discountFemaleFee", 7000)
 			}
 		}
 
-		it("얼리버드·할인가가 없는 모임은 해당 필드가 null이고, 일정이 없으면 빈 배열이다 (200)") {
+		it("일정이 없으면 schedules가 빈 배열이다 (200)") {
 			val id: Long = IntegrationUtil.persist(
-				GatheringEntityFixture.create(title = "특가 없는 모임", imageKey = null),
+				GatheringEntityFixture.create(title = "일정 없는 모임", imageKey = null),
 			).id!!
 
 			get("/admin/v1/gatherings/$id") {
 				bearer(adminAccessTokenFor(9901L))
 			} expect {
 				status(200)
-				body("data.earlyBirdMaleFee", null)
-				body("data.discountMaleFee", null)
 				// 대표 이미지가 없으면 imageUrl도 null.
 				body("data.imageUrl", null)
 				// 일정이 없으면 빈 배열.

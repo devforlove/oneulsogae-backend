@@ -3,7 +3,8 @@ package com.org.meeple.core.gathering.query.dto
 import com.org.meeple.common.gathering.GatheringType
 
 /**
- * 유저용 모임 상세 한 건(read model). 목록과 달리 소개·인원·참가비 3티어 + 모임 일정 목록([schedules])까지 포함한다.
+ * 유저용 모임 상세 한 건(read model). 목록과 달리 소개·인원 + 모임 일정 목록([schedules])까지 포함한다.
+ * 참가비는 모임이 아니라 각 일정([GatheringScheduleView])이 가진다.
  * dao는 [imageKey]까지 채우고 [imageUrl]은 null로 둔다. 서비스가 presign 결과로 [imageUrl]을 채운다(이미지 없으면 null).
  * [schedules]는 dao의 별도 조회 결과를 서비스가 채운다(dao 투영 시엔 빈 리스트).
  * 노출 대상은 모집중(RECRUITING) 모임뿐이라 상태(status)는 표시하지 않는다(그 외 상태는 조회 시 404).
@@ -18,13 +19,6 @@ data class GatheringDetailView(
 	val region: String,
 	val minParticipants: Int,
 	val maxParticipants: Int,
-	val maleFee: Int,
-	val femaleFee: Int,
-	val earlyBirdMaleFee: Int?,
-	val earlyBirdFemaleFee: Int?,
-	val earlyBirdCapacity: Int?,
-	val discountMaleFee: Int?,
-	val discountFemaleFee: Int?,
 	val schedules: List<GatheringScheduleView> = emptyList(),
 ) {
 	/** dao 투영용 생성자. imageUrl은 서비스가 presign으로, schedules는 서비스가 별도 조회로 채운다. */
@@ -37,16 +31,8 @@ data class GatheringDetailView(
 		region: String,
 		minParticipants: Int,
 		maxParticipants: Int,
-		maleFee: Int,
-		femaleFee: Int,
-		earlyBirdMaleFee: Int?,
-		earlyBirdFemaleFee: Int?,
-		earlyBirdCapacity: Int?,
-		discountMaleFee: Int?,
-		discountFemaleFee: Int?,
 	) : this(
 		id, type, title, description, imageKey, null, region,
-		minParticipants, maxParticipants, maleFee, femaleFee,
-		earlyBirdMaleFee, earlyBirdFemaleFee, earlyBirdCapacity, discountMaleFee, discountFemaleFee,
+		minParticipants, maxParticipants,
 	)
 }

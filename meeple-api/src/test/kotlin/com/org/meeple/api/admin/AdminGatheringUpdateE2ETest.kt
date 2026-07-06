@@ -24,9 +24,7 @@ class AdminGatheringUpdateE2ETest : AbstractIntegrationSupport({
 		"""
 		{
 			"type": "COOKING", "title": "수정된 모임", "description": "수정된 소개", "region": "부산 해운대구",
-			"minParticipants": 3, "maxParticipants": 8,
-			"maleFee": 20000, "femaleFee": 15000,
-			"earlyBirdMaleFee": 12000, "earlyBirdFemaleFee": 9000, "earlyBirdCapacity": 5
+			"minParticipants": 3, "maxParticipants": 8
 		}
 		""".trimIndent()
 
@@ -62,8 +60,6 @@ class AdminGatheringUpdateE2ETest : AbstractIntegrationSupport({
 				saved.region shouldBe "부산 해운대구"
 				saved.minParticipants shouldBe 3
 				saved.maxParticipants shouldBe 8
-				saved.maleFee shouldBe 20000
-				saved.earlyBirdCapacity shouldBe 5
 				// 새 이미지로 교체 → 키가 바뀐다.
 				saved.imageKey!! shouldStartWith "gatherings/"
 				saved.imageKey shouldNotBe "gatherings/old.png"
@@ -95,7 +91,7 @@ class AdminGatheringUpdateE2ETest : AbstractIntegrationSupport({
 			it("400을 반환한다") {
 				val id: Long = IntegrationUtil.persist(GatheringEntityFixture.create()).id!!
 				val body: String =
-					"""{"type": "PARTY", "title": "제목", "region": "서울", "minParticipants": 1, "maxParticipants": 4, "maleFee": 0, "femaleFee": 0}"""
+					"""{"type": "PARTY", "title": "제목", "region": "서울", "minParticipants": 1, "maxParticipants": 4}"""
 
 				RestAssured.given()
 					.header("Authorization", "Bearer ${adminAccessTokenFor(9901L)}")

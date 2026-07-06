@@ -60,13 +60,6 @@ class GatheringAdapter(
 		entity.region = gathering.region
 		entity.minParticipants = gathering.minParticipants
 		entity.maxParticipants = gathering.maxParticipants
-		entity.maleFee = gathering.fee.male
-		entity.femaleFee = gathering.fee.female
-		entity.earlyBirdMaleFee = gathering.earlyBirdFee?.male
-		entity.earlyBirdFemaleFee = gathering.earlyBirdFee?.female
-		entity.earlyBirdCapacity = gathering.earlyBirdCapacity
-		entity.discountMaleFee = gathering.discountFee?.male
-		entity.discountFemaleFee = gathering.discountFee?.female
 		gatheringJpaRepository.save(entity)
 	}
 }

@@ -25,7 +25,7 @@ class OfflineGatheringDetailE2ETest : AbstractIntegrationSupport({
 
 	describe("GET /offline/v1/gatherings/{id}") {
 
-		it("인증 토큰 없이도 모집중 모임 상세를 소개·인원·참가비 3티어와 함께 반환한다") {
+		it("인증 토큰 없이도 모집중 모임 상세를 소개·일정(참가비 포함) 목록과 함께 반환한다") {
 			val id: Long = IntegrationUtil.persist(
 				GatheringEntityFixture.create(
 					type = GatheringType.COOKING,
@@ -35,17 +35,10 @@ class OfflineGatheringDetailE2ETest : AbstractIntegrationSupport({
 					region = "서울 마포구",
 					minParticipants = 3,
 					maxParticipants = 8,
-					maleFee = 10000,
-					femaleFee = 8000,
-					earlyBirdMaleFee = 7000,
-					earlyBirdFemaleFee = 5000,
-					earlyBirdCapacity = 5,
-					discountMaleFee = 9000,
-					discountFemaleFee = 7000,
 					status = GatheringStatus.RECRUITING,
 				),
 			).id!!
-			// 일정 2건(시작 시각 다르게)을 넣어 시작 시각 오름차순으로 내려오는지 확인한다.
+			// 일정 2건(시작 시각 다르게)을 넣어 시작 시각 오름차순 + 참가비가 일정에 실리는지 확인한다.
 			IntegrationUtil.persist(
 				GatheringScheduleEntityFixture.create(
 					gatheringId = id,
@@ -57,6 +50,13 @@ class OfflineGatheringDetailE2ETest : AbstractIntegrationSupport({
 				GatheringScheduleEntityFixture.create(
 					gatheringId = id,
 					startAt = LocalDateTime.of(2999, 1, 1, 18, 0, 0),
+					maleFee = 10000,
+					femaleFee = 8000,
+					earlyBirdMaleFee = 7000,
+					earlyBirdFemaleFee = 5000,
+					earlyBirdCapacity = 5,
+					discountMaleFee = 9000,
+					discountFemaleFee = 7000,
 					status = GatheringScheduleStatus.SCHEDULED,
 				),
 			)
@@ -73,27 +73,24 @@ class OfflineGatheringDetailE2ETest : AbstractIntegrationSupport({
 				body("data.region", "서울 마포구")
 				body("data.minParticipants", 3)
 				body("data.maxParticipants", 8)
-				body("data.maleFee", 10000)
-				body("data.femaleFee", 8000)
-				body("data.earlyBirdMaleFee", 7000)
-				body("data.earlyBirdFemaleFee", 5000)
-				body("data.earlyBirdCapacity", 5)
-				body("data.discountMaleFee", 9000)
-				body("data.discountFemaleFee", 7000)
 				// 상태(status)는 응답에 포함하지 않는다.
 				body("data.status", null)
-				// 일정 목록은 시작 시각 오름차순으로 내려온다.
+				// 일정 목록은 시작 시각 오름차순으로 내려오고, 참가비는 각 일정에 실린다.
 				body("data.schedules", hasSize<Any>(2))
 				body("data.schedules.status", contains("SCHEDULED", "COMPLETED"))
 				body("data.schedules[0].startAt", "2999-01-01T18:00:00")
 				body("data.schedules[0].statusDescription", "예정")
+				body("data.schedules[0].maleFee", 10000)
+				body("data.schedules[0].earlyBirdMaleFee", 7000)
+				body("data.schedules[0].earlyBirdCapacity", 5)
+				body("data.schedules[0].discountMaleFee", 9000)
 			}
 		}
 
-		it("얼리버드·할인가가 없는 모임은 해당 필드가 null이고, 대표 이미지가 없으면 imageUrl도 null이다") {
+		it("일정이 없으면 schedules가 빈 배열이고, 대표 이미지가 없으면 imageUrl도 null이다") {
 			val id: Long = IntegrationUtil.persist(
 				GatheringEntityFixture.create(
-					title = "특가 없는 모임",
+					title = "일정 없는 모임",
 					status = GatheringStatus.RECRUITING,
 					imageKey = null,
 				),
@@ -101,9 +98,6 @@ class OfflineGatheringDetailE2ETest : AbstractIntegrationSupport({
 
 			get("/offline/v1/gatherings/$id") { } expect {
 				status(200)
-				body("data.earlyBirdMaleFee", null)
-				body("data.earlyBirdCapacity", null)
-				body("data.discountFemaleFee", null)
 				body("data.imageUrl", null)
 				// 일정이 없으면 빈 배열.
 				body("data.schedules", hasSize<Any>(0))

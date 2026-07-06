@@ -8,7 +8,6 @@ import com.org.meeple.admin.gathering.command.application.port.out.LoadAdminGath
 import com.org.meeple.admin.gathering.command.application.port.out.UpdateAdminGatheringPort
 import com.org.meeple.admin.gathering.command.application.port.out.UploadGatheringImagePort
 import com.org.meeple.admin.gathering.command.domain.AdminGathering
-import com.org.meeple.admin.gathering.command.domain.GatheringFee
 import com.org.meeple.admin.gathering.command.domain.GatheringImage
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
@@ -39,10 +38,6 @@ class UpdateAdminGatheringService(
 			region = command.region,
 			minParticipants = command.minParticipants,
 			maxParticipants = command.maxParticipants,
-			fee = GatheringFee(command.maleFee, command.femaleFee),
-			earlyBirdFee = GatheringFee.optional(command.earlyBirdMaleFee, command.earlyBirdFemaleFee),
-			earlyBirdCapacity = command.earlyBirdCapacity,
-			discountFee = GatheringFee.optional(command.discountMaleFee, command.discountFemaleFee),
 		)
 		updateAdminGatheringPort.update(updated)
 	}

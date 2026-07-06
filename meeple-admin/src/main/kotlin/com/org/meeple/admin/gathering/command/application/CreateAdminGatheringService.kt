@@ -5,7 +5,6 @@ import com.org.meeple.admin.gathering.command.application.port.`in`.command.Crea
 import com.org.meeple.admin.gathering.command.application.port.out.SaveAdminGatheringPort
 import com.org.meeple.admin.gathering.command.application.port.out.UploadGatheringImagePort
 import com.org.meeple.admin.gathering.command.domain.AdminGathering
-import com.org.meeple.admin.gathering.command.domain.GatheringFee
 import com.org.meeple.admin.gathering.command.domain.GatheringImage
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
@@ -33,10 +32,6 @@ class CreateAdminGatheringService(
 				region = command.region,
 				minParticipants = command.minParticipants,
 				maxParticipants = command.maxParticipants,
-				fee = GatheringFee(command.maleFee, command.femaleFee),
-				earlyBirdFee = GatheringFee.optional(command.earlyBirdMaleFee, command.earlyBirdFemaleFee),
-				earlyBirdCapacity = command.earlyBirdCapacity,
-				discountFee = GatheringFee.optional(command.discountMaleFee, command.discountFemaleFee),
 			),
 		)
 

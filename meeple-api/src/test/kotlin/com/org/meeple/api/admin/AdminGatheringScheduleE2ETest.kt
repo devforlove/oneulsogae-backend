@@ -42,7 +42,14 @@ class AdminGatheringScheduleE2ETest : AbstractIntegrationSupport({
 				val scheduleId: Long = RestAssured.given()
 					.header("Authorization", "Bearer ${adminAccessTokenFor(9901L)}")
 					.contentType("application/json")
-					.body("""{"startAt": "2999-12-31T18:00:00", "endAt": "2999-12-31T20:00:00"}""")
+					.body(
+						"""
+						{"startAt": "2999-12-31T18:00:00", "endAt": "2999-12-31T20:00:00",
+						 "maleFee": 10000, "femaleFee": 8000,
+						 "earlyBirdMaleFee": 7000, "earlyBirdFemaleFee": 5000, "earlyBirdCapacity": 2,
+						 "discountMaleFee": 9000, "discountFemaleFee": 7000}
+						""".trimIndent(),
+					)
 					.post("/admin/v1/gatherings/$gatheringId/schedules")
 					.then()
 					.statusCode(200)
@@ -53,23 +60,62 @@ class AdminGatheringScheduleE2ETest : AbstractIntegrationSupport({
 				val saved: GatheringScheduleEntity = savedById(scheduleId)
 				saved.gatheringId shouldBe gatheringId
 				saved.status shouldBe GatheringScheduleStatus.SCHEDULED
+				saved.maleFee shouldBe 10000
+				saved.femaleFee shouldBe 8000
+				saved.earlyBirdMaleFee shouldBe 7000
+				saved.earlyBirdCapacity shouldBe 2
+				saved.discountMaleFee shouldBe 9000
 			}
 		}
 
-		context("종료 시각 없이 생성하면") {
-			it("end_at이 null로 저장된다 (200)") {
+		context("종료 시각·특가 없이 정상가만 생성하면") {
+			it("end_at·특가가 null로 저장된다 (200)") {
 				val gatheringId: Long = persistGathering()
 
 				val scheduleId: Long = RestAssured.given()
 					.header("Authorization", "Bearer ${adminAccessTokenFor(9901L)}")
 					.contentType("application/json")
-					.body("""{"startAt": "2999-12-31T18:00:00"}""")
+					.body("""{"startAt": "2999-12-31T18:00:00", "maleFee": 10000, "femaleFee": 8000}""")
 					.post("/admin/v1/gatherings/$gatheringId/schedules")
 					.then()
 					.statusCode(200)
 					.extract().path<Int>("data.scheduleId").toLong()
 
-				savedById(scheduleId).endAt shouldBe null
+				val saved: GatheringScheduleEntity = savedById(scheduleId)
+				saved.endAt shouldBe null
+				saved.earlyBirdMaleFee shouldBe null
+				saved.earlyBirdCapacity shouldBe null
+			}
+		}
+
+		context("정상가(남/녀)가 없으면") {
+			it("400을 반환한다") {
+				val gatheringId: Long = persistGathering()
+
+				post("/admin/v1/gatherings/$gatheringId/schedules") {
+					bearer(adminAccessTokenFor(9901L))
+					jsonBody("""{"startAt": "2999-12-31T18:00:00"}""")
+				} expect {
+					status(400)
+				}
+			}
+		}
+
+		context("얼리버드 적용 인원이 모임 정원을 초과하면") {
+			it("400(GATHER-012)를 반환한다") {
+				// 모임 정원(fixture 기본) = 4. earlyBirdCapacity=5는 정원 초과.
+				val gatheringId: Long = persistGathering()
+
+				post("/admin/v1/gatherings/$gatheringId/schedules") {
+					bearer(adminAccessTokenFor(9901L))
+					jsonBody(
+						"""{"startAt": "2999-12-31T18:00:00", "maleFee": 10000, "femaleFee": 8000,
+						 "earlyBirdMaleFee": 7000, "earlyBirdFemaleFee": 5000, "earlyBirdCapacity": 5}""",
+					)
+				} expect {
+					status(400)
+					body("error.code", "GATHER-012")
+				}
 			}
 		}
 
@@ -77,7 +123,7 @@ class AdminGatheringScheduleE2ETest : AbstractIntegrationSupport({
 			it("404(GATHER-008)를 반환한다") {
 				post("/admin/v1/gatherings/999999/schedules") {
 					bearer(adminAccessTokenFor(9901L))
-					jsonBody("""{"startAt": "2999-12-31T18:00:00"}""")
+					jsonBody("""{"startAt": "2999-12-31T18:00:00", "maleFee": 10000, "femaleFee": 8000}""")
 				} expect {
 					status(404)
 					body("error.code", "GATHER-008")
@@ -91,7 +137,7 @@ class AdminGatheringScheduleE2ETest : AbstractIntegrationSupport({
 
 				post("/admin/v1/gatherings/$gatheringId/schedules") {
 					bearer(adminAccessTokenFor(9901L))
-					jsonBody("""{"startAt": "2000-01-01T18:00:00"}""")
+					jsonBody("""{"startAt": "2000-01-01T18:00:00", "maleFee": 10000, "femaleFee": 8000}""")
 				} expect {
 					status(400)
 					body("error.code", "GATHER-015")
@@ -105,7 +151,9 @@ class AdminGatheringScheduleE2ETest : AbstractIntegrationSupport({
 
 				post("/admin/v1/gatherings/$gatheringId/schedules") {
 					bearer(adminAccessTokenFor(9901L))
-					jsonBody("""{"startAt": "2999-12-31T18:00:00", "endAt": "2999-12-31T17:00:00"}""")
+					jsonBody(
+						"""{"startAt": "2999-12-31T18:00:00", "endAt": "2999-12-31T17:00:00", "maleFee": 10000, "femaleFee": 8000}""",
+					)
 				} expect {
 					status(400)
 					body("error.code", "GATHER-016")

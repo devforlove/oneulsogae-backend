@@ -14,12 +14,26 @@ object GatheringScheduleEntityFixture {
 		gatheringId: Long = 1L,
 		startAt: LocalDateTime = LocalDateTime.of(2999, 12, 31, 18, 0, 0),
 		endAt: LocalDateTime? = LocalDateTime.of(2999, 12, 31, 20, 0, 0),
+		maleFee: Int = 10000,
+		femaleFee: Int = 8000,
+		earlyBirdMaleFee: Int? = null,
+		earlyBirdFemaleFee: Int? = null,
+		earlyBirdCapacity: Int? = null,
+		discountMaleFee: Int? = null,
+		discountFemaleFee: Int? = null,
 		status: GatheringScheduleStatus = GatheringScheduleStatus.SCHEDULED,
 	): GatheringScheduleEntity =
 		GatheringScheduleEntity(
 			gatheringId = gatheringId,
 			startAt = startAt,
 			endAt = endAt,
+			maleFee = maleFee,
+			femaleFee = femaleFee,
+			earlyBirdMaleFee = earlyBirdMaleFee,
+			earlyBirdFemaleFee = earlyBirdFemaleFee,
+			earlyBirdCapacity = earlyBirdCapacity,
+			discountMaleFee = discountMaleFee,
+			discountFemaleFee = discountFemaleFee,
 			status = status,
 		)
 }
