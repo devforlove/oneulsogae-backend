@@ -46,7 +46,6 @@ class AdminGatheringScheduleE2ETest : AbstractIntegrationSupport({
 						"""
 						{"startAt": "2999-12-31T18:00:00", "endAt": "2999-12-31T20:00:00",
 						 "maleFee": 10000, "femaleFee": 8000,
-						 "maleCapacity": 4, "femaleCapacity": 3,
 						 "earlyBirdMaleFee": 7000, "earlyBirdFemaleFee": 5000, "earlyBirdCapacity": 2,
 						 "discountMaleFee": 9000, "discountFemaleFee": 7000}
 						""".trimIndent(),
@@ -63,11 +62,12 @@ class AdminGatheringScheduleE2ETest : AbstractIntegrationSupport({
 				saved.status shouldBe GatheringScheduleStatus.SCHEDULED
 				saved.maleFee shouldBe 10000
 				saved.femaleFee shouldBe 8000
-				saved.maleCapacity shouldBe 4
-				saved.femaleCapacity shouldBe 3
+				// 정원은 모임 정원(fixture 기본 4)의 절반(2)으로 정해진다.
+				saved.maleCapacity shouldBe 2
+				saved.femaleCapacity shouldBe 2
 				// 저장 시 남/녀 여분은 각 성별 정원으로 초기화된다.
-				saved.maleRemaining shouldBe 4
-				saved.femaleRemaining shouldBe 3
+				saved.maleRemaining shouldBe 2
+				saved.femaleRemaining shouldBe 2
 				saved.earlyBirdMaleFee shouldBe 7000
 				saved.earlyBirdCapacity shouldBe 2
 				// 저장 시 남은 개수는 정원(earlyBirdCapacity)으로 초기화된다.
@@ -83,7 +83,7 @@ class AdminGatheringScheduleE2ETest : AbstractIntegrationSupport({
 				val scheduleId: Long = RestAssured.given()
 					.header("Authorization", "Bearer ${adminAccessTokenFor(9901L)}")
 					.contentType("application/json")
-					.body("""{"startAt": "2999-12-31T18:00:00", "maleFee": 10000, "femaleFee": 8000, "maleCapacity": 4, "femaleCapacity": 4}""")
+					.body("""{"startAt": "2999-12-31T18:00:00", "maleFee": 10000, "femaleFee": 8000}""")
 					.post("/admin/v1/gatherings/$gatheringId/schedules")
 					.then()
 					.statusCode(200)
@@ -91,9 +91,9 @@ class AdminGatheringScheduleE2ETest : AbstractIntegrationSupport({
 
 				val saved: GatheringScheduleEntity = savedById(scheduleId)
 				saved.endAt shouldBe null
-				// 남/녀 여분은 정원으로 초기화된다.
-				saved.maleRemaining shouldBe 4
-				saved.femaleRemaining shouldBe 4
+				// 남/녀 여분은 모임 정원(4)의 절반(2)으로 초기화된다.
+				saved.maleRemaining shouldBe 2
+				saved.femaleRemaining shouldBe 2
 				saved.earlyBirdMaleFee shouldBe null
 				saved.earlyBirdCapacity shouldBe null
 				saved.earlyBirdRemaining shouldBe null
@@ -121,7 +121,7 @@ class AdminGatheringScheduleE2ETest : AbstractIntegrationSupport({
 				post("/admin/v1/gatherings/$gatheringId/schedules") {
 					bearer(adminAccessTokenFor(9901L))
 					jsonBody(
-						"""{"startAt": "2999-12-31T18:00:00", "maleFee": 10000, "femaleFee": 8000, "maleCapacity": 4, "femaleCapacity": 4,
+						"""{"startAt": "2999-12-31T18:00:00", "maleFee": 10000, "femaleFee": 8000,
 						 "earlyBirdMaleFee": 7000, "earlyBirdFemaleFee": 5000, "earlyBirdCapacity": 5}""",
 					)
 				} expect {
@@ -135,7 +135,7 @@ class AdminGatheringScheduleE2ETest : AbstractIntegrationSupport({
 			it("404(GATHER-008)를 반환한다") {
 				post("/admin/v1/gatherings/999999/schedules") {
 					bearer(adminAccessTokenFor(9901L))
-					jsonBody("""{"startAt": "2999-12-31T18:00:00", "maleFee": 10000, "femaleFee": 8000, "maleCapacity": 4, "femaleCapacity": 4}""")
+					jsonBody("""{"startAt": "2999-12-31T18:00:00", "maleFee": 10000, "femaleFee": 8000}""")
 				} expect {
 					status(404)
 					body("error.code", "GATHER-008")
@@ -149,7 +149,7 @@ class AdminGatheringScheduleE2ETest : AbstractIntegrationSupport({
 
 				post("/admin/v1/gatherings/$gatheringId/schedules") {
 					bearer(adminAccessTokenFor(9901L))
-					jsonBody("""{"startAt": "2000-01-01T18:00:00", "maleFee": 10000, "femaleFee": 8000, "maleCapacity": 4, "femaleCapacity": 4}""")
+					jsonBody("""{"startAt": "2000-01-01T18:00:00", "maleFee": 10000, "femaleFee": 8000}""")
 				} expect {
 					status(400)
 					body("error.code", "GATHER-015")
@@ -164,7 +164,7 @@ class AdminGatheringScheduleE2ETest : AbstractIntegrationSupport({
 				post("/admin/v1/gatherings/$gatheringId/schedules") {
 					bearer(adminAccessTokenFor(9901L))
 					jsonBody(
-						"""{"startAt": "2999-12-31T18:00:00", "endAt": "2999-12-31T17:00:00", "maleFee": 10000, "femaleFee": 8000, "maleCapacity": 4, "femaleCapacity": 4}""",
+						"""{"startAt": "2999-12-31T18:00:00", "endAt": "2999-12-31T17:00:00", "maleFee": 10000, "femaleFee": 8000}""",
 					)
 				} expect {
 					status(400)

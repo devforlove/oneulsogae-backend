@@ -12,7 +12,8 @@ import java.time.LocalDateTime
  * 시간 범위는 [startAt](필수)·[endAt](선택)으로 표현하고, 생성 시 status는 예정([GatheringScheduleStatus.SCHEDULED])이다.
  * 참가비는 일정별로 가진다: 정상가([fee], 필수), 얼리버드 특가([earlyBirdFee]·[earlyBirdCapacity], 선택),
  * 할인가([discountFee], 선택). 얼리버드 특가가 있으면 적용 인원 수도 함께 가진다. (특가 가격과 인원은 세트)
- * 정원은 성별로 가진다([maleCapacity]·[femaleCapacity]). 여분(남은 자리)은 저장 시 정원으로 초기화되므로 도메인은 정원만 다룬다.
+ * 정원은 성별로 가진다([maleCapacity]·[femaleCapacity]) — 생성 시 모임 정원(maxParticipants)의 절반으로 정한다.
+ * 여분(남은 자리)은 저장 시 정원으로 초기화되므로 도메인은 정원만 다룬다.
  */
 data class GatheringSchedule(
 	val id: Long = 0,
@@ -55,15 +56,14 @@ data class GatheringSchedule(
 		/**
 		 * [gatheringId] 모임에 [startAt]~[endAt] 시간 범위·참가비([fee]·[earlyBirdFee]·[earlyBirdCapacity]·[discountFee])의 일정을 만든다.
 		 * [startAt]은 [now] 이후여야 하고, [endAt]이 있으면 [startAt] 이후여야 한다.
-		 * 얼리버드 가격과 적용 인원은 세트이고, 인원은 1..[maxParticipants](모임 정원) 범위여야 한다. 예정(SCHEDULED)으로 생성한다.
+		 * 남/녀 정원은 [maxParticipants](모임 정원)의 절반으로 정한다(정수 나눗셈).
+		 * 얼리버드 가격과 적용 인원은 세트이고, 인원은 1..[maxParticipants] 범위여야 한다. 예정(SCHEDULED)으로 생성한다.
 		 */
 		fun create(
 			gatheringId: Long,
 			startAt: LocalDateTime,
 			endAt: LocalDateTime?,
 			fee: GatheringFee,
-			maleCapacity: Int,
-			femaleCapacity: Int,
 			earlyBirdFee: GatheringFee?,
 			earlyBirdCapacity: Int?,
 			discountFee: GatheringFee?,
@@ -77,13 +77,15 @@ data class GatheringSchedule(
 				throw AdminException(AdminErrorCode.GATHERING_SCHEDULE_INVALID_END_AT)
 			}
 			validateEarlyBirdCapacity(earlyBirdFee, earlyBirdCapacity, maxParticipants)
+			// 남/녀 정원은 모임 정원의 절반으로 정한다.
+			val genderCapacity: Int = maxParticipants / 2
 			return GatheringSchedule(
 				gatheringId = gatheringId,
 				startAt = startAt,
 				endAt = endAt,
 				fee = fee,
-				maleCapacity = maleCapacity,
-				femaleCapacity = femaleCapacity,
+				maleCapacity = genderCapacity,
+				femaleCapacity = genderCapacity,
 				earlyBirdFee = earlyBirdFee,
 				earlyBirdCapacity = earlyBirdCapacity,
 				discountFee = discountFee,

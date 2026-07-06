@@ -9,6 +9,7 @@ import java.time.LocalDateTime
 /**
  * 모임 일정 생성 요청. [startAt]은 필수, [endAt]은 선택(미정 가능)이다. 참가비도 일정별로 받는다:
  * 정상가([maleFee]·[femaleFee], 필수)·얼리버드 특가([earlyBirdMaleFee]·[earlyBirdFemaleFee]·[earlyBirdCapacity], 선택)·할인가([discountMaleFee]·[discountFemaleFee], 선택).
+ * 남/녀 정원은 요청으로 받지 않고 모임 정원(maxParticipants)의 절반으로 도메인이 정한다.
  * 시간 규칙(시작은 현재 이후, 종료는 시작 이후)과 얼리버드 인원(모임 정원 이하)은 도메인이 검증한다.
  */
 data class CreateGatheringScheduleRequest(
@@ -24,15 +25,6 @@ data class CreateGatheringScheduleRequest(
 	@field:NotNull(message = "여성 참가비는 필수입니다.")
 	@field:PositiveOrZero(message = "참가비는 0원 이상이어야 합니다.")
 	val femaleFee: Int? = null,
-
-	// 정원(남/녀, 필수) — 여분(남은 자리)은 저장 시 이 값으로 초기화된다
-	@field:NotNull(message = "남성 정원은 필수입니다.")
-	@field:PositiveOrZero(message = "정원은 0명 이상이어야 합니다.")
-	val maleCapacity: Int? = null,
-
-	@field:NotNull(message = "여성 정원은 필수입니다.")
-	@field:PositiveOrZero(message = "정원은 0명 이상이어야 합니다.")
-	val femaleCapacity: Int? = null,
 
 	// 얼리버드 특가(남/녀, 선택 — 남/녀를 함께 입력한다)
 	@field:PositiveOrZero(message = "참가비는 0원 이상이어야 합니다.")
@@ -58,8 +50,6 @@ data class CreateGatheringScheduleRequest(
 			endAt = endAt,
 			maleFee = maleFee!!,
 			femaleFee = femaleFee!!,
-			maleCapacity = maleCapacity!!,
-			femaleCapacity = femaleCapacity!!,
 			earlyBirdMaleFee = earlyBirdMaleFee,
 			earlyBirdFemaleFee = earlyBirdFemaleFee,
 			earlyBirdCapacity = earlyBirdCapacity,
