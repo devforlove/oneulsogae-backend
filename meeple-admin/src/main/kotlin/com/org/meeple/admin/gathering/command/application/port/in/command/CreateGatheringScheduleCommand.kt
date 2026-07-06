@@ -13,6 +13,9 @@ data class CreateGatheringScheduleCommand(
 	// 정상가(남/녀, 필수)
 	val maleFee: Int,
 	val femaleFee: Int,
+	// 정원(남/녀, 필수) — 여분(남은 자리)은 저장 시 이 값으로 초기화된다
+	val maleCapacity: Int,
+	val femaleCapacity: Int,
 	// 얼리버드 특가(남/녀, 선택) — 가격이 있으면 적용 인원(earlyBirdCapacity)도 함께
 	val earlyBirdMaleFee: Int?,
 	val earlyBirdFemaleFee: Int?,

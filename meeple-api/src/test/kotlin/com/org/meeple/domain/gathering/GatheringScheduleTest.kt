@@ -17,6 +17,7 @@ class GatheringScheduleTest : DescribeSpec({
 	val end: LocalDateTime = start.plusHours(2)
 	val fee: GatheringFee = GatheringFee(male = 10000, female = 8000)
 	val earlyBird: GatheringFee = GatheringFee(male = 7000, female = 5000)
+	val cap: Int = 4
 	val maxParticipants: Int = 4
 
 	describe("GatheringSchedule.create") {
@@ -27,6 +28,8 @@ class GatheringScheduleTest : DescribeSpec({
 				startAt = start,
 				endAt = end,
 				fee = fee,
+				maleCapacity = 4,
+				femaleCapacity = 3,
 				earlyBirdFee = earlyBird,
 				earlyBirdCapacity = 2,
 				discountFee = null,
@@ -39,6 +42,8 @@ class GatheringScheduleTest : DescribeSpec({
 			schedule.startAt shouldBe start
 			schedule.endAt shouldBe end
 			schedule.fee shouldBe fee
+			schedule.maleCapacity shouldBe 4
+			schedule.femaleCapacity shouldBe 3
 			schedule.earlyBirdFee shouldBe earlyBird
 			schedule.earlyBirdCapacity shouldBe 2
 		}
@@ -49,6 +54,8 @@ class GatheringScheduleTest : DescribeSpec({
 				startAt = start,
 				endAt = null,
 				fee = fee,
+				maleCapacity = cap,
+				femaleCapacity = cap,
 				earlyBirdFee = null,
 				earlyBirdCapacity = null,
 				discountFee = null,
@@ -61,49 +68,49 @@ class GatheringScheduleTest : DescribeSpec({
 
 		it("시작 시각이 현재 이전이면 GATHERING_SCHEDULE_INVALID_START_AT을 던진다") {
 			shouldThrow<AdminException> {
-				GatheringSchedule.create(1L, now.minusMinutes(1), null, fee, null, null, null, maxParticipants, now)
+				GatheringSchedule.create(1L, now.minusMinutes(1), null, fee, cap, cap, null, null, null, maxParticipants, now)
 			}.errorCode shouldBe AdminErrorCode.GATHERING_SCHEDULE_INVALID_START_AT
 		}
 
 		it("시작 시각이 현재와 같으면 GATHERING_SCHEDULE_INVALID_START_AT을 던진다") {
 			shouldThrow<AdminException> {
-				GatheringSchedule.create(1L, now, null, fee, null, null, null, maxParticipants, now)
+				GatheringSchedule.create(1L, now, null, fee, cap, cap, null, null, null, maxParticipants, now)
 			}.errorCode shouldBe AdminErrorCode.GATHERING_SCHEDULE_INVALID_START_AT
 		}
 
 		it("종료 시각이 시작 시각 이전이면 GATHERING_SCHEDULE_INVALID_END_AT을 던진다") {
 			shouldThrow<AdminException> {
-				GatheringSchedule.create(1L, start, start.minusMinutes(1), fee, null, null, null, maxParticipants, now)
+				GatheringSchedule.create(1L, start, start.minusMinutes(1), fee, cap, cap, null, null, null, maxParticipants, now)
 			}.errorCode shouldBe AdminErrorCode.GATHERING_SCHEDULE_INVALID_END_AT
 		}
 
 		it("종료 시각이 시작 시각과 같으면 GATHERING_SCHEDULE_INVALID_END_AT을 던진다") {
 			shouldThrow<AdminException> {
-				GatheringSchedule.create(1L, start, start, fee, null, null, null, maxParticipants, now)
+				GatheringSchedule.create(1L, start, start, fee, cap, cap, null, null, null, maxParticipants, now)
 			}.errorCode shouldBe AdminErrorCode.GATHERING_SCHEDULE_INVALID_END_AT
 		}
 
 		it("얼리버드 가격은 있는데 적용 인원이 없으면 GATHERING_INVALID_EARLY_BIRD_CAPACITY를 던진다") {
 			shouldThrow<AdminException> {
-				GatheringSchedule.create(1L, start, end, fee, earlyBird, null, null, maxParticipants, now)
+				GatheringSchedule.create(1L, start, end, fee, cap, cap, earlyBird, null, null, maxParticipants, now)
 			}.errorCode shouldBe AdminErrorCode.GATHERING_INVALID_EARLY_BIRD_CAPACITY
 		}
 
 		it("얼리버드 적용 인원은 있는데 가격이 없으면 GATHERING_INVALID_EARLY_BIRD_CAPACITY를 던진다") {
 			shouldThrow<AdminException> {
-				GatheringSchedule.create(1L, start, end, fee, null, 2, null, maxParticipants, now)
+				GatheringSchedule.create(1L, start, end, fee, cap, cap, null, 2, null, maxParticipants, now)
 			}.errorCode shouldBe AdminErrorCode.GATHERING_INVALID_EARLY_BIRD_CAPACITY
 		}
 
 		it("얼리버드 적용 인원이 모임 정원을 초과하면 GATHERING_INVALID_EARLY_BIRD_CAPACITY를 던진다") {
 			shouldThrow<AdminException> {
-				GatheringSchedule.create(1L, start, end, fee, earlyBird, maxParticipants + 1, null, maxParticipants, now)
+				GatheringSchedule.create(1L, start, end, fee, cap, cap, earlyBird, maxParticipants + 1, null, maxParticipants, now)
 			}.errorCode shouldBe AdminErrorCode.GATHERING_INVALID_EARLY_BIRD_CAPACITY
 		}
 
 		it("얼리버드 적용 인원이 모임 정원과 같으면(경계값) 통과한다") {
 			val schedule: GatheringSchedule = GatheringSchedule.create(
-				1L, start, end, fee, earlyBird, maxParticipants, null, maxParticipants, now,
+				1L, start, end, fee, cap, cap, earlyBird, maxParticipants, null, maxParticipants, now,
 			)
 
 			schedule.earlyBirdCapacity shouldBe maxParticipants
@@ -115,7 +122,8 @@ class GatheringScheduleTest : DescribeSpec({
 		fun scheduleWith(status: GatheringScheduleStatus): GatheringSchedule =
 			GatheringSchedule(
 				id = 1L, gatheringId = 1L, startAt = start, endAt = end,
-				fee = fee, earlyBirdFee = null, earlyBirdCapacity = null, discountFee = null, status = status,
+				fee = fee, maleCapacity = cap, femaleCapacity = cap,
+				earlyBirdFee = null, earlyBirdCapacity = null, discountFee = null, status = status,
 			)
 
 		it("예정 → 종료로 전이한다") {

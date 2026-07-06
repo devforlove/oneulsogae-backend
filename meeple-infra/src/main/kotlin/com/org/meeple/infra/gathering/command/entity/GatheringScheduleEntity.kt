@@ -48,6 +48,22 @@ class GatheringScheduleEntity(
 	@Column(name = "female_fee", nullable = false)
 	var femaleFee: Int,
 
+	/** 남성 정원. */
+	@Column(name = "male_capacity", nullable = false)
+	var maleCapacity: Int,
+
+	/** 여성 정원. */
+	@Column(name = "female_capacity", nullable = false)
+	var femaleCapacity: Int,
+
+	/** 남성 여분(남은 자리). 저장 시 [maleCapacity]로 초기화하고, 남성이 참여하면 차감한다. */
+	@Column(name = "male_remaining", nullable = false)
+	var maleRemaining: Int,
+
+	/** 여성 여분(남은 자리). 저장 시 [femaleCapacity]로 초기화하고, 여성이 참여하면 차감한다. */
+	@Column(name = "female_remaining", nullable = false)
+	var femaleRemaining: Int,
+
 	/** 얼리버드 특가 - 남성 참가비(원). 특가가 없는 일정은 null. */
 	@Column(name = "early_bird_male_fee")
 	var earlyBirdMaleFee: Int? = null,

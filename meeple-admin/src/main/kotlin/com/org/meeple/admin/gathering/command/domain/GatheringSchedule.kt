@@ -12,6 +12,7 @@ import java.time.LocalDateTime
  * 시간 범위는 [startAt](필수)·[endAt](선택)으로 표현하고, 생성 시 status는 예정([GatheringScheduleStatus.SCHEDULED])이다.
  * 참가비는 일정별로 가진다: 정상가([fee], 필수), 얼리버드 특가([earlyBirdFee]·[earlyBirdCapacity], 선택),
  * 할인가([discountFee], 선택). 얼리버드 특가가 있으면 적용 인원 수도 함께 가진다. (특가 가격과 인원은 세트)
+ * 정원은 성별로 가진다([maleCapacity]·[femaleCapacity]). 여분(남은 자리)은 저장 시 정원으로 초기화되므로 도메인은 정원만 다룬다.
  */
 data class GatheringSchedule(
 	val id: Long = 0,
@@ -19,6 +20,8 @@ data class GatheringSchedule(
 	val startAt: LocalDateTime,
 	val endAt: LocalDateTime?,
 	val fee: GatheringFee,
+	val maleCapacity: Int,
+	val femaleCapacity: Int,
 	val earlyBirdFee: GatheringFee?,
 	val earlyBirdCapacity: Int?,
 	val discountFee: GatheringFee?,
@@ -59,6 +62,8 @@ data class GatheringSchedule(
 			startAt: LocalDateTime,
 			endAt: LocalDateTime?,
 			fee: GatheringFee,
+			maleCapacity: Int,
+			femaleCapacity: Int,
 			earlyBirdFee: GatheringFee?,
 			earlyBirdCapacity: Int?,
 			discountFee: GatheringFee?,
@@ -77,6 +82,8 @@ data class GatheringSchedule(
 				startAt = startAt,
 				endAt = endAt,
 				fee = fee,
+				maleCapacity = maleCapacity,
+				femaleCapacity = femaleCapacity,
 				earlyBirdFee = earlyBirdFee,
 				earlyBirdCapacity = earlyBirdCapacity,
 				discountFee = discountFee,

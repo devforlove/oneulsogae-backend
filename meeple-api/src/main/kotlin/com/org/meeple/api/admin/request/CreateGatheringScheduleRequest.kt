@@ -25,6 +25,15 @@ data class CreateGatheringScheduleRequest(
 	@field:PositiveOrZero(message = "참가비는 0원 이상이어야 합니다.")
 	val femaleFee: Int? = null,
 
+	// 정원(남/녀, 필수) — 여분(남은 자리)은 저장 시 이 값으로 초기화된다
+	@field:NotNull(message = "남성 정원은 필수입니다.")
+	@field:PositiveOrZero(message = "정원은 0명 이상이어야 합니다.")
+	val maleCapacity: Int? = null,
+
+	@field:NotNull(message = "여성 정원은 필수입니다.")
+	@field:PositiveOrZero(message = "정원은 0명 이상이어야 합니다.")
+	val femaleCapacity: Int? = null,
+
 	// 얼리버드 특가(남/녀, 선택 — 남/녀를 함께 입력한다)
 	@field:PositiveOrZero(message = "참가비는 0원 이상이어야 합니다.")
 	val earlyBirdMaleFee: Int? = null,
@@ -49,6 +58,8 @@ data class CreateGatheringScheduleRequest(
 			endAt = endAt,
 			maleFee = maleFee!!,
 			femaleFee = femaleFee!!,
+			maleCapacity = maleCapacity!!,
+			femaleCapacity = femaleCapacity!!,
 			earlyBirdMaleFee = earlyBirdMaleFee,
 			earlyBirdFemaleFee = earlyBirdFemaleFee,
 			earlyBirdCapacity = earlyBirdCapacity,
