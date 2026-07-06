@@ -15,7 +15,7 @@ private const val MIN_PARTICIPANTS: Int = 2
  * 운영이 만든 모임이므로 생성자(userId)는 두지 않는다. 영속성에서 user_id는 null(운영 생성)로 저장된다.
  * 인원은 [minParticipants](최소 성사 인원)·[maxParticipants](정원)로 표현한다.
  * 참가비는 모임이 아니라 일정([GatheringSchedule])이 가진다.
- * 생성 시 status는 DRAFT(준비중)이고, 활성화해야 RECRUITING(모집중)이 된다. 영속성은 [com.org.meeple.infra.gathering.command.entity.GatheringEntity]가 담당한다.
+ * 생성 시 status는 활성화(RECRUITING)이고, 취소(CANCELED)로만 전이한다. 영속성은 [com.org.meeple.infra.gathering.command.entity.GatheringEntity]가 담당한다.
  */
 data class AdminGathering(
 	val id: Long = 0,
@@ -26,8 +26,8 @@ data class AdminGathering(
 	val region: String,
 	val minParticipants: Int,
 	val maxParticipants: Int,
-	// 등록 직후는 준비중(DRAFT). 활성화해야 모집중(RECRUITING)이 된다.
-	val status: GatheringStatus = GatheringStatus.DRAFT,
+	// 등록 직후는 활성화(RECRUITING). 취소(CANCELED)로만 전이한다.
+	val status: GatheringStatus = GatheringStatus.RECRUITING,
 ) {
 
 	/**
@@ -59,7 +59,7 @@ data class AdminGathering(
 
 		/**
 		 * [type]·[title]·[description]·[imageKey]·[region]·인원([minParticipants]·[maxParticipants])로 모임을 만든다.
-		 * 입력을 검증한 뒤 준비중(DRAFT)으로 만든다.
+		 * 입력을 검증한 뒤 활성화(RECRUITING)로 만든다.
 		 */
 		fun create(
 			type: GatheringType,

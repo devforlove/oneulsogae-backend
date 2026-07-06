@@ -104,9 +104,9 @@ class OfflineGatheringDetailE2ETest : AbstractIntegrationSupport({
 			}
 		}
 
-		it("모집중이 아닌 모임(DRAFT 등)은 404다 (GATHERING-001)") {
+		it("활성화가 아닌 모임(취소 등)은 404다 (GATHERING-001)") {
 			val id: Long = IntegrationUtil.persist(
-				GatheringEntityFixture.create(title = "준비중", status = GatheringStatus.DRAFT),
+				GatheringEntityFixture.create(title = "취소됨", status = GatheringStatus.CANCELED),
 			).id!!
 
 			get("/offline/v1/gatherings/$id") { } expect {

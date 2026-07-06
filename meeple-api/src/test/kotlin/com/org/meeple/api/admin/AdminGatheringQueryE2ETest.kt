@@ -72,17 +72,17 @@ class AdminGatheringQueryE2ETest : AbstractIntegrationSupport({
 		}
 
 		it("status로 상태를 필터한다") {
-			IntegrationUtil.persist(GatheringEntityFixture.create(title = "모집중 모임", status = GatheringStatus.RECRUITING))
-			IntegrationUtil.persist(GatheringEntityFixture.create(title = "종료 모임", status = GatheringStatus.FINISHED))
+			IntegrationUtil.persist(GatheringEntityFixture.create(title = "활성화 모임", status = GatheringStatus.RECRUITING))
+			IntegrationUtil.persist(GatheringEntityFixture.create(title = "취소 모임", status = GatheringStatus.CANCELED))
 
-			get("/admin/v1/gatherings?status=FINISHED") {
+			get("/admin/v1/gatherings?status=CANCELED") {
 				bearer(adminAccessTokenFor(9901L))
 			} expect {
 				status(200)
 				body("data.totalElements", 1)
 				body("data.content", hasSize<Any>(1))
-				body("data.content[0].title", "종료 모임")
-				body("data.content[0].status", "FINISHED")
+				body("data.content[0].title", "취소 모임")
+				body("data.content[0].status", "CANCELED")
 			}
 		}
 
@@ -108,7 +108,7 @@ class AdminGatheringQueryE2ETest : AbstractIntegrationSupport({
 				GatheringEntityFixture.create(title = "종류 불일치", type = GatheringType.COOKING, status = GatheringStatus.RECRUITING),
 			)
 			IntegrationUtil.persist(
-				GatheringEntityFixture.create(title = "상태 불일치", type = GatheringType.PARTY, status = GatheringStatus.FINISHED),
+				GatheringEntityFixture.create(title = "상태 불일치", type = GatheringType.PARTY, status = GatheringStatus.CANCELED),
 			)
 
 			get("/admin/v1/gatherings?status=RECRUITING&type=PARTY") {

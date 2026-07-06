@@ -62,7 +62,7 @@ class GatheringEntity(
 	@Column(name = "max_participants", nullable = false)
 	var maxParticipants: Int,
 
-	/** 모임 진행 상태. 모집중으로 시작한다. */
+	/** 모임 진행 상태. 활성화(RECRUITING)로 시작한다. */
 	@Enumerated(EnumType.STRING)
 	@Column(name = "status", nullable = false, columnDefinition = "varchar(50)")
 	var status: GatheringStatus = GatheringStatus.RECRUITING,

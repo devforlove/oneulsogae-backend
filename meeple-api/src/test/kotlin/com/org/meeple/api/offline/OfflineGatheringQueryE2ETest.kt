@@ -53,22 +53,19 @@ class OfflineGatheringQueryE2ETest : AbstractIntegrationSupport({
 			}
 		}
 
-		it("모집중이 아닌 모임(DRAFT·CANCELED·FINISHED 등)은 제외한다") {
-			IntegrationUtil.persist(
-				GatheringEntityFixture.create(title = "준비중", type = GatheringType.PARTY, status = GatheringStatus.DRAFT),
-			)
+		it("활성화가 아닌 모임(취소 등)은 제외한다") {
 			IntegrationUtil.persist(
 				GatheringEntityFixture.create(title = "취소됨", type = GatheringType.PARTY, status = GatheringStatus.CANCELED),
 			)
 			IntegrationUtil.persist(
-				GatheringEntityFixture.create(title = "모집중", type = GatheringType.PARTY, status = GatheringStatus.RECRUITING),
+				GatheringEntityFixture.create(title = "활성화", type = GatheringType.PARTY, status = GatheringStatus.RECRUITING),
 			)
 
 			get("/offline/v1/gatherings") { } expect {
 				status(200)
 				body("data.groups[2].type", "PARTY")
 				body("data.groups[2].gatherings", hasSize<Any>(1))
-				body("data.groups[2].gatherings[0].title", "모집중")
+				body("data.groups[2].gatherings[0].title", "활성화")
 			}
 		}
 

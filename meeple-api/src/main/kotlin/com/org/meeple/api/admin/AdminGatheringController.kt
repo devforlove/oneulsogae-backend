@@ -31,7 +31,7 @@ import org.springframework.web.multipart.MultipartFile
  * 어드민 모임 엔드포인트. `/admin` 하위는 SecurityConfig의 hasRole(ADMIN)으로 보호된다.
  * - GET /: 최신순 page·size 페이징 목록 (소개·참가비 상세 제외).
  * - GET /{id}: 상세(소개·참가비 상세 + 모임 일정 목록 포함). 없으면 404(GATHER-008).
- * - POST /: 종류·제목·소개·지역·일시·인원·참가비(성별·티어)로 모임 생성. (운영 생성 → user_id null, 준비중으로 시작)
+ * - POST /: 종류·제목·소개·지역·인원으로 모임 생성. (운영 생성 → user_id null, 활성화(RECRUITING)로 시작)
  * - POST /{id}: 모임 전체 데이터 수정(교체). 이미지 파트가 없으면 기존 이미지 유지. 없으면 404(GATHER-008).
  * - POST /{id}/status: 상태 변경(활성화 RECRUITING·취소 CANCELED). 없으면 404(GATHER-008), 전이 불가면 409(GATHER-013).
  */
@@ -111,7 +111,7 @@ class AdminGatheringController(
 
 	@Operation(
 		summary = "모임 상태 변경",
-		description = "모임 상태를 전이한다. status=RECRUITING이면 활성화(준비중→모집중), status=CANCELED면 취소(준비중·모집중·모집마감→취소). " +
+		description = "모임 상태를 전이한다. status=CANCELED면 취소(활성화→취소)한다. (모임은 생성 시 이미 활성화 상태다) " +
 			"없으면 404(GATHER-008), 전이 불가면 409(GATHER-013).",
 	)
 	@PostMapping("/{id}/status")
