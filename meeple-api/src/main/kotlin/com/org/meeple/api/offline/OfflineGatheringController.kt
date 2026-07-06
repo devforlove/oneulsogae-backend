@@ -15,7 +15,7 @@ import org.springframework.web.bind.annotation.RestController
  * 오프라인(비인증 공개) 모임 엔드포인트. `/offline` 하위는 인증 토큰 없이 접근할 수 있다(SecurityConfig permitAll).
  * gathering 도메인(core query)에 의존한다.
  * - GET /: 모집중(RECRUITING) 모임을 모임 타입별로 그룹핑해 조회한다. (타입 3종 모두 포함, 타입 내 최신 등록순)
- * - GET /{id}: 모집중 모임 한 건의 상세(소개·인원·참가비 3티어)를 조회한다. 없거나 모집중이 아니면 404(GATHERING-001).
+ * - GET /{id}: 모집중 모임 한 건의 상세(소개·인원·참가비 3티어 + 모임 일정 목록)를 조회한다. 없거나 모집중이 아니면 404(GATHERING-001).
  */
 @Tag(name = "오프라인 모임", description = "비인증 공개 모임 조회 엔드포인트. 모집중 모임을 타입별로 그룹핑해 내려준다.")
 @RestController
@@ -37,8 +37,8 @@ class OfflineGatheringController(
 	@Operation(
 		summary = "모집중 모임 상세 조회",
 		description = "모집중(RECRUITING) 모임 한 건의 상세를 id로 조회한다. 소개·인원(최소/최대)·참가비 3티어" +
-			"(정상가 남/녀, 얼리버드 남/녀+적용 인원, 할인가 남/녀)와 imageUrl(presigned)·region·title을 포함한다. " +
-			"없거나 모집중이 아니면 404(GATHERING-001). (인증 불필요)",
+			"(정상가 남/녀, 얼리버드 남/녀+적용 인원, 할인가 남/녀)와 imageUrl(presigned)·region·title, " +
+			"모임 일정 목록(schedules, 시작 시각 오름차순)을 포함한다. 없거나 모집중이 아니면 404(GATHERING-001). (인증 불필요)",
 	)
 	@GetMapping("/{id}")
 	fun gathering(

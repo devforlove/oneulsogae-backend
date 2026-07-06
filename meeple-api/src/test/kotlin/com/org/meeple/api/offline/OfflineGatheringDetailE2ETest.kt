@@ -1,13 +1,19 @@
 package com.org.meeple.api.offline
 
+import com.org.meeple.common.gathering.GatheringScheduleStatus
 import com.org.meeple.common.gathering.GatheringStatus
 import com.org.meeple.common.gathering.GatheringType
 import com.org.meeple.common.integration.AbstractIntegrationSupport
 import com.org.meeple.common.integration.expect
 import com.org.meeple.common.integration.get
 import com.org.meeple.infra.fixture.GatheringEntityFixture
+import com.org.meeple.infra.fixture.GatheringScheduleEntityFixture
 import com.org.meeple.infra.fixture.IntegrationUtil
 import com.org.meeple.infra.gathering.command.entity.QGatheringEntity
+import com.org.meeple.infra.gathering.command.entity.QGatheringScheduleEntity
+import org.hamcrest.Matchers.contains
+import org.hamcrest.Matchers.hasSize
+import java.time.LocalDateTime
 
 /**
  * 오프라인(비인증 공개) 모임 상세 조회 API E2E 테스트.
@@ -39,6 +45,21 @@ class OfflineGatheringDetailE2ETest : AbstractIntegrationSupport({
 					status = GatheringStatus.RECRUITING,
 				),
 			).id!!
+			// 일정 2건(시작 시각 다르게)을 넣어 시작 시각 오름차순으로 내려오는지 확인한다.
+			IntegrationUtil.persist(
+				GatheringScheduleEntityFixture.create(
+					gatheringId = id,
+					startAt = LocalDateTime.of(2999, 6, 1, 18, 0, 0),
+					status = GatheringScheduleStatus.COMPLETED,
+				),
+			)
+			IntegrationUtil.persist(
+				GatheringScheduleEntityFixture.create(
+					gatheringId = id,
+					startAt = LocalDateTime.of(2999, 1, 1, 18, 0, 0),
+					status = GatheringScheduleStatus.SCHEDULED,
+				),
+			)
 
 			get("/offline/v1/gatherings/$id") { } expect {
 				status(200)
@@ -61,6 +82,11 @@ class OfflineGatheringDetailE2ETest : AbstractIntegrationSupport({
 				body("data.discountFemaleFee", 7000)
 				// 상태(status)는 응답에 포함하지 않는다.
 				body("data.status", null)
+				// 일정 목록은 시작 시각 오름차순으로 내려온다.
+				body("data.schedules", hasSize<Any>(2))
+				body("data.schedules.status", contains("SCHEDULED", "COMPLETED"))
+				body("data.schedules[0].startAt", "2999-01-01T18:00:00")
+				body("data.schedules[0].statusDescription", "예정")
 			}
 		}
 
@@ -79,6 +105,8 @@ class OfflineGatheringDetailE2ETest : AbstractIntegrationSupport({
 				body("data.earlyBirdCapacity", null)
 				body("data.discountFemaleFee", null)
 				body("data.imageUrl", null)
+				// 일정이 없으면 빈 배열.
+				body("data.schedules", hasSize<Any>(0))
 			}
 		}
 
@@ -104,6 +132,7 @@ class OfflineGatheringDetailE2ETest : AbstractIntegrationSupport({
 	}
 
 	afterTest {
+		IntegrationUtil.deleteAll(QGatheringScheduleEntity.gatheringScheduleEntity)
 		IntegrationUtil.deleteAll(QGatheringEntity.gatheringEntity)
 	}
 })

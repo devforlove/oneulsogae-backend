@@ -1,6 +1,7 @@
 package com.org.meeple.core.gathering.query.dao
 
 import com.org.meeple.core.gathering.query.dto.GatheringDetailView
+import com.org.meeple.core.gathering.query.dto.GatheringScheduleView
 import com.org.meeple.core.gathering.query.dto.GatheringViews
 
 /**
@@ -14,4 +15,7 @@ interface GetGatheringDao {
 
 	/** 모집중 모임 한 건을 id로 조회한다. 없거나 모집중이 아니면 null. (imageUrl은 서비스가 채운다) */
 	fun findRecruitingDetailById(id: Long): GatheringDetailView?
+
+	/** [gatheringId] 모임의 일정 목록을 시작 시각 오름차순으로 조회한다. (soft delete 제외) */
+	fun findSchedulesByGatheringId(gatheringId: Long): List<GatheringScheduleView>
 }

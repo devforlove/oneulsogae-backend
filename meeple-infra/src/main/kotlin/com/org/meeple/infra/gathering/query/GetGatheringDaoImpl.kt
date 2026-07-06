@@ -3,9 +3,11 @@ package com.org.meeple.infra.gathering.query
 import com.org.meeple.common.gathering.GatheringStatus
 import com.org.meeple.core.gathering.query.dao.GetGatheringDao
 import com.org.meeple.core.gathering.query.dto.GatheringDetailView
+import com.org.meeple.core.gathering.query.dto.GatheringScheduleView
 import com.org.meeple.core.gathering.query.dto.GatheringView
 import com.org.meeple.core.gathering.query.dto.GatheringViews
 import com.org.meeple.infra.gathering.command.entity.QGatheringEntity
+import com.org.meeple.infra.gathering.command.entity.QGatheringScheduleEntity
 import com.querydsl.core.types.Projections
 import com.querydsl.jpa.impl.JPAQueryFactory
 import org.springframework.stereotype.Component
@@ -68,5 +70,23 @@ class GetGatheringDaoImpl(
 			.from(gathering)
 			.where(gathering.id.eq(id), gathering.status.eq(GatheringStatus.RECRUITING))
 			.fetchOne()
+	}
+
+	override fun findSchedulesByGatheringId(gatheringId: Long): List<GatheringScheduleView> {
+		val schedule: QGatheringScheduleEntity = QGatheringScheduleEntity.gatheringScheduleEntity
+		return queryFactory
+			.select(
+				Projections.constructor(
+					GatheringScheduleView::class.java,
+					schedule.id,
+					schedule.startAt,
+					schedule.endAt,
+					schedule.status,
+				),
+			)
+			.from(schedule)
+			.where(schedule.gatheringId.eq(gatheringId))
+			.orderBy(schedule.startAt.asc())
+			.fetch()
 	}
 }
