@@ -1,6 +1,5 @@
 package com.org.meeple.api.offline.response
 
-import com.org.meeple.common.gathering.GatheringScheduleStatus
 import com.org.meeple.common.gathering.GatheringType
 import com.org.meeple.common.user.Gender
 import com.org.meeple.core.gathering.query.dto.GatheringDetailView
@@ -34,8 +33,10 @@ data class GatheringDetailResponse(
 
 	/**
 	 * 성별로 나뉜 일정 한 건(셀렉트박스 아이템). 같은 일정([scheduleId])이라도 남/녀는 별개 아이템이다.
-	 * 참가비는 이 아이템의 성별([gender]) 값만 담는다: 정상가([fee], 필수)·얼리버드([earlyBirdFee], 선택)·할인가([discountFee], 선택).
-	 * 얼리버드 정원·남은 개수([earlyBirdCapacity]·[earlyBirdRemaining])는 일정 공통이라 성별과 무관하게 같은 값이다.
+	 * 참가비는 이 아이템의 성별([gender]) 값만 담되, 얼리버드 남은 개수에 따라 노출 티어가 달라진다:
+	 * - 얼리버드가 남아있으면: 정상가([fee])·얼리버드가([earlyBirdFee])를 내리고 할인가([discountFee])는 null.
+	 * - 얼리버드가 모두 소진되면(또는 얼리버드가 없으면 정상 노출): 위 규칙 예외 — 소진 시 [fee]·[earlyBirdFee]는 null, 할인가([discountFee])만 내린다.
+	 * [status]는 일정 상태이되, 해당 성별 정원이 모두 소진되면 소진됨(SOLD_OUT)으로 내려간다.
 	 */
 	data class Schedule(
 		val scheduleId: Long,
@@ -43,31 +44,37 @@ data class GatheringDetailResponse(
 		val genderDescription: String,
 		val startAt: LocalDateTime,
 		val endAt: LocalDateTime?,
-		val fee: Int,
+		val fee: Int?,
 		val earlyBirdFee: Int?,
-		val earlyBirdCapacity: Int?,
-		val earlyBirdRemaining: Int?,
 		val discountFee: Int?,
-		val status: GatheringScheduleStatus,
+		val status: GatheringScheduleItemStatus,
 		val statusDescription: String,
 	) {
 		companion object {
-			/** [view] 일정을 [gender] 성별 아이템으로 만든다. (해당 성별의 참가비만 담는다) */
-			fun of(view: GatheringScheduleView, gender: Gender): Schedule =
-				Schedule(
+			/** [view] 일정을 [gender] 성별 아이템으로 만든다. (해당 성별의 참가비·정원 소진 여부를 반영한다) */
+			fun of(view: GatheringScheduleView, gender: Gender): Schedule {
+				val fee: Int = if (gender == Gender.MALE) view.maleFee else view.femaleFee
+				val earlyBirdFee: Int? = if (gender == Gender.MALE) view.earlyBirdMaleFee else view.earlyBirdFemaleFee
+				val discountFee: Int? = if (gender == Gender.MALE) view.discountMaleFee else view.discountFemaleFee
+				val genderRemaining: Int = if (gender == Gender.MALE) view.maleRemaining else view.femaleRemaining
+				// 얼리버드가 있고(earlyBirdRemaining != null) 모두 소진(<= 0)되면 할인가만, 아니면 정상가·얼리버드가만 노출.
+				val earlyBirdRemaining: Int? = view.earlyBirdRemaining
+				val earlyBirdSoldOut: Boolean = earlyBirdRemaining != null && earlyBirdRemaining <= 0
+				val soldOut: Boolean = genderRemaining <= 0
+				val status: GatheringScheduleItemStatus = GatheringScheduleItemStatus.of(view.status, soldOut)
+				return Schedule(
 					scheduleId = view.id,
 					gender = gender,
 					genderDescription = gender.description,
 					startAt = view.startAt,
 					endAt = view.endAt,
-					fee = if (gender == Gender.MALE) view.maleFee else view.femaleFee,
-					earlyBirdFee = if (gender == Gender.MALE) view.earlyBirdMaleFee else view.earlyBirdFemaleFee,
-					earlyBirdCapacity = view.earlyBirdCapacity,
-					earlyBirdRemaining = view.earlyBirdRemaining,
-					discountFee = if (gender == Gender.MALE) view.discountMaleFee else view.discountFemaleFee,
-					status = view.status,
-					statusDescription = view.status.description,
+					fee = if (earlyBirdSoldOut) null else fee,
+					earlyBirdFee = if (earlyBirdSoldOut) null else earlyBirdFee,
+					discountFee = if (earlyBirdSoldOut) discountFee else null,
+					status = status,
+					statusDescription = status.description,
 				)
+			}
 		}
 	}
 

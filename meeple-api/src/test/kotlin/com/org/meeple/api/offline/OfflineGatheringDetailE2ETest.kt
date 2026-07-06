@@ -81,26 +81,27 @@ class OfflineGatheringDetailE2ETest : AbstractIntegrationSupport({
 				// 비로그인이라 각 일정이 남/녀 두 아이템으로 펼쳐진다. (일정 시작 오름차순, 같은 일정은 남성→여성)
 				body("data.schedules", hasSize<Any>(4))
 				body("data.schedules.gender", contains("MALE", "FEMALE", "MALE", "FEMALE"))
-				// 첫 일정(2999-01-01) 남성 아이템 — 해당 성별의 참가비만 담는다.
+				// 첫 일정(2999-01-01) 남성 아이템 — 얼리버드가 남아있어(remaining 5) 정상가·얼리버드가만, 할인가는 null.
 				body("data.schedules[0].gender", "MALE")
 				body("data.schedules[0].genderDescription", "남성")
 				body("data.schedules[0].startAt", "2999-01-01T18:00:00")
+				body("data.schedules[0].status", "SCHEDULED")
 				body("data.schedules[0].statusDescription", "예정")
 				body("data.schedules[0].fee", 10000)
 				body("data.schedules[0].earlyBirdFee", 7000)
-				body("data.schedules[0].earlyBirdCapacity", 5)
-				body("data.schedules[0].earlyBirdRemaining", 5)
-				body("data.schedules[0].discountFee", 9000)
+				body("data.schedules[0].discountFee", null)
 				// 같은 일정의 여성 아이템 — 여성 참가비.
 				body("data.schedules[1].gender", "FEMALE")
 				body("data.schedules[1].fee", 8000)
 				body("data.schedules[1].earlyBirdFee", 5000)
-				body("data.schedules[1].discountFee", 7000)
-				// 두 번째 일정(2999-06-01, 특가 없음) 남성 아이템.
+				body("data.schedules[1].discountFee", null)
+				// 두 번째 일정(2999-06-01, 특가 없음) 남성 아이템 — 얼리버드가 없으니 정상가만.
 				body("data.schedules[2].gender", "MALE")
+				body("data.schedules[2].status", "COMPLETED")
 				body("data.schedules[2].statusDescription", "종료")
 				body("data.schedules[2].fee", 10000)
 				body("data.schedules[2].earlyBirdFee", null)
+				body("data.schedules[2].discountFee", null)
 				// 비로그인 조회이므로 조회자 성별은 null이다.
 				body("data.viewerGender", null)
 			}
@@ -143,6 +144,63 @@ class OfflineGatheringDetailE2ETest : AbstractIntegrationSupport({
 			} expect {
 				status(200)
 				body("data.viewerGender", null)
+			}
+		}
+
+		it("얼리버드가 모두 소진되면 정상가·얼리버드가는 null이고 할인가만 내려준다") {
+			val id: Long = IntegrationUtil.persist(
+				GatheringEntityFixture.create(title = "얼리버드 소진", status = GatheringStatus.RECRUITING),
+			).id!!
+			IntegrationUtil.persist(
+				GatheringScheduleEntityFixture.create(
+					gatheringId = id,
+					startAt = LocalDateTime.of(2999, 1, 1, 18, 0, 0),
+					maleFee = 10000,
+					femaleFee = 8000,
+					earlyBirdMaleFee = 7000,
+					earlyBirdFemaleFee = 5000,
+					earlyBirdCapacity = 5,
+					earlyBirdRemaining = 0,
+					discountMaleFee = 9000,
+					discountFemaleFee = 7000,
+				),
+			)
+
+			get("/offline/v1/gatherings/$id") { } expect {
+				status(200)
+				// 남성 아이템 — 얼리버드 소진 → 정상가·얼리버드가 null, 할인가만.
+				body("data.schedules[0].gender", "MALE")
+				body("data.schedules[0].fee", null)
+				body("data.schedules[0].earlyBirdFee", null)
+				body("data.schedules[0].discountFee", 9000)
+			}
+		}
+
+		it("해당 성별 정원이 소진되면 status가 소진됨(SOLD_OUT)으로 내려간다") {
+			val id: Long = IntegrationUtil.persist(
+				GatheringEntityFixture.create(title = "정원 소진", status = GatheringStatus.RECRUITING),
+			).id!!
+			IntegrationUtil.persist(
+				GatheringScheduleEntityFixture.create(
+					gatheringId = id,
+					startAt = LocalDateTime.of(2999, 1, 1, 18, 0, 0),
+					maleCapacity = 4,
+					femaleCapacity = 4,
+					// 남성 정원만 소진, 여성은 남아있음.
+					maleRemaining = 0,
+					femaleRemaining = 4,
+				),
+			)
+
+			get("/offline/v1/gatherings/$id") { } expect {
+				status(200)
+				// 남성 아이템 — 정원 소진 → 소진됨.
+				body("data.schedules[0].gender", "MALE")
+				body("data.schedules[0].status", "SOLD_OUT")
+				body("data.schedules[0].statusDescription", "소진됨")
+				// 여성 아이템 — 정원 남음 → 예정.
+				body("data.schedules[1].gender", "FEMALE")
+				body("data.schedules[1].status", "SCHEDULED")
 			}
 		}
 

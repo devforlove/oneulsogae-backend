@@ -8,6 +8,7 @@ import java.time.LocalDateTime
  * 시간 범위는 [startAt](필수)·[endAt](선택)으로, 진행 상태는 [status]로 표현한다.
  * 참가비는 일정별로 가진다: 정상가([maleFee]·[femaleFee], 필수), 얼리버드([earlyBirdMaleFee]·[earlyBirdFemaleFee]·[earlyBirdCapacity]·남은 개수[earlyBirdRemaining], 선택),
  * 할인가([discountMaleFee]·[discountFemaleFee], 선택). 없는 티어는 null.
+ * 남/녀 여분([maleRemaining]·[femaleRemaining])은 해당 성별 소진(소진됨 상태) 판정에 쓴다.
  */
 data class GatheringScheduleView(
 	val id: Long,
@@ -15,6 +16,8 @@ data class GatheringScheduleView(
 	val endAt: LocalDateTime?,
 	val maleFee: Int,
 	val femaleFee: Int,
+	val maleRemaining: Int,
+	val femaleRemaining: Int,
 	val earlyBirdMaleFee: Int?,
 	val earlyBirdFemaleFee: Int?,
 	val earlyBirdCapacity: Int?,
