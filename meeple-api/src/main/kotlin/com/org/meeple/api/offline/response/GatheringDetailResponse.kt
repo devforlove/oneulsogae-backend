@@ -2,6 +2,7 @@ package com.org.meeple.api.offline.response
 
 import com.org.meeple.common.gathering.GatheringScheduleStatus
 import com.org.meeple.common.gathering.GatheringType
+import com.org.meeple.common.user.Gender
 import com.org.meeple.core.gathering.query.dto.GatheringDetailView
 import com.org.meeple.core.gathering.query.dto.GatheringScheduleView
 import java.time.LocalDateTime
@@ -9,6 +10,7 @@ import java.time.LocalDateTime
 /**
  * 오프라인 모임 상세 응답. 소개·인원 + 모임 일정 목록([schedules])을 flat하게 내려준다. 참가비는 각 일정([Schedule])이 가진다.
  * imageKey는 응답에서 제외하고 presigned [imageUrl]만 노출한다. (모집중 모임만 조회되므로 상태는 포함하지 않는다)
+ * [viewerGender]는 로그인한 상태로 조회했을 때만 채워지는 조회자 성별이다. (비로그인이거나 성별 미설정이면 null)
  */
 data class GatheringDetailResponse(
 	val id: Long,
@@ -22,6 +24,8 @@ data class GatheringDetailResponse(
 	val maxParticipants: Int,
 	// 모임 일정 목록(시작 시각 오름차순). 일정이 없으면 빈 배열.
 	val schedules: List<Schedule>,
+	// 로그인 조회자의 성별. 비로그인/성별 미설정이면 null.
+	val viewerGender: Gender?,
 ) {
 
 	/** 모임 일정 한 건. 참가비(성별·티어별, 없는 티어는 null)를 포함한다. */
@@ -60,7 +64,8 @@ data class GatheringDetailResponse(
 
 	companion object {
 
-		fun of(view: GatheringDetailView): GatheringDetailResponse =
+		/** [viewerGender]는 로그인 조회 시에만 채운다(비로그인이면 null). */
+		fun of(view: GatheringDetailView, viewerGender: Gender?): GatheringDetailResponse =
 			GatheringDetailResponse(
 				id = view.id,
 				type = view.type,
@@ -72,6 +77,7 @@ data class GatheringDetailResponse(
 				minParticipants = view.minParticipants,
 				maxParticipants = view.maxParticipants,
 				schedules = view.schedules.map { schedule: GatheringScheduleView -> Schedule.of(schedule) },
+				viewerGender = viewerGender,
 			)
 	}
 }

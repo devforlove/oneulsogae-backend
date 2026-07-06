@@ -6,11 +6,14 @@ import com.org.meeple.common.gathering.GatheringType
 import com.org.meeple.common.integration.AbstractIntegrationSupport
 import com.org.meeple.common.integration.expect
 import com.org.meeple.common.integration.get
+import com.org.meeple.common.user.Gender
 import com.org.meeple.infra.fixture.GatheringEntityFixture
 import com.org.meeple.infra.fixture.GatheringScheduleEntityFixture
 import com.org.meeple.infra.fixture.IntegrationUtil
+import com.org.meeple.infra.fixture.UserDetailEntityFixture
 import com.org.meeple.infra.gathering.command.entity.QGatheringEntity
 import com.org.meeple.infra.gathering.command.entity.QGatheringScheduleEntity
+import com.org.meeple.infra.user.command.entity.QUserDetailEntity
 import org.hamcrest.Matchers.contains
 import org.hamcrest.Matchers.hasSize
 import java.time.LocalDateTime
@@ -84,6 +87,36 @@ class OfflineGatheringDetailE2ETest : AbstractIntegrationSupport({
 				body("data.schedules[0].earlyBirdMaleFee", 7000)
 				body("data.schedules[0].earlyBirdCapacity", 5)
 				body("data.schedules[0].discountMaleFee", 9000)
+				// 비로그인 조회이므로 조회자 성별은 null이다.
+				body("data.viewerGender", null)
+			}
+		}
+
+		it("로그인한 상태로 조회하면 조회자 성별(viewerGender)을 함께 내려준다") {
+			val userId = 7001L
+			IntegrationUtil.persist(UserDetailEntityFixture.create(userId = userId, gender = Gender.MALE))
+			val id: Long = IntegrationUtil.persist(
+				GatheringEntityFixture.create(title = "성별 확인 모임", status = GatheringStatus.RECRUITING),
+			).id!!
+
+			get("/offline/v1/gatherings/$id") {
+				bearer(accessTokenFor(userId))
+			} expect {
+				status(200)
+				body("data.viewerGender", "MALE")
+			}
+		}
+
+		it("로그인했지만 프로필(성별)이 없으면 viewerGender는 null이다") {
+			val id: Long = IntegrationUtil.persist(
+				GatheringEntityFixture.create(title = "프로필 없는 조회자", status = GatheringStatus.RECRUITING),
+			).id!!
+
+			get("/offline/v1/gatherings/$id") {
+				bearer(accessTokenFor(7002L))
+			} expect {
+				status(200)
+				body("data.viewerGender", null)
 			}
 		}
 
@@ -128,5 +161,6 @@ class OfflineGatheringDetailE2ETest : AbstractIntegrationSupport({
 	afterTest {
 		IntegrationUtil.deleteAll(QGatheringScheduleEntity.gatheringScheduleEntity)
 		IntegrationUtil.deleteAll(QGatheringEntity.gatheringEntity)
+		IntegrationUtil.deleteAll(QUserDetailEntity.userDetailEntity)
 	}
 })
