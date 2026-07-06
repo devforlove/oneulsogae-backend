@@ -68,7 +68,7 @@ data class GatheringDetailResponse(
 					genderDescription = gender.description,
 					startAt = view.startAt,
 					endAt = view.endAt,
-					fee = if (earlyBirdSoldOut) null else fee,
+					fee = fee,
 					earlyBirdFee = if (earlyBirdSoldOut) null else earlyBirdFee,
 					discountFee = if (earlyBirdSoldOut) discountFee else null,
 					status = status,
