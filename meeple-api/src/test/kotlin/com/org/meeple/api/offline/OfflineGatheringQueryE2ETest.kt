@@ -1,4 +1,4 @@
-package com.org.meeple.api.gathering
+package com.org.meeple.api.offline
 
 import com.org.meeple.common.gathering.GatheringStatus
 import com.org.meeple.common.gathering.GatheringType
@@ -13,16 +13,16 @@ import org.hamcrest.Matchers.hasSize
 import java.time.LocalDateTime
 
 /**
- * 유저 모임 조회 API E2E 테스트.
- * - GET /gatherings/v1: 모집중(RECRUITING)만, 타입별 그룹(3종 모두 포함, 없으면 빈 배열), 타입 내 gatheringAt 임박순.
- *   항목은 id·imageUrl(presigned)·region·title·gatheringAt을 포함한다.
+ * 오프라인(비인증 공개) 모임 조회 API E2E 테스트.
+ * - GET /offline/v1/gatherings: 인증 토큰 없이 접근 가능. 모집중(RECRUITING)만, 타입별 그룹(3종 모두 포함, 없으면 빈 배열),
+ *   타입 내 gatheringAt 임박순. 항목은 id·imageUrl(presigned)·region·title·gatheringAt을 포함한다.
  * (presigned URL은 TestFileStorageConfig의 페이크로 대체 — https://presigned.test/<imageKey>)
  */
-class GatheringQueryE2ETest : AbstractIntegrationSupport({
+class OfflineGatheringQueryE2ETest : AbstractIntegrationSupport({
 
-	describe("GET /gatherings/v1") {
+	describe("GET /offline/v1/gatherings") {
 
-		it("모집중 모임을 타입별 그룹으로 반환하고 타입 3종을 선언 순서로 모두 포함한다") {
+		it("인증 토큰 없이도 모집중 모임을 타입별 그룹으로 반환하고 타입 3종을 선언 순서로 모두 포함한다") {
 			IntegrationUtil.persist(
 				GatheringEntityFixture.create(
 					title = "쿠킹 모임",
@@ -34,9 +34,7 @@ class GatheringQueryE2ETest : AbstractIntegrationSupport({
 				),
 			)
 
-			get("/gatherings/v1") {
-				bearer(accessTokenFor(7001L))
-			} expect {
+			get("/offline/v1/gatherings") { } expect {
 				status(200)
 				body("success", true)
 				// 타입 3종을 선언 순서로 모두 포함한다.
@@ -69,9 +67,7 @@ class GatheringQueryE2ETest : AbstractIntegrationSupport({
 				GatheringEntityFixture.create(title = "모집중", type = GatheringType.PARTY, status = GatheringStatus.RECRUITING),
 			)
 
-			get("/gatherings/v1") {
-				bearer(accessTokenFor(7001L))
-			} expect {
+			get("/offline/v1/gatherings") { } expect {
 				status(200)
 				body("data.groups[2].type", "PARTY")
 				body("data.groups[2].gatherings", hasSize<Any>(1))
@@ -97,9 +93,7 @@ class GatheringQueryE2ETest : AbstractIntegrationSupport({
 				),
 			)
 
-			get("/gatherings/v1") {
-				bearer(accessTokenFor(7001L))
-			} expect {
+			get("/offline/v1/gatherings") { } expect {
 				status(200)
 				body("data.groups[2].gatherings[0].title", "먼저")
 				body("data.groups[2].gatherings[1].title", "나중")
@@ -116,17 +110,9 @@ class GatheringQueryE2ETest : AbstractIntegrationSupport({
 				),
 			)
 
-			get("/gatherings/v1") {
-				bearer(accessTokenFor(7001L))
-			} expect {
+			get("/offline/v1/gatherings") { } expect {
 				status(200)
 				body("data.groups[2].gatherings[0].imageUrl", null)
-			}
-		}
-
-		it("토큰이 없으면 401이다") {
-			get("/gatherings/v1") { } expect {
-				status(401)
 			}
 		}
 	}

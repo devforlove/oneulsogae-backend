@@ -1,6 +1,6 @@
-package com.org.meeple.api.gathering
+package com.org.meeple.api.offline
 
-import com.org.meeple.api.gathering.response.GatheringGroupListResponse
+import com.org.meeple.api.offline.response.GatheringGroupListResponse
 import com.org.meeple.core.common.response.ApiResponse
 import com.org.meeple.core.gathering.query.service.port.`in`.GetGatheringsUseCase
 import io.swagger.v3.oas.annotations.Operation
@@ -10,13 +10,14 @@ import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RestController
 
 /**
- * 유저 모임 엔드포인트. (인증 필요 - SecurityConfig anyRequest().authenticated())
+ * 오프라인(비인증 공개) 모임 엔드포인트. `/offline` 하위는 인증 토큰 없이 접근할 수 있다(SecurityConfig permitAll).
+ * gathering 도메인(core query)에 의존한다.
  * - GET /: 모집중(RECRUITING) 모임을 모임 타입별로 그룹핑해 조회한다. (타입 3종 모두 포함, 타입 내 gatheringAt 임박순)
  */
-@Tag(name = "모임", description = "유저용 모임 조회 엔드포인트. 모집중 모임을 타입별로 그룹핑해 내려준다.")
+@Tag(name = "오프라인 모임", description = "비인증 공개 모임 조회 엔드포인트. 모집중 모임을 타입별로 그룹핑해 내려준다.")
 @RestController
-@RequestMapping("/gatherings/v1")
-class GatheringController(
+@RequestMapping("/offline/v1/gatherings")
+class OfflineGatheringController(
 	private val getGatheringsUseCase: GetGatheringsUseCase,
 ) {
 
@@ -24,7 +25,7 @@ class GatheringController(
 		summary = "모집중 모임 목록(타입별 그룹) 조회",
 		description = "모집중(RECRUITING) 모임을 모임 타입별 그룹으로 조회한다. 타입 3종(1:1 로테이션·쿠킹·파티)을 항상 모두 포함하고, " +
 			"해당 타입 모임이 없으면 빈 배열이다. 각 그룹 내부는 모임 일시(gatheringAt) 임박순으로 정렬한다. " +
-			"항목은 imageUrl(presigned)·region(장소)·title(제목)·gatheringAt(시간)을 포함한다.",
+			"항목은 imageUrl(presigned)·region(장소)·title(제목)·gatheringAt(시간)을 포함한다. (인증 불필요)",
 	)
 	@GetMapping
 	fun gatherings(): ApiResponse<GatheringGroupListResponse> =
