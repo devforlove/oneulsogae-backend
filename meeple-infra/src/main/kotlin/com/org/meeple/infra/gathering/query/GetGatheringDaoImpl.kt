@@ -2,6 +2,7 @@ package com.org.meeple.infra.gathering.query
 
 import com.org.meeple.common.gathering.GatheringStatus
 import com.org.meeple.core.gathering.query.dao.GetGatheringDao
+import com.org.meeple.core.gathering.query.dto.GatheringDetailView
 import com.org.meeple.core.gathering.query.dto.GatheringView
 import com.org.meeple.core.gathering.query.dto.GatheringViews
 import com.org.meeple.infra.gathering.command.entity.QGatheringEntity
@@ -16,6 +17,7 @@ import org.springframework.stereotype.Component
  * 복합 인덱스 idx_status_type_gathering_at의 선두 status 동등 조건은 seek로 받쳐지지만,
  * type을 제약하지 않아 gathering_at 정렬은 이 인덱스로 커버되지 않고 filesort가 발생한다.
  * 현재 RECRUITING 집합 규모가 작아 허용한다. (정렬까지 seek하려면 (status, gathering_at) 인덱스 필요)
+ * 상세 조회는 id + status=RECRUITING 동등 조건으로 단건 투영한다(모집중이 아니면 null → 서비스가 404).
  */
 @Component
 class GetGatheringDaoImpl(
@@ -41,5 +43,34 @@ class GetGatheringDaoImpl(
 			.orderBy(gathering.gatheringAt.asc())
 			.fetch()
 		return GatheringViews(views)
+	}
+
+	override fun findRecruitingDetailById(id: Long): GatheringDetailView? {
+		val gathering: QGatheringEntity = QGatheringEntity.gatheringEntity
+		return queryFactory
+			.select(
+				Projections.constructor(
+					GatheringDetailView::class.java,
+					gathering.id,
+					gathering.type,
+					gathering.title,
+					gathering.description,
+					gathering.imageKey,
+					gathering.region,
+					gathering.gatheringAt,
+					gathering.minParticipants,
+					gathering.maxParticipants,
+					gathering.maleFee,
+					gathering.femaleFee,
+					gathering.earlyBirdMaleFee,
+					gathering.earlyBirdFemaleFee,
+					gathering.earlyBirdCapacity,
+					gathering.discountMaleFee,
+					gathering.discountFemaleFee,
+				),
+			)
+			.from(gathering)
+			.where(gathering.id.eq(id), gathering.status.eq(GatheringStatus.RECRUITING))
+			.fetchOne()
 	}
 }
