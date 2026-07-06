@@ -2,7 +2,6 @@ package com.org.meeple.admin.gathering.command.application
 
 import com.org.meeple.admin.common.error.AdminErrorCode
 import com.org.meeple.admin.common.error.AdminException
-import com.org.meeple.admin.common.time.TimeGenerator
 import com.org.meeple.admin.gathering.command.application.port.`in`.UpdateAdminGatheringUseCase
 import com.org.meeple.admin.gathering.command.application.port.`in`.command.UpdateAdminGatheringCommand
 import com.org.meeple.admin.gathering.command.application.port.out.LoadAdminGatheringPort
@@ -26,7 +25,6 @@ class UpdateAdminGatheringService(
 	private val loadAdminGatheringPort: LoadAdminGatheringPort,
 	private val updateAdminGatheringPort: UpdateAdminGatheringPort,
 	private val uploadGatheringImagePort: UploadGatheringImagePort,
-	private val timeGenerator: TimeGenerator,
 ) : UpdateAdminGatheringUseCase {
 
 	override fun update(id: Long, command: UpdateAdminGatheringCommand) {
@@ -39,14 +37,12 @@ class UpdateAdminGatheringService(
 			description = command.description,
 			imageKey = resolveImageKey(command, existing.imageKey),
 			region = command.region,
-			gatheringAt = command.gatheringAt,
 			minParticipants = command.minParticipants,
 			maxParticipants = command.maxParticipants,
 			fee = GatheringFee(command.maleFee, command.femaleFee),
 			earlyBirdFee = GatheringFee.optional(command.earlyBirdMaleFee, command.earlyBirdFemaleFee),
 			earlyBirdCapacity = command.earlyBirdCapacity,
 			discountFee = GatheringFee.optional(command.discountMaleFee, command.discountFemaleFee),
-			now = timeGenerator.now(),
 		)
 		updateAdminGatheringPort.update(updated)
 	}

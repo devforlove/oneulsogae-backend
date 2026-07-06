@@ -1,7 +1,6 @@
 package com.org.meeple.admin.gathering.command.application.port.`in`.command
 
 import com.org.meeple.common.gathering.GatheringType
-import java.time.LocalDateTime
 
 /**
  * 어드민 모임 전체 수정 입력. 전 필드를 새 값으로 교체한다.
@@ -15,7 +14,6 @@ data class UpdateAdminGatheringCommand(
 	val imageContentType: String?,
 	val imageSize: Long,
 	val region: String,
-	val gatheringAt: LocalDateTime,
 	val minParticipants: Int,
 	val maxParticipants: Int,
 	// 정상가(남/녀, 필수)

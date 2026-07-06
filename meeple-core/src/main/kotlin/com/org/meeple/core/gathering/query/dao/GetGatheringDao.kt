@@ -9,8 +9,8 @@ import com.org.meeple.core.gathering.query.dto.GatheringViews
  */
 interface GetGatheringDao {
 
-	/** 모집중 모임을 gatheringAt 오름차순(임박순)으로 조회한다. (imageUrl은 서비스가 채운다) */
-	fun findRecruitingOrderByGatheringAt(): GatheringViews
+	/** 모집중 모임을 최신 등록순으로 조회한다. (imageUrl은 서비스가 채운다) */
+	fun findRecruiting(): GatheringViews
 
 	/** 모집중 모임 한 건을 id로 조회한다. 없거나 모집중이 아니면 null. (imageUrl은 서비스가 채운다) */
 	fun findRecruitingDetailById(id: Long): GatheringDetailView?

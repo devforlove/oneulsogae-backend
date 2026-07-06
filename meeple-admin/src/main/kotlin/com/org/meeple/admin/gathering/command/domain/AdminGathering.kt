@@ -4,7 +4,6 @@ import com.org.meeple.admin.common.error.AdminErrorCode
 import com.org.meeple.admin.common.error.AdminException
 import com.org.meeple.common.gathering.GatheringStatus
 import com.org.meeple.common.gathering.GatheringType
-import java.time.LocalDateTime
 
 private const val TITLE_MAX_LENGTH: Int = 100
 private const val DESCRIPTION_MAX_LENGTH: Int = 1000
@@ -27,7 +26,6 @@ data class AdminGathering(
 	val description: String?,
 	val imageKey: String?,
 	val region: String,
-	val gatheringAt: LocalDateTime,
 	val minParticipants: Int,
 	val maxParticipants: Int,
 	val fee: GatheringFee,
@@ -48,16 +46,14 @@ data class AdminGathering(
 		description: String?,
 		imageKey: String?,
 		region: String,
-		gatheringAt: LocalDateTime,
 		minParticipants: Int,
 		maxParticipants: Int,
 		fee: GatheringFee,
 		earlyBirdFee: GatheringFee?,
 		earlyBirdCapacity: Int?,
 		discountFee: GatheringFee?,
-		now: LocalDateTime,
 	): AdminGathering {
-		validateGathering(title, description, region, minParticipants, maxParticipants, gatheringAt, now)
+		validateGathering(title, description, region, minParticipants, maxParticipants)
 		validateEarlyBirdCapacity(earlyBirdFee, earlyBirdCapacity, maxParticipants)
 		return copy(
 			type = type,
@@ -65,7 +61,6 @@ data class AdminGathering(
 			description = description,
 			imageKey = imageKey,
 			region = region,
-			gatheringAt = gatheringAt,
 			minParticipants = minParticipants,
 			maxParticipants = maxParticipants,
 			fee = fee,
@@ -78,9 +73,9 @@ data class AdminGathering(
 	companion object {
 
 		/**
-		 * [type]·[title]·[description]·[imageKey]·[region]·[gatheringAt]·인원([minParticipants]·[maxParticipants])·
+		 * [type]·[title]·[description]·[imageKey]·[region]·인원([minParticipants]·[maxParticipants])·
 		 * 참가비([fee]·[earlyBirdFee]·[earlyBirdCapacity]·[discountFee])로 모임을 만든다.
-		 * 입력을 검증한 뒤 준비중(DRAFT)으로 만든다. [now]는 모임 일시가 미래인지 판정하는 기준 시각이다.
+		 * 입력을 검증한 뒤 준비중(DRAFT)으로 만든다.
 		 */
 		fun create(
 			type: GatheringType,
@@ -88,16 +83,14 @@ data class AdminGathering(
 			description: String?,
 			imageKey: String?,
 			region: String,
-			gatheringAt: LocalDateTime,
 			minParticipants: Int,
 			maxParticipants: Int,
 			fee: GatheringFee,
 			earlyBirdFee: GatheringFee?,
 			earlyBirdCapacity: Int?,
 			discountFee: GatheringFee?,
-			now: LocalDateTime,
 		): AdminGathering {
-			validateGathering(title, description, region, minParticipants, maxParticipants, gatheringAt, now)
+			validateGathering(title, description, region, minParticipants, maxParticipants)
 			validateEarlyBirdCapacity(earlyBirdFee, earlyBirdCapacity, maxParticipants)
 			return AdminGathering(
 				type = type,
@@ -105,7 +98,6 @@ data class AdminGathering(
 				description = description,
 				imageKey = imageKey,
 				region = region,
-				gatheringAt = gatheringAt,
 				minParticipants = minParticipants,
 				maxParticipants = maxParticipants,
 				fee = fee,
@@ -121,8 +113,6 @@ data class AdminGathering(
 			region: String,
 			minParticipants: Int,
 			maxParticipants: Int,
-			gatheringAt: LocalDateTime,
-			now: LocalDateTime,
 		) {
 			if (title.isBlank()) {
 				throw AdminException(AdminErrorCode.GATHERING_INVALID_TITLE)
@@ -141,9 +131,6 @@ data class AdminGathering(
 			}
 			if (maxParticipants < minParticipants) {
 				throw AdminException(AdminErrorCode.GATHERING_INVALID_MAX_PARTICIPANTS)
-			}
-			if (!gatheringAt.isAfter(now)) {
-				throw AdminException(AdminErrorCode.GATHERING_INVALID_GATHERING_AT)
 			}
 		}
 

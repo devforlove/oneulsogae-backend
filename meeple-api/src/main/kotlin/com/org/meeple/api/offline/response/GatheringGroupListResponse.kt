@@ -4,7 +4,6 @@ import com.org.meeple.common.gathering.GatheringType
 import com.org.meeple.core.gathering.query.dto.GatheringTypeGroup
 import com.org.meeple.core.gathering.query.dto.GatheringView
 import com.org.meeple.core.gathering.query.dto.GroupedGatherings
-import java.time.LocalDateTime
 
 /**
  * 오프라인 모임 목록 응답. 모임 타입별 그룹([groups])으로 내려준다.
@@ -27,7 +26,6 @@ data class GatheringGroupListResponse(
 		val imageUrl: String?,
 		val region: String,
 		val title: String,
-		val gatheringAt: LocalDateTime,
 	)
 
 	companion object {
@@ -44,7 +42,6 @@ data class GatheringGroupListResponse(
 								imageUrl = view.imageUrl,
 								region = view.region,
 								title = view.title,
-								gatheringAt = view.gatheringAt,
 							)
 						},
 					)

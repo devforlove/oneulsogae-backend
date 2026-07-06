@@ -2,13 +2,11 @@ package com.org.meeple.api.admin.request
 
 import com.org.meeple.admin.gathering.command.application.port.`in`.command.UpdateAdminGatheringCommand
 import com.org.meeple.common.gathering.GatheringType
-import jakarta.validation.constraints.Future
 import jakarta.validation.constraints.Min
 import jakarta.validation.constraints.NotBlank
 import jakarta.validation.constraints.NotNull
 import jakarta.validation.constraints.PositiveOrZero
 import jakarta.validation.constraints.Size
-import java.time.LocalDateTime
 
 /**
  * 어드민 모임 전체 수정 요청. 필드는 생성과 동일하다(전체 교체).
@@ -28,10 +26,6 @@ data class UpdateAdminGatheringRequest(
 	@field:NotBlank(message = "모임 지역은 필수입니다.")
 	@field:Size(max = 100, message = "모임 지역은 100자 이하여야 합니다.")
 	val region: String? = null,
-
-	@field:NotNull(message = "모임 일시는 필수입니다.")
-	@field:Future(message = "모임 일시는 현재 이후여야 합니다.")
-	val gatheringAt: LocalDateTime? = null,
 
 	@field:NotNull(message = "모임 최소 인원은 필수입니다.")
 	@field:Min(value = 2, message = "모임 최소 인원은 2명 이상이어야 합니다.")
@@ -77,7 +71,6 @@ data class UpdateAdminGatheringRequest(
 			imageContentType = imageContentType,
 			imageSize = imageSize,
 			region = region!!,
-			gatheringAt = gatheringAt!!,
 			minParticipants = minParticipants!!,
 			maxParticipants = maxParticipants!!,
 			maleFee = maleFee!!,

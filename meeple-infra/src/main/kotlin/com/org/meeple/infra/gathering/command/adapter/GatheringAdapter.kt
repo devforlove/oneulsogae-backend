@@ -58,7 +58,6 @@ class GatheringAdapter(
 		entity.description = gathering.description
 		entity.imageKey = gathering.imageKey
 		entity.region = gathering.region
-		entity.gatheringAt = gathering.gatheringAt
 		entity.minParticipants = gathering.minParticipants
 		entity.maxParticipants = gathering.maxParticipants
 		entity.maleFee = gathering.fee.male

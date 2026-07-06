@@ -3,7 +3,6 @@ package com.org.meeple.infra.fixture
 import com.org.meeple.common.gathering.GatheringStatus
 import com.org.meeple.common.gathering.GatheringType
 import com.org.meeple.infra.gathering.command.entity.GatheringEntity
-import java.time.LocalDateTime
 
 /**
  * [GatheringEntity] 테스트 픽스처. 합리적 기본값을 주고, 필요한 값만 덮어쓴다.
@@ -18,7 +17,6 @@ object GatheringEntityFixture {
 		description: String? = "모임 소개",
 		imageKey: String? = "gatherings/fixture.png",
 		region: String = "서울 강남구",
-		gatheringAt: LocalDateTime = LocalDateTime.of(2999, 12, 31, 18, 0, 0),
 		minParticipants: Int = 2,
 		maxParticipants: Int = 4,
 		maleFee: Int = 10000,
@@ -37,7 +35,6 @@ object GatheringEntityFixture {
 			description = description,
 			imageKey = imageKey,
 			region = region,
-			gatheringAt = gatheringAt,
 			minParticipants = minParticipants,
 			maxParticipants = maxParticipants,
 			maleFee = maleFee,

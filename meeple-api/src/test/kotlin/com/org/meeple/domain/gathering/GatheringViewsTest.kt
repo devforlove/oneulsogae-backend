@@ -6,11 +6,8 @@ import com.org.meeple.core.gathering.query.dto.GatheringViews
 import com.org.meeple.core.gathering.query.dto.GroupedGatherings
 import io.kotest.core.spec.style.DescribeSpec
 import io.kotest.matchers.shouldBe
-import java.time.LocalDateTime
 
 class GatheringViewsTest : DescribeSpec({
-
-	val baseTime: LocalDateTime = LocalDateTime.of(2026, 8, 1, 19, 0, 0)
 
 	fun view(id: Long, type: GatheringType): GatheringView =
 		GatheringView(
@@ -19,7 +16,6 @@ class GatheringViewsTest : DescribeSpec({
 			title = "모임-$id",
 			imageKey = null,
 			region = "서울 강남구",
-			gatheringAt = baseTime,
 		)
 
 	describe("GatheringViews.groupByType") {

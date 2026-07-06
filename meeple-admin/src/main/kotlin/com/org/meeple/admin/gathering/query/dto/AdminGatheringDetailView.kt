@@ -18,7 +18,6 @@ data class AdminGatheringDetailView(
 	val imageKey: String?,
 	val imageUrl: String? = null,
 	val region: String,
-	val gatheringAt: LocalDateTime,
 	val minParticipants: Int,
 	val maxParticipants: Int,
 	val maleFee: Int,
@@ -39,7 +38,6 @@ data class AdminGatheringDetailView(
 		description: String?,
 		imageKey: String?,
 		region: String,
-		gatheringAt: LocalDateTime,
 		minParticipants: Int,
 		maxParticipants: Int,
 		maleFee: Int,
@@ -52,7 +50,7 @@ data class AdminGatheringDetailView(
 		status: GatheringStatus,
 		createdAt: LocalDateTime?,
 	) : this(
-		id, type, title, description, imageKey, null, region, gatheringAt, minParticipants, maxParticipants,
+		id, type, title, description, imageKey, null, region, minParticipants, maxParticipants,
 		maleFee, femaleFee, earlyBirdMaleFee, earlyBirdFemaleFee, earlyBirdCapacity, discountMaleFee, discountFemaleFee, status, createdAt,
 	)
 }

@@ -1,7 +1,6 @@
 package com.org.meeple.core.gathering.query.dto
 
 import com.org.meeple.common.gathering.GatheringType
-import java.time.LocalDateTime
 
 /**
  * 유저용 모임 목록 한 건(read model).
@@ -14,7 +13,6 @@ data class GatheringView(
 	val imageKey: String?,
 	val imageUrl: String? = null,
 	val region: String,
-	val gatheringAt: LocalDateTime,
 ) {
 	/** dao 투영용 생성자. imageUrl은 서비스가 presign으로 채운다. */
 	constructor(
@@ -23,6 +21,5 @@ data class GatheringView(
 		title: String,
 		imageKey: String?,
 		region: String,
-		gatheringAt: LocalDateTime,
-	) : this(id, type, title, imageKey, null, region, gatheringAt)
+	) : this(id, type, title, imageKey, null, region)
 }

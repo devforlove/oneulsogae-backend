@@ -8,7 +8,6 @@ import com.org.meeple.common.integration.get
 import com.org.meeple.infra.fixture.GatheringEntityFixture
 import com.org.meeple.infra.fixture.IntegrationUtil
 import com.org.meeple.infra.gathering.command.entity.QGatheringEntity
-import java.time.LocalDateTime
 
 /**
  * 오프라인(비인증 공개) 모임 상세 조회 API E2E 테스트.
@@ -28,7 +27,6 @@ class OfflineGatheringDetailE2ETest : AbstractIntegrationSupport({
 					description = "상세 소개",
 					imageKey = "gatherings/detail.png",
 					region = "서울 마포구",
-					gatheringAt = LocalDateTime.of(2999, 1, 1, 19, 0, 0),
 					minParticipants = 3,
 					maxParticipants = 8,
 					maleFee = 10000,
@@ -52,7 +50,6 @@ class OfflineGatheringDetailE2ETest : AbstractIntegrationSupport({
 				body("data.description", "상세 소개")
 				body("data.imageUrl", "https://presigned.test/gatherings/detail.png")
 				body("data.region", "서울 마포구")
-				body("data.gatheringAt", "2999-01-01T19:00:00")
 				body("data.minParticipants", 3)
 				body("data.maxParticipants", 8)
 				body("data.maleFee", 10000)

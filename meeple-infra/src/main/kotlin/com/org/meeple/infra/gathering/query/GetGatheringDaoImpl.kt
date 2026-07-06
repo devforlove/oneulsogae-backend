@@ -12,11 +12,9 @@ import org.springframework.stereotype.Component
 
 /**
  * [GetGatheringDao]의 QueryDSL 구현. (조회 전용)
- * 모집중(RECRUITING) 모임을 모임 일시(gathering_at) 오름차순(임박순)으로 read model에 직접 투영한다.
+ * 모집중(RECRUITING) 모임을 최신 등록순(created_at 내림차순, 동률이면 id 내림차순)으로 read model에 직접 투영한다.
  * imageKey까지만 담고 imageUrl은 서비스가 presign으로 채운다. (soft delete 행은 @SQLRestriction으로 제외)
- * 복합 인덱스 idx_status_type_gathering_at의 선두 status 동등 조건은 seek로 받쳐지지만,
- * type을 제약하지 않아 gathering_at 정렬은 이 인덱스로 커버되지 않고 filesort가 발생한다.
- * 현재 RECRUITING 집합 규모가 작아 허용한다. (정렬까지 seek하려면 (status, gathering_at) 인덱스 필요)
+ * 복합 인덱스 idx_status_type의 선두 status 동등 조건은 seek로 받쳐진다.
  * 상세 조회는 id + status=RECRUITING 동등 조건으로 단건 투영한다(모집중이 아니면 null → 서비스가 404).
  */
 @Component
@@ -24,7 +22,7 @@ class GetGatheringDaoImpl(
 	private val queryFactory: JPAQueryFactory,
 ) : GetGatheringDao {
 
-	override fun findRecruitingOrderByGatheringAt(): GatheringViews {
+	override fun findRecruiting(): GatheringViews {
 		val gathering: QGatheringEntity = QGatheringEntity.gatheringEntity
 		val views: List<GatheringView> = queryFactory
 			.select(
@@ -35,12 +33,11 @@ class GetGatheringDaoImpl(
 					gathering.title,
 					gathering.imageKey,
 					gathering.region,
-					gathering.gatheringAt,
 				),
 			)
 			.from(gathering)
 			.where(gathering.status.eq(GatheringStatus.RECRUITING))
-			.orderBy(gathering.gatheringAt.asc())
+			.orderBy(gathering.createdAt.desc(), gathering.id.desc())
 			.fetch()
 		return GatheringViews(views)
 	}
@@ -57,7 +54,6 @@ class GetGatheringDaoImpl(
 					gathering.description,
 					gathering.imageKey,
 					gathering.region,
-					gathering.gatheringAt,
 					gathering.minParticipants,
 					gathering.maxParticipants,
 					gathering.maleFee,

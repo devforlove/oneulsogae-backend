@@ -12,7 +12,7 @@ data class GatheringViews(
 
 	/**
 	 * [types] 선언 순서대로 타입별 그룹을 만든다. 각 그룹은 이 목록에서 해당 타입 행만 추린 것으로,
-	 * 원래 순서(gatheringAt 오름차순)를 유지한다. 해당 타입 모임이 없으면 빈 리스트 그룹으로 포함한다.
+	 * 원래 순서(최신 등록순)를 유지한다. 해당 타입 모임이 없으면 빈 리스트 그룹으로 포함한다.
 	 */
 	fun groupByType(types: List<GatheringType>): GroupedGatherings =
 		GroupedGatherings(

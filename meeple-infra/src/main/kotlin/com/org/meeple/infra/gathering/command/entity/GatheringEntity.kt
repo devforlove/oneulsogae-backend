@@ -10,7 +10,6 @@ import jakarta.persistence.Enumerated
 import jakarta.persistence.Index
 import jakarta.persistence.Table
 import org.hibernate.annotations.SQLRestriction
-import java.time.LocalDateTime
 
 /**
  * 모임의 정체성을 담는 영속성 엔티티. 참가자는 [GatheringMemberEntity]가 1:N으로 보관한다. (gathering_id로 연결)
@@ -23,8 +22,8 @@ import java.time.LocalDateTime
 @Table(
 	name = "gatherings",
 	indexes = [
-		// 상태·종류로 필터하고 일시순 정렬하는 모임 목록 조회용. 동등 조건(status, type)을 선두에 두고 정렬 컬럼(gathering_at)을 잇는다.
-		Index(name = "idx_status_type_gathering_at", columnList = "status, type, gathering_at"),
+		// 상태·종류로 필터하는 모임 목록 조회용. 동등 조건(status, type)을 인덱스로 받친다.
+		Index(name = "idx_status_type", columnList = "status, type"),
 		// 내가 만든 모임 조회용.
 		Index(name = "idx_user_id", columnList = "user_id"),
 	],
@@ -54,10 +53,6 @@ class GatheringEntity(
 	/** 모임 활동지역(자유 텍스트). 예: "서울 강남구". */
 	@Column(name = "region", nullable = false, length = 100)
 	var region: String,
-
-	/** 모임 일시. */
-	@Column(name = "gathering_at", nullable = false)
-	var gatheringAt: LocalDateTime,
 
 	/** 최소 참가 인원(모임 성사 기준). */
 	@Column(name = "min_participants", nullable = false)

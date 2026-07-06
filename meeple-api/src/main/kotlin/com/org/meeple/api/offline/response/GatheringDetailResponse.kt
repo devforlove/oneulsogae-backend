@@ -2,7 +2,6 @@ package com.org.meeple.api.offline.response
 
 import com.org.meeple.common.gathering.GatheringType
 import com.org.meeple.core.gathering.query.dto.GatheringDetailView
-import java.time.LocalDateTime
 
 /**
  * 오프라인 모임 상세 응답. 소개·인원·참가비 3티어(정상·얼리버드·할인)까지 flat하게 내려준다.
@@ -16,7 +15,6 @@ data class GatheringDetailResponse(
 	val description: String?,
 	val imageUrl: String?,
 	val region: String,
-	val gatheringAt: LocalDateTime,
 	val minParticipants: Int,
 	val maxParticipants: Int,
 	val maleFee: Int,
@@ -39,7 +37,6 @@ data class GatheringDetailResponse(
 				description = view.description,
 				imageUrl = view.imageUrl,
 				region = view.region,
-				gatheringAt = view.gatheringAt,
 				minParticipants = view.minParticipants,
 				maxParticipants = view.maxParticipants,
 				maleFee = view.maleFee,

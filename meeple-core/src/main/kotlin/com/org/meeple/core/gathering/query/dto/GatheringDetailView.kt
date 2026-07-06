@@ -1,7 +1,6 @@
 package com.org.meeple.core.gathering.query.dto
 
 import com.org.meeple.common.gathering.GatheringType
-import java.time.LocalDateTime
 
 /**
  * 유저용 모임 상세 한 건(read model). 목록과 달리 소개·인원·참가비 3티어까지 포함한다.
@@ -16,7 +15,6 @@ data class GatheringDetailView(
 	val imageKey: String?,
 	val imageUrl: String? = null,
 	val region: String,
-	val gatheringAt: LocalDateTime,
 	val minParticipants: Int,
 	val maxParticipants: Int,
 	val maleFee: Int,
@@ -35,7 +33,6 @@ data class GatheringDetailView(
 		description: String?,
 		imageKey: String?,
 		region: String,
-		gatheringAt: LocalDateTime,
 		minParticipants: Int,
 		maxParticipants: Int,
 		maleFee: Int,
@@ -46,7 +43,7 @@ data class GatheringDetailView(
 		discountMaleFee: Int?,
 		discountFemaleFee: Int?,
 	) : this(
-		id, type, title, description, imageKey, null, region, gatheringAt,
+		id, type, title, description, imageKey, null, region,
 		minParticipants, maxParticipants, maleFee, femaleFee,
 		earlyBirdMaleFee, earlyBirdFemaleFee, earlyBirdCapacity, discountMaleFee, discountFemaleFee,
 	)
