@@ -175,6 +175,31 @@ class OfflineGatheringDetailE2ETest : AbstractIntegrationSupport({
 			}
 		}
 
+		it("얼리버드 남은 개수가 null이면(티어 없음) 할인율이 있어도 earlyBirdFee는 내려가지 않는다") {
+			val id: Long = IntegrationUtil.persist(
+				GatheringEntityFixture.create(title = "얼리버드 티어 없음", status = GatheringStatus.RECRUITING),
+			).id!!
+			IntegrationUtil.persist(
+				GatheringScheduleEntityFixture.create(
+					gatheringId = id,
+					startAt = LocalDateTime.of(2999, 1, 1, 18, 0, 0),
+					maleFee = 10000,
+					femaleFee = 8000,
+					earlyBirdDiscountRate = 30,
+					// earlyBirdCapacity 미설정 → earlyBirdRemaining null(얼리버드 티어 없음).
+				),
+			)
+
+			get("/offline/v1/gatherings/$id") { } expect {
+				status(200)
+				// 얼리버드 티어가 없으므로(remaining null) 정상가만, 얼리버드가·할인가는 null.
+				body("data.schedules[0].gender", "MALE")
+				body("data.schedules[0].fee", 10000)
+				body("data.schedules[0].earlyBirdFee", null)
+				body("data.schedules[0].discountFee", null)
+			}
+		}
+
 		it("해당 성별 정원이 소진되면 status가 소진됨(SOLD_OUT)으로 내려간다") {
 			val id: Long = IntegrationUtil.persist(
 				GatheringEntityFixture.create(title = "정원 소진", status = GatheringStatus.RECRUITING),

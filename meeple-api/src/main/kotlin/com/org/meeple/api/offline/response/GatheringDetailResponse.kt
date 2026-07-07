@@ -33,9 +33,10 @@ data class GatheringDetailResponse(
 
 	/**
 	 * 성별로 나뉜 일정 한 건(셀렉트박스 아이템). 같은 일정([scheduleId])이라도 남/녀는 별개 아이템이다.
-	 * 참가비는 이 아이템의 성별([gender]) 값만 담되, 얼리버드 남은 개수에 따라 노출 티어가 달라진다:
-	 * - 얼리버드가 남아있으면: 정상가([fee])·얼리버드가([earlyBirdFee])를 내리고 할인가([discountFee])는 null.
-	 * - 얼리버드가 모두 소진되면(또는 얼리버드가 없으면 정상 노출): 위 규칙 예외 — 소진 시 [fee]·[earlyBirdFee]는 null, 할인가([discountFee])만 내린다.
+	 * 참가비는 이 아이템의 성별([gender]) 값만 담되, 얼리버드 남은 개수([GatheringScheduleView.earlyBirdRemaining])에 따라 노출 티어가 달라진다:
+	 * - 얼리버드 티어가 없으면(remaining null): 정상가([fee])만, [earlyBirdFee]·[discountFee]는 null.
+	 * - 얼리버드가 남아있으면(remaining > 0): 정상가([fee])·얼리버드가([earlyBirdFee]), 할인가([discountFee])는 null.
+	 * - 얼리버드가 모두 소진되면(remaining <= 0): [fee]·[earlyBirdFee]는 null, 할인가([discountFee])만 내린다.
 	 * [status]는 일정 상태이되, 해당 성별 정원이 모두 소진되면 소진됨(SOLD_OUT)으로 내려간다.
 	 */
 	data class Schedule(
@@ -54,13 +55,17 @@ data class GatheringDetailResponse(
 			/** [view] 일정을 [gender] 성별 아이템으로 만든다. (해당 성별의 참가비·정원 소진 여부를 반영한다) */
 			fun of(view: GatheringScheduleView, gender: Gender): Schedule {
 				val fee: Int = if (gender == Gender.MALE) view.maleFee else view.femaleFee
-				// 얼리버드는 할인율(%)만 저장하므로, 해당 성별 정상가에 곱해 금액을 계산한다(버림). 할인율이 없으면 얼리버드도 없다.
-				val earlyBirdFee: Int? = view.earlyBirdDiscountRate?.let { rate: Int -> fee * (100 - rate) / 100 }
 				val discountFee: Int? = if (gender == Gender.MALE) view.discountMaleFee else view.discountFemaleFee
 				val genderRemaining: Int = if (gender == Gender.MALE) view.maleRemaining else view.femaleRemaining
-				// 얼리버드가 있고(earlyBirdRemaining != null) 모두 소진(<= 0)되면 할인가만, 아니면 정상가·얼리버드가만 노출.
+				// 얼리버드 티어는 earlyBirdRemaining으로 판정한다: null이면 티어 없음, <= 0이면 소진, > 0이면 남음.
 				val earlyBirdRemaining: Int? = view.earlyBirdRemaining
 				val earlyBirdSoldOut: Boolean = earlyBirdRemaining != null && earlyBirdRemaining <= 0
+				// 얼리버드가 남아있을 때만(티어 존재 + 미소진) 할인율(%)을 정상가에 곱해 금액을 계산한다(버림). 그 외엔 null.
+				val earlyBirdFee: Int? = if (earlyBirdRemaining != null && !earlyBirdSoldOut) {
+					view.earlyBirdDiscountRate?.let { rate: Int -> fee * (100 - rate) / 100 }
+				} else {
+					null
+				}
 				val soldOut: Boolean = genderRemaining <= 0
 				val status: GatheringScheduleItemStatus = GatheringScheduleItemStatus.of(view.status, soldOut)
 				return Schedule(
@@ -70,7 +75,7 @@ data class GatheringDetailResponse(
 					startAt = view.startAt,
 					endAt = view.endAt,
 					fee = if (earlyBirdSoldOut) null else fee,
-					earlyBirdFee = if (earlyBirdSoldOut) null else earlyBirdFee,
+					earlyBirdFee = earlyBirdFee,
 					discountFee = if (earlyBirdSoldOut) discountFee else null,
 					status = status,
 					statusDescription = status.description,
