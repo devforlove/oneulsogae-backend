@@ -3,7 +3,7 @@ package com.org.meeple.api.admin
 import com.org.meeple.api.admin.response.AdminReportDetailResponse
 import com.org.meeple.api.admin.response.AdminReportPageResponse
 import com.org.meeple.core.common.response.ApiResponse
-import com.org.meeple.core.report.query.service.port.`in`.GetAdminReportsUseCase
+import com.org.meeple.admin.report.query.service.port.`in`.GetAdminReportsUseCase
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.tags.Tag
 import org.springframework.web.bind.annotation.GetMapping

@@ -1,6 +1,6 @@
 package com.org.meeple.api.admin.response
 
-import com.org.meeple.core.report.query.dto.AdminReportPage
+import com.org.meeple.admin.report.query.dto.AdminReportPage
 
 /** 어드민 신고 목록 페이지 응답. (offset 페이징) */
 data class AdminReportPageResponse(

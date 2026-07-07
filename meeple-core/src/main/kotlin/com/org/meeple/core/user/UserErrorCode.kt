@@ -39,4 +39,10 @@ enum class UserErrorCode(
 	// 학교 이메일 인증(대학 인증)
 	UNIVERSITY_NOT_FOUND("USER-016", "확인되지 않는 학교 이메일입니다. 본인 학교의 이메일을 입력해 주세요.", HttpStatus.BAD_REQUEST),
 	UNIVERSITY_EMAIL_ALREADY_USED("USER-018", "이미 다른 사용자가 인증한 학교 이메일입니다.", HttpStatus.CONFLICT),
+
+	// 직장 서류 이미지 인증(company_image_verifications)
+	EMPTY_IMAGE("USER-020", "이미지 파일이 비어 있습니다.", HttpStatus.BAD_REQUEST),
+	INVALID_IMAGE_TYPE("USER-021", "지원하지 않는 파일 형식입니다. JPEG·PNG·PDF만 업로드할 수 있습니다.", HttpStatus.BAD_REQUEST),
+	IMAGE_TOO_LARGE("USER-022", "파일이 너무 큽니다. 최대 10MB까지 업로드할 수 있습니다.", HttpStatus.PAYLOAD_TOO_LARGE),
+	INVALID_COMPANY_NAME("USER-023", "회사명을 입력해 주세요. (최대 50자)", HttpStatus.BAD_REQUEST),
 }

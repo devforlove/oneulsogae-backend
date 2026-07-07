@@ -23,4 +23,6 @@ data class S3Properties(
 	val accessKey: String = "",
 	/** 정적 시크릿 키. [accessKey]와 함께 비우면 기본 자격증명 체인을 쓴다. */
 	val secretKey: String = "",
+	/** presigned GET URL 서명 유효시간(분). 어드민 서류 열람용. */
+	val presignedGetExpiryMinutes: Long = 10,
 )

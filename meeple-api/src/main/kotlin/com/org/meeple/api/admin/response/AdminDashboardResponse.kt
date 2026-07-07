@@ -1,6 +1,6 @@
 package com.org.meeple.api.admin.response
 
-import com.org.meeple.core.admin.query.dto.AdminDashboardView
+import com.org.meeple.admin.dashboard.query.dto.AdminDashboardView
 
 /** 어드민 대시보드 응답. 전체 사용자·금일 가입자·금일 DAU·금일 코인 결제액·진행중 매치·미처리 신고를 담는다. */
 data class AdminDashboardResponse(

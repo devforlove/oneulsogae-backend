@@ -8,6 +8,7 @@ import com.org.meeple.auth.oauth.OAuth2FailureHandler
 import com.org.meeple.auth.oauth.OAuth2SuccessHandler
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
+import org.springframework.http.HttpMethod
 import org.springframework.security.config.annotation.web.builders.HttpSecurity
 import org.springframework.security.config.annotation.web.builders.WebSecurity
 import org.springframework.security.config.annotation.web.configuration.WebSecurityCustomizer
@@ -60,6 +61,8 @@ class SecurityConfig(
 					.requestMatchers("/ws/chat/**").permitAll()
 					// 비로그인 사용자도 고객센터 문의를 접수할 수 있도록 연다. (토큰 있으면 컨트롤러가 회원 ID로 귀속)
 					.requestMatchers("/inquiries/v1").permitAll()
+					// 오프라인(비인증 공개) 모임 목록·상세 조회는 토큰 없이 접근할 수 있다.
+					.requestMatchers(HttpMethod.GET, "/offline/v1/gatherings", "/offline/v1/gatherings/*").permitAll()
 					// 어드민 API는 role=ADMIN 유저(토큰의 ROLE_ADMIN 권한)만 접근한다. (어드민도 같은 OAuth2+JWT 체계를 쓴다)
 					.requestMatchers("/admin/**").hasRole("ADMIN")
 					.anyRequest().authenticated()

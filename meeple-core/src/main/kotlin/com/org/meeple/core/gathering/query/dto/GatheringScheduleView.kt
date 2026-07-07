@@ -1,0 +1,28 @@
+package com.org.meeple.core.gathering.query.dto
+
+import com.org.meeple.common.gathering.GatheringScheduleStatus
+import java.time.LocalDateTime
+
+/**
+ * 유저용 모임 상세에 포함되는 일정 한 건(read model). 한 모임의 일정 목록으로 노출된다.
+ * 시간 범위는 [startAt](필수)·[endAt](선택)으로, 진행 상태는 [status]로 표현한다.
+ * 참가비는 일정별로 가진다: 정상가([maleFee]·[femaleFee], 필수), 얼리버드(할인율[earlyBirdDiscountRate]·[earlyBirdCapacity]·남은 개수[earlyBirdRemaining], 선택),
+ * 할인가([discountMaleFee]·[discountFemaleFee], 선택). 없는 티어는 null.
+ * 얼리버드 금액은 저장하지 않고 할인율(%)만 가지며, 응답에서 정상가에 곱해 계산한다.
+ * 남/녀 여분([maleRemaining]·[femaleRemaining])은 해당 성별 소진(소진됨 상태) 판정에 쓴다.
+ */
+data class GatheringScheduleView(
+	val id: Long,
+	val startAt: LocalDateTime,
+	val endAt: LocalDateTime?,
+	val maleFee: Int,
+	val femaleFee: Int,
+	val maleRemaining: Int,
+	val femaleRemaining: Int,
+	val earlyBirdDiscountRate: Int?,
+	val earlyBirdCapacity: Int?,
+	val earlyBirdRemaining: Int?,
+	val discountMaleFee: Int?,
+	val discountFemaleFee: Int?,
+	val status: GatheringScheduleStatus,
+)

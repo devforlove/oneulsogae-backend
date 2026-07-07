@@ -47,6 +47,17 @@ interface MatchUserJpaRepository : JpaRepository<MatchUserEntity, Long> {
 	)
 	fun updateRefuseSameCompanyIntro(@Param("userId") userId: Long, @Param("refuse") refuse: Boolean): Int
 
+	/** 회사명만 갱신한다. 영향 행 수를 반환한다(행이 없으면 0 = 미적재, 예외 없음). */
+	@Modifying
+	@Query(
+		"""
+		update MatchUserEntity m
+		set m.companyName = :companyName
+		where m.userId = :userId
+		""",
+	)
+	fun updateCompanyName(@Param("userId") userId: Long, @Param("companyName") companyName: String): Int
+
 	/** 해당 사용자의 행을 삭제한다. 영향 행 수를 반환한다(행이 없으면 0 = no-op, 예외 없음). */
 	@Modifying
 	@Query("delete from MatchUserEntity m where m.userId = :userId")

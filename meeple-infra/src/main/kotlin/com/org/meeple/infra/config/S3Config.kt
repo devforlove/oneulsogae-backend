@@ -8,6 +8,8 @@ import software.amazon.awssdk.http.urlconnection.UrlConnectionHttpClient
 import software.amazon.awssdk.regions.Region
 import software.amazon.awssdk.services.s3.S3Client
 import software.amazon.awssdk.services.s3.S3ClientBuilder
+import software.amazon.awssdk.services.s3.S3Configuration
+import software.amazon.awssdk.services.s3.presigner.S3Presigner
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
 import java.net.URI
@@ -30,6 +32,23 @@ class S3Config(
 			.forcePathStyle(properties.pathStyleAccess)
 			.credentialsProvider(credentialsProvider())
 			.httpClientBuilder(UrlConnectionHttpClient.builder())
+
+		if (properties.endpoint.isNotBlank()) {
+			builder.endpointOverride(URI.create(properties.endpoint))
+		}
+		return builder.build()
+	}
+
+	@Bean(destroyMethod = "close")
+	fun s3Presigner(): S3Presigner {
+		val builder: S3Presigner.Builder = S3Presigner.builder()
+			.region(Region.of(properties.region))
+			.credentialsProvider(credentialsProvider())
+			.serviceConfiguration(
+				S3Configuration.builder()
+					.pathStyleAccessEnabled(properties.pathStyleAccess)
+					.build(),
+			)
 
 		if (properties.endpoint.isNotBlank()) {
 			builder.endpointOverride(URI.create(properties.endpoint))

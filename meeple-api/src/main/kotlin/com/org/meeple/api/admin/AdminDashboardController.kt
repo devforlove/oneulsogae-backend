@@ -1,7 +1,7 @@
 package com.org.meeple.api.admin
 
 import com.org.meeple.api.admin.response.AdminDashboardResponse
-import com.org.meeple.core.admin.query.service.port.`in`.GetAdminDashboardUseCase
+import com.org.meeple.admin.dashboard.query.service.port.`in`.GetAdminDashboardUseCase
 import com.org.meeple.core.common.response.ApiResponse
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.tags.Tag
