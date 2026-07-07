@@ -37,6 +37,11 @@ class HttpRequestSpec {
 	fun jsonBody(json: String) {
 		spec.body(json)
 	}
+
+	/** 302 등 리다이렉트 응답을 자동으로 따라가지 않고 그대로 검증하고 싶을 때 호출한다. */
+	fun noRedirect() {
+		spec.redirects().follow(false)
+	}
 }
 
 class HttpResponseSpec(private val response: ValidatableResponse) {
@@ -54,6 +59,11 @@ class HttpResponseSpec(private val response: ValidatableResponse) {
 	/** JSON 경로 값을 Hamcrest matcher로 검증한다. (예: notNullValue) */
 	fun body(path: String, matcher: Matcher<*>) {
 		response.body(path, matcher)
+	}
+
+	/** 응답 헤더 값을 Hamcrest matcher로 검증한다. (예: 302 리다이렉트의 Location) */
+	fun header(name: String, matcher: Matcher<String>) {
+		response.header(name, matcher)
 	}
 }
 
