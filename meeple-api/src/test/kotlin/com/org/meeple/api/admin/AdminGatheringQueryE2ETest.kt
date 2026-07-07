@@ -148,8 +148,7 @@ class AdminGatheringQueryE2ETest : AbstractIntegrationSupport({
 					startAt = LocalDateTime.of(2999, 1, 1, 18, 0, 0),
 					maleFee = 10000,
 					femaleFee = 8000,
-					earlyBirdMaleFee = 7000,
-					earlyBirdFemaleFee = 5000,
+					earlyBirdDiscountRate = 30,
 					earlyBirdCapacity = 5,
 					discountMaleFee = 9000,
 					discountFemaleFee = 7000,
@@ -176,7 +175,7 @@ class AdminGatheringQueryE2ETest : AbstractIntegrationSupport({
 				body("data.schedules[0].statusDescription", "예정")
 				body("data.schedules[0].maleFee", 10000)
 				body("data.schedules[0].femaleFee", 8000)
-				body("data.schedules[0].earlyBirdMaleFee", 7000)
+				body("data.schedules[0].earlyBirdDiscountRate", 30)
 				body("data.schedules[0].earlyBirdCapacity", 5)
 				body("data.schedules[0].earlyBirdRemaining", 5)
 				body("data.schedules[0].discountFemaleFee", 7000)

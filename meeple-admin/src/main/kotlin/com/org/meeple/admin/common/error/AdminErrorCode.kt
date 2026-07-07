@@ -30,7 +30,7 @@ enum class AdminErrorCode(
 	GATHERING_INVALID_IMAGE_TYPE("GATHER-009", "모임 대표 이미지는 비어 있지 않은 JPEG 또는 PNG 파일이어야 합니다.", HttpStatus.BAD_REQUEST),
 	GATHERING_IMAGE_TOO_LARGE("GATHER-010", "모임 대표 이미지는 5MB 이하여야 합니다.", HttpStatus.BAD_REQUEST),
 	GATHERING_INVALID_MAX_PARTICIPANTS("GATHER-011", "모임 최대 인원은 최소 인원 이상이어야 합니다.", HttpStatus.BAD_REQUEST),
-	GATHERING_INVALID_EARLY_BIRD_CAPACITY("GATHER-012", "얼리버드 적용 인원은 얼리버드 가격과 함께 1명 이상 최대 인원 이하로 입력해야 합니다.", HttpStatus.BAD_REQUEST),
+	GATHERING_INVALID_EARLY_BIRD_CAPACITY("GATHER-012", "얼리버드 적용 인원은 얼리버드 할인율과 함께 1명 이상 최대 인원 이하로 입력해야 합니다.", HttpStatus.BAD_REQUEST),
 	GATHERING_INVALID_STATUS_TRANSITION("GATHER-013", "요청한 상태로 전이할 수 없습니다.", HttpStatus.CONFLICT),
 
 	// 모임 일정(GatheringSchedule) 관련.
@@ -38,4 +38,5 @@ enum class AdminErrorCode(
 	GATHERING_SCHEDULE_INVALID_START_AT("GATHER-015", "일정 시작 시각은 현재 이후여야 합니다.", HttpStatus.BAD_REQUEST),
 	GATHERING_SCHEDULE_INVALID_END_AT("GATHER-016", "일정 종료 시각은 시작 시각 이후여야 합니다.", HttpStatus.BAD_REQUEST),
 	GATHERING_SCHEDULE_INVALID_STATUS_TRANSITION("GATHER-017", "요청한 일정 상태로 전이할 수 없습니다.", HttpStatus.CONFLICT),
+	GATHERING_INVALID_EARLY_BIRD_DISCOUNT_RATE("GATHER-018", "얼리버드 할인율은 1 이상 100 이하여야 합니다.", HttpStatus.BAD_REQUEST),
 }

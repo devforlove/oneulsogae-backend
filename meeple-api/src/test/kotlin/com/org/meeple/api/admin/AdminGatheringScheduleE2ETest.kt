@@ -46,7 +46,7 @@ class AdminGatheringScheduleE2ETest : AbstractIntegrationSupport({
 						"""
 						{"startAt": "2999-12-31T18:00:00", "endAt": "2999-12-31T20:00:00",
 						 "maleFee": 10000, "femaleFee": 8000,
-						 "earlyBirdMaleFee": 7000, "earlyBirdFemaleFee": 5000, "earlyBirdCapacity": 2,
+						 "earlyBirdDiscountRate": 30, "earlyBirdCapacity": 2,
 						 "discountMaleFee": 9000, "discountFemaleFee": 7000}
 						""".trimIndent(),
 					)
@@ -68,7 +68,7 @@ class AdminGatheringScheduleE2ETest : AbstractIntegrationSupport({
 				// 저장 시 남/녀 여분은 각 성별 정원으로 초기화된다.
 				saved.maleRemaining shouldBe 2
 				saved.femaleRemaining shouldBe 2
-				saved.earlyBirdMaleFee shouldBe 7000
+				saved.earlyBirdDiscountRate shouldBe 30
 				saved.earlyBirdCapacity shouldBe 2
 				// 저장 시 남은 개수는 정원(earlyBirdCapacity)으로 초기화된다.
 				saved.earlyBirdRemaining shouldBe 2
@@ -94,7 +94,7 @@ class AdminGatheringScheduleE2ETest : AbstractIntegrationSupport({
 				// 남/녀 여분은 모임 정원(4)의 절반(2)으로 초기화된다.
 				saved.maleRemaining shouldBe 2
 				saved.femaleRemaining shouldBe 2
-				saved.earlyBirdMaleFee shouldBe null
+				saved.earlyBirdDiscountRate shouldBe null
 				saved.earlyBirdCapacity shouldBe null
 				saved.earlyBirdRemaining shouldBe null
 			}
@@ -122,7 +122,7 @@ class AdminGatheringScheduleE2ETest : AbstractIntegrationSupport({
 					bearer(adminAccessTokenFor(9901L))
 					jsonBody(
 						"""{"startAt": "2999-12-31T18:00:00", "maleFee": 10000, "femaleFee": 8000,
-						 "earlyBirdMaleFee": 7000, "earlyBirdFemaleFee": 5000, "earlyBirdCapacity": 5}""",
+						 "earlyBirdDiscountRate": 30, "earlyBirdCapacity": 5}""",
 					)
 				} expect {
 					status(400)

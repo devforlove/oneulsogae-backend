@@ -55,8 +55,7 @@ class OfflineGatheringDetailE2ETest : AbstractIntegrationSupport({
 					startAt = LocalDateTime.of(2999, 1, 1, 18, 0, 0),
 					maleFee = 10000,
 					femaleFee = 8000,
-					earlyBirdMaleFee = 7000,
-					earlyBirdFemaleFee = 5000,
+					earlyBirdDiscountRate = 30,
 					earlyBirdCapacity = 5,
 					discountMaleFee = 9000,
 					discountFemaleFee = 7000,
@@ -82,6 +81,7 @@ class OfflineGatheringDetailE2ETest : AbstractIntegrationSupport({
 				body("data.schedules", hasSize<Any>(4))
 				body("data.schedules.gender", contains("MALE", "FEMALE", "MALE", "FEMALE"))
 				// 첫 일정(2999-01-01) 남성 아이템 — 얼리버드가 남아있어(remaining 5) 정상가·얼리버드가만, 할인가는 null.
+				// 얼리버드가 = 정상가 × (100 - 할인율30) / 100 → 남성 10000×0.7=7000.
 				body("data.schedules[0].gender", "MALE")
 				body("data.schedules[0].genderDescription", "남성")
 				body("data.schedules[0].startAt", "2999-01-01T18:00:00")
@@ -90,10 +90,10 @@ class OfflineGatheringDetailE2ETest : AbstractIntegrationSupport({
 				body("data.schedules[0].fee", 10000)
 				body("data.schedules[0].earlyBirdFee", 7000)
 				body("data.schedules[0].discountFee", null)
-				// 같은 일정의 여성 아이템 — 여성 참가비.
+				// 같은 일정의 여성 아이템 — 여성 참가비. 얼리버드가 = 8000×0.7=5600.
 				body("data.schedules[1].gender", "FEMALE")
 				body("data.schedules[1].fee", 8000)
-				body("data.schedules[1].earlyBirdFee", 5000)
+				body("data.schedules[1].earlyBirdFee", 5600)
 				body("data.schedules[1].discountFee", null)
 				// 두 번째 일정(2999-06-01, 특가 없음) 남성 아이템 — 얼리버드가 없으니 정상가만.
 				body("data.schedules[2].gender", "MALE")
@@ -157,8 +157,7 @@ class OfflineGatheringDetailE2ETest : AbstractIntegrationSupport({
 					startAt = LocalDateTime.of(2999, 1, 1, 18, 0, 0),
 					maleFee = 10000,
 					femaleFee = 8000,
-					earlyBirdMaleFee = 7000,
-					earlyBirdFemaleFee = 5000,
+					earlyBirdDiscountRate = 30,
 					earlyBirdCapacity = 5,
 					earlyBirdRemaining = 0,
 					discountMaleFee = 9000,

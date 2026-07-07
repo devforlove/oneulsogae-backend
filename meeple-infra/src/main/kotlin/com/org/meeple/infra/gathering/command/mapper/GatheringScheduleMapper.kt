@@ -13,7 +13,7 @@ fun GatheringScheduleEntity.toDomain(): GatheringSchedule =
 		fee = GatheringFee(maleFee, femaleFee),
 		maleCapacity = maleCapacity,
 		femaleCapacity = femaleCapacity,
-		earlyBirdFee = GatheringFee.optional(earlyBirdMaleFee, earlyBirdFemaleFee),
+		earlyBirdDiscountRate = earlyBirdDiscountRate,
 		earlyBirdCapacity = earlyBirdCapacity,
 		discountFee = GatheringFee.optional(discountMaleFee, discountFemaleFee),
 		status = status,
@@ -31,8 +31,7 @@ fun GatheringSchedule.toEntity(): GatheringScheduleEntity =
 		// 저장 시 남/녀 여분은 각 성별 정원으로 초기화한다.
 		maleRemaining = maleCapacity,
 		femaleRemaining = femaleCapacity,
-		earlyBirdMaleFee = earlyBirdFee?.male,
-		earlyBirdFemaleFee = earlyBirdFee?.female,
+		earlyBirdDiscountRate = earlyBirdDiscountRate,
 		earlyBirdCapacity = earlyBirdCapacity,
 		// 저장 시 남은 개수는 정원(earlyBirdCapacity)으로 초기화한다.
 		earlyBirdRemaining = earlyBirdCapacity,

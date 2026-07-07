@@ -35,7 +35,7 @@ class CreateGatheringScheduleService(
 				startAt = command.startAt,
 				endAt = command.endAt,
 				fee = GatheringFee(command.maleFee, command.femaleFee),
-				earlyBirdFee = GatheringFee.optional(command.earlyBirdMaleFee, command.earlyBirdFemaleFee),
+				earlyBirdDiscountRate = command.earlyBirdDiscountRate,
 				earlyBirdCapacity = command.earlyBirdCapacity,
 				discountFee = GatheringFee.optional(command.discountMaleFee, command.discountFemaleFee),
 				maxParticipants = gathering.maxParticipants,

@@ -54,7 +54,8 @@ data class GatheringDetailResponse(
 			/** [view] 일정을 [gender] 성별 아이템으로 만든다. (해당 성별의 참가비·정원 소진 여부를 반영한다) */
 			fun of(view: GatheringScheduleView, gender: Gender): Schedule {
 				val fee: Int = if (gender == Gender.MALE) view.maleFee else view.femaleFee
-				val earlyBirdFee: Int? = if (gender == Gender.MALE) view.earlyBirdMaleFee else view.earlyBirdFemaleFee
+				// 얼리버드는 할인율(%)만 저장하므로, 해당 성별 정상가에 곱해 금액을 계산한다(버림). 할인율이 없으면 얼리버드도 없다.
+				val earlyBirdFee: Int? = view.earlyBirdDiscountRate?.let { rate: Int -> fee * (100 - rate) / 100 }
 				val discountFee: Int? = if (gender == Gender.MALE) view.discountMaleFee else view.discountFemaleFee
 				val genderRemaining: Int = if (gender == Gender.MALE) view.maleRemaining else view.femaleRemaining
 				// 얼리버드가 있고(earlyBirdRemaining != null) 모두 소진(<= 0)되면 할인가만, 아니면 정상가·얼리버드가만 노출.
@@ -68,7 +69,7 @@ data class GatheringDetailResponse(
 					genderDescription = gender.description,
 					startAt = view.startAt,
 					endAt = view.endAt,
-					fee = fee,
+					fee = if (earlyBirdSoldOut) null else fee,
 					earlyBirdFee = if (earlyBirdSoldOut) null else earlyBirdFee,
 					discountFee = if (earlyBirdSoldOut) discountFee else null,
 					status = status,
