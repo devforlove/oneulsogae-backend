@@ -6,7 +6,7 @@ import com.org.meeple.common.gathering.GatheringStatus
 import com.org.meeple.common.gathering.GatheringType
 
 private const val TITLE_MAX_LENGTH: Int = 100
-private const val DESCRIPTION_MAX_LENGTH: Int = 1000
+private const val DESCRIPTION_MAX_LENGTH: Int = 4000
 private const val MIN_PARTICIPANTS: Int = 2
 
 /**
