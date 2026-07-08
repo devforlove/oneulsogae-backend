@@ -19,6 +19,9 @@ class LoginOriginCookieFactory(
 	/** 어드민 프론트에서 시작한 로그인 표식 쿠키. 공급자 왕복 시간만 버티면 되므로 수명을 짧게 둔다. */
 	fun adminOriginCookie(): ResponseCookie = build(ADMIN_ORIGIN, Duration.ofMinutes(5))
 
+	/** 모바일 앱에서 시작한 로그인 표식 쿠키. 공급자 왕복 시간만 버티면 되므로 수명을 짧게 둔다. */
+	fun mobileOriginCookie(): ResponseCookie = build(MOBILE_ORIGIN, Duration.ofMinutes(5))
+
 	/** 출처 쿠키 즉시 삭제용 빈 쿠키. (maxAge=0) */
 	fun expiredOriginCookie(): ResponseCookie = build("", Duration.ZERO)
 
@@ -37,6 +40,9 @@ class LoginOriginCookieFactory(
 
 		/** 어드민 프론트 출처 값. */
 		const val ADMIN_ORIGIN: String = "admin"
+
+		/** 모바일 앱 출처 값. */
+		const val MOBILE_ORIGIN: String = "mobile"
 
 		/** 로그인 시작 요청에서 출처를 받는 쿼리 파라미터 이름. */
 		const val ORIGIN_PARAM: String = "origin"

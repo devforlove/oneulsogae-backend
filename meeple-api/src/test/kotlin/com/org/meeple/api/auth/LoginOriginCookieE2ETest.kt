@@ -39,5 +39,15 @@ class LoginOriginCookieE2ETest : AbstractIntegrationSupport({
 				setCookies.any { header: String -> header.startsWith("loginOrigin=;") && header.contains("Max-Age=0") }.shouldBeTrue()
 			}
 		}
+
+		context("origin=mobile로 로그인을 시작하면") {
+			it("공급자로 리다이렉트하며 모바일 출처 쿠키(loginOrigin=mobile)를 심는다") {
+				val response: Response = startLogin("?origin=mobile")
+
+				response.statusCode shouldBe 302
+				val setCookies: List<String> = response.headers().getValues("Set-Cookie")
+				setCookies.any { header: String -> header.startsWith("loginOrigin=mobile") }.shouldBeTrue()
+			}
+		}
 	}
 })
