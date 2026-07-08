@@ -44,9 +44,17 @@ class AdminGatheringTest : DescribeSpec({
 			}.errorCode shouldBe AdminErrorCode.GATHERING_TITLE_TOO_LONG
 		}
 
-		it("소개가 1000자를 초과하면 GATHERING_DESCRIPTION_TOO_LONG을 던진다") {
+		it("소개가 4000자면 통과한다") {
+			val gathering: AdminGathering = AdminGathering.create(
+				GatheringType.PARTY, "파티", "가".repeat(4000), null, "서울", 2, 4,
+			)
+
+			gathering.description?.length shouldBe 4000
+		}
+
+		it("소개가 4000자를 초과하면 GATHERING_DESCRIPTION_TOO_LONG을 던진다") {
 			shouldThrow<AdminException> {
-				AdminGathering.create(GatheringType.PARTY, "파티", "가".repeat(1001), null, "서울", 2, 4)
+				AdminGathering.create(GatheringType.PARTY, "파티", "가".repeat(4001), null, "서울", 2, 4)
 			}.errorCode shouldBe AdminErrorCode.GATHERING_DESCRIPTION_TOO_LONG
 		}
 

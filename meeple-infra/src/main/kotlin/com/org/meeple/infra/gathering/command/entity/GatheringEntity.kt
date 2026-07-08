@@ -43,7 +43,7 @@ class GatheringEntity(
 	var title: String,
 
 	/** 모임 소개. */
-	@Column(name = "description", length = 1000)
+	@Column(name = "description", length = 4000)
 	var description: String? = null,
 
 	/** 모임 대표 이미지의 S3 오브젝트 키. 없으면 null. (열람용 URL은 조회 시 presigned로 발급) */

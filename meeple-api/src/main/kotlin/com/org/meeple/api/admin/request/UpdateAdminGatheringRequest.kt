@@ -19,7 +19,7 @@ data class UpdateAdminGatheringRequest(
 	@field:Size(max = 100, message = "모임 제목은 100자 이하여야 합니다.")
 	val title: String? = null,
 
-	@field:Size(max = 1000, message = "모임 소개는 1000자 이하여야 합니다.")
+	@field:Size(max = 4000, message = "모임 소개는 4000자 이하여야 합니다.")
 	val description: String? = null,
 
 	@field:NotBlank(message = "모임 지역은 필수입니다.")
