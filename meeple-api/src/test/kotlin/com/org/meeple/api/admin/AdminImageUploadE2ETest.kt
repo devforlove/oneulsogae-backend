@@ -39,9 +39,9 @@ class AdminImageUploadE2ETest : AbstractIntegrationSupport({
 			}
 		}
 
-		context("5MB를 초과하는 이미지를 올리면") {
+		context("10MB를 초과하는 이미지를 올리면") {
 			it("400(GATHER-010)을 반환한다") {
-				val tooLarge = ByteArray(6 * 1024 * 1024)
+				val tooLarge = ByteArray(10 * 1024 * 1024 + 1)
 				RestAssured.given()
 					.header("Authorization", "Bearer ${adminAccessTokenFor(9901L)}")
 					.multiPart("image", "big.png", tooLarge, "image/png")
