@@ -6,10 +6,14 @@ import com.org.meeple.auth.jwt.RefreshTokenService
 import com.org.meeple.common.integration.AbstractIntegrationSupport
 import com.org.meeple.common.integration.expect
 import com.org.meeple.common.integration.post
+import com.org.meeple.common.user.UserStatus
 import com.org.meeple.infra.auth.code.MobileAuthCodeStore
 import com.org.meeple.infra.auth.code.StoredTokens
 import com.org.meeple.infra.auth.entity.QRefreshTokenEntity
 import com.org.meeple.infra.fixture.IntegrationUtil
+import com.org.meeple.infra.fixture.UserEntityFixture
+import com.org.meeple.infra.user.command.entity.QUserEntity
+import com.org.meeple.infra.user.command.entity.UserEntity
 import org.hamcrest.Matchers.notNullValue
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken
 import org.springframework.security.core.Authentication
@@ -65,10 +69,45 @@ class MobileAuthControllerE2ETest(
 				}
 			}
 		}
+
+		context("유효하지 않은 refreshToken이면") {
+			it("401을 반환한다") {
+				post("/auth/v1/mobile/refresh") {
+					jsonBody("""{"refreshToken": "garbage-token"}""")
+				} expect {
+					status(401)
+				}
+			}
+		}
+	}
+
+	describe("POST /auth/v1/mobile/logout") {
+		context("유효한 refreshToken이면") {
+			it("200을 반환하고, 해당 토큰은 폐기되어 이후 refresh에 사용할 수 없다") {
+				val user: UserEntity = IntegrationUtil.persist(
+					UserEntityFixture.create(providerId = "mobile-logout", email = "mobile-logout@test.com", status = UserStatus.ACTIVE),
+				)
+				val authentication: Authentication = authenticationFor(user.id!!, "mobile-logout@test.com")
+				val issued: IssuedTokens = refreshTokenService.issue(authentication)
+
+				post("/auth/v1/mobile/logout") {
+					jsonBody("""{"refreshToken": "${issued.refreshToken}"}""")
+				} expect {
+					status(200)
+				}
+
+				post("/auth/v1/mobile/refresh") {
+					jsonBody("""{"refreshToken": "${issued.refreshToken}"}""")
+				} expect {
+					status(401)
+				}
+			}
+		}
 	}
 
 	afterTest {
 		IntegrationUtil.deleteAll(QRefreshTokenEntity.refreshTokenEntity)
+		IntegrationUtil.deleteAll(QUserEntity.userEntity)
 	}
 })
 
