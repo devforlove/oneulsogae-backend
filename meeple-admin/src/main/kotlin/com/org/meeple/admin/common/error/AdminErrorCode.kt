@@ -28,7 +28,7 @@ enum class AdminErrorCode(
 	GATHERING_INVALID_REGION("GATHER-007", "모임 지역은 필수입니다.", HttpStatus.BAD_REQUEST),
 	GATHERING_NOT_FOUND("GATHER-008", "모임을 찾을 수 없습니다.", HttpStatus.NOT_FOUND),
 	GATHERING_INVALID_IMAGE_TYPE("GATHER-009", "모임 대표 이미지는 비어 있지 않은 JPEG 또는 PNG 파일이어야 합니다.", HttpStatus.BAD_REQUEST),
-	GATHERING_IMAGE_TOO_LARGE("GATHER-010", "모임 대표 이미지는 5MB 이하여야 합니다.", HttpStatus.BAD_REQUEST),
+	GATHERING_IMAGE_TOO_LARGE("GATHER-010", "모임 대표 이미지는 10MB 이하여야 합니다.", HttpStatus.BAD_REQUEST),
 	GATHERING_INVALID_MAX_PARTICIPANTS("GATHER-011", "모임 최대 인원은 최소 인원 이상이어야 합니다.", HttpStatus.BAD_REQUEST),
 	GATHERING_INVALID_EARLY_BIRD_CAPACITY("GATHER-012", "얼리버드 적용 인원은 얼리버드 할인율과 함께 1명 이상 최대 인원 이하로 입력해야 합니다.", HttpStatus.BAD_REQUEST),
 	GATHERING_INVALID_STATUS_TRANSITION("GATHER-013", "요청한 상태로 전이할 수 없습니다.", HttpStatus.CONFLICT),

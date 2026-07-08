@@ -12,8 +12,8 @@ object GatheringImage {
 	/** 허용하는 이미지 콘텐츠 타입. */
 	val ALLOWED_CONTENT_TYPES: Set<String> = setOf("image/jpeg", "image/png")
 
-	/** 허용하는 최대 파일 크기(바이트). 5MB. */
-	const val MAX_FILE_SIZE_BYTES: Long = 5L * 1024 * 1024
+	/** 허용하는 최대 파일 크기(바이트). 10MB. */
+	const val MAX_FILE_SIZE_BYTES: Long = 10L * 1024 * 1024
 
 	/** 업로드 파일의 형식·크기를 검증한다. 비어 있거나 허용하지 않는 형식이면 INVALID_IMAGE_TYPE, 너무 크면 IMAGE_TOO_LARGE. */
 	fun validate(contentType: String?, size: Long) {

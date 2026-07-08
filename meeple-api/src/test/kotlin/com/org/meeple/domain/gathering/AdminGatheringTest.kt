@@ -174,8 +174,12 @@ class AdminGatheringTest : DescribeSpec({
 				.errorCode shouldBe AdminErrorCode.GATHERING_INVALID_IMAGE_TYPE
 		}
 
-		it("5MB를 초과하면 GATHERING_IMAGE_TOO_LARGE를 던진다") {
-			shouldThrow<AdminException> { GatheringImage.validate("image/png", 5L * 1024 * 1024 + 1) }
+		it("10MB까지는 통과한다") {
+			GatheringImage.validate("image/png", 10L * 1024 * 1024)
+		}
+
+		it("10MB를 초과하면 GATHERING_IMAGE_TOO_LARGE를 던진다") {
+			shouldThrow<AdminException> { GatheringImage.validate("image/png", 10L * 1024 * 1024 + 1) }
 				.errorCode shouldBe AdminErrorCode.GATHERING_IMAGE_TOO_LARGE
 		}
 
