@@ -2,6 +2,7 @@ package com.org.meeple.core.user.command.application
 
 import com.org.meeple.core.common.time.TimeGenerator
 import com.org.meeple.core.user.command.application.port.`in`.PurgeWithdrawnUserUseCase
+import com.org.meeple.core.user.command.application.port.out.AnonymizeIdentityVerificationPort
 import com.org.meeple.core.user.command.application.port.out.AnonymizeUserDetailPort
 import com.org.meeple.core.user.command.application.port.out.AnonymizeUserPort
 import org.springframework.stereotype.Service
@@ -16,6 +17,7 @@ import org.springframework.transaction.annotation.Transactional
 class PurgeWithdrawnUserService(
 	private val anonymizeUserPort: AnonymizeUserPort,
 	private val anonymizeUserDetailPort: AnonymizeUserDetailPort,
+	private val anonymizeIdentityVerificationPort: AnonymizeIdentityVerificationPort,
 	private val timeGenerator: TimeGenerator,
 ) : PurgeWithdrawnUserUseCase {
 
@@ -26,6 +28,7 @@ class PurgeWithdrawnUserService(
 		val anonymized: Boolean = anonymizeUserPort.anonymize(userId, "withdrawn_$userId")
 		if (anonymized) {
 			anonymizeUserDetailPort.anonymize(userId, timeGenerator.now())
+			anonymizeIdentityVerificationPort.anonymize(userId, timeGenerator.now())
 		}
 	}
 }

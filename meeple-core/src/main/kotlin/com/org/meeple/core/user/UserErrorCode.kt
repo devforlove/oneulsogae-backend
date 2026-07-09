@@ -45,4 +45,14 @@ enum class UserErrorCode(
 	INVALID_IMAGE_TYPE("USER-021", "지원하지 않는 파일 형식입니다. JPEG·PNG·PDF만 업로드할 수 있습니다.", HttpStatus.BAD_REQUEST),
 	IMAGE_TOO_LARGE("USER-022", "파일이 너무 큽니다. 최대 10MB까지 업로드할 수 있습니다.", HttpStatus.PAYLOAD_TOO_LARGE),
 	INVALID_COMPANY_NAME("USER-023", "회사명을 입력해 주세요. (최대 50자)", HttpStatus.BAD_REQUEST),
+
+	// 본인확인(KCP identity_verification)
+	KCP_REGISTER_FAILED("USER-024", "본인확인 거래등록에 실패했습니다. 잠시 후 다시 시도해 주세요.", HttpStatus.BAD_GATEWAY),
+	KCP_QUERY_FAILED("USER-025", "본인확인 결과 조회에 실패했습니다. 잠시 후 다시 시도해 주세요.", HttpStatus.BAD_GATEWAY),
+	IDENTITY_VERIFICATION_NOT_FOUND("USER-026", "본인확인 요청 내역이 없습니다. 처음부터 다시 시도해 주세요.", HttpStatus.NOT_FOUND),
+	IDENTITY_VERIFICATION_MISMATCH("USER-027", "본인확인 거래 정보가 일치하지 않습니다.", HttpStatus.BAD_REQUEST),
+	IDENTITY_ALREADY_VERIFIED("USER-028", "이미 완료된 본인확인 요청입니다.", HttpStatus.CONFLICT),
+	IDENTITY_NOT_ADULT("USER-029", "만 19세 이상만 가입할 수 있습니다.", HttpStatus.BAD_REQUEST),
+	IDENTITY_ALREADY_REGISTERED("USER-030", "이미 본인확인으로 가입된 사용자입니다.", HttpStatus.CONFLICT),
+	IDENTITY_VERIFICATION_REQUIRED("USER-031", "본인확인을 먼저 완료해 주세요.", HttpStatus.BAD_REQUEST),
 }

@@ -3,6 +3,9 @@ package com.org.meeple.common.user
 /** 사용자의 가입 진행 상태. */
 enum class UserStatus {
 
+	/** OAuth 인증 후 본인확인(KCP)만 남은 상태. 본인확인 통과 전까지 온보딩 정보 입력 불가. */
+	IDENTITY_VERIFICATION_PENDING,
+
 	/** OAuth 인증만 완료한 상태. 아직 정식 가입(추가 정보 입력) 전. */
 	ONBOARDING,
 

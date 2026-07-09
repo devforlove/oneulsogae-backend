@@ -17,6 +17,8 @@ dependencies {
 	implementation(project(":meeple-admin"))
 
 	api("org.springframework.boot:spring-boot-starter-data-jpa")
+	// KCP 거래등록/결과조회 HTTP 어댑터용 RestClient. (Boot BOM이 버전 관리)
+	implementation("org.springframework:spring-web")
 	// 매칭 풀 적재용. 스타터로 두어 Lettuce 클라이언트 + Spring Boot 자동설정(StringRedisTemplate)을 함께 가져온다.
 	implementation("org.springframework.boot:spring-boot-starter-data-redis")
 	// 분산 락 어댑터(RedissonDistributedLockAdapter)가 쓰는 RedissonClient 용.
@@ -41,6 +43,8 @@ dependencies {
 	testFixturesApi("io.github.openfeign.querydsl:querydsl-jpa:7.3.0")
 	// 엔티티 픽스처가 common의 enum(MatchType/MatchStatus/Gender/CoinUsageType)을 참조한다.
 	testFixturesImplementation(project(":meeple-common"))
+	// IdentityVerificationEntityFixture가 core의 IdentityVerificationStatus를 참조한다.
+	testFixturesImplementation(project(":meeple-core"))
 
 	testImplementation("org.springframework.boot:spring-boot-starter-data-jpa-test")
 }

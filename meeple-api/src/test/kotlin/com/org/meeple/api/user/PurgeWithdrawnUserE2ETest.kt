@@ -5,6 +5,7 @@ import com.org.meeple.common.user.UserStatus
 import com.org.meeple.core.user.command.application.port.`in`.PurgeWithdrawnUserUseCase
 import com.org.meeple.core.user.command.application.port.`in`.RegisterUserUseCase
 import com.org.meeple.core.user.command.domain.User
+import com.org.meeple.infra.fixture.IdentityVerificationEntityFixture
 import com.org.meeple.infra.fixture.IntegrationUtil
 import com.org.meeple.infra.fixture.UserDetailEntityFixture
 import com.org.meeple.infra.fixture.UserEntityFixture
@@ -42,6 +43,9 @@ class PurgeWithdrawnUserE2ETest : AbstractIntegrationSupport() {
                     ).also { it.softDelete(withdrawnAt) },
                 ).id!!
                 IntegrationUtil.persist(UserDetailEntityFixture.create(userId = oldId))
+                IntegrationUtil.persist(
+                    IdentityVerificationEntityFixture.create(userId = oldId, di = "DI-OLD"),
+                )
 
                 purgeWithdrawnUserBatchJob.run()
 
@@ -60,10 +64,18 @@ class PurgeWithdrawnUserE2ETest : AbstractIntegrationSupport() {
                 detailRow[0] shouldBe null      // nickname PII 제거됨
                 detailRow[1] shouldNotBe null   // user_details도 소프트삭제됨
 
+                // identity_verifications도 파기(개인정보 제거 + 소프트삭제)됨
+                val identityRow: Array<Any?> = IntegrationUtil.nativeQuerySingleOrNull(
+                    "select di, ci_encrypted, deleted_at from identity_verifications where user_id = $oldId"
+                )!!
+                identityRow[0] shouldBe null      // di 제거
+                identityRow[1] shouldBe null      // ci 제거
+                identityRow[2] shouldNotBe null   // 소프트삭제
+
                 // 파기 후: provider_id가 치환돼 복구 대상이 아니므로 같은 카카오로 신규 가입된다.
                 val newUser: User = registerUserUseCase.registerIfAbsent("kakao", "kakao-777", "new@test.com", null)
                 newUser.id shouldNotBe oldId
-                newUser.status shouldBe UserStatus.ONBOARDING   // 복구가 아닌 신규 → 온보딩부터
+                newUser.status shouldBe UserStatus.IDENTITY_VERIFICATION_PENDING   // 복구가 아닌 신규 → 본인확인부터
             }
 
             it("활성(deleted_at=null) 계정은 파기 직접 호출에도 변경되지 않는다 — anonymizeById 가드 검증") {
