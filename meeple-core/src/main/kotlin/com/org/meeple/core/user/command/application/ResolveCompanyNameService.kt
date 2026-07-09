@@ -30,12 +30,14 @@ class ResolveCompanyNameService(
 
 	@Transactional
 	override fun resolve(userId: Long, companyName: String) {
+		val user: User = getUserPort.findById(userId)
+			?: throw BusinessException(UserErrorCode.USER_NOT_FOUND, "사용자를 찾을 수 없습니다: $userId")
+		user.validateIdentityVerified()
+
 		val detail: UserDetail = getUserDetailPort.findByUserId(userId)
 			?: throw BusinessException(UserErrorCode.USER_DETAIL_NOT_FOUND, "사용자 프로필을 찾을 수 없습니다: $userId")
 		saveUserDetailPort.save(detail.copy(companyName = companyName))
 
-		val user: User = getUserPort.findById(userId)
-			?: throw BusinessException(UserErrorCode.USER_NOT_FOUND, "사용자를 찾을 수 없습니다: $userId")
 		saveUserPort.save(user.completeSignUp())
 
 		// 가입 상태가 바뀌었음을 알린다. (UserEventHandler가 매칭 읽기 모델 동기화로 이어간다)

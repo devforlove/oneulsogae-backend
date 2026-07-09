@@ -51,6 +51,13 @@ data class User(
 		}
 	}
 
+	/** 본인확인(KCP)을 마치지 않은 상태면 예외를 던진다. 온보딩·가입 진입의 사전 검증. */
+	fun validateIdentityVerified() {
+		if (status == UserStatus.IDENTITY_VERIFICATION_PENDING) {
+			throw BusinessException(UserErrorCode.IDENTITY_VERIFICATION_REQUIRED)
+		}
+	}
+
 	/** 마지막 로그인 시점을 기록한다. */
 	fun recordLogin(at: LocalDateTime): User =
 		copy(lastLoginAt = at)

@@ -100,6 +100,7 @@ class VerifyCompanyEmailService(
 	private fun finalizeStatus(userId: Long, companyName: String?): Boolean {
 		val user: User = getUserPort.findById(userId)
 			?: throw BusinessException(UserErrorCode.USER_NOT_FOUND, "사용자를 찾을 수 없습니다: $userId")
+		user.validateIdentityVerified()
 
 		if (user.isRegistered) return false
 
