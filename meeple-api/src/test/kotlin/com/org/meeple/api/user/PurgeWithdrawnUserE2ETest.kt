@@ -75,7 +75,7 @@ class PurgeWithdrawnUserE2ETest : AbstractIntegrationSupport() {
                 // 파기 후: provider_id가 치환돼 복구 대상이 아니므로 같은 카카오로 신규 가입된다.
                 val newUser: User = registerUserUseCase.registerIfAbsent("kakao", "kakao-777", "new@test.com", null)
                 newUser.id shouldNotBe oldId
-                newUser.status shouldBe UserStatus.IDENTITY_VERIFICATION_PENDING   // 복구가 아닌 신규 → 본인확인부터
+                newUser.status shouldBe UserStatus.ONBOARDING   // 복구가 아닌 신규 → 온보딩부터
             }
 
             it("활성(deleted_at=null) 계정은 파기 직접 호출에도 변경되지 않는다 — anonymizeById 가드 검증") {

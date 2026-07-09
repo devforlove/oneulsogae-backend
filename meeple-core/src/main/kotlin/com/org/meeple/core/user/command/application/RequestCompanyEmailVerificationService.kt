@@ -44,10 +44,6 @@ class RequestCompanyEmailVerificationService(
 
 	@Transactional
 	override fun request(userId: Long, command: UpdateUserDetailCommand): CompanyEmailVerification {
-		val user: User = getUserPort.findById(userId)
-			?: throw BusinessException(UserErrorCode.USER_NOT_FOUND, "사용자를 찾을 수 없습니다: $userId")
-		user.validateIdentityVerified()
-
 		// 다른 사용자가 이미 인증해 쓰고 있는 회사 이메일이면, 부수효과(프로필 저장·메일 발송) 전에 막는다.
 		if (getUserDetailPort.existsCompanyEmailUsedByOther(command.companyEmail, userId)) {
 			throw BusinessException(UserErrorCode.COMPANY_EMAIL_ALREADY_USED)

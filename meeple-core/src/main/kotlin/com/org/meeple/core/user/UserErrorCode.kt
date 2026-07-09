@@ -54,5 +54,4 @@ enum class UserErrorCode(
 	IDENTITY_ALREADY_VERIFIED("USER-028", "이미 완료된 본인확인 요청입니다.", HttpStatus.CONFLICT),
 	IDENTITY_NOT_ADULT("USER-029", "만 19세 이상만 가입할 수 있습니다.", HttpStatus.BAD_REQUEST),
 	IDENTITY_ALREADY_REGISTERED("USER-030", "이미 본인확인으로 가입된 사용자입니다.", HttpStatus.CONFLICT),
-	IDENTITY_VERIFICATION_REQUIRED("USER-031", "본인확인을 먼저 완료해 주세요.", HttpStatus.BAD_REQUEST),
 }

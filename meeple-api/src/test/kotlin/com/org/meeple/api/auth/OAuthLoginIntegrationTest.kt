@@ -33,7 +33,7 @@ class OAuthLoginIntegrationTest(
 	describe("registerIfAbsent (OAuth 로그인)") {
 
 		context("처음 로그인하는 OAuth 사용자면") {
-			it("신규 User를 IDENTITY_VERIFICATION_PENDING 상태로 저장하고 로그인 시점을 기록한다") {
+			it("신규 User를 ONBOARDING 상태로 저장하고 로그인 시점을 기록한다") {
 				val user: User = registerUserUseCase.registerIfAbsent(
 					provider = "google",
 					providerId = "google-new",
@@ -45,7 +45,7 @@ class OAuthLoginIntegrationTest(
 				user.provider shouldBe "google"
 				user.providerId shouldBe "google-new"
 				user.email shouldBe "new@test.com"
-				user.status shouldBe UserStatus.IDENTITY_VERIFICATION_PENDING
+				user.status shouldBe UserStatus.ONBOARDING
 				user.lastLoginAt.shouldNotBeNull()
 
 				usersWithProviderId("google-new") shouldHaveSize 1

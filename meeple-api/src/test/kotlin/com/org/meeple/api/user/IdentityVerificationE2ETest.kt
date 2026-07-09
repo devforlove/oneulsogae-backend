@@ -44,7 +44,7 @@ class IdentityVerificationE2ETest : AbstractIntegrationSupport({
 		context("성인이고 DI가 중복되지 않으면") {
 			it("확정되고 사용자가 ONBOARDING으로 전이한다 (200)") {
 				val userId: Long = IntegrationUtil.persist(
-					UserEntityFixture.create(status = UserStatus.IDENTITY_VERIFICATION_PENDING),
+					UserEntityFixture.create(status = UserStatus.ONBOARDING),
 				).id!!
 				val (regCertKey: String, ordrIdxx: String) = registerFor(userId)
 				FakeKcpCertData.next = adult(di = "DI-OK")
@@ -66,7 +66,7 @@ class IdentityVerificationE2ETest : AbstractIntegrationSupport({
 		context("미성년이면") {
 			it("IDENTITY_NOT_ADULT로 거절하고 상태를 유지한다 (400)") {
 				val userId: Long = IntegrationUtil.persist(
-					UserEntityFixture.create(status = UserStatus.IDENTITY_VERIFICATION_PENDING),
+					UserEntityFixture.create(status = UserStatus.ONBOARDING),
 				).id!!
 				val (regCertKey: String, ordrIdxx: String) = registerFor(userId)
 				FakeKcpCertData.next = adult().copy(birthday = LocalDate.of(2012, 1, 1))
@@ -80,7 +80,7 @@ class IdentityVerificationE2ETest : AbstractIntegrationSupport({
 					body("error.code", "USER-029")
 				}
 
-				userStatusOfIdentity(userId) shouldBe UserStatus.IDENTITY_VERIFICATION_PENDING
+				userStatusOfIdentity(userId) shouldBe UserStatus.ONBOARDING
 			}
 		}
 
@@ -93,7 +93,7 @@ class IdentityVerificationE2ETest : AbstractIntegrationSupport({
 					IdentityVerificationEntityFixture.create(userId = otherId, di = "DI-DUP"),
 				)
 				val userId: Long = IntegrationUtil.persist(
-					UserEntityFixture.create(status = UserStatus.IDENTITY_VERIFICATION_PENDING),
+					UserEntityFixture.create(status = UserStatus.ONBOARDING),
 				).id!!
 				val (regCertKey: String, ordrIdxx: String) = registerFor(userId)
 				FakeKcpCertData.next = adult(di = "DI-DUP")
@@ -106,7 +106,7 @@ class IdentityVerificationE2ETest : AbstractIntegrationSupport({
 					body("error.code", "USER-030")
 				}
 
-				userStatusOfIdentity(userId) shouldBe UserStatus.IDENTITY_VERIFICATION_PENDING
+				userStatusOfIdentity(userId) shouldBe UserStatus.ONBOARDING
 			}
 		}
 
@@ -120,7 +120,7 @@ class IdentityVerificationE2ETest : AbstractIntegrationSupport({
 						.also { it.softDelete(java.time.LocalDateTime.now()) },
 				)
 				val userId: Long = IntegrationUtil.persist(
-					UserEntityFixture.create(status = UserStatus.IDENTITY_VERIFICATION_PENDING),
+					UserEntityFixture.create(status = UserStatus.ONBOARDING),
 				).id!!
 				val (regCertKey: String, ordrIdxx: String) = registerFor(userId)
 				FakeKcpCertData.next = adult(di = "DI-REJOIN")
@@ -138,7 +138,7 @@ class IdentityVerificationE2ETest : AbstractIntegrationSupport({
 		context("거래 정보가 위변조되면") {
 			it("IDENTITY_VERIFICATION_MISMATCH로 거절한다 (400)") {
 				val userId: Long = IntegrationUtil.persist(
-					UserEntityFixture.create(status = UserStatus.IDENTITY_VERIFICATION_PENDING),
+					UserEntityFixture.create(status = UserStatus.ONBOARDING),
 				).id!!
 				val (_, ordrIdxx: String) = registerFor(userId)
 				FakeKcpCertData.next = adult()
@@ -151,7 +151,7 @@ class IdentityVerificationE2ETest : AbstractIntegrationSupport({
 					body("error.code", "USER-027")
 				}
 
-				userStatusOfIdentity(userId) shouldBe UserStatus.IDENTITY_VERIFICATION_PENDING
+				userStatusOfIdentity(userId) shouldBe UserStatus.ONBOARDING
 			}
 		}
 	}

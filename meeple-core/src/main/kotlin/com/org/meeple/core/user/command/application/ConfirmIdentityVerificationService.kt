@@ -1,6 +1,5 @@
 package com.org.meeple.core.user.command.application
 
-import com.org.meeple.common.user.UserStatus
 import com.org.meeple.core.common.error.BusinessException
 import com.org.meeple.core.common.time.TimeGenerator
 import com.org.meeple.core.user.UserErrorCode
@@ -10,14 +9,11 @@ import com.org.meeple.core.user.command.application.port.`in`.result.ConfirmIden
 import com.org.meeple.core.user.command.application.port.out.ExistsIdentityByDiPort
 import com.org.meeple.core.user.command.application.port.out.GetIdentityVerificationPort
 import com.org.meeple.core.user.command.application.port.out.GetUserDetailPort
-import com.org.meeple.core.user.command.application.port.out.GetUserPort
 import com.org.meeple.core.user.command.application.port.out.KcpCertQueryPort
 import com.org.meeple.core.user.command.application.port.out.SaveIdentityVerificationPort
 import com.org.meeple.core.user.command.application.port.out.SaveUserDetailPort
-import com.org.meeple.core.user.command.application.port.out.SaveUserPort
 import com.org.meeple.core.user.command.domain.CertifiedIdentity
 import com.org.meeple.core.user.command.domain.IdentityVerification
-import com.org.meeple.core.user.command.domain.User
 import com.org.meeple.core.user.command.domain.UserDetail
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
@@ -29,8 +25,6 @@ class ConfirmIdentityVerificationService(
 	private val saveIdentityVerificationPort: SaveIdentityVerificationPort,
 	private val kcpCertQueryPort: KcpCertQueryPort,
 	private val existsIdentityByDiPort: ExistsIdentityByDiPort,
-	private val getUserPort: GetUserPort,
-	private val saveUserPort: SaveUserPort,
 	private val getUserDetailPort: GetUserDetailPort,
 	private val saveUserDetailPort: SaveUserDetailPort,
 	private val timeGenerator: TimeGenerator,
@@ -53,7 +47,6 @@ class ConfirmIdentityVerificationService(
 		saveIdentityVerificationPort.save(verification.complete(certified, now.toLocalDate(), now))
 
 		reflectToUserDetail(userId, certified)
-		passIdentityVerification(userId)
 
 		return ConfirmIdentityVerificationResult(
 			name = certified.realName,
@@ -71,14 +64,5 @@ class ConfirmIdentityVerificationService(
 				phoneNumber = certified.phoneNumber,
 			),
 		)
-	}
-
-	/** 본인확인 대기 상태면 온보딩으로 전이한다. (재확정 시 상태 유지) */
-	private fun passIdentityVerification(userId: Long) {
-		val user: User = getUserPort.findById(userId)
-			?: throw BusinessException(UserErrorCode.USER_NOT_FOUND, "사용자를 찾을 수 없습니다: $userId")
-		if (user.status == UserStatus.IDENTITY_VERIFICATION_PENDING) {
-			saveUserPort.save(user.passIdentityVerification())
-		}
 	}
 }

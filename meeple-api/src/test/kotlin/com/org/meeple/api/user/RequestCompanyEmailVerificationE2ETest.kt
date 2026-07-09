@@ -117,29 +117,6 @@ class RequestCompanyEmailVerificationE2ETest : AbstractIntegrationSupport({
 			}
 		}
 
-		context("본인확인 미완료(IDENTITY_VERIFICATION_PENDING) 사용자가 회사 이메일 인증을 요청하면") {
-			it("IDENTITY_VERIFICATION_REQUIRED로 거절하고 상태·부수효과가 없다 (400)") {
-				val userId: Long = IntegrationUtil.persist(
-					UserEntityFixture.create(status = UserStatus.IDENTITY_VERIFICATION_PENDING),
-				).id!!
-				val regionId: Long = IntegrationUtil.persist(
-					RegionEntityFixture.create(sido = "서울특별시", sigungu = "강남구"),
-				).id!!
-
-				post("/users/v1/onboarding/company-email/verifications") {
-					bearer(accessTokenFor(userId))
-					jsonBody(fullProfileBody(companyEmail = "user@meeple.com", regionId = regionId))
-				} expect {
-					status(400)
-					body("success", false)
-					body("error.code", "USER-031")
-				}
-
-				userStatusOf(userId) shouldBe UserStatus.IDENTITY_VERIFICATION_PENDING
-				verificationCountOf(userId) shouldBe 0
-			}
-		}
-
 		context("필수 프로필 필드(성별)가 빠지면") {
 			it("도메인에 닿기 전 검증 실패로 400을 반환한다") {
 				post("/users/v1/onboarding/company-email/verifications") {
