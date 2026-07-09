@@ -88,6 +88,14 @@ app:
     # 비우면 기본 자격증명 체인(IAM 역할·환경변수 등)을 쓴다. 운영에서는 IAM 역할 권장.
     access-key: ${S3_ACCESS_KEY:}
     secret-key: ${S3_SECRET_KEY:}
+  kcp:
+    site-cd: ${KCP_SITE_CD:}
+    enc-key: ${KCP_ENC_KEY:}
+    web-siteid: ${KCP_WEB_SITEID:}
+    base-url: ${KCP_BASE_URL:https://testcert.kcp.co.kr}
+    ret-url: ${KCP_RET_URL:}
+  identity:
+    ci-encryption-key: ${IDENTITY_CI_KEY:local-dev-ci-key-change-me}
 
 meeple:
   match:
