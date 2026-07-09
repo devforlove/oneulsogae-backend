@@ -63,4 +63,18 @@ class IdentityVerificationEntity(
 
 	@Column(name = "verified_at")
 	var verifiedAt: LocalDateTime? = null,
-) : BaseEntity()
+) : BaseEntity() {
+
+	/** 파기(탈퇴 유예 경과) 시 개인정보를 제거한다. 거래 추적용 ordr_idxx/reg_cert_key(불변)는 남긴다. */
+	fun anonymize() {
+		realName = null
+		birthday = null
+		gender = null
+		phoneNumber = null
+		di = null
+		ciEncrypted = null
+		foreigner = null
+		telecom = null
+		verifiedAt = null
+	}
+}

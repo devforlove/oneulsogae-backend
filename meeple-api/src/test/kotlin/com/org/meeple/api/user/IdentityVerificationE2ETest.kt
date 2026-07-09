@@ -110,6 +110,31 @@ class IdentityVerificationE2ETest : AbstractIntegrationSupport({
 			}
 		}
 
+		context("같은 DI가 파기(소프트삭제)된 기록만 있으면") {
+			it("중복으로 막지 않고 정상 확정된다 (200)") {
+				val goneId: Long = IntegrationUtil.persist(
+					UserEntityFixture.create(providerId = "gone", status = UserStatus.WITHDRAWN),
+				).id!!
+				IntegrationUtil.persist(
+					IdentityVerificationEntityFixture.create(userId = goneId, di = "DI-REJOIN")
+						.also { it.softDelete(java.time.LocalDateTime.now()) },
+				)
+				val userId: Long = IntegrationUtil.persist(
+					UserEntityFixture.create(status = UserStatus.IDENTITY_VERIFICATION_PENDING),
+				).id!!
+				val (regCertKey: String, ordrIdxx: String) = registerFor(userId)
+				FakeKcpCertData.next = adult(di = "DI-REJOIN")
+
+				post("/users/v1/identity-verification/confirm") {
+					bearer(accessTokenFor(userId))
+					jsonBody("""{"regCertKey":"$regCertKey","ordrIdxx":"$ordrIdxx"}""")
+				} expect {
+					status(200)
+					body("data.adult", true)
+				}
+			}
+		}
+
 		context("거래 정보가 위변조되면") {
 			it("IDENTITY_VERIFICATION_MISMATCH로 거절한다 (400)") {
 				val userId: Long = IntegrationUtil.persist(

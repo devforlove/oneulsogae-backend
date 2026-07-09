@@ -8,6 +8,8 @@ interface IdentityVerificationJpaRepository : JpaRepository<IdentityVerification
 
 	fun findFirstByUserIdOrderByIdDesc(userId: Long): IdentityVerificationEntity?
 
+	fun findAllByUserId(userId: Long): List<IdentityVerificationEntity>
+
 	fun existsByDiAndStatusAndUserIdNot(
 		di: String,
 		status: IdentityVerificationStatus,
