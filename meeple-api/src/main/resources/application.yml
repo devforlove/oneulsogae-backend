@@ -95,7 +95,7 @@ app:
     base-url: ${KCP_BASE_URL:https://testcert.kcp.co.kr}
     ret-url: ${KCP_RET_URL:}
   identity:
-    ci-encryption-key: ${IDENTITY_CI_KEY:local-dev-ci-key-change-me}
+    ci-encryption-key: ${IDENTITY_CI_KEY:}
 
 meeple:
   match:
