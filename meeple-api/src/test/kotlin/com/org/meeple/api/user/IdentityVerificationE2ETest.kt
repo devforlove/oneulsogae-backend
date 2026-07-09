@@ -105,6 +105,8 @@ class IdentityVerificationE2ETest : AbstractIntegrationSupport({
 					status(409)
 					body("error.code", "USER-030")
 				}
+
+				userStatusOfIdentity(userId) shouldBe UserStatus.IDENTITY_VERIFICATION_PENDING
 			}
 		}
 
@@ -123,6 +125,8 @@ class IdentityVerificationE2ETest : AbstractIntegrationSupport({
 					status(400)
 					body("error.code", "USER-027")
 				}
+
+				userStatusOfIdentity(userId) shouldBe UserStatus.IDENTITY_VERIFICATION_PENDING
 			}
 		}
 	}
