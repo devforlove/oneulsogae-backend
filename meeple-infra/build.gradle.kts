@@ -43,6 +43,8 @@ dependencies {
 	testFixturesApi("io.github.openfeign.querydsl:querydsl-jpa:7.3.0")
 	// 엔티티 픽스처가 common의 enum(MatchType/MatchStatus/Gender/CoinUsageType)을 참조한다.
 	testFixturesImplementation(project(":meeple-common"))
+	// IdentityVerificationEntityFixture가 core의 IdentityVerificationStatus를 참조한다.
+	testFixturesImplementation(project(":meeple-core"))
 
 	testImplementation("org.springframework.boot:spring-boot-starter-data-jpa-test")
 }
