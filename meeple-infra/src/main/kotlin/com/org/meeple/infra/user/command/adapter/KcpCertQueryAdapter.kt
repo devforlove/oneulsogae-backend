@@ -1,7 +1,6 @@
 package com.org.meeple.infra.user.command.adapter
 
 import com.fasterxml.jackson.annotation.JsonProperty
-import com.fasterxml.jackson.databind.ObjectMapper
 import com.org.meeple.common.user.Gender
 import com.org.meeple.core.common.error.BusinessException
 import com.org.meeple.core.user.UserErrorCode
@@ -13,6 +12,7 @@ import org.springframework.http.MediaType
 import org.springframework.stereotype.Component
 import org.springframework.web.client.RestClient
 import org.springframework.web.client.body
+import tools.jackson.databind.ObjectMapper
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 
