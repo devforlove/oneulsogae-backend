@@ -56,6 +56,8 @@ class SecurityConfig(
 						.requestMatchers("/oauth2/**", "/login/**").permitAll()
 					// 토큰 재발급/로그아웃은 access token이 만료된 상태에서도 호출되므로 허용한다.
 					.requestMatchers("/auth/v1/refresh", "/auth/v1/logout").permitAll()
+					// 모바일 앱용 인증 엔드포인트(일회용 코드 교환·갱신·로그아웃)는 access token 없이 호출된다.
+					.requestMatchers("/auth/v1/mobile/**").permitAll()
 					// WebSocket 핸드셰이크(SockJS 하위 경로 포함)는 토큰을 못 싣으므로 열어둔다.
 					// 실제 인증은 STOMP CONNECT 프레임에서 AuthChannelInterceptor가 수행한다.
 					.requestMatchers("/ws/chat/**").permitAll()

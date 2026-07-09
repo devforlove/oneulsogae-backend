@@ -66,6 +66,8 @@ app:
     # 어드민 프론트에서 시작한(?origin=admin) 로그인 성공 시 리다이렉트할 어드민 프론트엔드 URI.
     # ROLE_ADMIN이 아니면 이 URI에 ?error=ACCESS_DENIED가 붙어 복귀한다.
     admin-redirect-uri: ${OAUTH2_ADMIN_REDIRECT_URI:http://localhost:3001/oauth/redirect}
+    # 모바일 앱에서 시작한(?origin=mobile) 로그인 성공 시 리다이렉트할 커스텀 스킴 딥링크. 환경별로 동일한 스킴을 쓴다.
+    mobile-redirect-uri: ${OAUTH2_MOBILE_REDIRECT_URI:meeplemobile://auth}
   # 인증 토큰 쿠키. local은 host-only/비-secure, 운영은 .도메인 공유 + secure 필요.
   auth:
     cookie:
