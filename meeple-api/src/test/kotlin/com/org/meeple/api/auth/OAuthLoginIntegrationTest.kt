@@ -45,7 +45,7 @@ class OAuthLoginIntegrationTest(
 				user.provider shouldBe "google"
 				user.providerId shouldBe "google-new"
 				user.email shouldBe "new@test.com"
-				user.status shouldBe UserStatus.ONBOARDING
+				user.status shouldBe UserStatus.IDENTITY_VERIFICATION_PENDING
 				user.lastLoginAt.shouldNotBeNull()
 
 				usersWithProviderId("google-new") shouldHaveSize 1

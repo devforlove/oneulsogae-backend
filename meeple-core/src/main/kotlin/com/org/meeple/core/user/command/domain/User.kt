@@ -21,6 +21,10 @@ data class User(
 	val lastLoginAt: LocalDateTime? = null,
 ) {
 
+	/** 본인확인(KCP)을 통과하고 온보딩 정보 입력 단계로 진입한다. (IDENTITY_VERIFICATION_PENDING -> ONBOARDING) */
+	fun passIdentityVerification(): User =
+		copy(status = UserStatus.ONBOARDING)
+
 	/** 추가 정보 입력을 마치고 회사 이메일 인증 단계로 진입한다. (ONBOARDING -> EMAIL_VERIFICATION_PENDING) */
 	fun startEmailVerification(): User =
 		copy(status = UserStatus.EMAIL_VERIFICATION_PENDING)
@@ -53,12 +57,13 @@ data class User(
 
 	companion object {
 
-		/** OAuth 인증 직후의 신규 사용자를 생성한다. (status ONBOARDING) */
+		/** OAuth 인증 직후의 신규 사용자를 생성한다. (status IDENTITY_VERIFICATION_PENDING) */
 		fun create(provider: String, providerId: String, email: String?): User =
 			User(
 				provider = provider,
 				providerId = providerId,
 				email = email,
+				status = UserStatus.IDENTITY_VERIFICATION_PENDING,
 			)
 	}
 }
