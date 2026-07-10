@@ -38,10 +38,10 @@ class UpdateUserDetailService(
 
 		val updated: UserDetail = existing.initProfile(
 			nickname = command.nickname,
-			birthday = command.birthday,
+			birthday = command.birthday ?: existing.birthday,
 			height = command.height,
-			gender = command.gender,
-			phoneNumber = command.phoneNumber,
+			gender = command.gender ?: existing.gender,
+			phoneNumber = command.phoneNumber ?: existing.phoneNumber,
 			job = command.job,
 			regionId = command.regionId,
 			introduction = command.introduction,
