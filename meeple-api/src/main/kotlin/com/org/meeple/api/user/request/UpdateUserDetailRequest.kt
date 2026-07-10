@@ -26,7 +26,6 @@ data class UpdateUserDetailRequest(
 	@field:Size(min = 2, max = 20, message = "닉네임은 2자 이상 20자 이하여야 합니다.")
 	val nickname: String? = null,
 
-	@field:NotNull(message = "생년월일은 필수입니다.")
 	val birthday: LocalDate? = null,
 
 	@field:NotNull(message = "키는 필수입니다.")
@@ -34,11 +33,8 @@ data class UpdateUserDetailRequest(
 	@field:Max(value = 250, message = "키는 250cm 이하여야 합니다.")
 	val height: Int? = null,
 
-	@field:NotNull(message = "성별은 필수입니다.")
 	val gender: Gender? = null,
 
-	@field:NotBlank(message = "휴대폰 번호는 필수입니다.")
-	@field:Size(max = 20, message = "휴대폰 번호는 20자 이하여야 합니다.")
 	val phoneNumber: String? = null,
 
 	@field:NotBlank(message = "직업은 필수입니다.")
@@ -85,10 +81,10 @@ data class UpdateUserDetailRequest(
 	fun toCommand(): UpdateUserDetailCommand =
 		UpdateUserDetailCommand(
 			nickname = nickname!!,
-			birthday = birthday!!,
+			birthday = birthday,
 			height = height!!,
-			gender = gender!!,
-			phoneNumber = phoneNumber!!,
+			gender = gender,
+			phoneNumber = phoneNumber,
 			job = job!!,
 			regionId = regionId!!,
 			introduction = introduction!!,
