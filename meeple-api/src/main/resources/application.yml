@@ -93,7 +93,7 @@ app:
     enc-key: ${KCP_ENC_KEY:c2a22fa3ebe4698075bcac6b433d52e351c881b02fb83488d4283a43385b1f8e}
     web-siteid: ${KCP_WEB_SITEID:J12345678901}
     base-url: ${KCP_BASE_URL:https://testcert.kcp.co.kr}
-    ret-url: ${KCP_RET_URL:localhost:3000}
+    ret-url: ${KCP_RET_URL:http://localhost:3000/api/onboarding/identity/callback}
   identity:
     ci-encryption-key: ${IDENTITY_CI_KEY:}
 
