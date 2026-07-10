@@ -89,11 +89,11 @@ app:
     access-key: ${S3_ACCESS_KEY:}
     secret-key: ${S3_SECRET_KEY:}
   kcp:
-    site-cd: ${KCP_SITE_CD:}
-    enc-key: ${KCP_ENC_KEY:}
-    web-siteid: ${KCP_WEB_SITEID:}
+    site-cd: ${KCP_SITE_CD:AO7F3}
+    enc-key: ${KCP_ENC_KEY:c2a22fa3ebe4698075bcac6b433d52e351c881b02fb83488d4283a43385b1f8e}
+    web-siteid: ${KCP_WEB_SITEID:J12345678901}
     base-url: ${KCP_BASE_URL:https://testcert.kcp.co.kr}
-    ret-url: ${KCP_RET_URL:}
+    ret-url: ${KCP_RET_URL:localhost:3000}
   identity:
     ci-encryption-key: ${IDENTITY_CI_KEY:}
 
