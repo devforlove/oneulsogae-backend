@@ -51,6 +51,7 @@ class ConfirmIdentityVerificationService(
 		return ConfirmIdentityVerificationResult(
 			name = certified.realName,
 			adult = certified.isAdult(now.toLocalDate()),
+			gender = certified.gender,
 		)
 	}
 

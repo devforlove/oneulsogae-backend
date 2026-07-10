@@ -56,6 +56,7 @@ class IdentityVerificationE2ETest : AbstractIntegrationSupport({
 					status(200)
 					body("data.name", "홍길동")
 					body("data.adult", true)
+					body("data.gender", "MALE")
 				}
 
 				userStatusOfIdentity(userId) shouldBe UserStatus.ONBOARDING
