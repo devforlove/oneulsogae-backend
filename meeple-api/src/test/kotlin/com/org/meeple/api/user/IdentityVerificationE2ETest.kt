@@ -18,10 +18,10 @@ import java.time.LocalDate
 
 class IdentityVerificationE2ETest : AbstractIntegrationSupport({
 
-	fun adult(di: String = "DI-UNIQUE"): CertifiedIdentity =
+	fun adult(phoneNumber: String = "01012345678"): CertifiedIdentity =
 		CertifiedIdentity(
 			realName = "홍길동", birthday = LocalDate.of(1996, 1, 1), gender = Gender.MALE,
-			phoneNumber = "01012345678", ci = "CI-$di", di = di, foreigner = false, telecom = "SKT",
+			phoneNumber = phoneNumber, ci = "CI-$phoneNumber", di = "DI-$phoneNumber", foreigner = false, telecom = "SKT",
 		)
 
 	fun registerFor(userId: Long): Pair<String, String> {
@@ -41,13 +41,13 @@ class IdentityVerificationE2ETest : AbstractIntegrationSupport({
 
 	describe("POST /users/v1/identity-verification (register→confirm)") {
 
-		context("성인이고 DI가 중복되지 않으면") {
+		context("성인이고 휴대폰 번호가 중복되지 않으면") {
 			it("확정되고 사용자가 ONBOARDING으로 전이한다 (200)") {
 				val userId: Long = IntegrationUtil.persist(
 					UserEntityFixture.create(status = UserStatus.ONBOARDING),
 				).id!!
 				val (regCertKey: String, ordrIdxx: String) = registerFor(userId)
-				FakeKcpCertData.next = adult(di = "DI-OK")
+				FakeKcpCertData.next = adult(phoneNumber = "01011110000")
 
 				post("/users/v1/identity-verification/confirm") {
 					bearer(accessTokenFor(userId))
@@ -56,6 +56,7 @@ class IdentityVerificationE2ETest : AbstractIntegrationSupport({
 					status(200)
 					body("data.name", "홍길동")
 					body("data.adult", true)
+					body("data.gender", "MALE")
 				}
 
 				userStatusOfIdentity(userId) shouldBe UserStatus.ONBOARDING
@@ -84,19 +85,19 @@ class IdentityVerificationE2ETest : AbstractIntegrationSupport({
 			}
 		}
 
-		context("같은 DI로 이미 가입한 다른 사용자가 있으면") {
+		context("같은 휴대폰 번호로 이미 가입한 다른 사용자가 있으면") {
 			it("IDENTITY_ALREADY_REGISTERED로 거절한다 (409)") {
 				val otherId: Long = IntegrationUtil.persist(
 					UserEntityFixture.create(providerId = "other", status = UserStatus.ACTIVE),
 				).id!!
 				IntegrationUtil.persist(
-					IdentityVerificationEntityFixture.create(userId = otherId, di = "DI-DUP"),
+					IdentityVerificationEntityFixture.create(userId = otherId, phoneNumber = "01022223333"),
 				)
 				val userId: Long = IntegrationUtil.persist(
 					UserEntityFixture.create(status = UserStatus.ONBOARDING),
 				).id!!
 				val (regCertKey: String, ordrIdxx: String) = registerFor(userId)
-				FakeKcpCertData.next = adult(di = "DI-DUP")
+				FakeKcpCertData.next = adult(phoneNumber = "01022223333")
 
 				post("/users/v1/identity-verification/confirm") {
 					bearer(accessTokenFor(userId))
@@ -110,20 +111,20 @@ class IdentityVerificationE2ETest : AbstractIntegrationSupport({
 			}
 		}
 
-		context("같은 DI가 파기(소프트삭제)된 기록만 있으면") {
+		context("같은 휴대폰 번호가 파기(소프트삭제)된 기록만 있으면") {
 			it("중복으로 막지 않고 정상 확정된다 (200)") {
 				val goneId: Long = IntegrationUtil.persist(
 					UserEntityFixture.create(providerId = "gone", status = UserStatus.WITHDRAWN),
 				).id!!
 				IntegrationUtil.persist(
-					IdentityVerificationEntityFixture.create(userId = goneId, di = "DI-REJOIN")
+					IdentityVerificationEntityFixture.create(userId = goneId, phoneNumber = "01044445555")
 						.also { it.softDelete(java.time.LocalDateTime.now()) },
 				)
 				val userId: Long = IntegrationUtil.persist(
 					UserEntityFixture.create(status = UserStatus.ONBOARDING),
 				).id!!
 				val (regCertKey: String, ordrIdxx: String) = registerFor(userId)
-				FakeKcpCertData.next = adult(di = "DI-REJOIN")
+				FakeKcpCertData.next = adult(phoneNumber = "01044445555")
 
 				post("/users/v1/identity-verification/confirm") {
 					bearer(accessTokenFor(userId))

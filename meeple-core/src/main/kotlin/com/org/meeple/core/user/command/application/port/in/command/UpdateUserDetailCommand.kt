@@ -10,7 +10,8 @@ import java.time.LocalDate
 
 /**
  * 프로필에서 사용자가 직접 편집 가능한 필드 묶음.
- * 식별/소유(id, userId), 서버 배정값(profileImageCode), 회사명(companyName)은 제외한다.
+ * 식별/소유(id, userId), 서버 배정값(profileImageCode), 회사 이메일(companyEmail)·회사명(companyName)은 제외한다.
+ * (회사 이메일/회사명은 온보딩과 분리된 회사 인증 플로우에서만 채워진다)
  * 온보딩 프로필 입력은 대부분 필드가 필수이며, 진입점(요청 DTO의 Bean Validation)에서 null·빈 값을 거른 뒤 채워진다.
  * 단, birthday·gender·phoneNumber는 본인인증(KCP)이 이미 채워둔 값을 신뢰하는 필드라 nullable이다.
  * null이면 서비스가 기존 [UserDetail] 저장값으로 채운다. (활동지역은 regionId로 받고, 서비스가 region 도메인에서 활동지역 문자열로 해석한다)
@@ -26,7 +27,6 @@ data class UpdateUserDetailCommand(
 	val introduction: String,
 	val traits: List<String>,
 	val interests: List<String>,
-	val companyEmail: String,
 	val maritalStatus: MaritalStatus,
 	val smokingStatus: SmokingStatus,
 	val religion: Religion,

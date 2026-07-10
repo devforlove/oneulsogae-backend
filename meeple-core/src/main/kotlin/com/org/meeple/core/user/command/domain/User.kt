@@ -21,10 +21,6 @@ data class User(
 	val lastLoginAt: LocalDateTime? = null,
 ) {
 
-	/** 추가 정보 입력을 마치고 회사 이메일 인증 단계로 진입한다. (ONBOARDING -> EMAIL_VERIFICATION_PENDING) */
-	fun startEmailVerification(): User =
-		copy(status = UserStatus.EMAIL_VERIFICATION_PENDING)
-
 	/** 회사 이메일 인증을 마치고 정식 가입을 완료한다. (-> ACTIVE) */
 	fun completeSignUp(): User =
 		copy(status = UserStatus.ACTIVE)

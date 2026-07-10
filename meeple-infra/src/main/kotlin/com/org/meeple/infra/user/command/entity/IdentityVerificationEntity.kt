@@ -19,7 +19,7 @@ import java.time.LocalDateTime
 	name = "identity_verifications",
 	indexes = [
 		Index(name = "idx_iv_user_id", columnList = "user_id"),
-		Index(name = "idx_iv_di", columnList = "di"),
+		Index(name = "idx_iv_phone_number", columnList = "phone_number"),
 	],
 )
 class IdentityVerificationEntity(
