@@ -7,7 +7,6 @@ import com.org.meeple.common.user.MaritalStatus
 import com.org.meeple.common.user.Religion
 import com.org.meeple.common.user.SmokingStatus
 import com.org.meeple.core.user.command.application.port.`in`.command.UpdateUserDetailCommand
-import jakarta.validation.constraints.Email
 import jakarta.validation.constraints.Max
 import jakarta.validation.constraints.Min
 import jakarta.validation.constraints.NotBlank
@@ -17,9 +16,10 @@ import jakarta.validation.constraints.Size
 import java.time.LocalDate
 
 /**
- * 회사 이메일 인증 요청 본문. 프로필 상세를 함께 받아 저장하고(전체 교체) 입력한 회사 이메일로 인증 메일을 발송한다.
+ * 온보딩 완료 요청 본문. 프로필 상세를 받아 저장하고(전체 교체) 정식 가입(ACTIVE) 처리한다.
  * id/userId/profileImageCode는 서버가 관리하므로 받지 않는다. (profileImageCode는 서버가 랜덤 배정한다)
- * nullable 필드는 값이 있을 때만 제약을 검사한다. (null은 통과) 단, companyEmail은 인증 대상이므로 필수다.
+ * 회사 이메일/회사명은 온보딩과 분리된 회사 인증 플로우에서만 다루므로 여기서 받지 않는다.
+ * nullable 필드는 값이 있을 때만 제약을 검사한다. (null은 통과)
  */
 data class UpdateUserDetailRequest(
 	@field:NotBlank(message = "닉네임은 필수입니다.")
@@ -56,11 +56,6 @@ data class UpdateUserDetailRequest(
 	@field:Size(max = 10, message = "관심사는 최대 10개까지 선택할 수 있습니다.")
 	val interests: List<@Size(max = 20, message = "관심사는 항목당 20자 이하여야 합니다.") String> = emptyList(),
 
-	@field:NotBlank(message = "회사 이메일은 필수입니다.")
-	@field:Email(message = "회사 이메일 형식이 올바르지 않습니다.")
-	@field:Size(max = 255, message = "회사 이메일은 255자 이하여야 합니다.")
-	val companyEmail: String,
-
 	@field:NotNull(message = "결혼 여부는 필수입니다.")
 	val maritalStatus: MaritalStatus? = null,
 
@@ -90,7 +85,6 @@ data class UpdateUserDetailRequest(
 			introduction = introduction!!,
 			traits = traits,
 			interests = interests,
-			companyEmail = companyEmail,
 			maritalStatus = maritalStatus!!,
 			smokingStatus = smokingStatus!!,
 			religion = religion!!,

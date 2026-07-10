@@ -63,10 +63,10 @@ data class UserDetail(
 		copy(secondaryEmail = secondaryEmail?.takeIf { it.isNotBlank() })
 
 	/**
-	 * 온보딩 입력값으로 편집 가능 필드와 회사 이메일을 교체한다.
+	 * 온보딩 입력값으로 편집 가능 필드를 교체한다.
 	 * - regionId는 서비스가 region 도메인에서 해석해 넘긴다. (활동지역 FK)
 	 * - profileImageCode는 아직 없으면 서버가 랜덤 배정하고, 이미 있으면 기존 값을 유지한다.
-	 * - id/userId/companyName은 보존한다. (companyName은 회사 이메일 인증 완료 시점에만 채워진다)
+	 * - id/userId/companyEmail/companyName은 보존한다. (회사 이메일/회사명은 온보딩과 분리된 회사 인증 플로우에서만 채워진다)
 	 * - 정식 가입(ACTIVE)으로 이어지는 입력이므로, 매칭 풀에 필요한 성별·활동지역을 [validateMatchProfile]로 강제한다.
 	 */
 	fun initProfile(
@@ -80,7 +80,6 @@ data class UserDetail(
 		introduction: String?,
 		traits: List<String>,
 		interests: List<String>,
-		companyEmail: String,
 		maritalStatus: MaritalStatus?,
 		smokingStatus: SmokingStatus?,
 		religion: Religion?,
@@ -99,7 +98,6 @@ data class UserDetail(
 			introduction = introduction,
 			traits = traits,
 			interests = interests,
-			companyEmail = companyEmail,
 			maritalStatus = maritalStatus,
 			smokingStatus = smokingStatus,
 			religion = religion,

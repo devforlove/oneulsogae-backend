@@ -47,7 +47,6 @@ class UpdateUserDetailService(
 			introduction = command.introduction,
 			traits = command.traits,
 			interests = command.interests,
-			companyEmail = command.companyEmail,
 			maritalStatus = command.maritalStatus,
 			smokingStatus = command.smokingStatus,
 			religion = command.religion,
