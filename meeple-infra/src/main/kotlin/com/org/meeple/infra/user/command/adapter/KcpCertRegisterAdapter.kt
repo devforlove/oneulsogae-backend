@@ -34,6 +34,9 @@ class KcpCertRegisterAdapter(
 				"ordr_idxx" to command.ordrIdxx,
 				"Ret_URL" to kcpProperties.retUrl,
 				"web_siteid" to kcpProperties.webSiteId,
+				// ordr_idxx를 param_opt_1로 실어 보내면 KCP가 인증 결과 콜백(Ret_URL)에 그대로 echo한다.
+				// 프론트 콜백이 이 값으로 confirm에 필요한 ordrIdxx를 회수한다. (KCP는 register 전문의 param_opt_*만 echo)
+				"param_opt_1" to command.ordrIdxx,
 			),
 		)
 		val encrypted: EncryptedRegisterData = kcpCertCryptoPort.encryptRegisterData(plainJson)
