@@ -19,6 +19,9 @@ dependencies {
 	api("org.springframework.boot:spring-boot-starter-data-jpa")
 	// KCP 거래등록/결과조회 HTTP 어댑터용 RestClient. (Boot BOM이 버전 관리)
 	implementation("org.springframework:spring-web")
+	// KCP 본인확인 V2 암복호화 라이브러리(utils.Crypto: encryptJson/decryptJson). Maven 미배포 → 로컬 JAR.
+	// JDK(javax.crypto/Base64)만 의존하므로 추가 전이 의존성 없음. (KcpCertCryptoPort 실구현이 사용)
+	implementation(files("libs/crypto-1.0.0.jar"))
 	// 매칭 풀 적재용. 스타터로 두어 Lettuce 클라이언트 + Spring Boot 자동설정(StringRedisTemplate)을 함께 가져온다.
 	implementation("org.springframework.boot:spring-boot-starter-data-redis")
 	// 분산 락 어댑터(RedissonDistributedLockAdapter)가 쓰는 RedissonClient 용.
@@ -48,3 +51,4 @@ dependencies {
 
 	testImplementation("org.springframework.boot:spring-boot-starter-data-jpa-test")
 }
+
