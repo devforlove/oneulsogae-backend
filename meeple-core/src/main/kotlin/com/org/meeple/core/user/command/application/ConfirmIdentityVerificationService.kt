@@ -6,7 +6,7 @@ import com.org.meeple.core.user.UserErrorCode
 import com.org.meeple.core.user.command.application.port.`in`.ConfirmIdentityVerificationUseCase
 import com.org.meeple.core.user.command.application.port.`in`.command.ConfirmIdentityVerificationCommand
 import com.org.meeple.core.user.command.application.port.`in`.result.ConfirmIdentityVerificationResult
-import com.org.meeple.core.user.command.application.port.out.ExistsIdentityByDiPort
+import com.org.meeple.core.user.command.application.port.out.ExistsIdentityByPhoneNumberPort
 import com.org.meeple.core.user.command.application.port.out.GetIdentityVerificationPort
 import com.org.meeple.core.user.command.application.port.out.GetUserDetailPort
 import com.org.meeple.core.user.command.application.port.out.KcpCertQueryPort
@@ -24,7 +24,7 @@ class ConfirmIdentityVerificationService(
 	private val getIdentityVerificationPort: GetIdentityVerificationPort,
 	private val saveIdentityVerificationPort: SaveIdentityVerificationPort,
 	private val kcpCertQueryPort: KcpCertQueryPort,
-	private val existsIdentityByDiPort: ExistsIdentityByDiPort,
+	private val existsIdentityByPhoneNumberPort: ExistsIdentityByPhoneNumberPort,
 	private val getUserDetailPort: GetUserDetailPort,
 	private val saveUserDetailPort: SaveUserDetailPort,
 	private val timeGenerator: TimeGenerator,
@@ -40,7 +40,7 @@ class ConfirmIdentityVerificationService(
 
 		val certified: CertifiedIdentity = kcpCertQueryPort.query(command.regCertKey, command.ordrIdxx)
 
-		if (existsIdentityByDiPort.existsVerifiedByDiOnOtherUser(certified.di, userId)) {
+		if (existsIdentityByPhoneNumberPort.existsVerifiedByPhoneNumberOnOtherUser(certified.phoneNumber, userId)) {
 			throw BusinessException(UserErrorCode.IDENTITY_ALREADY_REGISTERED)
 		}
 

@@ -1,7 +1,7 @@
 package com.org.meeple.infra.user.command.adapter
 
 import com.org.meeple.core.user.command.application.port.out.AnonymizeIdentityVerificationPort
-import com.org.meeple.core.user.command.application.port.out.ExistsIdentityByDiPort
+import com.org.meeple.core.user.command.application.port.out.ExistsIdentityByPhoneNumberPort
 import com.org.meeple.core.user.command.application.port.out.GetIdentityVerificationPort
 import com.org.meeple.core.user.command.application.port.out.SaveIdentityVerificationPort
 import com.org.meeple.core.user.command.domain.IdentityVerification
@@ -18,7 +18,7 @@ import java.time.LocalDateTime
 class IdentityVerificationRepositoryAdapter(
 	private val identityVerificationJpaRepository: IdentityVerificationJpaRepository,
 	private val ciCipher: CiCipher,
-) : SaveIdentityVerificationPort, GetIdentityVerificationPort, ExistsIdentityByDiPort, AnonymizeIdentityVerificationPort {
+) : SaveIdentityVerificationPort, GetIdentityVerificationPort, ExistsIdentityByPhoneNumberPort, AnonymizeIdentityVerificationPort {
 
 	override fun save(verification: IdentityVerification): IdentityVerification =
 		identityVerificationJpaRepository.save(verification.toEntity(ciCipher)).toDomain()
@@ -26,9 +26,9 @@ class IdentityVerificationRepositoryAdapter(
 	override fun findLatestByUserId(userId: Long): IdentityVerification? =
 		identityVerificationJpaRepository.findFirstByUserIdOrderByIdDesc(userId)?.toDomain()
 
-	override fun existsVerifiedByDiOnOtherUser(di: String, userId: Long): Boolean =
-		identityVerificationJpaRepository.existsByDiAndStatusAndUserIdNot(
-			di, IdentityVerificationStatus.VERIFIED, userId,
+	override fun existsVerifiedByPhoneNumberOnOtherUser(phoneNumber: String, userId: Long): Boolean =
+		identityVerificationJpaRepository.existsByPhoneNumberAndStatusAndUserIdNot(
+			phoneNumber, IdentityVerificationStatus.VERIFIED, userId,
 		)
 
 	override fun anonymize(userId: Long, at: LocalDateTime) {

@@ -10,8 +10,8 @@ interface IdentityVerificationJpaRepository : JpaRepository<IdentityVerification
 
 	fun findAllByUserId(userId: Long): List<IdentityVerificationEntity>
 
-	fun existsByDiAndStatusAndUserIdNot(
-		di: String,
+	fun existsByPhoneNumberAndStatusAndUserIdNot(
+		phoneNumber: String,
 		status: IdentityVerificationStatus,
 		userId: Long,
 	): Boolean
