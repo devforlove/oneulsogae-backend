@@ -33,6 +33,13 @@ data class User(
 	val isOnboarding: Boolean
 		get() = status == UserStatus.ONBOARDING
 
+	/** 본인확인(KCP)을 시작할 수 있는 상태(ONBOARDING)인지 검증한다. 이미 온보딩을 지난 사용자면 예외를 던진다. */
+	fun validateCanStartIdentityVerification() {
+		if (!isOnboarding) {
+			throw BusinessException(UserErrorCode.IDENTITY_VERIFICATION_NOT_ONBOARDING)
+		}
+	}
+
 	val isRegistered: Boolean
 		get() = status.isRegistered()
 
