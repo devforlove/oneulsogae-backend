@@ -136,6 +136,22 @@ class IdentityVerificationE2ETest : AbstractIntegrationSupport({
 			}
 		}
 
+		context("이미 정식 가입(ACTIVE)한 사용자가 본인확인을 시작하면") {
+			it("IDENTITY_VERIFICATION_NOT_ONBOARDING으로 거절한다 (409)") {
+				val userId: Long = IntegrationUtil.persist(
+					UserEntityFixture.create(providerId = "already-active", status = UserStatus.ACTIVE),
+				).id!!
+
+				post("/users/v1/identity-verification/register") {
+					bearer(accessTokenFor(userId))
+				} expect {
+					status(409)
+					body("success", false)
+					body("error.code", "USER-031")
+				}
+			}
+		}
+
 		context("거래 정보가 위변조되면") {
 			it("IDENTITY_VERIFICATION_MISMATCH로 거절한다 (400)") {
 				val userId: Long = IntegrationUtil.persist(
