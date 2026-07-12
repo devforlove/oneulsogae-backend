@@ -17,7 +17,7 @@ import java.time.LocalDateTime
  * [GetMatchesUseCase] 구현.
  * 사용자의 모든 매칭을 상대방 프로필과 조인 한 번으로(1+N 없이) 가져와 반환한다. (만료된 소개는 now 기준으로 제외)
  * 조회 트랜잭션 자체는 쓰지 않는다 — 온보딩 직후 첫 매칭 자동 소개는 회사 이메일 인증 완료 시점([com.org.meeple.core.user.command.application.UserEventHandler])이 담당한다.
- * 단, "상대가 관심을 보냈는데 아직 확인 시각이 없는" 매칭은 [MatchChecked] 이벤트를 발행해,
+ * 단, "내가 관심을 보내지 않았고 상대만 관심을 보냈는데 아직 확인 시각이 없는" 매칭은 [MatchChecked] 이벤트를 발행해,
  * 커밋 후 command 측([com.org.meeple.core.solomatch.command.application.MatchEventHandler])이 확인 시각 기록·상대 알람을 별도 트랜잭션으로 처리한다.
  * (성별은 상대 프로필 표시 조인에 쓰며, 매칭 대상이 아니어도 조회 자체는 막지 않는다)
  */
@@ -36,9 +36,10 @@ class GetMatchesService(
 		val now: LocalDateTime = timeGenerator.now()
 		val matches: List<MatchWithPartner> = getMatchWithPartnerDao.findAllWithPartnerByUserId(userId, gender, now)
 
-		// 상대가 관심을 보냈는데 아직 확인하지 않은 매칭은 확인 이벤트를 발행한다. (확인 시각 기록·상대 알람은 커밋 후 command 측이 처리)
+		// 내가 관심을 보내지 않았는데 상대만 관심을 보낸, 아직 확인하지 않은 매칭만 확인 이벤트를 발행한다. (확인 시각 기록·상대 알람은 커밋 후 command 측이 처리)
+		// 내가 이미 관심을 보낸 매칭에서 상대에게 "매칭 확인" 알람을 보내면 어색하므로 제외한다.
 		matches
-			.filter { match: MatchWithPartner -> match.checkedAt == null && match.hasPartnerInterest }
+			.filter { match: MatchWithPartner -> match.checkedAt == null && match.hasPartnerInterest && !match.hasUserInterest }
 			.forEach { match: MatchWithPartner ->
 				domainEventPublisher.publish(MatchChecked(matchId = match.matchId, checkedByUserId = userId, partnerUserId = match.partnerUserId))
 			}

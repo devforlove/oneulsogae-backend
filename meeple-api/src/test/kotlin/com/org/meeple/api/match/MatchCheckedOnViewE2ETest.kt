@@ -28,10 +28,10 @@ import java.time.LocalDate
 /**
  * 매칭 확인(checked_at) 처리 E2E.
  *
- * `GET /matches/v1` 조회 시 "상대가 관심을 보냈는데 아직 확인 시각이 없는" 매칭은
+ * `GET /matches/v1` 조회 시 "내가 관심을 보내지 않았고 상대만 관심을 보냈는데 아직 확인 시각이 없는" 매칭은
  * 커밋 후 이벤트([com.org.meeple.core.solomatch.command.domain.event.MatchChecked])로
  * 참가자 확인 시각(solo_match_members.checked_at)이 기록되고, 관심을 보낸 상대에게 "매칭 확인" 알람이 저장되는지 검증한다.
- * (이미 확인된 매칭·상대 관심이 없는 매칭은 기록·알람 없이 그대로다)
+ * (이미 확인된 매칭·상대 관심이 없는 매칭·나도 관심을 보낸 매칭은 기록·알람 없이 그대로다)
  */
 class MatchCheckedOnViewE2ETest : AbstractIntegrationSupport({
 
@@ -77,6 +77,31 @@ class MatchCheckedOnViewE2ETest : AbstractIntegrationSupport({
 				} expect {
 					status(200)
 					body("data.size()", 1)
+				}
+			}
+		}
+
+		context("나도 관심을 보낸(상대도 관심을 보낸) 매칭을 조회하면") {
+			it("확인 시각을 기록하지 않고 상대에게 '매칭 확인' 알람도 저장하지 않는다") {
+				val meUserId: Long = persistUser(providerId = "both-me", nickname = "철수", gender = Gender.MALE)
+				val partnerUserId: Long = persistUser(providerId = "both-partner", nickname = "영희", gender = Gender.FEMALE)
+				val matchId: Long = persistMatch(meUserId, partnerUserId, MatchStatus.PARTIALLY_ACCEPTED)
+				// 나: 신청(APPLY) → hasUserInterest=true / 상대: 신청(APPLY) → hasPartnerInterest=true → 확인 알람 대상 아님
+				persistMember(matchId, meUserId, Gender.MALE, MatchMemberStatus.APPLY)
+				persistMember(matchId, partnerUserId, Gender.FEMALE, MatchMemberStatus.APPLY)
+
+				get("/matches/v1") {
+					bearer(accessTokenFor(meUserId))
+				} expect {
+					status(200)
+				}
+
+				findMember(matchId, meUserId).checkedAt.shouldBeNull()
+				get("/alarms/v1") {
+					bearer(accessTokenFor(partnerUserId))
+				} expect {
+					status(200)
+					body("data.size()", 0)
 				}
 			}
 		}
