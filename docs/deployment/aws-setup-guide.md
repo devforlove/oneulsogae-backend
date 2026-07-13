@@ -242,7 +242,7 @@ ENTRYPOINT ["sh","-c","java $JAVA_OPTS -jar app.jar"]
 ```yaml
 services:
   api:
-    image: ghcr.io/<github-계정>/meeple-backend:latest
+    image: ghcr.io/devforlove/meeple-backend:latest
     restart: always
     env_file: /opt/meeple/.env
     ports:
@@ -267,7 +267,7 @@ volumes:
 ### `/opt/meeple/Caddyfile` (EC2에 배치 — HTTPS 자동)
 
 ```
-api.meeple.example {
+api.meeple.life {
     reverse_proxy api:8080
 }
 ```
@@ -290,12 +290,16 @@ DB_PASSWORD=$(aws ssm get-parameter --name /meeple/prod/DB_PASSWORD --with-decry
 
 ```bash
 # --- 프로파일 ---
-SPRING_PROFILES_ACTIVE=local          # ※ 아래 주의 참고
+SPRING_PROFILES_ACTIVE=prod
+# 첫 배포에만: 빈 RDS에 스키마를 생성하기 위해 아래를 켠다. 스키마 생성·검증 후 이 줄을 지우면
+# 기본값 validate로 복귀한다(운영 정상 상태). ※ 아래 주의 참고
+# JPA_DDL_AUTO=update
 
 # --- DB (RDS) ---
+DB_HOST=meeple-prod-db.xxxx.ap-northeast-2.rds.amazonaws.com
+DB_NAME=meeple
 DB_USERNAME=meeple
 DB_PASSWORD=<SSM에서 읽은 값>
-# 앱은 application-local.yml의 localhost URL을 쓰므로, 운영 URL을 환경변수로 오버라이드해야 한다(주의 참고)
 
 # --- Redis (ElastiCache) ---
 REDIS_HOST=meeple-prod-redis.xxxx.cache.amazonaws.com
@@ -329,15 +333,14 @@ KCP_BASE_URL=https://cert.kcp.co.kr
 KCP_RET_URL=https://app.meeple.example/api/onboarding/identity/callback
 ```
 
-> ### ⚠️ 프로파일·DB URL 관련 중요 주의
+> ### ⚠️ 운영 프로파일·첫 배포 스키마 주의
 >
-> 현재 리포에는 **운영(prod) 프로파일이 없다.** DB 접속 정보(`spring.datasource.url`)는 `meeple-infra`의 **`application-local.yml`에만** 있고 `localhost:3306`으로 하드코딩돼 있다. 그대로 배포하면 RDS에 붙지 못한다. 배포 전 **둘 중 하나**를 선택해야 한다:
+> 운영 프로파일(`prod`)이 리포에 추가돼 있다. `SPRING_PROFILES_ACTIVE=prod`로 구동하면:
+> - `meeple-infra/application-prod.yml`이 DB(`DB_HOST`)·Redis(`REDIS_HOST`)를 환경변수로 받는다(위 `.env`).
+> - `application.yml`의 prod 블록이 `server.forward-headers-strategy: framework`를 켜, Caddy 뒤에서 OAuth redirect_uri가 https로 조립된다.
+> - `ddl-auto` 기본값은 `validate`(스키마 검증만, DDL 변경 없음).
 >
-> **(A) 운영 프로파일 추가 (권장)** — `application-prod.yml`을 만들어 `SPRING_DATASOURCE_URL` 등을 환경변수로 받게 하고 `SPRING_PROFILES_ACTIVE=prod`로 구동. `ddl-auto`도 운영에선 `validate`나 `none`으로 두는 것을 검토(현재 local은 `update`).
->
-> **(B) 환경변수 오버라이드** — local 프로파일을 유지하되 `.env`에 `SPRING_DATASOURCE_URL=jdbc:mysql://<RDS엔드포인트>:3306/meeple?...` 를 추가해 URL만 덮어쓴다. (Spring은 `SPRING_DATASOURCE_URL` 환경변수로 `spring.datasource.url`을 오버라이드한다)
->
-> 이 작업은 코드 변경이므로 배포 착수 시 별도로 진행한다. **(A)를 권장**한다 — local 프로파일은 SQL 디버그 로깅·`ddl-auto: update`가 켜져 있어 운영 부적합.
+> **첫 배포 스키마 부트스트랩**: 새로 만든 RDS는 테이블이 비어 있어 `validate`가 실패한다. **최초 1회만** `.env`에 `JPA_DDL_AUTO=update`를 켜서 스키마를 생성한 뒤, 기동·검증이 끝나면 그 줄을 지워 `validate`로 되돌린다(재기동). 장기적으로는 Flyway 도입을 권장한다.
 
 ---
 

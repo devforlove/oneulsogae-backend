@@ -165,3 +165,16 @@ meeple:
       purge-batch:
         # 로컬에서는 1분마다 돌려 동작을 빠르게 확인한다. (운영 기본값은 매일 05:00)
         cron: ${MEEPLE_PURGE_WITHDRAWN_BATCH_CRON:0 * * * * *}
+
+---
+# 운영(prod) 프로파일. Caddy(리버스 프록시) 뒤에서 구동되므로 forwarded 헤더를 신뢰해야
+# OAuth2 redirect_uri의 {baseUrl}이 https로 조립된다. (미설정 시 http로 만들어져 provider 등록값과 불일치해 로그인 실패)
+spring:
+  config:
+    activate:
+      on-profile: prod
+server:
+  forward-headers-strategy: framework
+logging:
+  level:
+    com.org.meeple: info
