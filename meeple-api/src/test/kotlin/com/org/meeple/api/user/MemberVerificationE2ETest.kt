@@ -14,7 +14,7 @@ import io.restassured.RestAssured
 
 /**
  * `POST /users/v1/member-verifications`·`GET /users/v1/member-verifications/me` E2E 테스트. (멀티파트 업로드)
- * 직업 정보와 사진 3종(얼굴·전신·서류)을 제출하면 member_verifications에 오브젝트 키 3개·PENDING이 저장되는지,
+ * 직업 정보와 사진 3종(얼굴·신분증·서류)을 제출하면 member_verifications에 오브젝트 키 3개·PENDING이 저장되는지,
  * 잘못된 사진 형식·직업 정보가 각각 막히는지, 내 최신 제출 조회(없으면 data null)가 동작하는지 검증한다.
  * (실제 S3 업로드는 [com.org.meeple.common.config.TestFileStorageConfig]의 페이크로 대체)
  */
@@ -37,7 +37,7 @@ class MemberVerificationE2ETest : AbstractIntegrationSupport({
 				RestAssured.given()
 					.header("Authorization", "Bearer ${accessTokenFor(userId)}")
 					.multiPart("faceImage", "face.jpg", "fake-face-bytes".toByteArray(), "image/jpeg")
-					.multiPart("bodyImage", "body.png", "fake-body-bytes".toByteArray(), "image/png")
+					.multiPart("idCardImage", "id-card.png", "fake-id-card-bytes".toByteArray(), "image/png")
 					.multiPart("documentImage", "badge.pdf", "fake-doc-bytes".toByteArray(), "application/pdf")
 					.multiPart("jobCategory", "IT·개발직", "text/plain;charset=UTF-8")
 					.multiPart("jobDetail", "미플 백엔드 개발자", "text/plain;charset=UTF-8")
@@ -52,7 +52,7 @@ class MemberVerificationE2ETest : AbstractIntegrationSupport({
 				saved.jobCategory shouldBe "IT·개발직"
 				saved.jobDetail shouldBe "미플 백엔드 개발자"
 				saved.faceImageKey shouldStartWith "member-verifications/$userId/"
-				saved.bodyImageKey shouldStartWith "member-verifications/$userId/"
+				saved.idCardImageKey shouldStartWith "member-verifications/$userId/"
 				saved.documentImageKey shouldStartWith "member-verifications/$userId/"
 			}
 		}
@@ -64,7 +64,7 @@ class MemberVerificationE2ETest : AbstractIntegrationSupport({
 				RestAssured.given()
 					.header("Authorization", "Bearer ${accessTokenFor(userId)}")
 					.multiPart("faceImage", "face.gif", "gif-bytes".toByteArray(), "image/gif")
-					.multiPart("bodyImage", "body.png", "fake-body-bytes".toByteArray(), "image/png")
+					.multiPart("idCardImage", "id-card.png", "fake-id-card-bytes".toByteArray(), "image/png")
 					.multiPart("documentImage", "badge.pdf", "fake-doc-bytes".toByteArray(), "application/pdf")
 					.multiPart("jobCategory", "IT·개발직", "text/plain;charset=UTF-8")
 					.multiPart("jobDetail", "미플 백엔드 개발자", "text/plain;charset=UTF-8")
@@ -85,7 +85,7 @@ class MemberVerificationE2ETest : AbstractIntegrationSupport({
 				RestAssured.given()
 					.header("Authorization", "Bearer ${accessTokenFor(userId)}")
 					.multiPart("faceImage", "face.jpg", "fake-face-bytes".toByteArray(), "image/jpeg")
-					.multiPart("bodyImage", "body.png", "fake-body-bytes".toByteArray(), "image/png")
+					.multiPart("idCardImage", "id-card.png", "fake-id-card-bytes".toByteArray(), "image/png")
 					.multiPart("documentImage", "badge.pdf", "fake-doc-bytes".toByteArray(), "application/pdf")
 					.multiPart("jobCategory", "IT·개발직", "text/plain;charset=UTF-8")
 					.multiPart("jobDetail", " ", "text/plain;charset=UTF-8")
@@ -102,7 +102,7 @@ class MemberVerificationE2ETest : AbstractIntegrationSupport({
 			it("401을 반환한다") {
 				RestAssured.given()
 					.multiPart("faceImage", "face.jpg", "fake".toByteArray(), "image/jpeg")
-					.multiPart("bodyImage", "body.png", "fake".toByteArray(), "image/png")
+					.multiPart("idCardImage", "id-card.png", "fake".toByteArray(), "image/png")
 					.multiPart("documentImage", "badge.pdf", "fake".toByteArray(), "application/pdf")
 					.multiPart("jobCategory", "IT·개발직")
 					.multiPart("jobDetail", "미플 백엔드 개발자")

@@ -12,7 +12,7 @@ import org.hibernate.annotations.SQLRestriction
 
 /**
  * 멤버 인증(본인인증) 제출을 추적하는 영속성 엔티티.
- * 직업 정보(직종·직장명/직종/직급)와 사진 3종(얼굴·전신·서류)의 S3 오브젝트 키, 심사 상태(status)를 보관한다.
+ * 직업 정보(직종·직장명/직종/직급)와 사진 3종(얼굴·신분증·서류)의 S3 오브젝트 키, 심사 상태(status)를 보관한다.
  * (파일 자체는 S3에 비공개 저장) 도메인 로직은 [com.org.meeple.core.user.command.domain.MemberVerification] 모델에 정의한다.
  */
 @Entity
@@ -37,8 +37,8 @@ class MemberVerificationEntity(
 	@Column(name = "face_image_key", nullable = false, length = 512)
 	val faceImageKey: String,
 
-	@Column(name = "body_image_key", nullable = false, length = 512)
-	val bodyImageKey: String,
+	@Column(name = "id_card_image_key", nullable = false, length = 512)
+	val idCardImageKey: String,
 
 	@Column(name = "document_image_key", nullable = false, length = 512)
 	val documentImageKey: String,

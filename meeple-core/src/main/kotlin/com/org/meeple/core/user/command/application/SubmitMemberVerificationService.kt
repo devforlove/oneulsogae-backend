@@ -15,7 +15,7 @@ import java.util.UUID
 
 /**
  * [SubmitMemberVerificationUseCase] 구현.
- * 업로드한 사진 3종(얼굴·전신·서류)과 직업 정보를 검증한 뒤 파일을 S3에 비공개로 올리고([FileStoragePort]),
+ * 업로드한 사진 3종(얼굴·신분증·서류)과 직업 정보를 검증한 뒤 파일을 S3에 비공개로 올리고([FileStoragePort]),
  * 오브젝트 키 3개와 심사 상태(PENDING)를 member_verifications에 저장한다.
  * 자동 검증이 불가능하므로 이 시점에 가입 상태는 바꾸지 않는다. (승인/반려는 어드민 심사 — 이번 범위 밖)
  */
@@ -33,12 +33,12 @@ class SubmitMemberVerificationService(
 
 		// 잘못된 입력이 S3에 올라가지 않도록 업로드 전에 파일 3개·직업 정보를 모두 검증한다. (검증 실패로 롤백돼도 S3 고아 객체가 남지 않게)
 		MemberVerification.validatePhoto(command.face.contentType, command.face.size)
-		MemberVerification.validatePhoto(command.body.contentType, command.body.size)
+		MemberVerification.validatePhoto(command.idCard.contentType, command.idCard.size)
 		MemberVerification.validateDocument(command.document.contentType, command.document.size)
 		MemberVerification.validateJobInfo(command.jobCategory, command.jobDetail)
 
 		val faceImageKey: String = uploadFile(user.id, command.face)
-		val bodyImageKey: String = uploadFile(user.id, command.body)
+		val idCardImageKey: String = uploadFile(user.id, command.idCard)
 		val documentImageKey: String = uploadFile(user.id, command.document)
 
 		return saveMemberVerificationPort.save(
@@ -47,7 +47,7 @@ class SubmitMemberVerificationService(
 				jobCategory = command.jobCategory,
 				jobDetail = command.jobDetail,
 				faceImageKey = faceImageKey,
-				bodyImageKey = bodyImageKey,
+				idCardImageKey = idCardImageKey,
 				documentImageKey = documentImageKey,
 			),
 		)

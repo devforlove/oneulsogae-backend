@@ -10,7 +10,7 @@ import io.kotest.matchers.shouldBe
 
 /**
  * [MemberVerification] 도메인 유닛 테스트.
- * 제출은 PENDING으로 시작하고, 사진(얼굴·전신)·서류 파일 검증(빈 파일·형식·크기)과
+ * 제출은 PENDING으로 시작하고, 사진(얼굴·신분증)·서류 파일 검증(빈 파일·형식·크기)과
  * 직업 정보 검증(직종·직장명/직종/직급), 확장자 매핑을 확인한다.
  */
 class MemberVerificationTest : DescribeSpec({
@@ -22,7 +22,7 @@ class MemberVerificationTest : DescribeSpec({
 				jobCategory = "IT·개발직",
 				jobDetail = "미플 백엔드 개발자",
 				faceImageKey = "member-verifications/1/face.jpg",
-				bodyImageKey = "member-verifications/1/body.jpg",
+				idCardImageKey = "member-verifications/1/id-card.jpg",
 				documentImageKey = "member-verifications/1/doc.pdf",
 			)
 
@@ -30,7 +30,7 @@ class MemberVerificationTest : DescribeSpec({
 			verification.jobCategory shouldBe "IT·개발직"
 			verification.jobDetail shouldBe "미플 백엔드 개발자"
 			verification.faceImageKey shouldBe "member-verifications/1/face.jpg"
-			verification.bodyImageKey shouldBe "member-verifications/1/body.jpg"
+			verification.idCardImageKey shouldBe "member-verifications/1/id-card.jpg"
 			verification.documentImageKey shouldBe "member-verifications/1/doc.pdf"
 			verification.status shouldBe MemberVerificationStatus.PENDING
 			verification.rejectionReason shouldBe null
@@ -43,7 +43,7 @@ class MemberVerificationTest : DescribeSpec({
 					jobCategory = "IT·개발직",
 					jobDetail = "미플 백엔드 개발자",
 					faceImageKey = " ",
-					bodyImageKey = "member-verifications/1/body.jpg",
+					idCardImageKey = "member-verifications/1/id-card.jpg",
 					documentImageKey = "member-verifications/1/doc.pdf",
 				)
 			}

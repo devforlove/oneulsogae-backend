@@ -7,8 +7,8 @@ package com.org.meeple.core.user.command.application.port.`in`.command
 data class SubmitMemberVerificationCommand(
 	/** 얼굴 사진. */
 	val face: FilePart,
-	/** 전신 사진. */
-	val body: FilePart,
+	/** 신분증 사진. (주민등록증·운전면허증·여권 등 — 연령 인증 및 본인 확인용) */
+	val idCard: FilePart,
 	/** 직장 인증 서류(공무원증·사원증·학생증 등). */
 	val document: FilePart,
 	/** 직종. */

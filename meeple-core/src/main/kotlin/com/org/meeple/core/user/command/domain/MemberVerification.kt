@@ -6,7 +6,7 @@ import com.org.meeple.core.user.UserErrorCode
 
 /**
  * 멤버 인증(본인인증) 도메인 모델.
- * 사용자가 직업 정보(직종·직장명/직종/직급)와 사진 3종(얼굴·전신·직장 인증 서류)을 제출하면,
+ * 사용자가 직업 정보(직종·직장명/직종/직급)와 사진 3종(얼굴·신분증·직장 인증 서류)을 제출하면,
  * 각 파일의 S3 오브젝트 키와 심사 상태([status])를 보관한다. 자동 검증이 불가능해 제출 시
  * [MemberVerificationStatus.PENDING]으로 시작하며, 어드민 심사로 승인/반려된다. (어드민 심사는 이번 범위 밖 — 상태 필드로 확장 여지를 둔다)
  */
@@ -19,8 +19,8 @@ data class MemberVerification(
 	val jobDetail: String,
 	/** 얼굴 사진의 S3 오브젝트 키. (버킷은 설정에서 관리 — 공개 URL이 아니라 키만 보관해 노출을 막는다) */
 	val faceImageKey: String,
-	/** 전신 사진의 S3 오브젝트 키. */
-	val bodyImageKey: String,
+	/** 신분증 사진(주민등록증·운전면허증·여권 등 — 연령 인증 및 본인 확인용)의 S3 오브젝트 키. */
+	val idCardImageKey: String,
 	/** 직장 인증 서류(공무원증·사원증·학생증 등)의 S3 오브젝트 키. */
 	val documentImageKey: String,
 	val status: MemberVerificationStatus = MemberVerificationStatus.PENDING,
@@ -30,13 +30,13 @@ data class MemberVerification(
 
 	init {
 		require(faceImageKey.isNotBlank()) { "faceImageKey must not be blank" }
-		require(bodyImageKey.isNotBlank()) { "bodyImageKey must not be blank" }
+		require(idCardImageKey.isNotBlank()) { "idCardImageKey must not be blank" }
 		require(documentImageKey.isNotBlank()) { "documentImageKey must not be blank" }
 	}
 
 	companion object {
 
-		/** 허용하는 사진(얼굴·전신) 콘텐츠 타입. (JPEG·PNG) */
+		/** 허용하는 사진(얼굴·신분증) 콘텐츠 타입. (JPEG·PNG) */
 		val PHOTO_CONTENT_TYPES: Set<String> = setOf("image/jpeg", "image/png")
 
 		/** 허용하는 서류 콘텐츠 타입. (JPEG·PNG·PDF) */
@@ -57,7 +57,7 @@ data class MemberVerification(
 			jobCategory: String,
 			jobDetail: String,
 			faceImageKey: String,
-			bodyImageKey: String,
+			idCardImageKey: String,
 			documentImageKey: String,
 		): MemberVerification {
 			validateJobInfo(jobCategory, jobDetail)
@@ -66,7 +66,7 @@ data class MemberVerification(
 				jobCategory = jobCategory,
 				jobDetail = jobDetail,
 				faceImageKey = faceImageKey,
-				bodyImageKey = bodyImageKey,
+				idCardImageKey = idCardImageKey,
 				documentImageKey = documentImageKey,
 			)
 		}
@@ -85,7 +85,7 @@ data class MemberVerification(
 		}
 
 		/**
-		 * 업로드한 사진(얼굴·전신) 파일이 멤버 인증에 쓸 수 있는지 검증한다. (업로드 전에 호출해 잘못된 파일이 S3에 올라가지 않게 한다)
+		 * 업로드한 사진(얼굴·신분증) 파일이 멤버 인증에 쓸 수 있는지 검증한다. (업로드 전에 호출해 잘못된 파일이 S3에 올라가지 않게 한다)
 		 * - 빈 파일: [UserErrorCode.EMPTY_IMAGE]
 		 * - 허용하지 않는 형식: [UserErrorCode.INVALID_MEMBER_PHOTO_TYPE]
 		 * - 크기 초과: [UserErrorCode.IMAGE_TOO_LARGE]

@@ -19,7 +19,7 @@ import org.springframework.web.multipart.MultipartFile
 
 /**
  * 멤버 인증(본인인증) 엔드포인트. (인증 필요)
- * - POST /member-verifications: 직업 정보(직종·직장명/직종/직급)와 사진 3종(얼굴·전신·서류)을 업로드해 심사(PENDING)를 접수한다.
+ * - POST /member-verifications: 직업 정보(직종·직장명/직종/직급)와 사진 3종(얼굴·신분증·서류)을 업로드해 심사(PENDING)를 접수한다.
  *   파일은 S3에 비공개로 저장되고 DB에는 오브젝트 키만 남는다. 자동 검증이 불가능해 어드민 심사로 승인/반려된다.
  * - GET /member-verifications/me: 내 최신 제출 1건을 조회한다. (없으면 data null)
  */
@@ -31,23 +31,23 @@ class MemberVerificationController(
 	private val getMyMemberVerificationUseCase: GetMyMemberVerificationUseCase,
 ) {
 
-	/** 직업 정보와 사진 3종(얼굴·전신 JPEG·PNG / 서류 JPEG·PNG·PDF, 각 최대 10MB)을 업로드해 심사를 접수한다. */
+	/** 직업 정보와 사진 3종(얼굴·신분증 JPEG·PNG / 서류 JPEG·PNG·PDF, 각 최대 10MB)을 업로드해 심사를 접수한다. */
 	@Operation(
 		summary = "멤버 인증 제출",
-		description = "multipart/form-data로 얼굴(faceImage)·전신(bodyImage)·직장 인증 서류(documentImage) 파일과 직종(jobCategory, 최대 30자)·직장명/직종/직급(jobDetail, 최대 100자) 텍스트를 함께 보낸다. 파일은 S3에 비공개 저장되고, member_verifications에 오브젝트 키 3개·직업 정보·심사 상태(PENDING)가 기록된다.",
+		description = "multipart/form-data로 얼굴(faceImage)·신분증(idCardImage — 주민등록증·운전면허증·여권 등, 연령 인증 및 본인 확인용. 주민등록번호 뒷자리는 가려서 제출)·직장 인증 서류(documentImage) 파일과 직종(jobCategory, 최대 30자)·직장명/직종/직급(jobDetail, 최대 100자) 텍스트를 함께 보낸다. 파일은 S3에 비공개 저장되고, member_verifications에 오브젝트 키 3개·직업 정보·심사 상태(PENDING)가 기록된다.",
 	)
 	@PostMapping("/member-verifications", consumes = [MediaType.MULTIPART_FORM_DATA_VALUE])
 	fun submitMemberVerification(
 		@LoginUser user: AuthUser,
 		@RequestParam("faceImage") faceImage: MultipartFile,
-		@RequestParam("bodyImage") bodyImage: MultipartFile,
+		@RequestParam("idCardImage") idCardImage: MultipartFile,
 		@RequestParam("documentImage") documentImage: MultipartFile,
 		@RequestParam("jobCategory", required = false) jobCategory: String?,
 		@RequestParam("jobDetail", required = false) jobDetail: String?,
 	): ApiResponse<MemberVerificationResponse> {
 		val command = SubmitMemberVerificationCommand(
 			face = toFilePart(faceImage),
-			body = toFilePart(bodyImage),
+			idCard = toFilePart(idCardImage),
 			document = toFilePart(documentImage),
 			jobCategory = jobCategory.orEmpty(),
 			jobDetail = jobDetail.orEmpty(),
