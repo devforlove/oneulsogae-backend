@@ -1,0 +1,9 @@
+# 빌드 컨텍스트를 가볍게 유지한다. 이미지 안에서 gradle로 새로 빌드하므로 호스트 산출물은 제외한다.
+.git
+.gradle
+.idea
+**/build
+*.iml
+# 로컬 개발용 파일 (운영 이미지에 불필요)
+docker-compose.yml
+docker/

@@ -61,3 +61,9 @@ dependencies {
 	// STOMP E2E 테스트: SockJsClient / WebSocketStompClient (meeple-chatting이 runtime으로 가져오나 test compile에는 미포함)
 	testImplementation("org.springframework.boot:spring-boot-starter-websocket")
 }
+
+// java-library 플러그인이 만드는 plain jar를 끈다. 실행 산출물은 bootJar 하나이며,
+// build/libs에 jar가 둘이면 Dockerfile의 COPY *.jar가 대상 모호로 실패한다.
+tasks.named("jar") {
+	enabled = false
+}
