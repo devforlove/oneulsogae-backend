@@ -8,6 +8,10 @@ permissions:
   packages: write
   id-token: write
 
+concurrency:
+  group: deploy-backend
+  cancel-in-progress: false
+
 jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
@@ -87,7 +91,7 @@ jobs:
             --command-id "$CMD_ID" \
             --instance-id "${{ vars.EC2_INSTANCE_ID }}" \
             --region "${{ vars.AWS_REGION }}" \
-            --query "StandardOutputContent" --output text
+            --query "StandardOutputContent" --output text || true
           echo "== FINAL STATUS: $STATUS =="
           if [ "$STATUS" != "Success" ]; then
             echo "== STDERR =="
@@ -95,6 +99,6 @@ jobs:
               --command-id "$CMD_ID" \
               --instance-id "${{ vars.EC2_INSTANCE_ID }}" \
               --region "${{ vars.AWS_REGION }}" \
-              --query "StandardErrorContent" --output text
+              --query "StandardErrorContent" --output text || true
             exit 1
           fi

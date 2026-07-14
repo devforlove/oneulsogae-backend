@@ -1,9 +1,10 @@
-# 빌드 컨텍스트를 가볍게 유지한다. 이미지 안에서 gradle로 새로 빌드하므로 호스트 산출물은 제외한다.
+# 빌드 컨텍스트를 가볍게 유지한다. 이미지는 미리 만든 부트 jar만 COPY하므로 그 외 호스트 산출물은 제외한다.
 .git
 .gradle
 .idea
 **/build
 # CI/로컬이 미리 만든 meeple-api 부트 jar만 예외로 빌드 컨텍스트에 포함한다(런타임 Dockerfile이 COPY).
+# (이 예외 재포함은 BuildKit 기준. 레거시 빌더 DOCKER_BUILDKIT=0에서는 동작하지 않음)
 !meeple-api/build/libs/*.jar
 *.iml
 # 로컬 개발용 파일 (운영 이미지에 불필요)
