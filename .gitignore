@@ -38,3 +38,8 @@ out/
 
 ### Kotlin ###
 .kotlin
+
+### Env (secrets — 절대 커밋 금지) ###
+.env
+.env.*
+!.env.example
