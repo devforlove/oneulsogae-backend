@@ -10,7 +10,9 @@ import com.org.meeple.core.coin.command.application.port.out.SaveCoinBalancePort
 import com.org.meeple.core.coin.command.application.port.out.SaveCoinPort
 import com.org.meeple.core.coin.command.domain.CoinHistory
 import com.org.meeple.core.coin.command.domain.CoinBalance
+import com.org.meeple.core.coin.command.domain.event.DailyCoinAcquired
 import com.org.meeple.core.common.error.BusinessException
+import com.org.meeple.core.common.event.DomainEventPublisher
 import com.org.meeple.core.common.time.TimeGenerator
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
@@ -28,6 +30,7 @@ class AcquireCoinService(
 	private val getCoinBalancePort: GetCoinBalancePort,
 	private val saveCoinBalancePort: SaveCoinBalancePort,
 	private val timeGenerator: TimeGenerator,
+	private val domainEventPublisher: DomainEventPublisher,
 ) : AcquireCoinUseCase {
 
 	@Transactional
@@ -53,7 +56,14 @@ class AcquireCoinService(
 		// 잔액 행이 없으면(첫 적립) 0에서 시작한다. 갱신을 위해 비관적 락으로 잠근다.
 		val balance: CoinBalance = getCoinBalancePort.findByUserIdForUpdate(userId)
 			?: CoinBalance.empty(userId)
-		return saveCoinBalancePort.save(balance.add(command.amount))
+		val updated: CoinBalance = saveCoinBalancePort.save(balance.add(command.amount))
+
+		// DAILY(출석) 코인 적립 시 본인에게 인앱 알림을 남기기 위해 이벤트를 발행한다.
+		// 알람은 부가효과이므로 수신측([CoinEventHandler])이 커밋 이후 best-effort로 처리한다(적립은 롤백되지 않음).
+		if (command.coinType == CoinGetType.DAILY) {
+			domainEventPublisher.publish(DailyCoinAcquired(userId = userId, amount = command.amount))
+		}
+		return updated
 	}
 
 	/**

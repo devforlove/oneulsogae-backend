@@ -46,6 +46,9 @@ enum class AlarmType(val description: String) {
 
 	/** [팀 매칭] 팀이 해체됨(해체를 실행한 구성원을 제외한 같은 팀의 남은 구성원에게). */
 	TEAM_DISBANDED("팀 해체됨"),
+
+	/** [코인] 출석(DAILY) 코인이 적립됨. (본인에게, 인앱 전용 — 알림톡 push 없음) */
+	COIN_DAILY_ACQUIRED("코인 적립"),
 	;
 
 	/** 이 알람 유형이 속한 알림 설정 카테고리. (알림톡 전송 게이트가 이 값으로 사용자 설정을 평가) */
@@ -57,5 +60,7 @@ enum class AlarmType(val description: String) {
 				NotificationCategory.MEETING
 			TEAM_INVITATION_RECEIVED, TEAM_INVITATION_DECLINED, TEAM_INVITATION_CANCELED, TEAM_INVITATION_ACCEPTED, TEAM_DISBANDED ->
 				NotificationCategory.TEAM
+			COIN_DAILY_ACQUIRED ->
+				NotificationCategory.COIN
 		}
 }

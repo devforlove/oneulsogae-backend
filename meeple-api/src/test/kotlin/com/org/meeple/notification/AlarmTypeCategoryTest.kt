@@ -36,5 +36,11 @@ class AlarmTypeCategoryTest : DescribeSpec({
 				AlarmType.TEAM_DISBANDED.category() shouldBe NotificationCategory.TEAM
 			}
 		}
+
+		context("COIN_* 은") {
+			it("COIN 카테고리로 매핑된다 (인앱 전용)") {
+				AlarmType.COIN_DAILY_ACQUIRED.category() shouldBe NotificationCategory.COIN
+			}
+		}
 	}
 })

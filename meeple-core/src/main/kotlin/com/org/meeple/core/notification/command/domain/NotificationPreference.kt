@@ -26,6 +26,8 @@ data class NotificationPreference(
 			NotificationCategory.TEAM -> team
 			NotificationCategory.MESSAGE -> message
 			NotificationCategory.MARKETING -> marketing
+			// COIN은 인앱 전용이라 알림톡 push를 보내지 않는다(토글 없음). 항상 false로 게이트한다.
+			NotificationCategory.COIN -> false
 		}
 
 	companion object {
