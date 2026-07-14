@@ -147,7 +147,7 @@ class OfflineGatheringDetailE2ETest : AbstractIntegrationSupport({
 			}
 		}
 
-		it("얼리버드가 모두 소진되면 정상가·얼리버드가는 null이고 할인가만 내려준다") {
+		it("얼리버드가 모두 소진되면 얼리버드가는 null이고 정상가·할인가를 내려준다") {
 			val id: Long = IntegrationUtil.persist(
 				GatheringEntityFixture.create(title = "얼리버드 소진", status = GatheringStatus.RECRUITING),
 			).id!!
@@ -167,9 +167,9 @@ class OfflineGatheringDetailE2ETest : AbstractIntegrationSupport({
 
 			get("/offline/v1/gatherings/$id") { } expect {
 				status(200)
-				// 남성 아이템 — 얼리버드 소진 → 정상가·얼리버드가 null, 할인가만.
+				// 남성 아이템 — 얼리버드 소진 → 얼리버드가 null, 정상가·할인가 노출.
 				body("data.schedules[0].gender", "MALE")
-				body("data.schedules[0].fee", null)
+				body("data.schedules[0].fee", 10000)
 				body("data.schedules[0].earlyBirdFee", null)
 				body("data.schedules[0].discountFee", 9000)
 			}
