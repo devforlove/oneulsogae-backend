@@ -3,6 +3,8 @@
 .gradle
 .idea
 **/build
+# CI/로컬이 미리 만든 meeple-api 부트 jar만 예외로 빌드 컨텍스트에 포함한다(런타임 Dockerfile이 COPY).
+!meeple-api/build/libs/*.jar
 *.iml
 # 로컬 개발용 파일 (운영 이미지에 불필요)
 docker-compose.yml
