@@ -218,7 +218,7 @@ sudo mkdir -p /opt/meeple && sudo chown ssm-user /opt/meeple
 
 ## 8. 백엔드 컨테이너화 (리포에 추가할 파일)
 
-아래 파일들을 **백엔드 리포에 커밋**한다. (Dockerfile이 아직 없으므로 신규 작성)
+아래 파일들을 **백엔드 리포에 커밋**한다. (리포 루트 `Dockerfile`은 이미 런타임 전용으로 커밋돼 있다. 변경 시 리포에 반영)
 
 ### `Dockerfile` (리포 루트)
 
@@ -353,65 +353,7 @@ KCP_RET_URL=https://app.meeple.example/api/onboarding/identity/callback
 2. IAM 역할 `meeple-github-deploy-role` 생성 (신뢰: 위 OIDC, 특정 리포로 제한)
 3. 권한: `ssm:SendCommand` (대상 EC2 인스턴스로 제한)
 
-### `.github/workflows/deploy.yml` (백엔드 리포)
-
-```yaml
-name: deploy-backend
-on:
-  push:
-    branches: [main]
-
-permissions:
-  contents: read
-  packages: write
-  id-token: write   # OIDC
-
-jobs:
-  build-and-deploy:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Set up JDK 21
-        uses: actions/setup-java@v4
-        with:
-          distribution: corretto
-          java-version: '21'
-
-      - name: Build & test
-        run: ./gradlew build   # Testcontainers E2E 포함
-
-      - name: Log in to GHCR
-        uses: docker/login-action@v3
-        with:
-          registry: ghcr.io
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Build & push (arm64)
-        uses: docker/build-push-action@v6
-        with:
-          context: .
-          platforms: linux/arm64
-          push: true
-          tags: ghcr.io/${{ github.repository_owner }}/meeple-backend:latest
-
-      - name: Configure AWS credentials (OIDC)
-        uses: aws-actions/configure-aws-credentials@v4
-        with:
-          role-to-assume: arn:aws:iam::<계정ID>:role/meeple-github-deploy-role
-          aws-region: ap-northeast-2
-
-      - name: Deploy via SSM
-        run: |
-          aws ssm send-command \
-            --document-name "AWS-RunShellScript" \
-            --targets "Key=InstanceIds,Values=<EC2 인스턴스 ID>" \
-            --parameters 'commands=["cd /opt/meeple && docker compose -f docker-compose.prod.yml pull && docker compose -f docker-compose.prod.yml up -d"]' \
-            --region ap-northeast-2
-```
-
-> `docker/build-push-action`의 arm64 크로스 빌드는 QEMU 에뮬레이션이라 다소 느리다. 빌드가 답답하면 `runs-on`을 ARM 러너로 바꾸거나 EC2에서 직접 빌드하는 방식으로 전환할 수 있다. 초기엔 이대로 충분.
+> **워크플로 실체는 리포의 `.github/workflows/deploy.yml`이다.** 문서에 전문을 중복하지 않는다(드리프트 방지). 트리거는 **수동(`workflow_dispatch`)** 이며, `./gradlew build`(테스트 게이트) → arm64 이미지 GHCR push → OIDC 인증 → SSM SendCommand로 EC2에서 `docker compose pull && up -d` 후 완료를 폴링한다. 실행: GitHub Actions 탭 → `deploy-backend` → **Run workflow**, 또는 `gh workflow run deploy-backend --ref <branch>`.
 
 ---
 
@@ -428,7 +370,7 @@ jobs:
    | `NEXT_PUBLIC_KAKAO_JS_KEY` | 카카오 JS 키(운영 도메인 등록 필요) |
 4. 배포 → `main` 푸시 시 자동 빌드·배포된다.
 
-> 이후 `main`에 푸시하면 프론트는 Amplify가, 백엔드는 GitHub Actions가 각각 자동 배포한다.
+> 이후 `main`에 푸시하면 프론트는 Amplify가 자동 배포한다. 백엔드는 GitHub Actions 탭에서 `deploy-backend` 워크플로를 수동으로 실행한다(workflow_dispatch).
 
 ---
 
