@@ -88,6 +88,10 @@ app:
     # 비우면 기본 자격증명 체인(IAM 역할·환경변수 등)을 쓴다. 운영에서는 IAM 역할 권장.
     access-key: ${S3_ACCESS_KEY:}
     secret-key: ${S3_SECRET_KEY:}
+  # SES(이메일 인증번호 발송). prod 프로파일에서만 SES 어댑터가 활성화된다(local·test는 로깅 스텁).
+  ses:
+    region: ${SES_REGION:ap-northeast-2}
+    from-address: ${SES_FROM_ADDRESS:no-reply@meeple.life}
   kcp:
     site-cd: ${KCP_SITE_CD:AO7F3}
     enc-key: ${KCP_ENC_KEY:c2a22fa3ebe4698075bcac6b433d52e351c881b02fb83488d4283a43385b1f8e}

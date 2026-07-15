@@ -33,6 +33,8 @@ dependencies {
 	// Spring Boot BOM이 AWS SDK를 관리하지 않아 자체 BOM으로 버전을 정렬한다.
 	implementation(platform("software.amazon.awssdk:bom:2.46.21"))
 	implementation("software.amazon.awssdk:s3")
+	// SES(이메일 인증번호 발송) 클라이언트. prod 프로파일에서만 빈이 활성화된다(local·test는 로깅 스텁).
+	implementation("software.amazon.awssdk:sesv2")
 	// 동기 S3 클라이언트용 경량 HTTP 구현(JDK HttpURLConnection 기반). 명시하지 않으면 런타임에 HTTP 구현을 못 찾는다.
 	implementation("software.amazon.awssdk:url-connection-client")
 
