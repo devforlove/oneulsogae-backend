@@ -8,15 +8,12 @@ import com.org.meeple.common.match.SoloMatchType
 import com.org.meeple.common.match.TeamMemberStatus
 import com.org.meeple.common.match.TeamStatus
 import com.org.meeple.common.user.Gender
-import com.org.meeple.common.user.MaritalStatus
 import com.org.meeple.common.user.UserStatus
 import com.org.meeple.infra.coin.command.entity.QCoinBalanceEntity
 import com.org.meeple.infra.coin.command.entity.QCoinHistoryEntity
-import com.org.meeple.infra.fixture.CompanyEmailVerificationEntityFixture
 import com.org.meeple.infra.fixture.IntegrationUtil
 import com.org.meeple.infra.fixture.MatchUserEntityFixture
 import com.org.meeple.infra.fixture.RegionEntityFixture
-import com.org.meeple.infra.fixture.UserCompanyEntityFixture
 import com.org.meeple.infra.fixture.UserDetailEntityFixture
 import com.org.meeple.infra.fixture.UserEntityFixture
 import com.org.meeple.infra.matchuser.command.entity.QMatchUserEntity
@@ -28,23 +25,20 @@ import com.org.meeple.infra.teammatch.command.entity.QTeamMemberEntity
 import com.org.meeple.infra.teammatch.command.entity.TeamEntity
 import com.org.meeple.infra.teammatch.command.entity.TeamMemberEntity
 import com.org.meeple.infra.region.entity.QRegionEntity
-import com.org.meeple.infra.user.command.entity.QCompanyEmailVerificationEntity
-import com.org.meeple.infra.user.command.entity.QUserCompanyEntity
 import com.org.meeple.infra.user.command.entity.QUserDetailEntity
 import com.org.meeple.infra.user.command.entity.QUserEntity
-import com.org.meeple.infra.user.command.entity.UserDetailEntity
 import com.org.meeple.scheduler.common.command.application.port.out.RegionProximityPort
 import io.kotest.matchers.collections.shouldBeIn
 import io.kotest.matchers.nulls.shouldBeNull
 import io.kotest.matchers.shouldBe
 import org.springframework.beans.factory.annotation.Autowired
-import java.time.LocalDate
 import java.time.LocalDateTime
 
 /**
- * 회사 이메일 인증으로 온보딩이 완료될 때 1:1 매칭 소개([RecommendMatch])와 팀 추천([RecommendTeam])이 함께 동작하는지 검증하는 E2E 테스트.
+ * 온보딩 완료(POST /users/v1/onboarding/complete)로 정식 가입될 때 1:1 매칭 소개([RecommendMatch])와
+ * 팀 추천([RecommendTeam])이 함께 동작하는지 검증하는 E2E 테스트.
  *
- * 인증이 완료되면 같은 트랜잭션에서 매칭 읽기 모델(match_user)이 동기 적재된 뒤,
+ * 가입이 완료되면 같은 트랜잭션에서 매칭 읽기 모델(match_user)이 동기 적재된 뒤,
  * 가까운 반대 성별 후보로 1:1 소개(solo_matches, PROPOSED·ONBOARDING)를 적재한다.
  * [미팅 기능 미노출] 팀 추천(recommended_teams) 적재는 온보딩 호출이 주석 처리되어 현재 동작하지 않으며,
  * 여기서는 "적재되지 않음"을 검증한다. (기능 노출 시 원래 검증으로 복구)
@@ -56,32 +50,11 @@ class OnboardingMatchRecommendationE2ETest : AbstractIntegrationSupport() {
 	private lateinit var regionProximityPort: RegionProximityPort
 
 	init {
-		// 온보딩 중(ONBOARDING) + 매칭 필수 필드를 갖춘 완성 프로필 + 회사 도메인 매핑 + 대기 중 인증번호를 갖춘 남성 요청자를 만들고 userId를 반환한다.
-		// 인증이 완료되면 ACTIVE로 전환돼 match_user가 동기 적재되고, 곧바로 1:1 소개·팀 추천이 같은 트랜잭션에서 처리된다.
-		// withCompanyMapping=false면 회사 도메인 매핑을 넣지 않아, 인증은 통과하되 회사명을 못 찾아 COMPANY_NOT_RESOLVED로 확정된다.
-		fun persistVerifiableMaleUser(providerId: String, regionId: Long, withCompanyMapping: Boolean = true): Long {
-			val userId: Long = IntegrationUtil.persist(
+		// 온보딩 중(ONBOARDING)인 남성 요청자를 만들고 userId를 반환한다. 프로필은 온보딩 완료 요청 본문으로 입력된다.
+		fun persistOnboardingMaleUser(providerId: String): Long =
+			IntegrationUtil.persist(
 				UserEntityFixture.create(providerId = providerId, status = UserStatus.ONBOARDING, lastLoginAt = LocalDateTime.now()),
 			).id!!
-			IntegrationUtil.persist(
-				UserDetailEntity(
-					userId = userId,
-					nickname = "철수",
-					profileImageCode = "1",
-					gender = Gender.MALE,
-					birthday = LocalDate.of(1996, 1, 1),
-					regionId = regionId,
-					maritalStatus = MaritalStatus.SINGLE,
-				),
-			)
-			IntegrationUtil.persist(
-				CompanyEmailVerificationEntityFixture.create(userId = userId, companyEmail = "me@meeple.com", code = "123456"),
-			)
-			if (withCompanyMapping) {
-				IntegrationUtil.persist(UserCompanyEntityFixture.create(emailDomain = "meeple.com", companyName = "미플"))
-			}
-			return userId
-		}
 
 		// 반대 성별(여성) 1:1 후보를 매칭 읽기 모델에만 적재한다. (1:1 소개는 프로필 조인 없이 match_user만으로 후보를 고른다)
 		fun persistFemaleCandidate(userId: Long, regionId: Long): Long {
@@ -101,15 +74,34 @@ class OnboardingMatchRecommendationE2ETest : AbstractIntegrationSupport() {
 			IntegrationUtil.persist(UserDetailEntityFixture.create(userId = userId, gender = gender, regionId = regionId))
 		}
 
-		fun verifyCompanyEmail(userId: Long, companyResolved: Boolean = true) {
-			post("/users/v1/onboarding/company-email/verifications/confirm") {
+		// 온보딩 완료를 요청해 정식 가입(ACTIVE) 처리한다. 가입 완료 시점에 match_user 적재·첫 소개·팀 추천이 처리된다.
+		fun completeOnboarding(userId: Long, regionId: Long) {
+			post("/users/v1/onboarding/complete") {
 				bearer(accessTokenFor(userId))
-				jsonBody("""{"code": "123456"}""")
+				jsonBody(
+					"""
+					{
+					  "nickname": "철수",
+					  "birthday": "1996-01-01",
+					  "height": 175,
+					  "gender": "MALE",
+					  "phoneNumber": "010-1234-5678",
+					  "job": "개발자",
+					  "regionId": $regionId,
+					  "introduction": "안녕하세요 잘 부탁드립니다.",
+					  "traits": ["성실함"],
+					  "interests": ["영화"],
+					  "maritalStatus": "SINGLE",
+					  "smokingStatus": "NON_SMOKER",
+					  "religion": "NONE",
+					  "drinkingStatus": "SOMETIMES",
+					  "bodyType": "MALE_NORMAL"
+					}
+					""".trimIndent(),
+				)
 			} expect {
 				status(200)
 				body("success", true)
-				body("data.justOnboarded", true)
-				body("data.isCompanyResolved", companyResolved)
 			}
 		}
 
@@ -141,20 +133,20 @@ class OnboardingMatchRecommendationE2ETest : AbstractIntegrationSupport() {
 				.fetchFirst()
 		}
 
-		describe("회사 이메일 인증으로 온보딩이 완료되면") {
+		describe("온보딩 완료(complete)로 정식 가입되면") {
 
 			context("가까운 반대 성별 1:1 후보가 있으면") {
 				it("그 후보를 1:1 매칭(PROPOSED·ONBOARDING)으로 소개한다") {
 					val regionId: Long = IntegrationUtil.persist(
 						RegionEntityFixture.create(sido = "서울특별시", sigungu = "강남구", latitude = 37.5172, longitude = 127.0473),
 					).id!!
-					val me: Long = persistVerifiableMaleUser(providerId = "verify-solo-me", regionId = regionId)
+					val me: Long = persistOnboardingMaleUser(providerId = "complete-solo-me")
 					val candidate: Long = persistFemaleCandidate(userId = 8101L, regionId = regionId)
 
 					// 후보 match_user 적재 후 유저 분포 스냅샷을 갱신한다. (강남에 여성 후보가 있음을 알아야 그 지역을 건너뛰지 않는다)
 					regionProximityPort.refresh()
 
-					verifyCompanyEmail(me)
+					completeOnboarding(me, regionId)
 
 					proposedOnboardingPartnerOf(me) shouldBe candidate
 				}
@@ -165,11 +157,11 @@ class OnboardingMatchRecommendationE2ETest : AbstractIntegrationSupport() {
 					val regionId: Long = IntegrationUtil.persist(
 						RegionEntityFixture.create(sido = "서울특별시", sigungu = "서초구"),
 					).id!!
-					val me: Long = persistVerifiableMaleUser(providerId = "verify-solo-empty", regionId = regionId)
+					val me: Long = persistOnboardingMaleUser(providerId = "complete-solo-empty")
 
 					regionProximityPort.refresh()
 
-					verifyCompanyEmail(me)
+					completeOnboarding(me, regionId)
 
 					proposedOnboardingPartnerOf(me).shouldBeNull()
 				}
@@ -180,7 +172,7 @@ class OnboardingMatchRecommendationE2ETest : AbstractIntegrationSupport() {
 					val regionId: Long = IntegrationUtil.persist(
 						RegionEntityFixture.create(sido = "서울특별시", sigungu = "강남구", latitude = 37.5172, longitude = 127.0473),
 					).id!!
-					val me: Long = persistVerifiableMaleUser(providerId = "verify-both-me", regionId = regionId)
+					val me: Long = persistOnboardingMaleUser(providerId = "complete-both-me")
 
 					// 반대 성별(FEMALE) ACTIVE 팀. 팀원들은 match_user에도 적재되므로 1:1 소개 후보이기도 하다.
 					val teamId: Long = persistTeam(TeamStatus.ACTIVE, Gender.FEMALE, regionId)
@@ -190,36 +182,12 @@ class OnboardingMatchRecommendationE2ETest : AbstractIntegrationSupport() {
 					// 후보·팀 적재 후 지역 매칭 스냅샷(유저/팀 분포)을 갱신한다.
 					regionProximityPort.refresh()
 
-					verifyCompanyEmail(me)
+					completeOnboarding(me, regionId)
 
 					// [미팅 기능 미노출] 온보딩 팀 추천 호출이 주석 처리되어 추천이 적재되지 않아야 한다.
 					recommendedTeamIdOf(me).shouldBeNull()
 					// 1:1 소개는 그대로 적재됐다. (상대는 팀의 여성 팀원 중 하나 — 로그인 시각 동점이라 둘 중 하나)
 					proposedOnboardingPartnerOf(me) shouldBeIn listOf(8201L, 8202L)
-				}
-			}
-
-			context("회사 도메인 매핑이 없어 COMPANY_NOT_RESOLVED로 확정돼도") {
-				it("회사 이메일 인증을 마친 사용자이므로 1:1 소개가 ACTIVE와 똑같이 적재된다 (팀 추천은 미팅 기능 미노출로 비활성화)") {
-					val regionId: Long = IntegrationUtil.persist(
-						RegionEntityFixture.create(sido = "서울특별시", sigungu = "강남구", latitude = 37.5172, longitude = 127.0473),
-					).id!!
-					// 회사 매핑이 없어 인증은 통과하되 COMPANY_NOT_RESOLVED로 확정된다. (isMatchable=true → 매칭 대상)
-					val me: Long = persistVerifiableMaleUser(providerId = "verify-unresolved-me", regionId = regionId, withCompanyMapping = false)
-
-					// 가까운 반대 성별 ACTIVE 팀. 팀원들은 match_user에도 적재돼 1:1 소개 후보이기도 하다.
-					val teamId: Long = persistTeam(TeamStatus.ACTIVE, Gender.FEMALE, regionId)
-					persistActiveMemberWithProfile(teamId, 8302L, Gender.FEMALE, regionId)
-					persistActiveMemberWithProfile(teamId, 8303L, Gender.FEMALE, regionId)
-
-					regionProximityPort.refresh()
-
-					verifyCompanyEmail(me, companyResolved = false)
-
-					// COMPANY_NOT_RESOLVED여도 match_user가 적재돼 1:1 소개가 적재된다.
-					// [미팅 기능 미노출] 온보딩 팀 추천 호출이 주석 처리되어 추천은 적재되지 않아야 한다.
-					recommendedTeamIdOf(me).shouldBeNull()
-					proposedOnboardingPartnerOf(me) shouldBeIn listOf(8302L, 8303L)
 				}
 			}
 		}
@@ -230,8 +198,6 @@ class OnboardingMatchRecommendationE2ETest : AbstractIntegrationSupport() {
 			IntegrationUtil.deleteAll(QRecommendedTeamEntity.recommendedTeamEntity)
 			IntegrationUtil.deleteAll(QTeamMemberEntity.teamMemberEntity)
 			IntegrationUtil.deleteAll(QTeamEntity.teamEntity)
-			IntegrationUtil.deleteAll(QCompanyEmailVerificationEntity.companyEmailVerificationEntity)
-			IntegrationUtil.deleteAll(QUserCompanyEntity.userCompanyEntity)
 			IntegrationUtil.deleteAll(QCoinBalanceEntity.coinBalanceEntity)
 			IntegrationUtil.deleteAll(QCoinHistoryEntity.coinHistoryEntity)
 			IntegrationUtil.deleteAll(QMatchUserEntity.matchUserEntity)

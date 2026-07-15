@@ -4,22 +4,18 @@ import com.org.meeple.core.user.command.application.port.`in`.result.VerifyCompa
 
 /**
  * 회사 이메일 인증번호 검증 결과 응답.
- * 회사명 매핑 성공 여부([isCompanyResolved])·찾은 회사명([companyName])과,
- * 이번 호출로 막 가입 완료됐는지([justOnboarded])·지급된 가입 축하 코인 수량([rewardCoin])을 내려준다.
+ * 회사명 매핑 성공 여부([isCompanyResolved])와 찾은 회사명([companyName])을 내려준다.
+ * (마이탭 부가 인증이라 가입 상태를 바꾸지 않으며, 온보딩 신호는 내려주지 않는다)
  */
 data class VerifyCompanyEmailResponse(
 	val isCompanyResolved: Boolean,
 	val companyName: String?,
-	val justOnboarded: Boolean,
-	val rewardCoin: Int,
 ) {
 	companion object {
 		fun of(result: VerifyCompanyEmailResult): VerifyCompanyEmailResponse =
 			VerifyCompanyEmailResponse(
 				isCompanyResolved = result.isCompanyResolved,
 				companyName = result.companyName,
-				justOnboarded = result.justOnboarded,
-				rewardCoin = result.rewardCoin,
 			)
 	}
 }

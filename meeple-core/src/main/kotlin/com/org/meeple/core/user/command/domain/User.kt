@@ -21,13 +21,9 @@ data class User(
 	val lastLoginAt: LocalDateTime? = null,
 ) {
 
-	/** 회사 이메일 인증을 마치고 정식 가입을 완료한다. (-> ACTIVE) */
+	/** 온보딩(프로필 입력)을 마치고 정식 가입을 완료한다. (-> ACTIVE) */
 	fun completeSignUp(): User =
 		copy(status = UserStatus.ACTIVE)
-
-	/** 이메일 인증은 마쳤으나 회사명을 확정하지 못한 상태로 전환한다. (-> COMPANY_NOT_RESOLVED) */
-	fun markCompanyNotResolved(): User =
-		copy(status = UserStatus.COMPANY_NOT_RESOLVED)
 
 	/** 아직 추가 정보 입력 전(ONBOARDING) 상태인지 여부. */
 	val isOnboarding: Boolean

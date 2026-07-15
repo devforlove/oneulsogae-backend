@@ -15,7 +15,9 @@ import org.hamcrest.Matchers.nullValue
 /**
  * `POST /users/v1/onboarding/company-email/verifications/confirm` E2E 테스트.
  *
- * 저장된 인증번호와 입력값을 비교해, 회사 도메인 매핑 결과에 따라 정식 가입(ACTIVE)/회사명 미확정(COMPANY_NOT_RESOLVED)으로 확정하는 경로를 검증한다.
+ * 마이탭 회사 인증(온보딩과 분리된 부가 인증) 경로를 검증한다: 저장된 인증번호와 입력값을 비교해
+ * 회사 이메일·회사명을 프로필에 확정 반영한다. **가입 상태는 바꾸지 않고, 가입 축하 코인도 지급하지 않는다.**
+ * (온보딩 완료·코인·첫 소개는 POST /users/v1/onboarding/complete 경로가 담당한다)
  * 공통 정리/조회 헬퍼는 [OnboardingE2ESupport] 파일의 최상위 함수로 둔다.
  */
 class ConfirmCompanyEmailVerificationE2ETest : AbstractIntegrationSupport({
@@ -23,9 +25,9 @@ class ConfirmCompanyEmailVerificationE2ETest : AbstractIntegrationSupport({
 	describe("POST /users/v1/onboarding/company-email/verifications/confirm") {
 
 		context("저장된 인증번호와 일치하고 회사 도메인이 매핑되면") {
-			it("정식 가입(ACTIVE)되고 회사명이 확정된다 (200, isCompanyResolved=true)") {
+			it("회사명이 프로필에 확정되고, 가입 상태·코인은 변하지 않는다 (200, isCompanyResolved=true)") {
 				val userId: Long = IntegrationUtil.persist(
-					UserEntityFixture.create(status = UserStatus.ONBOARDING),
+					UserEntityFixture.create(status = UserStatus.ACTIVE),
 				).id!!
 				IntegrationUtil.persist(UserDetailEntityFixture.create(userId = userId))
 				IntegrationUtil.persist(
@@ -45,20 +47,21 @@ class ConfirmCompanyEmailVerificationE2ETest : AbstractIntegrationSupport({
 					body("success", true)
 					body("data.isCompanyResolved", true)
 					body("data.companyName", "미플")
-					body("data.justOnboarded", true)
-					body("data.rewardCoin", 100)
 				}
 
-				userStatusOf(userId) shouldBe UserStatus.ACTIVE
+				// 프로필에는 회사 이메일·회사명이 확정 반영된다.
+				userDetailOf(userId).companyEmail shouldBe "user@meeple.com"
 				userDetailOf(userId).companyName shouldBe "미플"
-				coinBalanceOf(userId) shouldBe 100
+				// 마이탭 부가 인증이므로 가입 상태는 그대로이고, 가입 축하 코인도 지급되지 않는다.
+				userStatusOf(userId) shouldBe UserStatus.ACTIVE
+				coinBalanceOf(userId) shouldBe 0
 			}
 		}
 
 		context("인증번호는 맞지만 회사 도메인 매핑이 없으면") {
-			it("회사명 미확정(COMPANY_NOT_RESOLVED) 상태가 된다 (200, isCompanyResolved=false)") {
+			it("회사명 없이 확정되고 가입 상태는 그대로다 (200, isCompanyResolved=false)") {
 				val userId: Long = IntegrationUtil.persist(
-					UserEntityFixture.create(status = UserStatus.ONBOARDING),
+					UserEntityFixture.create(status = UserStatus.ACTIVE),
 				).id!!
 				IntegrationUtil.persist(UserDetailEntityFixture.create(userId = userId))
 				IntegrationUtil.persist(
@@ -77,20 +80,20 @@ class ConfirmCompanyEmailVerificationE2ETest : AbstractIntegrationSupport({
 					body("success", true)
 					body("data.isCompanyResolved", false)
 					body("data.companyName", nullValue())
-					body("data.justOnboarded", true)
-					body("data.rewardCoin", 100)
 				}
 
-				userStatusOf(userId) shouldBe UserStatus.COMPANY_NOT_RESOLVED
-				coinBalanceOf(userId) shouldBe 100
+				// 회사 이메일은 확정되지만 회사명은 비어 있고, 가입 상태는 어떤 값으로도 전환되지 않는다.
+				userDetailOf(userId).companyEmail shouldBe "user@unknown-corp.com"
+				userStatusOf(userId) shouldBe UserStatus.ACTIVE
 			}
 		}
 
 		context("인증번호가 일치하지 않으면") {
-			it("USER-006으로 실패하고 가입 상태가 그대로다 (400)") {
+			it("USER-006으로 실패하고 프로필에 아무것도 반영되지 않는다 (400)") {
 				val userId: Long = IntegrationUtil.persist(
-					UserEntityFixture.create(status = UserStatus.ONBOARDING),
+					UserEntityFixture.create(status = UserStatus.ACTIVE),
 				).id!!
+				IntegrationUtil.persist(UserDetailEntityFixture.create(userId = userId))
 				IntegrationUtil.persist(
 					CompanyEmailVerificationEntityFixture.create(userId = userId, code = "123456"),
 				)
@@ -104,7 +107,7 @@ class ConfirmCompanyEmailVerificationE2ETest : AbstractIntegrationSupport({
 					body("error.code", "USER-006")
 				}
 
-				userStatusOf(userId) shouldBe UserStatus.ONBOARDING
+				userDetailOf(userId).companyEmail shouldBe null
 			}
 		}
 	}
