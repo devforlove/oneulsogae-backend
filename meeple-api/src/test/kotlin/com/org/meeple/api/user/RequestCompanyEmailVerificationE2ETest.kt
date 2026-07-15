@@ -5,6 +5,7 @@ import com.org.meeple.common.integration.expect
 import com.org.meeple.common.integration.post
 import com.org.meeple.common.user.UserStatus
 import com.org.meeple.infra.fixture.IntegrationUtil
+import com.org.meeple.infra.fixture.UserCompanyEntityFixture
 import com.org.meeple.infra.fixture.UserDetailEntityFixture
 import com.org.meeple.infra.fixture.UserEntityFixture
 import io.kotest.matchers.shouldBe
@@ -21,11 +22,13 @@ class RequestCompanyEmailVerificationE2ETest : AbstractIntegrationSupport({
 
 	describe("POST /users/v1/onboarding/company-email/verifications") {
 
-		context("회사 이메일로 인증을 요청하면") {
+		context("등록된 회사의 이메일로 인증을 요청하면") {
 			it("인증번호가 발급된다 (200)") {
 				val userId: Long = IntegrationUtil.persist(
 					UserEntityFixture.create(status = UserStatus.ACTIVE),
 				).id!!
+				// 등록된 회사 도메인이어야 발급된다.
+				IntegrationUtil.persist(UserCompanyEntityFixture.create(emailDomain = "meeple.com", companyName = "미플"))
 
 				post("/users/v1/onboarding/company-email/verifications") {
 					bearer(accessTokenFor(userId))
@@ -69,6 +72,26 @@ class RequestCompanyEmailVerificationE2ETest : AbstractIntegrationSupport({
 				}
 
 				// 중복으로 막혔으므로 인증번호 발급 등 부수효과가 없어야 한다.
+				verificationCountOf(userId) shouldBe 0
+			}
+		}
+
+		context("등록되지 않은 회사 도메인으로 인증을 요청하면") {
+			it("부수효과 없이 400(COMPANY_NOT_FOUND)를 반환한다") {
+				val userId: Long = IntegrationUtil.persist(
+					UserEntityFixture.create(status = UserStatus.ACTIVE),
+				).id!!
+
+				post("/users/v1/onboarding/company-email/verifications") {
+					bearer(accessTokenFor(userId))
+					jsonBody("""{"companyEmail": "user@unknown-corp.com"}""")
+				} expect {
+					status(400)
+					body("success", false)
+					body("error.code", "USER-034")
+				}
+
+				// 미등록 회사로 막혔으므로 인증번호 발급·메일 발송 부수효과가 없어야 한다.
 				verificationCountOf(userId) shouldBe 0
 			}
 		}
