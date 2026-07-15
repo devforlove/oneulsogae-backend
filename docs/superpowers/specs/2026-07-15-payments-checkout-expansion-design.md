@@ -46,19 +46,7 @@ v1 checkout은 주문자 정보만 반환하고 모임·금액은 offline API가
 
 ## 결제수단 테이블
 
-```sql
-CREATE TABLE payment_methods (
-  id            BIGINT AUTO_INCREMENT PRIMARY KEY,
-  code          VARCHAR(50)  NOT NULL,
-  name          VARCHAR(100) NOT NULL,
-  display_order INT          NOT NULL,
-  active        BOOLEAN      NOT NULL,
-  created_at    DATETIME     NOT NULL,
-  updated_at    DATETIME     NOT NULL,
-  deleted_at    DATETIME     NULL,
-  CONSTRAINT ux_payment_method_code UNIQUE (code)
-);
-```
+DDL·초기 행은 `docs/migration/payment_methods.sql`(리포 마이그레이션 관례 위치)에 체크인한다 — `DATETIME(6)` 정밀도 등 image_templates.sql 선례를 따른다. prod는 `ddl-auto: validate`라 배포 전 실DB 반영이 필수다.
 
 - `PaymentMethodEntity`(infra `payments/command/entity`, `BaseEntity` 상속 + `@SQLRestriction`). **앱은 읽기 전용, 행은 DB에서 직접 관리**(image_template 패턴).
 - 서버는 code에 로직을 두지 않으므로 enum을 만들지 않고 String으로 유지한다.
