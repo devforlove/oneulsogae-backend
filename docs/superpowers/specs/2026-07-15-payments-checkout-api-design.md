@@ -64,7 +64,7 @@ meeple-core/…/core/payments/query/
   dto/OrdererView.kt                      name/email/phoneNumber 모두 String?
 
 meeple-infra/…/infra/payments/query/
-  GetCheckoutOrdererDaoImpl.kt            QueryDSL 단일 쿼리(JPAQueryFactory만 주입)
+  GetCheckoutOrdererDaoImpl.kt            QueryDSL 2쿼리(JPAQueryFactory만 주입)
 
 meeple-api/…/api/payments/
   PaymentsController.kt                   @RequestMapping("/payments/v1"), GET /checkout
@@ -72,7 +72,7 @@ meeple-api/…/api/payments/
   response/OrdererResponse.kt             companion object of(OrdererView)
 ```
 
-- **DAO 쿼리**: `users` ⟕ `user_details`(user_id) ⟕ `identity_verifications`(user_id, status = VERIFIED, 최신 1건 = `id desc` 서브쿼리) → `OrdererView` 투영. 명시 조인(`join … on`)을 사용한다.
+- **DAO 쿼리**: 2개의 단순 쿼리로 나눈다. ① `users` ⟕ `user_details`(user_id, 명시 조인 `join … on`) → 이메일·휴대폰, ② `identity_verifications`(user_id 동등 + status = VERIFIED, `id desc` 첫 행) → 실명. (최신 1건 상관 서브쿼리를 ON절에 넣는 단일 쿼리는 JPQL/Hibernate 지원이 불확실해 배제 — 두 쿼리 모두 기존 인덱스로 seek된다)
 - **도메인 간 참조**: CQRS 규칙상 payments query는 user 도메인의 포트·도메인을 참조하지 않고, 자기 DaoImpl이 infra에서 user 계열 엔티티를 직접 조인해 자기 read model로 투영한다(기존 "표시용 프로필 조인" 패턴과 동일).
 - **인덱스**: 조회 경로는 기존 `findLatestByUserId`와 동일한 `identity_verifications.user_id` 동등 조건이다. 구현 시 실제 인덱스 존재를 확인하고, 없으면 추가를 검토한다.
 - 에러코드·도메인 모델은 만들지 않는다(검증·상태 변경이 없는 순수 조회 — YAGNI). DAO가 null을 반환하면(이론상 인증 유저는 users 행이 항상 존재) 모든 필드가 null인 `OrdererView`로 대체한다.
