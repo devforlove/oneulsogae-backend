@@ -39,7 +39,7 @@
     "orderer": {
       "name": "김미플",
       "email": "meeple@example.com",
-      "phoneNumber": "010-1234-5678"
+      "phoneNumber": "01012345678"
     }
   },
   "error": null
@@ -90,4 +90,5 @@ meeple-api/…/api/payments/
 - `src/domains/payment/presentation/paymentMockOrderer.ts`의 `MOCK_ORDERER` 제거.
 - `GET /payments/v1/checkout`을 호출하는 remote datasource + DTO(`{ orderer: { name, email, phoneNumber } }`) 추가, `PaymentScreen`이 조회 결과를 `PaymentOrdererCard`에 주입.
 - `name`/`email`/`phoneNumber`가 `null`일 수 있으므로 표시 정책(빈 값 표기 또는 입력 유도) 필요.
+- `phoneNumber`는 저장값 그대로(하이픈 없는 `01012345678`) 내려간다 — 표시 포맷팅(하이픈 삽입)은 프론트 책임.
 - 쿠폰 카드(`PaymentCouponCard`)·무통장 입금 계좌는 이번 범위 밖이라 목업 유지.
