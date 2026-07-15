@@ -35,4 +35,8 @@ data class GatheringDetailView(
 		id, type, title, description, imageKey, null, region,
 		minParticipants, maxParticipants,
 	)
+
+	/** [scheduleId] 일정을 찾는다. 이 모임의 일정이 아니면 null. */
+	fun scheduleOrNull(scheduleId: Long): GatheringScheduleView? =
+		schedules.find { schedule: GatheringScheduleView -> schedule.id == scheduleId }
 }
