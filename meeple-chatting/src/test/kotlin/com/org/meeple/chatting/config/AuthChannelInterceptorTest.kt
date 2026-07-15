@@ -4,7 +4,6 @@ import com.org.meeple.auth.PrincipalDetails
 import com.org.meeple.auth.jwt.TokenProvider
 import com.org.meeple.chatting.chat.application.ChatErrorCode
 import com.org.meeple.chatting.chat.application.port.`in`.VerifyChatRoomParticipantUseCase
-import com.org.meeple.chatting.chat.application.port.out.CheckActiveSessionPort
 import com.org.meeple.chatting.common.error.ChatException
 import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.core.spec.style.DescribeSpec
@@ -19,14 +18,10 @@ import org.springframework.messaging.support.MessageBuilder
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken
 import org.springframework.security.core.Authentication
 import org.springframework.security.core.authority.SimpleGrantedAuthority
-import org.springframework.web.socket.WebSocketSession
 
 /**
- * [AuthChannelInterceptor]의 단일 활성 세션 대조 유닛 테스트.
- *
- * 동시 접속 차단은 CONNECT 시점에만 한다. 토큰의 session_id가 현재 활성 세션과 일치하는지 확인해,
- * 다른 브라우저의 새 로그인으로 밀려난 세션이면 CONNECT 연결을 거부(SESSION_TAKEN_OVER)함을 검증한다.
- * (실제 활성 세션 저장소(Redis)는 [CheckActiveSessionPort] 페이크로 대체)
+ * [AuthChannelInterceptor]의 CONNECT 인증 유닛 테스트.
+ * 유효한 JWT면 Authentication을 STOMP 세션에 주입하고, 없거나 유효하지 않으면 연결을 거부함을 검증한다.
  */
 class AuthChannelInterceptorTest : DescribeSpec({
 
@@ -36,27 +31,15 @@ class AuthChannelInterceptorTest : DescribeSpec({
 		refreshExpireTime = "604800000",
 	)
 
-	// userId -> 현재 활성 sessionId. (Redis 마커를 대신하는 페이크)
-	val activeSessions: MutableMap<Long, String> = mutableMapOf()
-	val checkActiveSessionPort = object : CheckActiveSessionPort {
-		override fun isActive(userId: Long, sessionId: String): Boolean = activeSessions[userId] == sessionId
-	}
 	val verifyParticipant = object : VerifyChatRoomParticipantUseCase {
 		override fun verifyParticipant(userId: Long, chatRoomId: Long) = Unit
 	}
 	val noopChannel = MessageChannel { _: Message<*>, _: Long -> true }
 	val messagingTemplate = SimpMessagingTemplate(noopChannel)
-	val sessionRegistry = object : WebSocketSessionRegistry {
-		override fun register(session: WebSocketSession) = Unit
-		override fun unregister(wsSessionId: String) = Unit
-		override fun bindAndEvictPrevious(userId: Long, jwtSessionId: String, wsSessionId: String) = Unit
-	}
 
 	val interceptor = AuthChannelInterceptor(
 		tokenProvider = tokenProvider,
 		verifyChatRoomParticipantUseCase = verifyParticipant,
-		checkActiveSessionPort = checkActiveSessionPort,
-		webSocketSessionRegistry = sessionRegistry,
 		messagingTemplate = messagingTemplate,
 	)
 
@@ -65,21 +48,17 @@ class AuthChannelInterceptorTest : DescribeSpec({
 		return UsernamePasswordAuthenticationToken(principal, "", principal.authorities)
 	}
 
-	fun accessTokenFor(userId: Long, sessionId: String): String =
-		tokenProvider.generateAccessToken(authFor(userId), sessionId)
-
-	fun connectMessage(token: String): Message<*> {
+	fun connectMessage(token: String?): Message<*> {
 		val accessor: StompHeaderAccessor = StompHeaderAccessor.create(StompCommand.CONNECT)
-		accessor.setNativeHeader("Authorization", "Bearer $token")
+		token?.let { accessor.setNativeHeader("Authorization", "Bearer $it") }
 		accessor.setLeaveMutable(true)
 		return MessageBuilder.createMessage(ByteArray(0), accessor.messageHeaders)
 	}
 
 	describe("CONNECT") {
 
-		it("현재 활성 세션의 토큰이면 연결을 허용하고 Authentication을 주입한다") {
-			activeSessions[1L] = "s1"
-			val token: String = accessTokenFor(1L, "s1")
+		it("유효한 토큰이면 연결을 허용하고 Authentication을 주입한다") {
+			val token: String = tokenProvider.generateAccessToken(authFor(1L))
 
 			val result: Message<*>? = interceptor.preSend(connectMessage(token), noopChannel)
 
@@ -88,14 +67,18 @@ class AuthChannelInterceptorTest : DescribeSpec({
 			(user?.principal as? PrincipalDetails)?.id shouldBe 1L
 		}
 
-		it("다른 브라우저의 새 로그인에 밀려난 세션이면 SESSION_TAKEN_OVER로 연결을 거부한다") {
-			activeSessions[1L] = "s2" // 새 로그인이 활성 세션을 s2로 덮어씀
-			val staleToken: String = accessTokenFor(1L, "s1") // 이전 브라우저의 토큰(서명은 유효)
-
+		it("토큰이 없으면 AUTHENTICATION_REQUIRED로 연결을 거부한다") {
 			val exception: ChatException = shouldThrow {
-				interceptor.preSend(connectMessage(staleToken), noopChannel)
+				interceptor.preSend(connectMessage(null), noopChannel)
 			}
-			exception.errorCode shouldBe ChatErrorCode.SESSION_TAKEN_OVER
+			exception.errorCode shouldBe ChatErrorCode.AUTHENTICATION_REQUIRED
+		}
+
+		it("유효하지 않은 토큰이면 AUTHENTICATION_REQUIRED로 연결을 거부한다") {
+			val exception: ChatException = shouldThrow {
+				interceptor.preSend(connectMessage("invalid-token"), noopChannel)
+			}
+			exception.errorCode shouldBe ChatErrorCode.AUTHENTICATION_REQUIRED
 		}
 	}
 })

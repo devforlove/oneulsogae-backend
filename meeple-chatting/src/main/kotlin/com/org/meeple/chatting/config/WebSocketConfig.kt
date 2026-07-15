@@ -7,7 +7,6 @@ import org.springframework.messaging.simp.config.MessageBrokerRegistry
 import org.springframework.web.socket.config.annotation.EnableWebSocketMessageBroker
 import org.springframework.web.socket.config.annotation.StompEndpointRegistry
 import org.springframework.web.socket.config.annotation.WebSocketMessageBrokerConfigurer
-import org.springframework.web.socket.config.annotation.WebSocketTransportRegistration
 
 /**
  * STOMP over WebSocket 설정.
@@ -23,7 +22,6 @@ import org.springframework.web.socket.config.annotation.WebSocketTransportRegist
 @EnableWebSocketMessageBroker
 class WebSocketConfig(
 	private val authChannelInterceptor: AuthChannelInterceptor,
-	private val webSocketSessionRegistry: WebSocketSessionRegistry,
 	// 앱 CORS와 동일한 프론트 오리진 목록. (api의 app.cors.allowed-origins를 그대로 읽어 WS 핸드셰이크 오리진을 제한한다)
 	@Value("\${app.cors.allowed-origins}") private val allowedOrigins: List<String>,
 ) : WebSocketMessageBrokerConfigurer {
@@ -50,13 +48,5 @@ class WebSocketConfig(
 	override fun configureClientInboundChannel(registration: ChannelRegistration) {
 		// CONNECT 등 STOMP 프레임 단계의 인증/처리는 인바운드 채널 인터셉터에서 수행한다.
 		registration.interceptors(authChannelInterceptor)
-	}
-
-	// 핸드셰이크 수명주기에 데코레이터를 끼워, 물리 WebSocket 소켓을 사용자별로 추적/축출한다.
-	// (CONNECT 시점에 같은 사용자의 이전 연결을 끊어 단일 활성 세션을 물리적으로 강제하기 위함)
-	override fun configureWebSocketTransport(registration: WebSocketTransportRegistration) {
-		registration.addDecoratorFactory { handler ->
-			SessionRegisteringHandlerDecorator(handler, webSocketSessionRegistry)
-		}
 	}
 }

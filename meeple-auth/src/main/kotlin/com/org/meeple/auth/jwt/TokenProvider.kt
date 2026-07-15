@@ -29,26 +29,19 @@ class TokenProvider(
 
 	private val secretKey = Keys.hmacShaKeyFor(key.toByteArray())
 
-	/**
-	 * access token을 발급한다. 단일 활성 세션 제어를 위해 [sessionId]를 클레임으로 심는다.
-	 * 발급 측은 같은 [sessionId]를 활성 세션 저장소에 기록해 두어야, 매 요청에서 토큰의 세션과 대조할 수 있다.
-	 */
-	fun generateAccessToken(authentication: Authentication, sessionId: String): String =
-		generateToken(authentication, expireTime.toLong(), sessionId)
+	/** access token을 발급한다. */
+	fun generateAccessToken(authentication: Authentication): String =
+		generateToken(authentication, expireTime.toLong())
 
 	/**
-	 * refresh token을 발급한다. 회전/폐기 추적을 위해 [tokenId]를 jti 클레임으로,
-	 * 단일 활성 세션 제어를 위해 [sessionId]를 클레임으로 심는다. (회전 시 같은 sessionId를 유지한다)
+	 * refresh token을 발급한다. 회전/폐기 추적을 위해 [tokenId]를 jti 클레임으로 심는다.
 	 * 발급된 jti는 호출 측에서 저장소에 기록해 두어야 검증·회전이 가능하다.
 	 */
-	fun generateRefreshToken(authentication: Authentication, tokenId: String, sessionId: String): String =
-		generateToken(authentication, refreshExpireTime.toLong(), sessionId, tokenId)
+	fun generateRefreshToken(authentication: Authentication, tokenId: String): String =
+		generateToken(authentication, refreshExpireTime.toLong(), tokenId)
 
 	/** refresh token의 jti(tokenId)를 추출한다. */
 	fun getTokenId(token: String): String? = parseClaims(token).id
-
-	/** 토큰의 단일 활성 세션 식별자(session_id)를 추출한다. (없으면 null) */
-	fun getSessionId(token: String): String? = parseClaims(token)[SESSION_ID] as? String
 
 	/** 토큰 만료 시각을 반환한다. (저장소의 expiresAt 기록용) */
 	fun getExpiration(token: String): LocalDateTime =
@@ -89,7 +82,6 @@ class TokenProvider(
 	private fun generateToken(
 		authentication: Authentication,
 		expirationMillis: Long,
-		sessionId: String,
 		tokenId: String? = null,
 	): String {
 		val now: Date = Date()
@@ -104,7 +96,6 @@ class TokenProvider(
 			.claim(KEY_ROLE, authorities)
 			.claim(USER_ID, principalDetails.id)
 			.claim(USER_EMAIL, principalDetails.username)
-			.claim(SESSION_ID, sessionId)
 			.issuedAt(now)
 			.expiration(expiry)
 			.signWith(secretKey, Jwts.SIG.HS512)
@@ -126,6 +117,5 @@ class TokenProvider(
 		private const val KEY_ROLE = "role"
 		private const val USER_ID = "user_id"
 		private const val USER_EMAIL = "user_email"
-		private const val SESSION_ID = "session_id"
 	}
 }

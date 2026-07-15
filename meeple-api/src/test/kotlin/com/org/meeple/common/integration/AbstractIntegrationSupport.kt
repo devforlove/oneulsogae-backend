@@ -10,7 +10,6 @@ import com.org.meeple.common.config.TestKcpConfig
 import com.org.meeple.common.config.TestRedisContainersConfig
 import com.org.meeple.common.config.TestRegionShufflerConfig
 import com.org.meeple.common.config.TestWireMockConfig
-import com.org.meeple.infra.auth.session.ActiveSessionStore
 import com.org.meeple.infra.fixture.IntegrationUtil
 import io.kotest.core.spec.style.DescribeSpec
 import io.kotest.extensions.spring.SpringExtension
@@ -79,9 +78,6 @@ abstract class AbstractIntegrationSupport(
 	@Autowired
 	protected lateinit var tokenProvider: TokenProvider
 
-	@Autowired
-	protected lateinit var activeSessionStore: ActiveSessionStore
-
 	@LocalServerPort
 	protected var port: Int = 0
 
@@ -111,10 +107,6 @@ abstract class AbstractIntegrationSupport(
 	private fun tokenFor(userId: Long, email: String, role: String): String {
 		val authorities: List<SimpleGrantedAuthority> = listOf(SimpleGrantedAuthority(role))
 		val principal = PrincipalDetails(email = email, id = userId, authorities = authorities)
-		// 단일 활성 세션 검사를 통과하도록, userId별 고정 sessionId를 활성 세션으로 등록한 뒤 같은 값을 토큰에 심는다.
-		// (고정값이라 같은 userId로 여러 번 발급해도 모든 토큰이 유효 — 테스트 셋업에서의 중복 호출에 안전)
-		val sessionId = "test-session-$userId"
-		activeSessionStore.activate(userId, sessionId)
-		return tokenProvider.generateAccessToken(UsernamePasswordAuthenticationToken(principal, "", authorities), sessionId)
+		return tokenProvider.generateAccessToken(UsernamePasswordAuthenticationToken(principal, "", authorities))
 	}
 }
