@@ -323,6 +323,7 @@ AUTH_COOKIE_SAME_SITE=Lax
 CORS_ALLOWED_ORIGINS=https://app.meeple.example
 OAUTH2_REDIRECT_URI=https://app.meeple.example/oauth/redirect
 OAUTH2_FAILURE_REDIRECT_URI=https://app.meeple.example
+OAUTH2_ADMIN_REDIRECT_URI=https://admin.meeple.example/oauth/redirect
 
 # --- KCP (운영·재발급값) ---
 KCP_SITE_CD=<SSM>
@@ -330,6 +331,10 @@ KCP_ENC_KEY=<SSM·재발급값>
 KCP_BASE_URL=https://cert.kcp.co.kr
 KCP_RET_URL=https://app.meeple.example/api/onboarding/identity/callback
 ```
+
+> ⚠️ `.env`는 **컨테이너 시작 시에만** 읽힌다. 값을 추가·수정한 뒤에는
+> `docker compose --env-file /opt/meeple/.env up -d --force-recreate`(또는 배포 워크플로 재실행)로
+> 재기동해야 반영된다. (미반영 시 Spring이 `application.yml`의 localhost 기본값으로 동작한다)
 
 > ### ⚠️ 운영 프로파일·첫 배포 스키마 주의
 >
