@@ -15,4 +15,7 @@ enum class PaymentsErrorCode(
 
 	/** 체크아웃 대상 일정을 모임에서 찾지 못함(scheduleId 미매칭). */
 	CHECKOUT_PRODUCT_NOT_FOUND("PAYMENTS-001", "결제할 일정을 찾을 수 없습니다.", HttpStatus.NOT_FOUND),
+
+	/** 결제 접수에 필요한 주문자 성별이 프로필에 없음(온보딩 미완료 등). */
+	ORDERER_GENDER_REQUIRED("PAYMENTS-002", "주문자 성별을 확인할 수 없습니다. 프로필을 먼저 완성해주세요.", HttpStatus.BAD_REQUEST),
 }
