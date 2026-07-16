@@ -1,14 +1,18 @@
 package com.org.meeple.api.admin
 
+import com.org.meeple.common.gathering.GatheringProductType
 import com.org.meeple.common.gathering.GatheringScheduleStatus
 import com.org.meeple.common.integration.AbstractIntegrationSupport
 import com.org.meeple.common.integration.expect
 import com.org.meeple.common.integration.post
+import com.org.meeple.common.user.Gender
 import com.org.meeple.infra.fixture.GatheringEntityFixture
 import com.org.meeple.infra.fixture.GatheringScheduleEntityFixture
 import com.org.meeple.infra.fixture.IntegrationUtil
+import com.org.meeple.infra.gathering.command.entity.GatheringProductEntity
 import com.org.meeple.infra.gathering.command.entity.GatheringScheduleEntity
 import com.org.meeple.infra.gathering.command.entity.QGatheringEntity
+import com.org.meeple.infra.gathering.command.entity.QGatheringProductEntity
 import com.org.meeple.infra.gathering.command.entity.QGatheringScheduleEntity
 import io.kotest.matchers.shouldBe
 import io.restassured.RestAssured
@@ -31,6 +35,11 @@ class AdminGatheringScheduleE2ETest : AbstractIntegrationSupport({
 	fun savedById(id: Long): GatheringScheduleEntity {
 		val schedule: QGatheringScheduleEntity = QGatheringScheduleEntity.gatheringScheduleEntity
 		return IntegrationUtil.getQuery().selectFrom(schedule).where(schedule.id.eq(id)).fetchOne()!!
+	}
+
+	fun productsByScheduleId(scheduleId: Long): List<GatheringProductEntity> {
+		val product: QGatheringProductEntity = QGatheringProductEntity.gatheringProductEntity
+		return IntegrationUtil.getQuery().selectFrom(product).where(product.scheduleId.eq(scheduleId)).fetch()
 	}
 
 	describe("POST /admin/v1/gatherings/{gatheringId}/schedules") {
@@ -73,6 +82,17 @@ class AdminGatheringScheduleE2ETest : AbstractIntegrationSupport({
 				// 저장 시 남은 개수는 정원(earlyBirdCapacity)으로 초기화된다.
 				saved.earlyBirdRemaining shouldBe 2
 				saved.discountMaleFee shouldBe 9000
+				// 성별·티어별 상품이 함께 생성된다: 남/녀 × (NORMAL, EARLY_BIRD, DISCOUNT) = 6행.
+				val products: List<GatheringProductEntity> = productsByScheduleId(scheduleId)
+				products.size shouldBe 6
+				products.first { it.gender == Gender.MALE && it.type == GatheringProductType.NORMAL }.price shouldBe 10000
+				products.first { it.gender == Gender.FEMALE && it.type == GatheringProductType.NORMAL }.price shouldBe 8000
+				// 얼리버드가 = 정가 × 70% (할인율 30).
+				products.first { it.gender == Gender.MALE && it.type == GatheringProductType.EARLY_BIRD }.price shouldBe 7000
+				products.first { it.gender == Gender.FEMALE && it.type == GatheringProductType.EARLY_BIRD }.price shouldBe 5600
+				products.first { it.gender == Gender.MALE && it.type == GatheringProductType.DISCOUNT }.price shouldBe 9000
+				products.first { it.gender == Gender.FEMALE && it.type == GatheringProductType.DISCOUNT }.price shouldBe 7000
+				products.all { it.gatheringId == gatheringId } shouldBe true
 			}
 		}
 
@@ -97,6 +117,10 @@ class AdminGatheringScheduleE2ETest : AbstractIntegrationSupport({
 				saved.earlyBirdDiscountRate shouldBe null
 				saved.earlyBirdCapacity shouldBe null
 				saved.earlyBirdRemaining shouldBe null
+				// 정가만 있으면 상품은 남/녀 NORMAL 2행이다.
+				val products: List<GatheringProductEntity> = productsByScheduleId(scheduleId)
+				products.size shouldBe 2
+				products.all { it.type == GatheringProductType.NORMAL } shouldBe true
 			}
 		}
 
@@ -313,6 +337,7 @@ class AdminGatheringScheduleE2ETest : AbstractIntegrationSupport({
 	}
 
 	afterTest {
+		IntegrationUtil.deleteAll(QGatheringProductEntity.gatheringProductEntity)
 		IntegrationUtil.deleteAll(QGatheringScheduleEntity.gatheringScheduleEntity)
 		IntegrationUtil.deleteAll(QGatheringEntity.gatheringEntity)
 	}

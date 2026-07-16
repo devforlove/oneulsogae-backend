@@ -29,6 +29,8 @@ data class GatheringSchedule(
 	val discountFee: GatheringFee?,
 	// 생성 직후는 예정(SCHEDULED). 시작/종료/취소로 전이한다.
 	val status: GatheringScheduleStatus = GatheringScheduleStatus.SCHEDULED,
+	// 성별·티어별 가격 상품. create()가 구성하며, 저장소에서 로드된 일정은 빈 컬렉션이다(상태 전이 등 products 불필요 경로).
+	val products: GatheringProducts = GatheringProducts(emptyList()),
 ) {
 
 	/**
@@ -59,6 +61,7 @@ data class GatheringSchedule(
 		 * [startAt]은 [now] 이후여야 하고, [endAt]이 있으면 [startAt] 이후여야 한다.
 		 * 남/녀 정원은 [maxParticipants](모임 정원)의 절반으로 정한다(정수 나눗셈).
 		 * 얼리버드 할인율과 적용 인원은 세트이고, 할인율은 1..100(%), 인원은 1..[maxParticipants] 범위여야 한다. 예정(SCHEDULED)으로 생성한다.
+		 * 생성 시 성별·티어별 가격 상품([GatheringProducts])을 함께 구성한다.
 		 */
 		fun create(
 			gatheringId: Long,
@@ -90,6 +93,12 @@ data class GatheringSchedule(
 				earlyBirdDiscountRate = earlyBirdDiscountRate,
 				earlyBirdCapacity = earlyBirdCapacity,
 				discountFee = discountFee,
+				products = GatheringProducts.create(
+					gatheringId = gatheringId,
+					fee = fee,
+					earlyBirdDiscountRate = earlyBirdDiscountRate,
+					discountFee = discountFee,
+				),
 			)
 		}
 

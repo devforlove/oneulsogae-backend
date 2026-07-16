@@ -3,8 +3,11 @@ package com.org.meeple.domain.gathering
 import com.org.meeple.admin.common.error.AdminErrorCode
 import com.org.meeple.admin.common.error.AdminException
 import com.org.meeple.admin.gathering.command.domain.GatheringFee
+import com.org.meeple.admin.gathering.command.domain.GatheringProduct
 import com.org.meeple.admin.gathering.command.domain.GatheringSchedule
+import com.org.meeple.common.gathering.GatheringProductType
 import com.org.meeple.common.gathering.GatheringScheduleStatus
+import com.org.meeple.common.user.Gender
 import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.core.spec.style.DescribeSpec
 import io.kotest.matchers.shouldBe
@@ -45,6 +48,44 @@ class GatheringScheduleTest : DescribeSpec({
 			schedule.femaleCapacity shouldBe 2
 			schedule.earlyBirdDiscountRate shouldBe earlyBirdRate
 			schedule.earlyBirdCapacity shouldBe 2
+		}
+
+		it("생성 시 성별·티어별 products를 함께 구성한다") {
+			val schedule: GatheringSchedule = GatheringSchedule.create(
+				gatheringId = 1L,
+				startAt = start,
+				endAt = end,
+				fee = fee,
+				earlyBirdDiscountRate = 30,
+				earlyBirdCapacity = 2,
+				discountFee = GatheringFee(male = 9000, female = 7000),
+				maxParticipants = maxParticipants,
+				now = now,
+			)
+
+			// 남/녀 × (NORMAL, EARLY_BIRD, DISCOUNT) = 6행.
+			schedule.products.values.size shouldBe 6
+			schedule.products.values
+				.first { product: GatheringProduct -> product.gender == Gender.FEMALE && product.type == GatheringProductType.EARLY_BIRD }
+				.price shouldBe 5600 // 8000 × 70%
+		}
+
+		it("얼리버드·할인가가 없으면 products는 남/녀 NORMAL 2행이다") {
+			val schedule: GatheringSchedule = GatheringSchedule.create(
+				gatheringId = 1L,
+				startAt = start,
+				endAt = null,
+				fee = fee,
+				earlyBirdDiscountRate = null,
+				earlyBirdCapacity = null,
+				discountFee = null,
+				maxParticipants = maxParticipants,
+				now = now,
+			)
+
+			schedule.products.values.map { product: GatheringProduct -> product.type }
+				.all { type: GatheringProductType -> type == GatheringProductType.NORMAL } shouldBe true
+			schedule.products.values.size shouldBe 2
 		}
 
 		it("모임 정원이 홀수면 정수 나눗셈으로 내림한다") {
