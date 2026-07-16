@@ -8,10 +8,13 @@ import com.org.meeple.common.integration.expect
 import com.org.meeple.common.integration.get
 import com.org.meeple.common.user.Gender
 import com.org.meeple.infra.fixture.GatheringEntityFixture
+import com.org.meeple.infra.fixture.GatheringProductEntityFixture
 import com.org.meeple.infra.fixture.GatheringScheduleEntityFixture
 import com.org.meeple.infra.fixture.IntegrationUtil
 import com.org.meeple.infra.fixture.UserDetailEntityFixture
+import com.org.meeple.infra.gathering.command.entity.GatheringProductEntity
 import com.org.meeple.infra.gathering.command.entity.QGatheringEntity
+import com.org.meeple.infra.gathering.command.entity.QGatheringProductEntity
 import com.org.meeple.infra.gathering.command.entity.QGatheringScheduleEntity
 import com.org.meeple.infra.user.command.entity.QUserDetailEntity
 import org.hamcrest.Matchers.contains
@@ -42,14 +45,16 @@ class OfflineGatheringDetailE2ETest : AbstractIntegrationSupport({
 				),
 			).id!!
 			// 일정 2건(시작 시각 다르게)을 넣어 시작 시각 오름차순 + 참가비가 일정에 실리는지 확인한다.
-			IntegrationUtil.persist(
+			val completedScheduleId: Long = IntegrationUtil.persist(
 				GatheringScheduleEntityFixture.create(
 					gatheringId = id,
 					startAt = LocalDateTime.of(2999, 6, 1, 18, 0, 0),
 					status = GatheringScheduleStatus.COMPLETED,
 				),
-			)
-			IntegrationUtil.persist(
+			).id!!
+			GatheringProductEntityFixture.tierSet(gatheringId = id, scheduleId = completedScheduleId)
+				.forEach { product: GatheringProductEntity -> IntegrationUtil.persist(product) }
+			val scheduledScheduleId: Long = IntegrationUtil.persist(
 				GatheringScheduleEntityFixture.create(
 					gatheringId = id,
 					startAt = LocalDateTime.of(2999, 1, 1, 18, 0, 0),
@@ -61,7 +66,16 @@ class OfflineGatheringDetailE2ETest : AbstractIntegrationSupport({
 					discountFemaleFee = 7000,
 					status = GatheringScheduleStatus.SCHEDULED,
 				),
-			)
+			).id!!
+			GatheringProductEntityFixture.tierSet(
+				gatheringId = id,
+				scheduleId = scheduledScheduleId,
+				maleFee = 10000,
+				femaleFee = 8000,
+				earlyBirdDiscountRate = 30,
+				discountMaleFee = 9000,
+				discountFemaleFee = 7000,
+			).forEach { product: GatheringProductEntity -> IntegrationUtil.persist(product) }
 
 			get("/offline/v1/gatherings/$id") { } expect {
 				status(200)
@@ -113,14 +127,16 @@ class OfflineGatheringDetailE2ETest : AbstractIntegrationSupport({
 			val id: Long = IntegrationUtil.persist(
 				GatheringEntityFixture.create(title = "성별 확인 모임", status = GatheringStatus.RECRUITING),
 			).id!!
-			IntegrationUtil.persist(
+			val scheduleId: Long = IntegrationUtil.persist(
 				GatheringScheduleEntityFixture.create(
 					gatheringId = id,
 					startAt = LocalDateTime.of(2999, 1, 1, 18, 0, 0),
 					maleFee = 10000,
 					femaleFee = 8000,
 				),
-			)
+			).id!!
+			GatheringProductEntityFixture.tierSet(gatheringId = id, scheduleId = scheduleId, maleFee = 10000, femaleFee = 8000)
+				.forEach { product: GatheringProductEntity -> IntegrationUtil.persist(product) }
 
 			get("/offline/v1/gatherings/$id") {
 				bearer(accessTokenFor(userId))
@@ -151,7 +167,7 @@ class OfflineGatheringDetailE2ETest : AbstractIntegrationSupport({
 			val id: Long = IntegrationUtil.persist(
 				GatheringEntityFixture.create(title = "얼리버드 소진", status = GatheringStatus.RECRUITING),
 			).id!!
-			IntegrationUtil.persist(
+			val scheduleId: Long = IntegrationUtil.persist(
 				GatheringScheduleEntityFixture.create(
 					gatheringId = id,
 					startAt = LocalDateTime.of(2999, 1, 1, 18, 0, 0),
@@ -163,7 +179,16 @@ class OfflineGatheringDetailE2ETest : AbstractIntegrationSupport({
 					discountMaleFee = 9000,
 					discountFemaleFee = 7000,
 				),
-			)
+			).id!!
+			GatheringProductEntityFixture.tierSet(
+				gatheringId = id,
+				scheduleId = scheduleId,
+				maleFee = 10000,
+				femaleFee = 8000,
+				earlyBirdDiscountRate = 30,
+				discountMaleFee = 9000,
+				discountFemaleFee = 7000,
+			).forEach { product: GatheringProductEntity -> IntegrationUtil.persist(product) }
 
 			get("/offline/v1/gatherings/$id") { } expect {
 				status(200)
@@ -179,16 +204,24 @@ class OfflineGatheringDetailE2ETest : AbstractIntegrationSupport({
 			val id: Long = IntegrationUtil.persist(
 				GatheringEntityFixture.create(title = "얼리버드 티어 없음", status = GatheringStatus.RECRUITING),
 			).id!!
-			IntegrationUtil.persist(
+			val scheduleId: Long = IntegrationUtil.persist(
 				GatheringScheduleEntityFixture.create(
 					gatheringId = id,
 					startAt = LocalDateTime.of(2999, 1, 1, 18, 0, 0),
 					maleFee = 10000,
 					femaleFee = 8000,
 					earlyBirdDiscountRate = 30,
-					// earlyBirdCapacity 미설정 → earlyBirdRemaining null(얼리버드 티어 없음).
+					// earlyBirdCapacity 미설정 → earlyBirdRemaining null(얼리버드 티어 없음). products에 EARLY_BIRD 행이 있어도
+					// view가 earlyBirdRemaining null을 먼저 보고 null을 반환하므로 동작은 유지된다.
 				),
-			)
+			).id!!
+			GatheringProductEntityFixture.tierSet(
+				gatheringId = id,
+				scheduleId = scheduleId,
+				maleFee = 10000,
+				femaleFee = 8000,
+				earlyBirdDiscountRate = 30,
+			).forEach { product: GatheringProductEntity -> IntegrationUtil.persist(product) }
 
 			get("/offline/v1/gatherings/$id") { } expect {
 				status(200)
@@ -204,7 +237,7 @@ class OfflineGatheringDetailE2ETest : AbstractIntegrationSupport({
 			val id: Long = IntegrationUtil.persist(
 				GatheringEntityFixture.create(title = "정원 소진", status = GatheringStatus.RECRUITING),
 			).id!!
-			IntegrationUtil.persist(
+			val scheduleId: Long = IntegrationUtil.persist(
 				GatheringScheduleEntityFixture.create(
 					gatheringId = id,
 					startAt = LocalDateTime.of(2999, 1, 1, 18, 0, 0),
@@ -214,7 +247,9 @@ class OfflineGatheringDetailE2ETest : AbstractIntegrationSupport({
 					maleRemaining = 0,
 					femaleRemaining = 4,
 				),
-			)
+			).id!!
+			GatheringProductEntityFixture.tierSet(gatheringId = id, scheduleId = scheduleId)
+				.forEach { product: GatheringProductEntity -> IntegrationUtil.persist(product) }
 
 			get("/offline/v1/gatherings/$id") { } expect {
 				status(200)
@@ -267,6 +302,7 @@ class OfflineGatheringDetailE2ETest : AbstractIntegrationSupport({
 	}
 
 	afterTest {
+		IntegrationUtil.deleteAll(QGatheringProductEntity.gatheringProductEntity)
 		IntegrationUtil.deleteAll(QGatheringScheduleEntity.gatheringScheduleEntity)
 		IntegrationUtil.deleteAll(QGatheringEntity.gatheringEntity)
 		IntegrationUtil.deleteAll(QUserDetailEntity.userDetailEntity)

@@ -3,10 +3,14 @@ package com.org.meeple.infra.gathering.query
 import com.org.meeple.common.gathering.GatheringStatus
 import com.org.meeple.core.gathering.query.dao.GetGatheringDao
 import com.org.meeple.core.gathering.query.dto.GatheringDetailView
+import com.org.meeple.core.gathering.query.dto.GatheringProductView
 import com.org.meeple.core.gathering.query.dto.GatheringScheduleView
 import com.org.meeple.core.gathering.query.dto.GatheringView
 import com.org.meeple.core.gathering.query.dto.GatheringViews
+import com.org.meeple.infra.gathering.command.entity.GatheringProductEntity
+import com.org.meeple.infra.gathering.command.entity.GatheringScheduleEntity
 import com.org.meeple.infra.gathering.command.entity.QGatheringEntity
+import com.org.meeple.infra.gathering.command.entity.QGatheringProductEntity
 import com.org.meeple.infra.gathering.command.entity.QGatheringScheduleEntity
 import com.querydsl.core.types.Projections
 import com.querydsl.jpa.impl.JPAQueryFactory
@@ -67,28 +71,35 @@ class GetGatheringDaoImpl(
 
 	override fun findSchedulesByGatheringId(gatheringId: Long): List<GatheringScheduleView> {
 		val schedule: QGatheringScheduleEntity = QGatheringScheduleEntity.gatheringScheduleEntity
-		return queryFactory
-			.select(
-				Projections.constructor(
-					GatheringScheduleView::class.java,
-					schedule.id,
-					schedule.startAt,
-					schedule.endAt,
-					schedule.maleFee,
-					schedule.femaleFee,
-					schedule.maleRemaining,
-					schedule.femaleRemaining,
-					schedule.earlyBirdDiscountRate,
-					schedule.earlyBirdCapacity,
-					schedule.earlyBirdRemaining,
-					schedule.discountMaleFee,
-					schedule.discountFemaleFee,
-					schedule.status,
-				),
-			)
-			.from(schedule)
+		val rows: List<GatheringScheduleEntity> = queryFactory
+			.selectFrom(schedule)
 			.where(schedule.gatheringId.eq(gatheringId))
 			.orderBy(schedule.startAt.asc())
 			.fetch()
+		if (rows.isEmpty()) return emptyList()
+
+		val product: QGatheringProductEntity = QGatheringProductEntity.gatheringProductEntity
+		val productsBySchedule: Map<Long, List<GatheringProductView>> = queryFactory
+			.selectFrom(product)
+			.where(product.scheduleId.`in`(rows.map { row: GatheringScheduleEntity -> checkNotNull(row.id) }))
+			.fetch()
+			.groupBy(
+				{ row: GatheringProductEntity -> row.scheduleId },
+				{ row: GatheringProductEntity -> GatheringProductView(gender = row.gender, type = row.type, price = row.price) },
+			)
+
+		return rows.map { row: GatheringScheduleEntity ->
+			GatheringScheduleView(
+				id = checkNotNull(row.id),
+				startAt = row.startAt,
+				endAt = row.endAt,
+				maleRemaining = row.maleRemaining,
+				femaleRemaining = row.femaleRemaining,
+				earlyBirdCapacity = row.earlyBirdCapacity,
+				earlyBirdRemaining = row.earlyBirdRemaining,
+				status = row.status,
+				products = productsBySchedule[row.id] ?: emptyList(),
+			)
+		}
 	}
 }

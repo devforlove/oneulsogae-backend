@@ -6,13 +6,16 @@ import com.org.meeple.common.integration.expect
 import com.org.meeple.common.integration.get
 import com.org.meeple.core.user.command.domain.IdentityVerificationStatus
 import com.org.meeple.infra.fixture.GatheringEntityFixture
+import com.org.meeple.infra.fixture.GatheringProductEntityFixture
 import com.org.meeple.infra.fixture.GatheringScheduleEntityFixture
 import com.org.meeple.infra.fixture.IdentityVerificationEntityFixture
 import com.org.meeple.infra.fixture.IntegrationUtil
 import com.org.meeple.infra.fixture.PaymentMethodEntityFixture
 import com.org.meeple.infra.fixture.UserDetailEntityFixture
 import com.org.meeple.infra.fixture.UserEntityFixture
+import com.org.meeple.infra.gathering.command.entity.GatheringProductEntity
 import com.org.meeple.infra.gathering.command.entity.QGatheringEntity
+import com.org.meeple.infra.gathering.command.entity.QGatheringProductEntity
 import com.org.meeple.infra.gathering.command.entity.QGatheringScheduleEntity
 import com.org.meeple.infra.payments.command.entity.QPaymentMethodEntity
 import com.org.meeple.infra.user.command.entity.QIdentityVerificationEntity
@@ -65,6 +68,14 @@ class PaymentsCheckoutE2ETest : AbstractIntegrationSupport({
 				discountMaleFee = discountMaleFee,
 			),
 		).id!!
+		GatheringProductEntityFixture.tierSet(
+			gatheringId = gatheringId,
+			scheduleId = scheduleId,
+			maleFee = 10000,
+			femaleFee = 8000,
+			earlyBirdDiscountRate = earlyBirdDiscountRate,
+			discountMaleFee = discountMaleFee,
+		).forEach { product: GatheringProductEntity -> IntegrationUtil.persist(product) }
 		return gatheringId to scheduleId
 	}
 
@@ -231,6 +242,7 @@ class PaymentsCheckoutE2ETest : AbstractIntegrationSupport({
 
 	afterTest {
 		IntegrationUtil.deleteAll(QPaymentMethodEntity.paymentMethodEntity)
+		IntegrationUtil.deleteAll(QGatheringProductEntity.gatheringProductEntity)
 		IntegrationUtil.deleteAll(QGatheringScheduleEntity.gatheringScheduleEntity)
 		IntegrationUtil.deleteAll(QGatheringEntity.gatheringEntity)
 		IntegrationUtil.deleteAll(QIdentityVerificationEntity.identityVerificationEntity)
