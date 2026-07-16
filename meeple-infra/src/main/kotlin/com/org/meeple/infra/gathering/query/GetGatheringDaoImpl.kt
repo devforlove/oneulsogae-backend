@@ -3,6 +3,7 @@ package com.org.meeple.infra.gathering.query
 import com.org.meeple.common.gathering.GatheringStatus
 import com.org.meeple.core.gathering.query.dao.GetGatheringDao
 import com.org.meeple.core.gathering.query.dto.GatheringDetailView
+import com.org.meeple.core.gathering.query.dto.GatheringProductIdentity
 import com.org.meeple.core.gathering.query.dto.GatheringProductView
 import com.org.meeple.core.gathering.query.dto.GatheringScheduleView
 import com.org.meeple.core.gathering.query.dto.GatheringView
@@ -101,5 +102,22 @@ class GetGatheringDaoImpl(
 				products = productsBySchedule[row.id] ?: emptyList(),
 			)
 		}
+	}
+
+	override fun findProductById(productId: Long): GatheringProductIdentity? {
+		val product: QGatheringProductEntity = QGatheringProductEntity.gatheringProductEntity
+		return queryFactory
+			.select(
+				Projections.constructor(
+					GatheringProductIdentity::class.java,
+					product.id,
+					product.gatheringId,
+					product.scheduleId,
+					product.gender,
+				),
+			)
+			.from(product)
+			.where(product.id.eq(productId))
+			.fetchOne()
 	}
 }

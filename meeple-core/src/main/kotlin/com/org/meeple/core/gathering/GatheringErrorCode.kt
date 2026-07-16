@@ -28,4 +28,7 @@ enum class GatheringErrorCode(
 
 	/** 같은 일정에 이미 승인대기 또는 참가 상태의 신청이 있음. */
 	GATHERING_ALREADY_JOINED("GATHERING-005", "이미 참가 신청한 일정입니다.", HttpStatus.CONFLICT),
+
+	/** 상품을 id로 찾지 못함(없거나 삭제됨). */
+	GATHERING_PRODUCT_NOT_FOUND("GATHERING-006", "상품을 찾을 수 없습니다.", HttpStatus.NOT_FOUND),
 }

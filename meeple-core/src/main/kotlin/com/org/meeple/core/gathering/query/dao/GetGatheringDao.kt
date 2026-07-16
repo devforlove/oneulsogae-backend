@@ -1,6 +1,7 @@
 package com.org.meeple.core.gathering.query.dao
 
 import com.org.meeple.core.gathering.query.dto.GatheringDetailView
+import com.org.meeple.core.gathering.query.dto.GatheringProductIdentity
 import com.org.meeple.core.gathering.query.dto.GatheringScheduleView
 import com.org.meeple.core.gathering.query.dto.GatheringViews
 
@@ -18,4 +19,7 @@ interface GetGatheringDao {
 
 	/** [gatheringId] 모임의 일정 목록을 시작 시각 오름차순으로 조회한다. (soft delete 제외) */
 	fun findSchedulesByGatheringId(gatheringId: Long): List<GatheringScheduleView>
+
+	/** 상품 한 건의 식별 정보를 id로 조회한다. 없으면 null. (soft delete 제외) */
+	fun findProductById(productId: Long): GatheringProductIdentity?
 }
