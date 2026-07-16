@@ -53,6 +53,14 @@ data class GatheringScheduleView(
 			?: (if (earlyBirdSoldOut) discountFeeFor(gender) else null)
 			?: feeFor(gender)
 
+	/** [gender] 성별의 정가(NORMAL) 상품 id. 프론트가 체크아웃·결제완료에 넘길 상품 식별자다. */
+	fun productIdFor(gender: Gender): Long =
+		checkNotNull(
+			products.firstOrNull { product: GatheringProductView ->
+				product.gender == gender && product.type == GatheringProductType.NORMAL
+			}?.id,
+		) { "정가 상품이 없습니다: $id" }
+
 	private fun priceFor(gender: Gender, type: GatheringProductType): Int? =
 		products.firstOrNull { product: GatheringProductView -> product.gender == gender && product.type == type }?.price
 }

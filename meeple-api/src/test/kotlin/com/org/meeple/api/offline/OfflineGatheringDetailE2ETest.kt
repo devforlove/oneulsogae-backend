@@ -1,5 +1,6 @@
 package com.org.meeple.api.offline
 
+import com.org.meeple.common.gathering.GatheringProductType
 import com.org.meeple.common.gathering.GatheringScheduleStatus
 import com.org.meeple.common.gathering.GatheringStatus
 import com.org.meeple.common.gathering.GatheringType
@@ -62,7 +63,7 @@ class OfflineGatheringDetailE2ETest : AbstractIntegrationSupport({
 					status = GatheringScheduleStatus.SCHEDULED,
 				),
 			).id!!
-			GatheringProductEntityFixture.tierSet(
+			val products: List<GatheringProductEntity> = GatheringProductEntityFixture.tierSet(
 				gatheringId = id,
 				scheduleId = scheduledScheduleId,
 				maleFee = 10000,
@@ -70,7 +71,13 @@ class OfflineGatheringDetailE2ETest : AbstractIntegrationSupport({
 				earlyBirdDiscountRate = 30,
 				discountMaleFee = 9000,
 				discountFemaleFee = 7000,
-			).forEach { product: GatheringProductEntity -> IntegrationUtil.persist(product) }
+			).map { product: GatheringProductEntity -> IntegrationUtil.persist(product) }
+			val maleProductId: Long = products.first { product: GatheringProductEntity ->
+				product.gender == Gender.MALE && product.type == GatheringProductType.NORMAL
+			}.id!!
+			val femaleProductId: Long = products.first { product: GatheringProductEntity ->
+				product.gender == Gender.FEMALE && product.type == GatheringProductType.NORMAL
+			}.id!!
 
 			get("/offline/v1/gatherings/$id") { } expect {
 				status(200)
@@ -99,11 +106,13 @@ class OfflineGatheringDetailE2ETest : AbstractIntegrationSupport({
 				body("data.schedules[0].fee", 10000)
 				body("data.schedules[0].earlyBirdFee", 7000)
 				body("data.schedules[0].discountFee", null)
+				body("data.schedules[0].productId", maleProductId.toInt())
 				// 같은 일정의 여성 아이템 — 여성 참가비. 얼리버드가 = 8000×0.7=5600.
 				body("data.schedules[1].gender", "FEMALE")
 				body("data.schedules[1].fee", 8000)
 				body("data.schedules[1].earlyBirdFee", 5600)
 				body("data.schedules[1].discountFee", null)
+				body("data.schedules[1].productId", femaleProductId.toInt())
 				// 두 번째 일정(2999-06-01, 특가 없음) 남성 아이템 — 얼리버드가 없으니 정상가만.
 				body("data.schedules[2].gender", "MALE")
 				body("data.schedules[2].status", "COMPLETED")

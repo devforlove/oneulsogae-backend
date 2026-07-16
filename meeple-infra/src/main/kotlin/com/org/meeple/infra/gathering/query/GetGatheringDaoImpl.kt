@@ -86,7 +86,7 @@ class GetGatheringDaoImpl(
 			.fetch()
 			.groupBy(
 				{ row: GatheringProductEntity -> row.scheduleId },
-				{ row: GatheringProductEntity -> GatheringProductView(gender = row.gender, type = row.type, price = row.price) },
+				{ row: GatheringProductEntity -> GatheringProductView(id = checkNotNull(row.id), gender = row.gender, type = row.type, price = row.price) },
 			)
 
 		return rows.map { row: GatheringScheduleEntity ->
