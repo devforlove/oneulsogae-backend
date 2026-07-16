@@ -98,6 +98,10 @@ products로 옮기지 않고 gathering_schedules에 남긴다.
 
 ## 8. 운영 DB 반영 SQL (이번 세션 미적용, 배포 전 순서대로 적용)
 
+**배포 창 주의**: 백필(2~4단계) 실행 후 신 코드가 뜨기 전까지 구 코드로 생성된 일정은 products가 없어,
+신 코드 전환 후 그 일정의 조회·접수가 실패한다("정가 상품이 없습니다"). 백필 SQL은 `not exists` 가드로
+멱등이므로 **신 코드 배포·검증 직후 2~4단계를 한 번 더 실행**한다. (또는 배포 창 동안 어드민 일정 생성을 중단)
+
 ```sql
 -- 1) 테이블 생성
 create table gathering_products (
@@ -113,29 +117,51 @@ create table gathering_products (
     index idx_schedule_id (schedule_id)
 );
 
--- 2) 기존 일정 백필 (NORMAL 남/녀)
+-- 2) 기존 일정 백필 (NORMAL 남/녀) — not exists 가드로 멱등(재실행 안전)
 insert into gathering_products (gathering_id, schedule_id, gender, type, price, created_at, updated_at)
-select gathering_id, id, 'MALE', 'NORMAL', male_fee, now(6), now(6) from gathering_schedules where deleted_at is null
-union all
-select gathering_id, id, 'FEMALE', 'NORMAL', female_fee, now(6), now(6) from gathering_schedules where deleted_at is null;
+select s.gathering_id, s.id, g.gender, 'NORMAL',
+       case g.gender when 'MALE' then s.male_fee else s.female_fee end, now(6), now(6)
+from gathering_schedules s
+join (select 'MALE' as gender union all select 'FEMALE') g
+where s.deleted_at is null
+  and not exists (
+    select 1 from gathering_products p
+    where p.schedule_id = s.id and p.gender = g.gender and p.type = 'NORMAL' and p.deleted_at is null
+  );
 
--- 3) 얼리버드 백필 (할인율 있는 일정)
+-- 3) 얼리버드 백필 (할인율 있는 일정) — 멱등
 insert into gathering_products (gathering_id, schedule_id, gender, type, price, created_at, updated_at)
-select gathering_id, id, 'MALE', 'EARLY_BIRD', floor(male_fee * (100 - early_bird_discount_rate) / 100), now(6), now(6)
-from gathering_schedules where deleted_at is null and early_bird_discount_rate is not null
-union all
-select gathering_id, id, 'FEMALE', 'EARLY_BIRD', floor(female_fee * (100 - early_bird_discount_rate) / 100), now(6), now(6)
-from gathering_schedules where deleted_at is null and early_bird_discount_rate is not null;
+select s.gathering_id, s.id, g.gender, 'EARLY_BIRD',
+       floor(case g.gender when 'MALE' then s.male_fee else s.female_fee end * (100 - s.early_bird_discount_rate) / 100),
+       now(6), now(6)
+from gathering_schedules s
+join (select 'MALE' as gender union all select 'FEMALE') g
+where s.deleted_at is null and s.early_bird_discount_rate is not null
+  and not exists (
+    select 1 from gathering_products p
+    where p.schedule_id = s.id and p.gender = g.gender and p.type = 'EARLY_BIRD' and p.deleted_at is null
+  );
 
--- 4) 할인가 백필 (할인가 있는 일정)
+-- 4) 할인가 백필 (할인가 있는 일정) — 멱등
 insert into gathering_products (gathering_id, schedule_id, gender, type, price, created_at, updated_at)
-select gathering_id, id, 'MALE', 'DISCOUNT', discount_male_fee, now(6), now(6)
-from gathering_schedules where deleted_at is null and discount_male_fee is not null
-union all
-select gathering_id, id, 'FEMALE', 'DISCOUNT', discount_female_fee, now(6), now(6)
-from gathering_schedules where deleted_at is null and discount_female_fee is not null;
+select s.gathering_id, s.id, g.gender, 'DISCOUNT',
+       case g.gender when 'MALE' then s.discount_male_fee else s.discount_female_fee end, now(6), now(6)
+from gathering_schedules s
+join (select 'MALE' as gender union all select 'FEMALE') g
+where s.deleted_at is null
+  and case g.gender when 'MALE' then s.discount_male_fee else s.discount_female_fee end is not null
+  and not exists (
+    select 1 from gathering_products p
+    where p.schedule_id = s.id and p.gender = g.gender and p.type = 'DISCOUNT' and p.deleted_at is null
+  );
 
--- 5) 컬럼 드롭 (신 코드 배포·검증 후)
+-- 5) 신 코드 배포 전: NOT NULL 가격 컬럼을 null 허용으로 전환
+--    (신 코드는 이 컬럼들 없이 INSERT하므로, 전환하지 않으면 컬럼 드롭 전까지 일정 생성이 NOT NULL 제약으로 실패한다)
+alter table gathering_schedules
+    modify male_fee int null,
+    modify female_fee int null;
+
+-- 6) 컬럼 드롭 (신 코드 배포·검증 + 2~4단계 재실행 후)
 alter table gathering_schedules
     drop column male_fee,
     drop column female_fee,
