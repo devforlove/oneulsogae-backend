@@ -30,8 +30,9 @@ data class AdminGatheringDetailResponse(
 		val endAt: LocalDateTime?,
 		val maleFee: Int,
 		val femaleFee: Int,
-		// 얼리버드 할인율(%). 얼리버드가 없는 일정은 null. (금액이 아니라 할인율로 노출한다)
-		val earlyBirdDiscountRate: Int?,
+		// 얼리버드가(남/녀, 저장 금액). 얼리버드가 없는 일정은 null. (할인율이 아니라 금액으로 노출한다)
+		val earlyBirdMaleFee: Int?,
+		val earlyBirdFemaleFee: Int?,
 		val earlyBirdCapacity: Int?,
 		// 얼리버드 특가 남은 개수. 특가가 없는 일정은 null.
 		val earlyBirdRemaining: Int?,
@@ -48,7 +49,8 @@ data class AdminGatheringDetailResponse(
 					endAt = view.endAt,
 					maleFee = view.maleFee,
 					femaleFee = view.femaleFee,
-					earlyBirdDiscountRate = view.earlyBirdDiscountRate,
+					earlyBirdMaleFee = view.earlyBirdMaleFee,
+					earlyBirdFemaleFee = view.earlyBirdFemaleFee,
 					earlyBirdCapacity = view.earlyBirdCapacity,
 					earlyBirdRemaining = view.earlyBirdRemaining,
 					discountMaleFee = view.discountMaleFee,

@@ -7,9 +7,12 @@ import com.org.meeple.common.integration.AbstractIntegrationSupport
 import com.org.meeple.common.integration.expect
 import com.org.meeple.common.integration.get
 import com.org.meeple.infra.fixture.GatheringEntityFixture
+import com.org.meeple.infra.fixture.GatheringProductEntityFixture
 import com.org.meeple.infra.fixture.GatheringScheduleEntityFixture
 import com.org.meeple.infra.fixture.IntegrationUtil
+import com.org.meeple.infra.gathering.command.entity.GatheringProductEntity
 import com.org.meeple.infra.gathering.command.entity.QGatheringEntity
+import com.org.meeple.infra.gathering.command.entity.QGatheringProductEntity
 import com.org.meeple.infra.gathering.command.entity.QGatheringScheduleEntity
 import org.hamcrest.Matchers.contains
 import org.hamcrest.Matchers.hasSize
@@ -135,14 +138,16 @@ class AdminGatheringQueryE2ETest : AbstractIntegrationSupport({
 				),
 			).id!!
 			// 일정 2건(시작 시각 다르게)을 넣어 시작 시각 오름차순으로 내려오는지 + 참가비가 일정에 실리는지 확인한다.
-			IntegrationUtil.persist(
+			val completedScheduleId: Long = IntegrationUtil.persist(
 				GatheringScheduleEntityFixture.create(
 					gatheringId = id,
 					startAt = LocalDateTime.of(2999, 6, 1, 18, 0, 0),
 					status = GatheringScheduleStatus.COMPLETED,
 				),
-			)
-			IntegrationUtil.persist(
+			).id!!
+			GatheringProductEntityFixture.tierSet(gatheringId = id, scheduleId = completedScheduleId)
+				.forEach { product: GatheringProductEntity -> IntegrationUtil.persist(product) }
+			val scheduledScheduleId: Long = IntegrationUtil.persist(
 				GatheringScheduleEntityFixture.create(
 					gatheringId = id,
 					startAt = LocalDateTime.of(2999, 1, 1, 18, 0, 0),
@@ -154,7 +159,16 @@ class AdminGatheringQueryE2ETest : AbstractIntegrationSupport({
 					discountFemaleFee = 7000,
 					status = GatheringScheduleStatus.SCHEDULED,
 				),
-			)
+			).id!!
+			GatheringProductEntityFixture.tierSet(
+				gatheringId = id,
+				scheduleId = scheduledScheduleId,
+				maleFee = 10000,
+				femaleFee = 8000,
+				earlyBirdDiscountRate = 30,
+				discountMaleFee = 9000,
+				discountFemaleFee = 7000,
+			).forEach { product: GatheringProductEntity -> IntegrationUtil.persist(product) }
 
 			get("/admin/v1/gatherings/$id") {
 				bearer(adminAccessTokenFor(9901L))
@@ -175,7 +189,8 @@ class AdminGatheringQueryE2ETest : AbstractIntegrationSupport({
 				body("data.schedules[0].statusDescription", "예정")
 				body("data.schedules[0].maleFee", 10000)
 				body("data.schedules[0].femaleFee", 8000)
-				body("data.schedules[0].earlyBirdDiscountRate", 30)
+				body("data.schedules[0].earlyBirdMaleFee", 7000)
+				body("data.schedules[0].earlyBirdFemaleFee", 5600)
 				body("data.schedules[0].earlyBirdCapacity", 5)
 				body("data.schedules[0].earlyBirdRemaining", 5)
 				body("data.schedules[0].discountFemaleFee", 7000)
@@ -210,6 +225,7 @@ class AdminGatheringQueryE2ETest : AbstractIntegrationSupport({
 	}
 
 	afterTest {
+		IntegrationUtil.deleteAll(QGatheringProductEntity.gatheringProductEntity)
 		IntegrationUtil.deleteAll(QGatheringScheduleEntity.gatheringScheduleEntity)
 		IntegrationUtil.deleteAll(QGatheringEntity.gatheringEntity)
 	}

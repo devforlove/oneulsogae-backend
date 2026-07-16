@@ -5,9 +5,14 @@ import com.org.meeple.admin.gathering.query.dto.AdminGatheringDetailView
 import com.org.meeple.admin.gathering.query.dto.AdminGatheringScheduleView
 import com.org.meeple.admin.gathering.query.dto.AdminGatheringView
 import com.org.meeple.admin.gathering.query.dto.AdminGatheringViews
+import com.org.meeple.common.gathering.GatheringProductType
 import com.org.meeple.common.gathering.GatheringStatus
 import com.org.meeple.common.gathering.GatheringType
+import com.org.meeple.common.user.Gender
+import com.org.meeple.infra.gathering.command.entity.GatheringProductEntity
+import com.org.meeple.infra.gathering.command.entity.GatheringScheduleEntity
 import com.org.meeple.infra.gathering.command.entity.QGatheringEntity
+import com.org.meeple.infra.gathering.command.entity.QGatheringProductEntity
 import com.org.meeple.infra.gathering.command.entity.QGatheringScheduleEntity
 import com.querydsl.core.types.Projections
 import com.querydsl.core.types.dsl.BooleanExpression
@@ -85,27 +90,39 @@ class GetAdminGatheringDaoImpl(
 
 	override fun findSchedulesByGatheringId(gatheringId: Long): List<AdminGatheringScheduleView> {
 		val schedule: QGatheringScheduleEntity = QGatheringScheduleEntity.gatheringScheduleEntity
-		return queryFactory
-			.select(
-				Projections.constructor(
-					AdminGatheringScheduleView::class.java,
-					schedule.id,
-					schedule.startAt,
-					schedule.endAt,
-					schedule.maleFee,
-					schedule.femaleFee,
-					schedule.earlyBirdDiscountRate,
-					schedule.earlyBirdCapacity,
-					schedule.earlyBirdRemaining,
-					schedule.discountMaleFee,
-					schedule.discountFemaleFee,
-					schedule.status,
-				),
-			)
-			.from(schedule)
+		val rows: List<GatheringScheduleEntity> = queryFactory
+			.selectFrom(schedule)
 			.where(schedule.gatheringId.eq(gatheringId))
 			.orderBy(schedule.startAt.asc())
 			.fetch()
+		if (rows.isEmpty()) return emptyList()
+
+		val product: QGatheringProductEntity = QGatheringProductEntity.gatheringProductEntity
+		val productsBySchedule: Map<Long, List<GatheringProductEntity>> = queryFactory
+			.selectFrom(product)
+			.where(product.scheduleId.`in`(rows.map { row: GatheringScheduleEntity -> checkNotNull(row.id) }))
+			.fetch()
+			.groupBy { row: GatheringProductEntity -> row.scheduleId }
+
+		return rows.map { row: GatheringScheduleEntity ->
+			val products: List<GatheringProductEntity> = productsBySchedule[row.id] ?: emptyList()
+			fun priceOf(gender: Gender, type: GatheringProductType): Int? =
+				products.firstOrNull { candidate: GatheringProductEntity -> candidate.gender == gender && candidate.type == type }?.price
+			AdminGatheringScheduleView(
+				id = checkNotNull(row.id),
+				startAt = row.startAt,
+				endAt = row.endAt,
+				maleFee = checkNotNull(priceOf(Gender.MALE, GatheringProductType.NORMAL)) { "정가 상품이 없습니다: ${row.id}" },
+				femaleFee = checkNotNull(priceOf(Gender.FEMALE, GatheringProductType.NORMAL)) { "정가 상품이 없습니다: ${row.id}" },
+				earlyBirdMaleFee = priceOf(Gender.MALE, GatheringProductType.EARLY_BIRD),
+				earlyBirdFemaleFee = priceOf(Gender.FEMALE, GatheringProductType.EARLY_BIRD),
+				earlyBirdCapacity = row.earlyBirdCapacity,
+				earlyBirdRemaining = row.earlyBirdRemaining,
+				discountMaleFee = priceOf(Gender.MALE, GatheringProductType.DISCOUNT),
+				discountFemaleFee = priceOf(Gender.FEMALE, GatheringProductType.DISCOUNT),
+				status = row.status,
+			)
+		}
 	}
 
 	// status가 null이면 null을 반환 → QueryDSL where가 해당 조건을 무시(필터 미적용).
