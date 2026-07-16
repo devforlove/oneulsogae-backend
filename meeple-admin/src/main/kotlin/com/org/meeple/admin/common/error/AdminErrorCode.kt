@@ -39,4 +39,10 @@ enum class AdminErrorCode(
 	GATHERING_SCHEDULE_INVALID_END_AT("GATHER-016", "일정 종료 시각은 시작 시각 이후여야 합니다.", HttpStatus.BAD_REQUEST),
 	GATHERING_SCHEDULE_INVALID_STATUS_TRANSITION("GATHER-017", "요청한 일정 상태로 전이할 수 없습니다.", HttpStatus.CONFLICT),
 	GATHERING_INVALID_EARLY_BIRD_DISCOUNT_RATE("GATHER-018", "얼리버드 할인율은 1 이상 100 이하여야 합니다.", HttpStatus.BAD_REQUEST),
+
+	/** 모임 일정 참가자를 찾지 못함(없거나 해당 일정 소속이 아님). */
+	GATHERING_MEMBER_NOT_FOUND("GATHER-019", "모임 참가 신청을 찾을 수 없습니다.", HttpStatus.NOT_FOUND),
+
+	/** 승인대기 상태가 아닌 참가 신청을 승인/거절함. */
+	GATHERING_MEMBER_INVALID_STATUS_TRANSITION("GATHER-020", "승인대기 상태의 신청만 승인/거절할 수 있습니다.", HttpStatus.CONFLICT),
 }
