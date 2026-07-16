@@ -1,6 +1,7 @@
 package com.org.meeple.api.payments
 
 import com.org.meeple.common.gathering.GatheringMemberStatus
+import com.org.meeple.common.gathering.GatheringProductType
 import com.org.meeple.common.gathering.GatheringScheduleStatus
 import com.org.meeple.common.gathering.GatheringStatus
 import com.org.meeple.common.integration.AbstractIntegrationSupport
@@ -28,9 +29,10 @@ import io.kotest.matchers.shouldBe
  * `POST /payments/v1/complete` E2E 테스트.
  *
  * 무검증 결제완료 접수: 본인 프로필 성별을 강제해 참가를 승인대기(PENDING)로 등록하고 결제 기록을 남긴다.
+ * 상품은 productId로 지정한다(모임 상세 응답의 schedules[].productId).
  * - 성별 여분·얼리버드 여분을 접수 시점에 차감한다(PENDING도 정원 포함).
  * - 매진 409(GATHERING-004), 예정 아닌 일정 409(GATHERING-003), 중복 접수 409(GATHERING-005),
- *   일정 없음 404(GATHERING-002), 성별 미확정 400(PAYMENTS-002).
+ *   상품 없음 404(GATHERING-006), 타성별 상품 400(PAYMENTS-003), 성별 미확정 400(PAYMENTS-002).
  * - 거절/취소 행은 재접수 시 PENDING으로 되살린다.
  */
 class PaymentsCompleteE2ETest : AbstractIntegrationSupport({
@@ -42,14 +44,14 @@ class PaymentsCompleteE2ETest : AbstractIntegrationSupport({
 		return userId
 	}
 
-	// 모집중 모임 + 일정 1건을 저장하고 (gatheringId, scheduleId)를 돌려준다.
+	// 모집중 모임 + 일정 1건을 저장하고 (gatheringId, scheduleId, 남성 NORMAL productId)를 돌려준다.
 	fun persistGatheringWithSchedule(
 		maleRemaining: Int = 4,
 		earlyBirdDiscountRate: Int? = null,
 		earlyBirdCapacity: Int? = null,
 		earlyBirdRemaining: Int? = earlyBirdCapacity,
 		status: GatheringScheduleStatus = GatheringScheduleStatus.SCHEDULED,
-	): Pair<Long, Long> {
+	): Triple<Long, Long, Long> {
 		val gatheringId: Long = IntegrationUtil.persist(
 			GatheringEntityFixture.create(status = GatheringStatus.RECRUITING),
 		).id!!
@@ -62,7 +64,7 @@ class PaymentsCompleteE2ETest : AbstractIntegrationSupport({
 				status = status,
 			),
 		).id!!
-		GatheringProductEntityFixture.tierSet(
+		val products: List<GatheringProductEntity> = GatheringProductEntityFixture.tierSet(
 			gatheringId = gatheringId,
 			scheduleId = scheduleId,
 			maleFee = 10000,
@@ -70,8 +72,11 @@ class PaymentsCompleteE2ETest : AbstractIntegrationSupport({
 			earlyBirdDiscountRate = earlyBirdDiscountRate,
 			discountMaleFee = null,
 			discountFemaleFee = null,
-		).forEach { product: GatheringProductEntity -> IntegrationUtil.persist(product) }
-		return gatheringId to scheduleId
+		).map { product: GatheringProductEntity -> IntegrationUtil.persist(product) }
+		val productId: Long = products.first { product: GatheringProductEntity ->
+			product.gender == Gender.MALE && product.type == GatheringProductType.NORMAL
+		}.id!!
+		return Triple(gatheringId, scheduleId, productId)
 	}
 
 	fun findMember(scheduleId: Long, userId: Long): GatheringMemberEntity? {
@@ -91,14 +96,14 @@ class PaymentsCompleteE2ETest : AbstractIntegrationSupport({
 		context("성별이 확정된 유저가 얼리버드 유효 일정에 결제완료하면") {
 			it("PENDING 참가·결제 기록을 남기고 성별·얼리버드 여분을 차감한다") {
 				val userId: Long = persistUserWithGender(providerId = "pay-complete-1", gender = Gender.MALE)
-				val (gatheringId: Long, scheduleId: Long) = persistGatheringWithSchedule(
+				val (gatheringId: Long, scheduleId: Long, productId: Long) = persistGatheringWithSchedule(
 					earlyBirdDiscountRate = 30,
 					earlyBirdCapacity = 2,
 				)
 
 				post("/payments/v1/complete") {
 					bearer(accessTokenFor(userId))
-					jsonBody("""{"gatheringId": $gatheringId, "scheduleId": $scheduleId}""")
+					jsonBody("""{"productId": $productId}""")
 				} expect {
 					status(200)
 					body("success", true)
@@ -126,11 +131,11 @@ class PaymentsCompleteE2ETest : AbstractIntegrationSupport({
 		context("해당 성별 여분이 없는 일정에 결제완료하면") {
 			it("409 GATHERING-004를 반환하고 아무것도 저장하지 않는다") {
 				val userId: Long = persistUserWithGender(providerId = "pay-complete-2", gender = Gender.MALE)
-				val (gatheringId: Long, scheduleId: Long) = persistGatheringWithSchedule(maleRemaining = 0)
+				val (gatheringId: Long, scheduleId: Long, productId: Long) = persistGatheringWithSchedule(maleRemaining = 0)
 
 				post("/payments/v1/complete") {
 					bearer(accessTokenFor(userId))
-					jsonBody("""{"gatheringId": $gatheringId, "scheduleId": $scheduleId}""")
+					jsonBody("""{"productId": $productId}""")
 				} expect {
 					status(409)
 					body("error.code", "GATHERING-004")
@@ -143,13 +148,13 @@ class PaymentsCompleteE2ETest : AbstractIntegrationSupport({
 		context("예정 상태가 아닌 일정에 결제완료하면") {
 			it("409 GATHERING-003을 반환한다") {
 				val userId: Long = persistUserWithGender(providerId = "pay-complete-3")
-				val (gatheringId: Long, scheduleId: Long) = persistGatheringWithSchedule(
+				val (gatheringId: Long, scheduleId: Long, productId: Long) = persistGatheringWithSchedule(
 					status = GatheringScheduleStatus.COMPLETED,
 				)
 
 				post("/payments/v1/complete") {
 					bearer(accessTokenFor(userId))
-					jsonBody("""{"gatheringId": $gatheringId, "scheduleId": $scheduleId}""")
+					jsonBody("""{"productId": $productId}""")
 				} expect {
 					status(409)
 					body("error.code", "GATHERING-003")
@@ -160,16 +165,16 @@ class PaymentsCompleteE2ETest : AbstractIntegrationSupport({
 		context("이미 승인대기 접수가 있는 일정에 다시 결제완료하면") {
 			it("409 GATHERING-005를 반환하고 여분을 추가 차감하지 않는다") {
 				val userId: Long = persistUserWithGender(providerId = "pay-complete-4", gender = Gender.MALE)
-				val (gatheringId: Long, scheduleId: Long) = persistGatheringWithSchedule()
+				val (gatheringId: Long, scheduleId: Long, productId: Long) = persistGatheringWithSchedule()
 
 				post("/payments/v1/complete") {
 					bearer(accessTokenFor(userId))
-					jsonBody("""{"gatheringId": $gatheringId, "scheduleId": $scheduleId}""")
+					jsonBody("""{"productId": $productId}""")
 				} expect { status(200) }
 
 				post("/payments/v1/complete") {
 					bearer(accessTokenFor(userId))
-					jsonBody("""{"gatheringId": $gatheringId, "scheduleId": $scheduleId}""")
+					jsonBody("""{"productId": $productId}""")
 				} expect {
 					status(409)
 					body("error.code", "GATHERING-005")
@@ -182,7 +187,7 @@ class PaymentsCompleteE2ETest : AbstractIntegrationSupport({
 		context("거절된 접수가 있는 유저가 다시 결제완료하면") {
 			it("기존 행을 PENDING으로 되살리고 여분을 다시 차감한다") {
 				val userId: Long = persistUserWithGender(providerId = "pay-complete-5", gender = Gender.MALE)
-				val (gatheringId: Long, scheduleId: Long) = persistGatheringWithSchedule()
+				val (gatheringId: Long, scheduleId: Long, productId: Long) = persistGatheringWithSchedule()
 				IntegrationUtil.persist(
 					GatheringMemberEntityFixture.create(
 						gatheringId = gatheringId,
@@ -195,7 +200,7 @@ class PaymentsCompleteE2ETest : AbstractIntegrationSupport({
 
 				post("/payments/v1/complete") {
 					bearer(accessTokenFor(userId))
-					jsonBody("""{"gatheringId": $gatheringId, "scheduleId": $scheduleId}""")
+					jsonBody("""{"productId": $productId}""")
 				} expect {
 					status(200)
 					body("data.amount", 10000)
@@ -210,11 +215,11 @@ class PaymentsCompleteE2ETest : AbstractIntegrationSupport({
 			it("400 PAYMENTS-002를 반환한다") {
 				val userId: Long = IntegrationUtil.persist(UserEntityFixture.create(providerId = "pay-complete-6")).id!!
 				IntegrationUtil.persist(UserDetailEntityFixture.create(userId = userId, gender = null))
-				val (gatheringId: Long, scheduleId: Long) = persistGatheringWithSchedule()
+				val (gatheringId: Long, scheduleId: Long, productId: Long) = persistGatheringWithSchedule()
 
 				post("/payments/v1/complete") {
 					bearer(accessTokenFor(userId))
-					jsonBody("""{"gatheringId": $gatheringId, "scheduleId": $scheduleId}""")
+					jsonBody("""{"productId": $productId}""")
 				} expect {
 					status(400)
 					body("error.code", "PAYMENTS-002")
@@ -222,18 +227,34 @@ class PaymentsCompleteE2ETest : AbstractIntegrationSupport({
 			}
 		}
 
-		context("없는 일정으로 결제완료하면") {
-			it("404 GATHERING-002를 반환한다") {
-				val userId: Long = persistUserWithGender(providerId = "pay-complete-7")
-				val (gatheringId: Long, _) = persistGatheringWithSchedule()
+		context("없는 productId로 결제완료하면") {
+			it("404 GATHERING-006을 반환한다") {
+				val userId: Long = persistUserWithGender(providerId = "pay-complete-nf")
 
 				post("/payments/v1/complete") {
 					bearer(accessTokenFor(userId))
-					jsonBody("""{"gatheringId": $gatheringId, "scheduleId": 999999}""")
+					jsonBody("""{"productId": 999999}""")
 				} expect {
 					status(404)
-					body("error.code", "GATHERING-002")
+					body("error.code", "GATHERING-006")
 				}
+			}
+		}
+
+		context("타성별 상품의 productId로 결제완료하면") {
+			it("400 PAYMENTS-003을 반환하고 아무것도 저장하지 않는다") {
+				val userId: Long = persistUserWithGender(providerId = "pay-complete-gm", gender = Gender.FEMALE)
+				val (gatheringId: Long, scheduleId: Long, maleProductId: Long) = persistGatheringWithSchedule()
+
+				post("/payments/v1/complete") {
+					bearer(accessTokenFor(userId))
+					jsonBody("""{"productId": $maleProductId}""")
+				} expect {
+					status(400)
+					body("error.code", "PAYMENTS-003")
+				}
+
+				findMember(scheduleId, userId) shouldBe null
 			}
 		}
 	}

@@ -18,4 +18,7 @@ enum class PaymentsErrorCode(
 
 	/** 결제 접수에 필요한 주문자 성별이 프로필에 없음(온보딩 미완료 등). */
 	ORDERER_GENDER_REQUIRED("PAYMENTS-002", "주문자 성별을 확인할 수 없습니다. 프로필을 먼저 완성해주세요.", HttpStatus.BAD_REQUEST),
+
+	/** 결제완료 접수의 productId가 본인 프로필 성별의 상품이 아님. */
+	PAYMENT_PRODUCT_GENDER_MISMATCH("PAYMENTS-003", "본인 성별의 상품이 아닙니다.", HttpStatus.BAD_REQUEST),
 }

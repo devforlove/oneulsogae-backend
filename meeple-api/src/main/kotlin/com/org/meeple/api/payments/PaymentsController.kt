@@ -64,9 +64,10 @@ class PaymentsController(
 	 */
 	@Operation(
 		summary = "결제완료 접수",
-		description = "결제 완료를 접수해 참가를 승인대기로 등록한다. 성별 여분·얼리버드 여분을 접수 시점에 차감한다. " +
-			"일정 없음 404(GATHERING-002), 판매 중 아님 409(GATHERING-003), 매진 409(GATHERING-004), " +
-			"중복 접수 409(GATHERING-005), 성별 미확정 400(PAYMENTS-002).",
+		description = "결제 완료를 접수해 참가를 승인대기로 등록한다. 상품은 productId로 지정한다(모임 상세 응답의 schedules[].productId). " +
+			"성별 여분·얼리버드 여분을 접수 시점에 차감한다. " +
+			"상품 없음 404(GATHERING-006), 타성별 상품 400(PAYMENTS-003), 판매 중 아님 409(GATHERING-003), " +
+			"매진 409(GATHERING-004), 중복 접수 409(GATHERING-005), 성별 미확정 400(PAYMENTS-002).",
 	)
 	@PostMapping("/complete")
 	fun complete(
