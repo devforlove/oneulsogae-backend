@@ -7,11 +7,14 @@ import com.org.meeple.common.integration.post
 import com.org.meeple.common.user.Gender
 import com.org.meeple.infra.fixture.GatheringEntityFixture
 import com.org.meeple.infra.fixture.GatheringMemberEntityFixture
+import com.org.meeple.infra.fixture.GatheringProductEntityFixture
 import com.org.meeple.infra.fixture.GatheringScheduleEntityFixture
 import com.org.meeple.infra.fixture.IntegrationUtil
 import com.org.meeple.infra.gathering.command.entity.GatheringMemberEntity
+import com.org.meeple.infra.gathering.command.entity.GatheringProductEntity
 import com.org.meeple.infra.gathering.command.entity.GatheringScheduleEntity
 import com.org.meeple.infra.gathering.command.entity.QGatheringMemberEntity
+import com.org.meeple.infra.gathering.command.entity.QGatheringProductEntity
 import com.org.meeple.infra.gathering.command.entity.QGatheringScheduleEntity
 import io.kotest.matchers.shouldBe
 
@@ -37,6 +40,11 @@ class AdminGatheringMemberE2ETest : AbstractIntegrationSupport({
 				earlyBirdRemaining = if (earlyBirdApplied) 1 else null,
 			),
 		).id!!
+		GatheringProductEntityFixture.tierSet(
+			gatheringId = gatheringId,
+			scheduleId = scheduleId,
+			earlyBirdDiscountRate = if (earlyBirdApplied) 30 else null,
+		).forEach { product: GatheringProductEntity -> IntegrationUtil.persist(product) }
 		val memberId: Long = IntegrationUtil.persist(
 			GatheringMemberEntityFixture.create(
 				gatheringId = gatheringId,
@@ -153,5 +161,9 @@ class AdminGatheringMemberE2ETest : AbstractIntegrationSupport({
 				findSchedule(scheduleId)?.maleRemaining shouldBe 4
 			}
 		}
+	}
+
+	afterTest {
+		IntegrationUtil.deleteAll(QGatheringProductEntity.gatheringProductEntity)
 	}
 })

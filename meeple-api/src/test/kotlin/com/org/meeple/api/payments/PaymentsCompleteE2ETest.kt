@@ -9,13 +9,16 @@ import com.org.meeple.common.integration.post
 import com.org.meeple.common.user.Gender
 import com.org.meeple.infra.fixture.GatheringEntityFixture
 import com.org.meeple.infra.fixture.GatheringMemberEntityFixture
+import com.org.meeple.infra.fixture.GatheringProductEntityFixture
 import com.org.meeple.infra.fixture.GatheringScheduleEntityFixture
 import com.org.meeple.infra.fixture.IntegrationUtil
 import com.org.meeple.infra.fixture.UserDetailEntityFixture
 import com.org.meeple.infra.fixture.UserEntityFixture
 import com.org.meeple.infra.gathering.command.entity.GatheringMemberEntity
+import com.org.meeple.infra.gathering.command.entity.GatheringProductEntity
 import com.org.meeple.infra.gathering.command.entity.GatheringScheduleEntity
 import com.org.meeple.infra.gathering.command.entity.QGatheringMemberEntity
+import com.org.meeple.infra.gathering.command.entity.QGatheringProductEntity
 import com.org.meeple.infra.gathering.command.entity.QGatheringScheduleEntity
 import com.org.meeple.infra.payments.command.entity.PaymentEntity
 import com.org.meeple.infra.payments.command.entity.QPaymentEntity
@@ -62,6 +65,15 @@ class PaymentsCompleteE2ETest : AbstractIntegrationSupport({
 				status = status,
 			),
 		).id!!
+		GatheringProductEntityFixture.tierSet(
+			gatheringId = gatheringId,
+			scheduleId = scheduleId,
+			maleFee = 10000,
+			femaleFee = 8000,
+			earlyBirdDiscountRate = earlyBirdDiscountRate,
+			discountMaleFee = null,
+			discountFemaleFee = null,
+		).forEach { product: GatheringProductEntity -> IntegrationUtil.persist(product) }
 		return gatheringId to scheduleId
 	}
 
@@ -227,5 +239,9 @@ class PaymentsCompleteE2ETest : AbstractIntegrationSupport({
 				}
 			}
 		}
+	}
+
+	afterTest {
+		IntegrationUtil.deleteAll(QGatheringProductEntity.gatheringProductEntity)
 	}
 })

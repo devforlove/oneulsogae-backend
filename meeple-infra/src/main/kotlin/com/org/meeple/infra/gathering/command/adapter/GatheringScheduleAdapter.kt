@@ -5,14 +5,17 @@ import com.org.meeple.admin.gathering.command.application.port.out.LoadGathering
 import com.org.meeple.admin.gathering.command.application.port.out.SaveGatheringSchedulePort
 import com.org.meeple.admin.gathering.command.application.port.out.RestoreGatheringMemberSeatPort
 import com.org.meeple.admin.gathering.command.domain.GatheringSchedule
+import com.org.meeple.common.gathering.GatheringProductType
 import com.org.meeple.common.gathering.GatheringScheduleStatus
 import com.org.meeple.common.user.Gender
 import com.org.meeple.core.gathering.command.application.port.out.GetJoiningSchedulePort
 import com.org.meeple.core.gathering.command.application.port.out.SaveJoiningSchedulePort
 import com.org.meeple.core.gathering.command.domain.JoiningSchedule
+import com.org.meeple.infra.gathering.command.entity.GatheringProductEntity
 import com.org.meeple.infra.gathering.command.entity.GatheringScheduleEntity
 import com.org.meeple.infra.gathering.command.mapper.toDomain
 import com.org.meeple.infra.gathering.command.mapper.toEntity
+import com.org.meeple.infra.gathering.command.repository.GatheringProductJpaRepository
 import com.org.meeple.infra.gathering.command.repository.GatheringScheduleJpaRepository
 import org.springframework.stereotype.Component
 
@@ -20,10 +23,12 @@ import org.springframework.stereotype.Component
  * [GatheringScheduleEntity]의 command 영속성 어댑터. (엔티티당 어댑터 하나)
  * 어드민의 저장([SaveGatheringSchedulePort])·로드([LoadGatheringSchedulePort])·상태 전이([ChangeGatheringScheduleStatusPort])와
  * core 참가 접수의 잠금 조회([GetJoiningSchedulePort])·여분 반영([SaveJoiningSchedulePort]) out-port를 함께 구현한다.
+ * 잠금 조회는 gathering_products의 저장 가격을 함께 실어 투영한다.
  */
 @Component
 class GatheringScheduleAdapter(
 	private val gatheringScheduleJpaRepository: GatheringScheduleJpaRepository,
+	private val gatheringProductJpaRepository: GatheringProductJpaRepository,
 ) : SaveGatheringSchedulePort,
 	LoadGatheringSchedulePort,
 	ChangeGatheringScheduleStatusPort,
@@ -47,21 +52,25 @@ class GatheringScheduleAdapter(
 		gatheringScheduleJpaRepository.save(entity)
 	}
 
-	// 참가 접수용: 비관적 쓰기 락으로 잠근 일정을 core 도메인으로 투영한다.
+	// 참가 접수용: 비관적 쓰기 락으로 잠근 일정을 상품 가격과 함께 core 도메인으로 투영한다.
 	override fun getForUpdate(scheduleId: Long): JoiningSchedule? =
 		gatheringScheduleJpaRepository.findByIdForUpdate(scheduleId)?.let { entity: GatheringScheduleEntity ->
+			val products: List<GatheringProductEntity> = gatheringProductJpaRepository.findByScheduleId(scheduleId)
+			fun priceOf(gender: Gender, type: GatheringProductType): Int? =
+				products.firstOrNull { product: GatheringProductEntity -> product.gender == gender && product.type == type }?.price
 			JoiningSchedule(
 				id = checkNotNull(entity.id),
 				gatheringId = entity.gatheringId,
 				status = entity.status,
-				maleFee = entity.maleFee,
-				femaleFee = entity.femaleFee,
+				maleFee = checkNotNull(priceOf(Gender.MALE, GatheringProductType.NORMAL)) { "정가 상품이 없습니다: $scheduleId" },
+				femaleFee = checkNotNull(priceOf(Gender.FEMALE, GatheringProductType.NORMAL)) { "정가 상품이 없습니다: $scheduleId" },
 				maleRemaining = entity.maleRemaining,
 				femaleRemaining = entity.femaleRemaining,
 				earlyBirdRemaining = entity.earlyBirdRemaining,
-				earlyBirdDiscountRate = entity.earlyBirdDiscountRate,
-				discountMaleFee = entity.discountMaleFee,
-				discountFemaleFee = entity.discountFemaleFee,
+				earlyBirdMaleFee = priceOf(Gender.MALE, GatheringProductType.EARLY_BIRD),
+				earlyBirdFemaleFee = priceOf(Gender.FEMALE, GatheringProductType.EARLY_BIRD),
+				discountMaleFee = priceOf(Gender.MALE, GatheringProductType.DISCOUNT),
+				discountFemaleFee = priceOf(Gender.FEMALE, GatheringProductType.DISCOUNT),
 			)
 		}
 

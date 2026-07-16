@@ -17,7 +17,8 @@ class JoiningScheduleTest : DescribeSpec({
 		maleRemaining: Int = 4,
 		femaleRemaining: Int = 4,
 		earlyBirdRemaining: Int? = null,
-		earlyBirdDiscountRate: Int? = null,
+		earlyBirdMaleFee: Int? = null,
+		earlyBirdFemaleFee: Int? = null,
 		discountMaleFee: Int? = null,
 		discountFemaleFee: Int? = null,
 	): JoiningSchedule =
@@ -30,7 +31,8 @@ class JoiningScheduleTest : DescribeSpec({
 			maleRemaining = maleRemaining,
 			femaleRemaining = femaleRemaining,
 			earlyBirdRemaining = earlyBirdRemaining,
-			earlyBirdDiscountRate = earlyBirdDiscountRate,
+			earlyBirdMaleFee = earlyBirdMaleFee,
+			earlyBirdFemaleFee = earlyBirdFemaleFee,
 			discountMaleFee = discountMaleFee,
 			discountFemaleFee = discountFemaleFee,
 		)
@@ -52,11 +54,11 @@ class JoiningScheduleTest : DescribeSpec({
 
 		context("얼리버드가 유효한 일정에 신청하면") {
 			it("얼리버드가로 접수하고 얼리버드 여분도 차감한다") {
-				val target: JoiningSchedule = schedule(earlyBirdRemaining = 2, earlyBirdDiscountRate = 30)
+				val target: JoiningSchedule = schedule(earlyBirdRemaining = 2, earlyBirdFemaleFee = 5600)
 
 				val pricing: JoinPricing = target.register(Gender.FEMALE)
 
-				pricing.amount shouldBe 5600 // 8000 × 70%
+				pricing.amount shouldBe 5600 // 저장된 얼리버드가
 				pricing.earlyBirdApplied shouldBe true
 				target.earlyBirdRemaining shouldBe 1
 				target.femaleRemaining shouldBe 3
@@ -67,7 +69,7 @@ class JoiningScheduleTest : DescribeSpec({
 			it("할인가로 접수하고 얼리버드 여분은 차감하지 않는다") {
 				val target: JoiningSchedule = schedule(
 					earlyBirdRemaining = 0,
-					earlyBirdDiscountRate = 30,
+					earlyBirdMaleFee = 7000,
 					discountMaleFee = 9000,
 				)
 
