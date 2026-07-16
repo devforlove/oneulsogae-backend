@@ -5,10 +5,10 @@ import com.org.meeple.api.payments.response.CheckoutResponse
 import com.org.meeple.api.payments.response.CompletePaymentResponse
 import com.org.meeple.auth.AuthUser
 import com.org.meeple.auth.LoginUser
-import com.org.meeple.common.user.Gender
 import com.org.meeple.core.common.error.BusinessException
 import com.org.meeple.core.common.response.ApiResponse
 import com.org.meeple.core.gathering.query.dto.GatheringDetailView
+import com.org.meeple.core.gathering.query.dto.GatheringProductIdentity
 import com.org.meeple.core.gathering.query.dto.GatheringScheduleView
 import com.org.meeple.core.gathering.query.service.port.`in`.GetGatheringsUseCase
 import com.org.meeple.core.payments.PaymentsErrorCode
@@ -36,24 +36,26 @@ class PaymentsController(
 
 	/**
 	 * 결제 화면 진입 시 필요한 주문자 정보·상품(모임 일정) 정보·활성 결제수단을 조회한다.
-	 * 상품은 gathering 도메인 in-port로 조합한다. 매진은 soldOut 플래그로 내려주고 차단하지 않는다.
+	 * 상품은 productId 하나로 지정하고, gathering 도메인 in-port가 (모임, 일정, 성별)로 해석한다.
+	 * 매진은 soldOut 플래그로 내려주고 차단하지 않는다.
 	 */
 	@Operation(
 		summary = "체크아웃 화면 조회",
-		description = "결제 화면 진입 시 필요한 주문자 정보(실명·이메일·휴대폰), 상품 정보(모임·일정·정가·실결제가·매진 여부), 활성 결제수단 목록을 조회한다. 본인인증 전 사용자는 주문자 필드가 null일 수 있다.",
+		description = "결제 화면 진입 시 필요한 주문자 정보(실명·이메일·휴대폰), 상품 정보(모임·일정·정가·실결제가·매진 여부), 활성 결제수단 목록을 조회한다. " +
+			"상품은 productId로 지정한다(모임 상세 응답의 schedules[].productId). 본인인증 전 사용자는 주문자 필드가 null일 수 있다. " +
+			"상품 없음 404(GATHERING-006), 모임 없음/모집중 아님 404(GATHERING-001), 일정 미매칭 404(PAYMENTS-001).",
 	)
 	@GetMapping("/checkout")
 	fun getCheckout(
 		@LoginUser user: AuthUser,
-		@RequestParam gatheringId: Long,
-		@RequestParam scheduleId: Long,
-		@RequestParam gender: Gender,
+		@RequestParam productId: Long,
 	): ApiResponse<CheckoutResponse> {
 		val checkout: CheckoutView = getCheckoutUseCase.getCheckout(user.id)
-		val gathering: GatheringDetailView = getGatheringsUseCase.getGathering(gatheringId)
-		val schedule: GatheringScheduleView = gathering.scheduleOrNull(scheduleId)
+		val product: GatheringProductIdentity = getGatheringsUseCase.getProduct(productId)
+		val gathering: GatheringDetailView = getGatheringsUseCase.getGathering(product.gatheringId)
+		val schedule: GatheringScheduleView = gathering.scheduleOrNull(product.scheduleId)
 			?: throw BusinessException(PaymentsErrorCode.CHECKOUT_PRODUCT_NOT_FOUND)
-		return ApiResponse.success(CheckoutResponse.of(checkout, gathering, schedule, gender))
+		return ApiResponse.success(CheckoutResponse.of(checkout, gathering, schedule, product.gender))
 	}
 
 	/**

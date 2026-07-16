@@ -1,9 +1,11 @@
 package com.org.meeple.api.payments
 
+import com.org.meeple.common.gathering.GatheringProductType
 import com.org.meeple.common.gathering.GatheringStatus
 import com.org.meeple.common.integration.AbstractIntegrationSupport
 import com.org.meeple.common.integration.expect
 import com.org.meeple.common.integration.get
+import com.org.meeple.common.user.Gender
 import com.org.meeple.core.user.command.domain.IdentityVerificationStatus
 import com.org.meeple.infra.fixture.GatheringEntityFixture
 import com.org.meeple.infra.fixture.GatheringProductEntityFixture
@@ -28,25 +30,25 @@ import org.hamcrest.Matchers.nullValue
 import java.time.LocalDateTime
 
 /**
- * `GET /payments/v1/checkout?gatheringId=&scheduleId=&gender=` E2E 테스트.
+ * `GET /payments/v1/checkout?productId=` E2E 테스트.
  *
  * 결제(체크아웃) 화면 진입 시 주문자 정보 + 상품(모임 일정) 정보 + 활성 결제수단 목록을 반환한다.
  * - 주문자: 실명(최신 VERIFIED 본인인증)·이메일(users)·휴대폰(user_details). 미비는 null 필드(에러 아님).
  * - 상품: 정가(price)와 서버 확정 실결제가(salePrice — 얼리버드 유효 시 얼리버드가, 소진 시 할인가, 그 외 정가), 매진은 soldOut 플래그(200).
  * - 결제수단: active만 displayOrder 순.
- * - 없는 일정은 404(PAYMENTS-001), 모임 없음/모집중 아님은 404(GATHERING-001).
+ * - 없는 productId는 404(GATHERING-006), 모임 없음/모집중 아님은 404(GATHERING-001), 일정 미매칭은 404(PAYMENTS-001).
  * (presigned URL은 TestFileStorageConfig의 페이크 — https://presigned.test/<imageKey>)
  */
 class PaymentsCheckoutE2ETest : AbstractIntegrationSupport({
 
-	// 모집중 모임 + 일정 1건을 저장하고 (gatheringId, scheduleId)를 돌려준다.
+	// 모집중 모임 + 일정 + 상품을 저장하고 (gatheringId, scheduleId, 남성 NORMAL productId)를 돌려준다.
 	fun persistGatheringWithSchedule(
 		earlyBirdDiscountRate: Int? = null,
 		earlyBirdCapacity: Int? = null,
 		earlyBirdRemaining: Int? = earlyBirdCapacity,
 		discountMaleFee: Int? = null,
 		maleRemaining: Int = 4,
-	): Pair<Long, Long> {
+	): Triple<Long, Long, Long> {
 		val gatheringId: Long = IntegrationUtil.persist(
 			GatheringEntityFixture.create(
 				title = "체크아웃 모임",
@@ -64,15 +66,18 @@ class PaymentsCheckoutE2ETest : AbstractIntegrationSupport({
 				earlyBirdRemaining = earlyBirdRemaining,
 			),
 		).id!!
-		GatheringProductEntityFixture.tierSet(
+		val products: List<GatheringProductEntity> = GatheringProductEntityFixture.tierSet(
 			gatheringId = gatheringId,
 			scheduleId = scheduleId,
 			maleFee = 10000,
 			femaleFee = 8000,
 			earlyBirdDiscountRate = earlyBirdDiscountRate,
 			discountMaleFee = discountMaleFee,
-		).forEach { product: GatheringProductEntity -> IntegrationUtil.persist(product) }
-		return gatheringId to scheduleId
+		).map { product: GatheringProductEntity -> IntegrationUtil.persist(product) }
+		val productId: Long = products.first { product: GatheringProductEntity ->
+			product.gender == Gender.MALE && product.type == GatheringProductType.NORMAL
+		}.id!!
+		return Triple(gatheringId, scheduleId, productId)
 	}
 
 	describe("GET /payments/v1/checkout") {
@@ -96,7 +101,7 @@ class PaymentsCheckoutE2ETest : AbstractIntegrationSupport({
 					),
 				)
 				// 얼리버드 30% 유효(remaining 5) → 남성 salePrice = 10000×0.7 = 7000.
-				val (gatheringId: Long, scheduleId: Long) = persistGatheringWithSchedule(
+				val (gatheringId: Long, scheduleId: Long, productId: Long) = persistGatheringWithSchedule(
 					earlyBirdDiscountRate = 30,
 					earlyBirdCapacity = 5,
 				)
@@ -105,7 +110,7 @@ class PaymentsCheckoutE2ETest : AbstractIntegrationSupport({
 				IntegrationUtil.persist(PaymentMethodEntityFixture.create(code = "BANK_TRANSFER", name = "무통장입금", displayOrder = 1))
 				IntegrationUtil.persist(PaymentMethodEntityFixture.create(code = "CARD", name = "카드", displayOrder = 3, active = false))
 
-				get("/payments/v1/checkout?gatheringId=$gatheringId&scheduleId=$scheduleId&gender=MALE") {
+				get("/payments/v1/checkout?productId=$productId") {
 					bearer(accessTokenFor(userId))
 				} expect {
 					status(200)
@@ -132,14 +137,14 @@ class PaymentsCheckoutE2ETest : AbstractIntegrationSupport({
 
 		context("얼리버드가 소진된 일정을 조회하면") {
 			it("실결제가는 할인가다") {
-				val (gatheringId: Long, scheduleId: Long) = persistGatheringWithSchedule(
+				val (gatheringId: Long, scheduleId: Long, productId: Long) = persistGatheringWithSchedule(
 					earlyBirdDiscountRate = 30,
 					earlyBirdCapacity = 5,
 					earlyBirdRemaining = 0,
 					discountMaleFee = 9000,
 				)
 
-				get("/payments/v1/checkout?gatheringId=$gatheringId&scheduleId=$scheduleId&gender=MALE") {
+				get("/payments/v1/checkout?productId=$productId") {
 					bearer(accessTokenFor(9001L))
 				} expect {
 					status(200)
@@ -151,9 +156,9 @@ class PaymentsCheckoutE2ETest : AbstractIntegrationSupport({
 
 		context("얼리버드 티어가 없는 일정을 조회하면") {
 			it("실결제가는 정가다") {
-				val (gatheringId: Long, scheduleId: Long) = persistGatheringWithSchedule()
+				val (gatheringId: Long, scheduleId: Long, productId: Long) = persistGatheringWithSchedule()
 
-				get("/payments/v1/checkout?gatheringId=$gatheringId&scheduleId=$scheduleId&gender=MALE") {
+				get("/payments/v1/checkout?productId=$productId") {
 					bearer(accessTokenFor(9002L))
 				} expect {
 					status(200)
@@ -165,9 +170,9 @@ class PaymentsCheckoutE2ETest : AbstractIntegrationSupport({
 
 		context("해당 성별 정원이 소진된 일정을 조회하면") {
 			it("200과 함께 soldOut을 true로 반환한다") {
-				val (gatheringId: Long, scheduleId: Long) = persistGatheringWithSchedule(maleRemaining = 0)
+				val (gatheringId: Long, scheduleId: Long, productId: Long) = persistGatheringWithSchedule(maleRemaining = 0)
 
-				get("/payments/v1/checkout?gatheringId=$gatheringId&scheduleId=$scheduleId&gender=MALE") {
+				get("/payments/v1/checkout?productId=$productId") {
 					bearer(accessTokenFor(9003L))
 				} expect {
 					status(200)
@@ -176,11 +181,29 @@ class PaymentsCheckoutE2ETest : AbstractIntegrationSupport({
 			}
 		}
 
-		context("모임에 없는 scheduleId로 조회하면") {
-			it("404(PAYMENTS-001)를 반환한다") {
-				val (gatheringId: Long, _) = persistGatheringWithSchedule()
+		context("없는 productId로 조회하면") {
+			it("404 GATHERING-006을 반환한다") {
+				val userId: Long = IntegrationUtil.persist(UserEntityFixture.create(providerId = "checkout-404")).id!!
 
-				get("/payments/v1/checkout?gatheringId=$gatheringId&scheduleId=999999&gender=MALE") {
+				get("/payments/v1/checkout?productId=999999") {
+					bearer(accessTokenFor(userId))
+				} expect {
+					status(404)
+					body("success", false)
+					body("error.code", "GATHERING-006")
+				}
+			}
+		}
+
+		context("모임 A에는 속하지만 다른 모임 B의 scheduleId를 가진 상품으로 조회하면") {
+			it("404(PAYMENTS-001)를 반환한다") {
+				val (gatheringAId: Long, _, _) = persistGatheringWithSchedule()
+				val (_, scheduleBId: Long, _) = persistGatheringWithSchedule()
+				val mismatchedProductId: Long = IntegrationUtil.persist(
+					GatheringProductEntityFixture.create(gatheringId = gatheringAId, scheduleId = scheduleBId),
+				).id!!
+
+				get("/payments/v1/checkout?productId=$mismatchedProductId") {
 					bearer(accessTokenFor(9004L))
 				} expect {
 					status(404)
@@ -195,8 +218,11 @@ class PaymentsCheckoutE2ETest : AbstractIntegrationSupport({
 				val gatheringId: Long = IntegrationUtil.persist(
 					GatheringEntityFixture.create(title = "취소된 모임", status = GatheringStatus.CANCELED),
 				).id!!
+				val productId: Long = IntegrationUtil.persist(
+					GatheringProductEntityFixture.create(gatheringId = gatheringId),
+				).id!!
 
-				get("/payments/v1/checkout?gatheringId=$gatheringId&scheduleId=1&gender=MALE") {
+				get("/payments/v1/checkout?productId=$productId") {
 					bearer(accessTokenFor(9005L))
 				} expect {
 					status(404)
@@ -211,10 +237,10 @@ class PaymentsCheckoutE2ETest : AbstractIntegrationSupport({
 				val user: UserEntity = IntegrationUtil.persist(
 					UserEntityFixture.create(providerId = "checkout-2", email = null),
 				)
-				val (gatheringId: Long, scheduleId: Long) = persistGatheringWithSchedule()
+				val (gatheringId: Long, scheduleId: Long, productId: Long) = persistGatheringWithSchedule()
 				IntegrationUtil.persist(PaymentMethodEntityFixture.create())
 
-				get("/payments/v1/checkout?gatheringId=$gatheringId&scheduleId=$scheduleId&gender=MALE") {
+				get("/payments/v1/checkout?productId=$productId") {
 					bearer(accessTokenFor(user.id!!))
 				} expect {
 					status(200)
@@ -229,7 +255,7 @@ class PaymentsCheckoutE2ETest : AbstractIntegrationSupport({
 
 		context("인증 토큰이 없으면") {
 			it("401을 반환한다") {
-				get("/payments/v1/checkout?gatheringId=1&scheduleId=1&gender=MALE") {} expect {
+				get("/payments/v1/checkout?productId=1") {} expect {
 					status(401)
 				}
 			}
