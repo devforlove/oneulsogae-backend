@@ -56,7 +56,7 @@ class GatheringScheduleEntity(
 	@Column(name = "female_remaining", nullable = false)
 	var femaleRemaining: Int,
 
-	/** 얼리버드를 적용하는 인원 수. 얼리버드가 없는 일정은 null. (할인율과 함께 존재) */
+	/** 얼리버드를 적용하는 인원 수. 얼리버드가 없는 일정은 null. (얼리버드가는 gathering_products의 EARLY_BIRD 행이 가진다) */
 	@Column(name = "early_bird_capacity")
 	var earlyBirdCapacity: Int? = null,
 
