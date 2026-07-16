@@ -42,11 +42,9 @@ class GatheringScheduleTest : DescribeSpec({
 			schedule.gatheringId shouldBe 1L
 			schedule.startAt shouldBe start
 			schedule.endAt shouldBe end
-			schedule.fee shouldBe fee
 			// 남/녀 정원은 모임 정원(4)의 절반(2).
 			schedule.maleCapacity shouldBe 2
 			schedule.femaleCapacity shouldBe 2
-			schedule.earlyBirdDiscountRate shouldBe earlyBirdRate
 			schedule.earlyBirdCapacity shouldBe 2
 		}
 
@@ -173,8 +171,8 @@ class GatheringScheduleTest : DescribeSpec({
 		fun scheduleWith(status: GatheringScheduleStatus): GatheringSchedule =
 			GatheringSchedule(
 				id = 1L, gatheringId = 1L, startAt = start, endAt = end,
-				fee = fee, maleCapacity = cap, femaleCapacity = cap,
-				earlyBirdDiscountRate = null, earlyBirdCapacity = null, discountFee = null, status = status,
+				maleCapacity = cap, femaleCapacity = cap,
+				earlyBirdCapacity = null, status = status,
 			)
 
 		it("예정 → 종료로 전이한다") {

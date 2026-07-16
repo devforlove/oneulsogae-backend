@@ -69,19 +69,15 @@ class AdminGatheringScheduleE2ETest : AbstractIntegrationSupport({
 				val saved: GatheringScheduleEntity = savedById(scheduleId)
 				saved.gatheringId shouldBe gatheringId
 				saved.status shouldBe GatheringScheduleStatus.SCHEDULED
-				saved.maleFee shouldBe 10000
-				saved.femaleFee shouldBe 8000
 				// 정원은 모임 정원(fixture 기본 4)의 절반(2)으로 정해진다.
 				saved.maleCapacity shouldBe 2
 				saved.femaleCapacity shouldBe 2
 				// 저장 시 남/녀 여분은 각 성별 정원으로 초기화된다.
 				saved.maleRemaining shouldBe 2
 				saved.femaleRemaining shouldBe 2
-				saved.earlyBirdDiscountRate shouldBe 30
 				saved.earlyBirdCapacity shouldBe 2
 				// 저장 시 남은 개수는 정원(earlyBirdCapacity)으로 초기화된다.
 				saved.earlyBirdRemaining shouldBe 2
-				saved.discountMaleFee shouldBe 9000
 				// 성별·티어별 상품이 함께 생성된다: 남/녀 × (NORMAL, EARLY_BIRD, DISCOUNT) = 6행.
 				val products: List<GatheringProductEntity> = productsByScheduleId(scheduleId)
 				products.size shouldBe 6
@@ -114,7 +110,6 @@ class AdminGatheringScheduleE2ETest : AbstractIntegrationSupport({
 				// 남/녀 여분은 모임 정원(4)의 절반(2)으로 초기화된다.
 				saved.maleRemaining shouldBe 2
 				saved.femaleRemaining shouldBe 2
-				saved.earlyBirdDiscountRate shouldBe null
 				saved.earlyBirdCapacity shouldBe null
 				saved.earlyBirdRemaining shouldBe null
 				// 정가만 있으면 상품은 남/녀 NORMAL 2행이다.

@@ -56,10 +56,7 @@ class PaymentsCompleteE2ETest : AbstractIntegrationSupport({
 		val scheduleId: Long = IntegrationUtil.persist(
 			GatheringScheduleEntityFixture.create(
 				gatheringId = gatheringId,
-				maleFee = 10000,
-				femaleFee = 8000,
 				maleRemaining = maleRemaining,
-				earlyBirdDiscountRate = earlyBirdDiscountRate,
 				earlyBirdCapacity = earlyBirdCapacity,
 				earlyBirdRemaining = earlyBirdRemaining,
 				status = status,

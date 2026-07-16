@@ -151,12 +151,7 @@ class AdminGatheringQueryE2ETest : AbstractIntegrationSupport({
 				GatheringScheduleEntityFixture.create(
 					gatheringId = id,
 					startAt = LocalDateTime.of(2999, 1, 1, 18, 0, 0),
-					maleFee = 10000,
-					femaleFee = 8000,
-					earlyBirdDiscountRate = 30,
 					earlyBirdCapacity = 5,
-					discountMaleFee = 9000,
-					discountFemaleFee = 7000,
 					status = GatheringScheduleStatus.SCHEDULED,
 				),
 			).id!!

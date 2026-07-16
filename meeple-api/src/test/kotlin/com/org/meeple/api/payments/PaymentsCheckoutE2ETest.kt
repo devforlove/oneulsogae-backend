@@ -59,13 +59,9 @@ class PaymentsCheckoutE2ETest : AbstractIntegrationSupport({
 			GatheringScheduleEntityFixture.create(
 				gatheringId = gatheringId,
 				startAt = LocalDateTime.of(2999, 1, 1, 19, 0, 0),
-				maleFee = 10000,
-				femaleFee = 8000,
 				maleRemaining = maleRemaining,
-				earlyBirdDiscountRate = earlyBirdDiscountRate,
 				earlyBirdCapacity = earlyBirdCapacity,
 				earlyBirdRemaining = earlyBirdRemaining,
-				discountMaleFee = discountMaleFee,
 			),
 		).id!!
 		GatheringProductEntityFixture.tierSet(

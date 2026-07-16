@@ -58,12 +58,7 @@ class OfflineGatheringDetailE2ETest : AbstractIntegrationSupport({
 				GatheringScheduleEntityFixture.create(
 					gatheringId = id,
 					startAt = LocalDateTime.of(2999, 1, 1, 18, 0, 0),
-					maleFee = 10000,
-					femaleFee = 8000,
-					earlyBirdDiscountRate = 30,
 					earlyBirdCapacity = 5,
-					discountMaleFee = 9000,
-					discountFemaleFee = 7000,
 					status = GatheringScheduleStatus.SCHEDULED,
 				),
 			).id!!
@@ -131,8 +126,6 @@ class OfflineGatheringDetailE2ETest : AbstractIntegrationSupport({
 				GatheringScheduleEntityFixture.create(
 					gatheringId = id,
 					startAt = LocalDateTime.of(2999, 1, 1, 18, 0, 0),
-					maleFee = 10000,
-					femaleFee = 8000,
 				),
 			).id!!
 			GatheringProductEntityFixture.tierSet(gatheringId = id, scheduleId = scheduleId, maleFee = 10000, femaleFee = 8000)
@@ -171,13 +164,8 @@ class OfflineGatheringDetailE2ETest : AbstractIntegrationSupport({
 				GatheringScheduleEntityFixture.create(
 					gatheringId = id,
 					startAt = LocalDateTime.of(2999, 1, 1, 18, 0, 0),
-					maleFee = 10000,
-					femaleFee = 8000,
-					earlyBirdDiscountRate = 30,
 					earlyBirdCapacity = 5,
 					earlyBirdRemaining = 0,
-					discountMaleFee = 9000,
-					discountFemaleFee = 7000,
 				),
 			).id!!
 			GatheringProductEntityFixture.tierSet(
@@ -208,9 +196,6 @@ class OfflineGatheringDetailE2ETest : AbstractIntegrationSupport({
 				GatheringScheduleEntityFixture.create(
 					gatheringId = id,
 					startAt = LocalDateTime.of(2999, 1, 1, 18, 0, 0),
-					maleFee = 10000,
-					femaleFee = 8000,
-					earlyBirdDiscountRate = 30,
 					// earlyBirdCapacity 미설정 → earlyBirdRemaining null(얼리버드 티어 없음). products에 EARLY_BIRD 행이 있어도
 					// view가 earlyBirdRemaining null을 먼저 보고 null을 반환하므로 동작은 유지된다.
 				),

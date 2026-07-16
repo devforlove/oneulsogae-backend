@@ -10,9 +10,7 @@ import java.time.LocalDateTime
  * 한 모임이 여러 일정을 가질 수 있으므로 gatherings : gathering_schedules = 1 : N이고,
  * 소속 모임은 [gatheringId]로만 참조한다. (영속성은 [com.org.meeple.infra.gathering.command.entity.GatheringScheduleEntity])
  * 시간 범위는 [startAt](필수)·[endAt](선택)으로 표현하고, 생성 시 status는 예정([GatheringScheduleStatus.SCHEDULED])이다.
- * 참가비는 일정별로 가진다: 정상가([fee], 필수), 얼리버드 할인율([earlyBirdDiscountRate]·[earlyBirdCapacity], 선택),
- * 할인가([discountFee], 선택). 얼리버드는 남/녀 금액이 아니라 정상가에 곱해지는 할인율(%)로 저장하고,
- * 할인율이 있으면 적용 인원 수도 함께 가진다. (할인율과 인원은 세트)
+ * 가격은 [products]가 성별·티어별 확정 금액으로 가진다. 얼리버드 선착순 수량은 [earlyBirdCapacity]로 가진다.
  * 정원은 성별로 가진다([maleCapacity]·[femaleCapacity]) — 생성 시 모임 정원(maxParticipants)의 절반으로 정한다.
  * 여분(남은 자리)은 저장 시 정원으로 초기화되므로 도메인은 정원만 다룬다.
  */
@@ -21,12 +19,9 @@ data class GatheringSchedule(
 	val gatheringId: Long,
 	val startAt: LocalDateTime,
 	val endAt: LocalDateTime?,
-	val fee: GatheringFee,
 	val maleCapacity: Int,
 	val femaleCapacity: Int,
-	val earlyBirdDiscountRate: Int?,
 	val earlyBirdCapacity: Int?,
-	val discountFee: GatheringFee?,
 	// 생성 직후는 예정(SCHEDULED). 시작/종료/취소로 전이한다.
 	val status: GatheringScheduleStatus = GatheringScheduleStatus.SCHEDULED,
 	// 성별·티어별 가격 상품. create()가 구성하며, 저장소에서 로드된 일정은 빈 컬렉션이다(상태 전이 등 products 불필요 경로).
@@ -87,12 +82,9 @@ data class GatheringSchedule(
 				gatheringId = gatheringId,
 				startAt = startAt,
 				endAt = endAt,
-				fee = fee,
 				maleCapacity = genderCapacity,
 				femaleCapacity = genderCapacity,
-				earlyBirdDiscountRate = earlyBirdDiscountRate,
 				earlyBirdCapacity = earlyBirdCapacity,
-				discountFee = discountFee,
 				products = GatheringProducts.create(
 					gatheringId = gatheringId,
 					fee = fee,

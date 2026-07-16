@@ -35,7 +35,6 @@ class AdminGatheringMemberE2ETest : AbstractIntegrationSupport({
 				gatheringId = gatheringId,
 				maleCapacity = 4,
 				maleRemaining = 3,
-				earlyBirdDiscountRate = if (earlyBirdApplied) 30 else null,
 				earlyBirdCapacity = if (earlyBirdApplied) 2 else null,
 				earlyBirdRemaining = if (earlyBirdApplied) 1 else null,
 			),
