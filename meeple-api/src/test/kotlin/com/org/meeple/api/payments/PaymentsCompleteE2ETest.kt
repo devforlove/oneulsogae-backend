@@ -113,7 +113,7 @@ class PaymentsCompleteE2ETest : AbstractIntegrationSupport({
 
 				post("/payments/v1/complete") {
 					bearer(accessTokenFor(userId))
-					jsonBody("""{"productId": $earlyBirdProductId}""")
+					jsonBody("""{"productId": $earlyBirdProductId, "paymentKey": "pay_key_1"}""")
 				} expect {
 					status(200)
 					body("success", true)
@@ -137,6 +137,7 @@ class PaymentsCompleteE2ETest : AbstractIntegrationSupport({
 				saved?.gender shouldBe Gender.MALE
 				// 가격 근거: 요청에 쓴 상품 id가 결제 기록에 남는다.
 				saved?.productId shouldBe earlyBirdProductId
+				saved?.paymentKey shouldBe "pay_key_1"
 			}
 		}
 
@@ -150,7 +151,7 @@ class PaymentsCompleteE2ETest : AbstractIntegrationSupport({
 
 				post("/payments/v1/complete") {
 					bearer(accessTokenFor(userId))
-					jsonBody("""{"productId": $normalProductId}""")
+					jsonBody("""{"productId": $normalProductId, "paymentKey": "pay_key_normal"}""")
 				} expect {
 					status(200)
 					body("data.amount", 10000)
@@ -173,7 +174,7 @@ class PaymentsCompleteE2ETest : AbstractIntegrationSupport({
 
 				post("/payments/v1/complete") {
 					bearer(accessTokenFor(userId))
-					jsonBody("""{"productId": $earlyBirdProductId}""")
+					jsonBody("""{"productId": $earlyBirdProductId, "paymentKey": "pay_key_soldout"}""")
 				} expect {
 					status(409)
 					body("error.code", "GATHERING-007")
@@ -192,7 +193,7 @@ class PaymentsCompleteE2ETest : AbstractIntegrationSupport({
 
 				post("/payments/v1/complete") {
 					bearer(accessTokenFor(userId))
-					jsonBody("""{"productId": $productId}""")
+					jsonBody("""{"productId": $productId, "paymentKey": "pay_key_no_gender_remaining"}""")
 				} expect {
 					status(409)
 					body("error.code", "GATHERING-004")
@@ -211,7 +212,7 @@ class PaymentsCompleteE2ETest : AbstractIntegrationSupport({
 
 				post("/payments/v1/complete") {
 					bearer(accessTokenFor(userId))
-					jsonBody("""{"productId": $productId}""")
+					jsonBody("""{"productId": $productId, "paymentKey": "pay_key_not_scheduled"}""")
 				} expect {
 					status(409)
 					body("error.code", "GATHERING-003")
@@ -226,12 +227,12 @@ class PaymentsCompleteE2ETest : AbstractIntegrationSupport({
 
 				post("/payments/v1/complete") {
 					bearer(accessTokenFor(userId))
-					jsonBody("""{"productId": $productId}""")
+					jsonBody("""{"productId": $productId, "paymentKey": "pay_key_dup_1"}""")
 				} expect { status(200) }
 
 				post("/payments/v1/complete") {
 					bearer(accessTokenFor(userId))
-					jsonBody("""{"productId": $productId}""")
+					jsonBody("""{"productId": $productId, "paymentKey": "pay_key_dup_2"}""")
 				} expect {
 					status(409)
 					body("error.code", "GATHERING-005")
@@ -257,7 +258,7 @@ class PaymentsCompleteE2ETest : AbstractIntegrationSupport({
 
 				post("/payments/v1/complete") {
 					bearer(accessTokenFor(userId))
-					jsonBody("""{"productId": $productId}""")
+					jsonBody("""{"productId": $productId, "paymentKey": "pay_key_rejected_revive"}""")
 				} expect {
 					status(200)
 					body("data.amount", 10000)
@@ -276,7 +277,7 @@ class PaymentsCompleteE2ETest : AbstractIntegrationSupport({
 
 				post("/payments/v1/complete") {
 					bearer(accessTokenFor(userId))
-					jsonBody("""{"productId": $productId}""")
+					jsonBody("""{"productId": $productId, "paymentKey": "pay_key_no_gender"}""")
 				} expect {
 					status(400)
 					body("error.code", "PAYMENTS-002")
@@ -290,7 +291,7 @@ class PaymentsCompleteE2ETest : AbstractIntegrationSupport({
 
 				post("/payments/v1/complete") {
 					bearer(accessTokenFor(userId))
-					jsonBody("""{"productId": 999999}""")
+					jsonBody("""{"productId": 999999, "paymentKey": "pay_key_not_found"}""")
 				} expect {
 					status(404)
 					body("error.code", "GATHERING-006")
@@ -305,7 +306,7 @@ class PaymentsCompleteE2ETest : AbstractIntegrationSupport({
 
 				post("/payments/v1/complete") {
 					bearer(accessTokenFor(userId))
-					jsonBody("""{"productId": $maleProductId}""")
+					jsonBody("""{"productId": $maleProductId, "paymentKey": "pay_key_gender_mismatch"}""")
 				} expect {
 					status(400)
 					body("error.code", "PAYMENTS-003")

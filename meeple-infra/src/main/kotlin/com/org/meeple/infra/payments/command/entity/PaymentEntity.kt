@@ -38,6 +38,10 @@ class PaymentEntity(
 	@Column(name = "product_id", nullable = false)
 	val productId: Long,
 
+	/** PG 거래 식별자(paymentKey). 승인 성공 건만 저장된다. */
+	@Column(name = "payment_key", nullable = false)
+	val paymentKey: String,
+
 	/** 접수 성별(금액 티어 근거). */
 	@Enumerated(EnumType.STRING)
 	@Column(name = "gender", nullable = false, columnDefinition = "varchar(50)")

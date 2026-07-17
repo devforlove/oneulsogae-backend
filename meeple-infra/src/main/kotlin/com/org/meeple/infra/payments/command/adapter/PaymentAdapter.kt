@@ -24,6 +24,7 @@ class PaymentAdapter(
 				productId = payment.productId,
 				gender = payment.gender,
 				amount = payment.amount,
+				paymentKey = payment.paymentKey,
 			),
 		)
 		return Payment(
@@ -34,6 +35,7 @@ class PaymentAdapter(
 			productId = saved.productId,
 			gender = saved.gender,
 			amount = saved.amount,
+			paymentKey = saved.paymentKey,
 		)
 	}
 }

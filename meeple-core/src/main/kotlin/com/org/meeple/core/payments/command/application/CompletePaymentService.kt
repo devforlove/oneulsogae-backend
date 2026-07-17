@@ -64,6 +64,7 @@ class CompletePaymentService(
 				productId = command.productId,
 				gender = gender,
 				amount = registered.amount,
+				paymentKey = command.paymentKey,
 			),
 		)
 		return CompletePaymentResult(amount = registered.amount)

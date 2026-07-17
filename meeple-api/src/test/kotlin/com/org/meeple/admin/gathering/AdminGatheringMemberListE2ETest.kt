@@ -41,7 +41,7 @@ class AdminGatheringMemberListE2ETest : AbstractIntegrationSupport({
 					),
 				)
 				IntegrationUtil.persist(
-					PaymentEntity(userId = firstUserId, gatheringId = gatheringId, scheduleId = scheduleId, productId = 1L, gender = Gender.MALE, amount = 10000),
+					PaymentEntity(userId = firstUserId, gatheringId = gatheringId, scheduleId = scheduleId, productId = 1L, paymentKey = "pay_key_admin_1", gender = Gender.MALE, amount = 10000),
 				)
 
 				val secondUserId: Long = IntegrationUtil.persist(UserEntityFixture.create(providerId = "admin-list-2")).id!!
@@ -54,10 +54,10 @@ class AdminGatheringMemberListE2ETest : AbstractIntegrationSupport({
 				)
 				// 재접수 이력: 과거 8000 → 최신 5600. 최신 금액이 조인되어야 한다.
 				IntegrationUtil.persist(
-					PaymentEntity(userId = secondUserId, gatheringId = gatheringId, scheduleId = scheduleId, productId = 2L, gender = Gender.FEMALE, amount = 8000),
+					PaymentEntity(userId = secondUserId, gatheringId = gatheringId, scheduleId = scheduleId, productId = 2L, paymentKey = "pay_key_admin_2", gender = Gender.FEMALE, amount = 8000),
 				)
 				IntegrationUtil.persist(
-					PaymentEntity(userId = secondUserId, gatheringId = gatheringId, scheduleId = scheduleId, productId = 2L, gender = Gender.FEMALE, amount = 5600),
+					PaymentEntity(userId = secondUserId, gatheringId = gatheringId, scheduleId = scheduleId, productId = 2L, paymentKey = "pay_key_admin_3", gender = Gender.FEMALE, amount = 5600),
 				)
 
 				get("/admin/v1/gatherings/schedules/$scheduleId/members") {
