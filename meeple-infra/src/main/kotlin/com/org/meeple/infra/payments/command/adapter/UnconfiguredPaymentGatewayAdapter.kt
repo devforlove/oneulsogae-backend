@@ -14,6 +14,6 @@ import org.springframework.stereotype.Component
 @Profile("prod")
 class UnconfiguredPaymentGatewayAdapter : PaymentGatewayPort {
 
-	override fun confirm(paymentKey: String, amount: Int): Boolean =
+	override fun confirm(paymentKey: String, orderId: String, amount: Int): Boolean =
 		throw IllegalStateException("PG 어댑터가 구성되지 않았습니다. 실제 PG 연동 전까지 prod에서 결제완료(confirm)를 사용할 수 없습니다.")
 }

@@ -43,6 +43,10 @@ class PaymentEntity(
 	@Column(name = "payment_key", nullable = false, unique = true)
 	val paymentKey: String,
 
+	/** 가맹점 주문번호(orderId). 결제 요청 시 생성해 PG confirm·조회에 쓴다. */
+	@Column(name = "order_id", nullable = false)
+	val orderId: String,
+
 	/** 접수 성별(금액 티어 근거). */
 	@Enumerated(EnumType.STRING)
 	@Column(name = "gender", nullable = false, columnDefinition = "varchar(50)")

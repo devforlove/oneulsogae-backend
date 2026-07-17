@@ -28,6 +28,7 @@ class PaymentAdapter(
 				gender = payment.gender,
 				amount = payment.amount,
 				paymentKey = payment.paymentKey,
+				orderId = payment.orderId,
 				status = payment.status,
 			),
 		)
@@ -40,6 +41,7 @@ class PaymentAdapter(
 			gender = saved.gender,
 			amount = saved.amount,
 			paymentKey = saved.paymentKey,
+			orderId = saved.orderId,
 			status = saved.status,
 		)
 	}

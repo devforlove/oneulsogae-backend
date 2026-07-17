@@ -7,6 +7,7 @@ CREATE TABLE payments (
     schedule_id BIGINT NOT NULL,
     product_id BIGINT NOT NULL,
     payment_key VARCHAR(255) NOT NULL,
+    order_id VARCHAR(255) NOT NULL,
     gender VARCHAR(50) NOT NULL,
     amount INT NOT NULL,
     status VARCHAR(50) NOT NULL,

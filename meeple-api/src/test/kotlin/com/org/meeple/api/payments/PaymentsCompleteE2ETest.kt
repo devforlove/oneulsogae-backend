@@ -114,7 +114,7 @@ class PaymentsCompleteE2ETest : AbstractIntegrationSupport({
 
 				post("/payments/v1/complete") {
 					bearer(accessTokenFor(userId))
-					jsonBody("""{"productId": $earlyBirdProductId, "paymentKey": "pay_key_1"}""")
+					jsonBody("""{"productId": $earlyBirdProductId, "paymentKey": "pay_key_1", "orderId": "ord_pay_key_1"}""")
 				} expect {
 					status(200)
 					body("success", true)
@@ -139,6 +139,7 @@ class PaymentsCompleteE2ETest : AbstractIntegrationSupport({
 				// 가격 근거: 요청에 쓴 상품 id가 결제 기록에 남는다.
 				saved?.productId shouldBe earlyBirdProductId
 				saved?.paymentKey shouldBe "pay_key_1"
+				saved?.orderId shouldBe "ord_pay_key_1"
 				saved?.status shouldBe PaymentStatus.APPROVED
 			}
 		}
@@ -153,7 +154,7 @@ class PaymentsCompleteE2ETest : AbstractIntegrationSupport({
 
 				post("/payments/v1/complete") {
 					bearer(accessTokenFor(userId))
-					jsonBody("""{"productId": $normalProductId, "paymentKey": "pay_key_normal"}""")
+					jsonBody("""{"productId": $normalProductId, "paymentKey": "pay_key_normal", "orderId": "ord_pay_key_normal"}""")
 				} expect {
 					status(200)
 					body("data.amount", 10000)
@@ -176,7 +177,7 @@ class PaymentsCompleteE2ETest : AbstractIntegrationSupport({
 
 				post("/payments/v1/complete") {
 					bearer(accessTokenFor(userId))
-					jsonBody("""{"productId": $earlyBirdProductId, "paymentKey": "pay_key_soldout"}""")
+					jsonBody("""{"productId": $earlyBirdProductId, "paymentKey": "pay_key_soldout", "orderId": "ord_pay_key_soldout"}""")
 				} expect {
 					status(409)
 					body("error.code", "GATHERING-007")
@@ -195,7 +196,7 @@ class PaymentsCompleteE2ETest : AbstractIntegrationSupport({
 
 				post("/payments/v1/complete") {
 					bearer(accessTokenFor(userId))
-					jsonBody("""{"productId": $productId, "paymentKey": "pay_key_no_gender_remaining"}""")
+					jsonBody("""{"productId": $productId, "paymentKey": "pay_key_no_gender_remaining", "orderId": "ord_pay_key_no_gender_remaining"}""")
 				} expect {
 					status(409)
 					body("error.code", "GATHERING-004")
@@ -214,7 +215,7 @@ class PaymentsCompleteE2ETest : AbstractIntegrationSupport({
 
 				post("/payments/v1/complete") {
 					bearer(accessTokenFor(userId))
-					jsonBody("""{"productId": $productId, "paymentKey": "pay_key_not_scheduled"}""")
+					jsonBody("""{"productId": $productId, "paymentKey": "pay_key_not_scheduled", "orderId": "ord_pay_key_not_scheduled"}""")
 				} expect {
 					status(409)
 					body("error.code", "GATHERING-003")
@@ -229,12 +230,12 @@ class PaymentsCompleteE2ETest : AbstractIntegrationSupport({
 
 				post("/payments/v1/complete") {
 					bearer(accessTokenFor(userId))
-					jsonBody("""{"productId": $productId, "paymentKey": "pay_key_dup_1"}""")
+					jsonBody("""{"productId": $productId, "paymentKey": "pay_key_dup_1", "orderId": "ord_pay_key_dup_1"}""")
 				} expect { status(200) }
 
 				post("/payments/v1/complete") {
 					bearer(accessTokenFor(userId))
-					jsonBody("""{"productId": $productId, "paymentKey": "pay_key_dup_2"}""")
+					jsonBody("""{"productId": $productId, "paymentKey": "pay_key_dup_2", "orderId": "ord_pay_key_dup_2"}""")
 				} expect {
 					status(409)
 					body("error.code", "GATHERING-005")
@@ -260,7 +261,7 @@ class PaymentsCompleteE2ETest : AbstractIntegrationSupport({
 
 				post("/payments/v1/complete") {
 					bearer(accessTokenFor(userId))
-					jsonBody("""{"productId": $productId, "paymentKey": "pay_key_rejected_revive"}""")
+					jsonBody("""{"productId": $productId, "paymentKey": "pay_key_rejected_revive", "orderId": "ord_pay_key_rejected_revive"}""")
 				} expect {
 					status(200)
 					body("data.amount", 10000)
@@ -279,7 +280,7 @@ class PaymentsCompleteE2ETest : AbstractIntegrationSupport({
 
 				post("/payments/v1/complete") {
 					bearer(accessTokenFor(userId))
-					jsonBody("""{"productId": $productId, "paymentKey": "pay_key_no_gender"}""")
+					jsonBody("""{"productId": $productId, "paymentKey": "pay_key_no_gender", "orderId": "ord_pay_key_no_gender"}""")
 				} expect {
 					status(400)
 					body("error.code", "PAYMENTS-002")
@@ -293,7 +294,7 @@ class PaymentsCompleteE2ETest : AbstractIntegrationSupport({
 
 				post("/payments/v1/complete") {
 					bearer(accessTokenFor(userId))
-					jsonBody("""{"productId": 999999, "paymentKey": "pay_key_not_found"}""")
+					jsonBody("""{"productId": 999999, "paymentKey": "pay_key_not_found", "orderId": "ord_pay_key_not_found"}""")
 				} expect {
 					status(404)
 					body("error.code", "GATHERING-006")
@@ -309,7 +310,7 @@ class PaymentsCompleteE2ETest : AbstractIntegrationSupport({
 				post("/payments/v1/complete") {
 					bearer(accessTokenFor(userId))
 					header("X-Stub-Pg-Confirm", "fail")
-					jsonBody("""{"productId": $normalProductId, "paymentKey": "pay_key_fail"}""")
+					jsonBody("""{"productId": $normalProductId, "paymentKey": "pay_key_fail", "orderId": "ord_pay_key_fail"}""")
 				} expect {
 					status(402)
 					body("error.code", "PAYMENTS-004")
@@ -335,7 +336,7 @@ class PaymentsCompleteE2ETest : AbstractIntegrationSupport({
 
 				post("/payments/v1/complete") {
 					bearer(accessTokenFor(userId))
-					jsonBody("""{"productId": $maleProductId, "paymentKey": "pay_key_gender_mismatch"}""")
+					jsonBody("""{"productId": $maleProductId, "paymentKey": "pay_key_gender_mismatch", "orderId": "ord_pay_key_gender_mismatch"}""")
 				} expect {
 					status(400)
 					body("error.code", "PAYMENTS-003")

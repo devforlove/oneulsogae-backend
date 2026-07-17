@@ -9,7 +9,7 @@ class UnconfiguredPaymentGatewayAdapterTest : DescribeSpec({
 	describe("confirm") {
 		it("호출 시 IllegalStateException을 던진다") {
 			shouldThrow<IllegalStateException> {
-				UnconfiguredPaymentGatewayAdapter().confirm(paymentKey = "key", amount = 1000)
+				UnconfiguredPaymentGatewayAdapter().confirm(paymentKey = "key", orderId = "order", amount = 1000)
 			}
 		}
 	}

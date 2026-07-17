@@ -15,7 +15,7 @@ import org.springframework.web.context.request.ServletRequestAttributes
 @Profile("!prod")
 class StubPaymentGatewayAdapter : PaymentGatewayPort {
 
-	override fun confirm(paymentKey: String, amount: Int): Boolean =
+	override fun confirm(paymentKey: String, orderId: String, amount: Int): Boolean =
 		confirmResult(stubHeader())
 
 	private fun stubHeader(): String? =

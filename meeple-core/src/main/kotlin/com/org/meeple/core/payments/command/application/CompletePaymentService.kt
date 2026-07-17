@@ -71,12 +71,13 @@ class CompletePaymentService(
 				gender = gender,
 				amount = registered.amount,
 				paymentKey = command.paymentKey,
+				orderId = command.orderId,
 				status = PaymentStatus.PENDING,
 			),
 		)
 
 		// ③ PG 최종 승인 (트랜잭션 밖).
-		val approved: Boolean = paymentGatewayPort.confirm(command.paymentKey, registered.amount)
+		val approved: Boolean = paymentGatewayPort.confirm(command.paymentKey, command.orderId, registered.amount)
 		if (!approved) {
 			// ④-실패: 기록을 FAILED로 남기고(이력 보존) 좌석 복원 후 402.
 			updatePaymentStatusPort.updateStatus(payment.id!!, PaymentStatus.FAILED)
