@@ -13,13 +13,14 @@ data class CheckoutResponse(
 ) {
 	companion object {
 		fun of(
+			userId: Long,
 			view: CheckoutView,
 			gathering: GatheringDetailView,
 			schedule: GatheringScheduleView,
 			gender: Gender,
 		): CheckoutResponse =
 			CheckoutResponse(
-				orderer = OrdererResponse.of(view.orderer),
+				orderer = OrdererResponse.of(userId, view.orderer),
 				product = ProductResponse.of(gathering, schedule, gender),
 				paymentMethods = PaymentMethodResponse.listOf(view.paymentMethods),
 			)

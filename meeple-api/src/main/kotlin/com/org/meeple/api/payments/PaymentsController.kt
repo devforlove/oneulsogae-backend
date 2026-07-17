@@ -55,7 +55,7 @@ class PaymentsController(
 		val gathering: GatheringDetailView = getGatheringsUseCase.getGathering(product.gatheringId)
 		val schedule: GatheringScheduleView = gathering.scheduleOrNull(product.scheduleId)
 			?: throw BusinessException(PaymentsErrorCode.CHECKOUT_PRODUCT_NOT_FOUND)
-		return ApiResponse.success(CheckoutResponse.of(checkout, gathering, schedule, product.gender))
+		return ApiResponse.success(CheckoutResponse.of(user.id, checkout, gathering, schedule, product.gender))
 	}
 
 	/**

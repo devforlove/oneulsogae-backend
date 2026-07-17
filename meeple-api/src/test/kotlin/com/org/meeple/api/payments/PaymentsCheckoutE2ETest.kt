@@ -115,6 +115,7 @@ class PaymentsCheckoutE2ETest : AbstractIntegrationSupport({
 				} expect {
 					status(200)
 					body("success", true)
+					body("data.orderer.userId", userId.toInt())
 					body("data.orderer.name", "김미플")
 					body("data.orderer.email", "orderer@test.com")
 					body("data.orderer.phoneNumber", "01011112222")
@@ -244,6 +245,7 @@ class PaymentsCheckoutE2ETest : AbstractIntegrationSupport({
 					bearer(accessTokenFor(user.id!!))
 				} expect {
 					status(200)
+					body("data.orderer.userId", user.id!!.toInt())
 					body("data.orderer.name", nullValue())
 					body("data.orderer.email", nullValue())
 					body("data.orderer.phoneNumber", nullValue())
