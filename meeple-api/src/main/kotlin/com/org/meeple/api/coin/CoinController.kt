@@ -1,14 +1,17 @@
 package com.org.meeple.api.coin
 
 import com.org.meeple.api.coin.response.CoinBalanceResponse
+import com.org.meeple.api.coin.response.CoinCheckoutResponse
 import com.org.meeple.api.coin.response.CoinHistoryPageResponse
 import com.org.meeple.api.coin.response.CoinItemResponse
 import com.org.meeple.auth.AuthUser
 import com.org.meeple.auth.LoginUser
 import com.org.meeple.core.coin.query.service.port.`in`.GetCoinBalanceUseCase
+import com.org.meeple.core.coin.query.service.port.`in`.GetCoinCheckoutUseCase
 import com.org.meeple.core.coin.query.service.port.`in`.GetCoinHistoriesUseCase
 import com.org.meeple.core.coin.query.service.port.`in`.GetCoinShopUseCase
 import com.org.meeple.core.common.response.ApiResponse
+import com.org.meeple.core.payments.query.service.port.`in`.GetPaymentMethodsUseCase
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.tags.Tag
 import org.springframework.web.bind.annotation.GetMapping
@@ -23,6 +26,8 @@ class CoinController(
 	private val getCoinBalanceUseCase: GetCoinBalanceUseCase,
 	private val getCoinShopUseCase: GetCoinShopUseCase,
 	private val getCoinHistoriesUseCase: GetCoinHistoriesUseCase,
+	private val getCoinCheckoutUseCase: GetCoinCheckoutUseCase,
+	private val getPaymentMethodsUseCase: GetPaymentMethodsUseCase,
 ) {
 
 	/** 코인 상점에 노출할 전체 코인 상품 목록을 조회한다. */
@@ -30,6 +35,22 @@ class CoinController(
 	@GetMapping("/shop")
 	fun getCoinShop(): ApiResponse<List<CoinItemResponse>> =
 		ApiResponse.success(CoinItemResponse.listOf(getCoinShopUseCase.getCoinShop()))
+
+	/** 코인 구매 직전 체크아웃 데이터(구매할 코인 아이템 + 구매방법)를 조회한다. */
+	@Operation(
+		summary = "코인 체크아웃 조회",
+		description = "구매할 코인 아이템(itemId)과 활성 구매방법(결제수단) 목록을 반환한다. 코인 상품 없음 404(COIN-004).",
+	)
+	@GetMapping("/checkout")
+	fun getCheckout(
+		@RequestParam itemId: Long,
+	): ApiResponse<CoinCheckoutResponse> =
+		ApiResponse.success(
+			CoinCheckoutResponse.of(
+				getCoinCheckoutUseCase.getCheckout(itemId),
+				getPaymentMethodsUseCase.getActiveMethods(),
+			),
+		)
 
 	/** 현재 로그인 사용자의 코인 잔액을 조회한다. */
 	@Operation(summary = "코인 잔액 조회", description = "현재 로그인 사용자의 코인 잔액을 조회한다.")

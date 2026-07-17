@@ -12,4 +12,5 @@ enum class CoinErrorCode(
 
 	INSUFFICIENT_COIN_BALANCE("COIN-001", "코인 잔액이 부족합니다.", HttpStatus.BAD_REQUEST),
 	DAILY_COIN_ALREADY_ACQUIRED("COIN-003", "오늘은 이미 출석 코인을 받았습니다.", HttpStatus.CONFLICT),
+	COIN_ITEM_NOT_FOUND("COIN-004", "코인 상품을 찾을 수 없습니다.", HttpStatus.NOT_FOUND),
 }

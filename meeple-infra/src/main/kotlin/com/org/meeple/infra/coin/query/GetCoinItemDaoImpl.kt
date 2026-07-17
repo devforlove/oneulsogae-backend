@@ -34,4 +34,21 @@ class GetCoinItemDaoImpl(
 				.fetch(),
 		)
 	}
+
+	override fun findById(itemId: Long): CoinItem? {
+		val coinItem: QCoinItemEntity = QCoinItemEntity.coinItemEntity
+		return queryFactory
+			.select(
+				Projections.constructor(
+					CoinItem::class.java,
+					coinItem.id,
+					coinItem.coinAmount,
+					coinItem.price,
+					coinItem.salePrice,
+				),
+			)
+			.from(coinItem)
+			.where(coinItem.id.eq(itemId))
+			.fetchOne()
+	}
 }
