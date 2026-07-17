@@ -21,6 +21,7 @@ class PaymentAdapter(
 				userId = payment.userId,
 				gatheringId = payment.gatheringId,
 				scheduleId = payment.scheduleId,
+				productId = payment.productId,
 				gender = payment.gender,
 				amount = payment.amount,
 			),
@@ -30,6 +31,7 @@ class PaymentAdapter(
 			userId = saved.userId,
 			gatheringId = saved.gatheringId,
 			scheduleId = saved.scheduleId,
+			productId = saved.productId,
 			gender = saved.gender,
 			amount = saved.amount,
 		)

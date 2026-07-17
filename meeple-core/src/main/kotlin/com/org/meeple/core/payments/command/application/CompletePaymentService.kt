@@ -59,6 +59,8 @@ class CompletePaymentService(
 				userId = userId,
 				gatheringId = product.gatheringId,
 				scheduleId = product.scheduleId,
+				// 가격 근거: 요청이 지정한 상품 id를 그대로 남긴다.
+				productId = command.productId,
 				gender = gender,
 				amount = registered.amount,
 			),

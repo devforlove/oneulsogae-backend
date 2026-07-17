@@ -125,6 +125,8 @@ class PaymentsCompleteE2ETest : AbstractIntegrationSupport({
 					.fetchOne()
 				saved?.amount shouldBe 7000
 				saved?.gender shouldBe Gender.MALE
+				// 가격 근거: 요청에 쓴 상품 id가 결제 기록에 남는다.
+				saved?.productId shouldBe productId
 			}
 		}
 

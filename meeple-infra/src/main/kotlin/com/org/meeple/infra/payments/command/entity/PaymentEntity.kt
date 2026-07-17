@@ -34,6 +34,10 @@ class PaymentEntity(
 	@Column(name = "schedule_id", nullable = false)
 	val scheduleId: Long,
 
+	/** 결제완료 요청의 상품 id(가격 근거). 요청이 지정한 성별 정가(NORMAL) 상품을 가리킨다. */
+	@Column(name = "product_id", nullable = false)
+	val productId: Long,
+
 	/** 접수 성별(금액 티어 근거). */
 	@Enumerated(EnumType.STRING)
 	@Column(name = "gender", nullable = false, columnDefinition = "varchar(50)")

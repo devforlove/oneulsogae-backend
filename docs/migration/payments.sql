@@ -5,6 +5,7 @@ CREATE TABLE payments (
     user_id BIGINT NOT NULL,
     gathering_id BIGINT NOT NULL,
     schedule_id BIGINT NOT NULL,
+    product_id BIGINT NOT NULL,
     gender VARCHAR(50) NOT NULL,
     amount INT NOT NULL,
     created_at DATETIME(6) NOT NULL,
