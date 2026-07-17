@@ -38,7 +38,7 @@ class RegisterGatheringMemberService(
 		val existing: GatheringMember? = loadGatheringMemberPort.loadByScheduleIdAndUserId(command.scheduleId, command.userId)
 		existing?.validateReRegistrable()
 
-		val pricing: JoinPricing = schedule.register(command.gender)
+		val pricing: JoinPricing = schedule.register(command.gender, command.type)
 		val member: GatheringMember = existing
 			?.also { it.revive(gender = command.gender, earlyBirdApplied = pricing.earlyBirdApplied) }
 			?: GatheringMember.pending(

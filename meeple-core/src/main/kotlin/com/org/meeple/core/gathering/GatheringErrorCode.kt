@@ -31,4 +31,7 @@ enum class GatheringErrorCode(
 
 	/** 상품을 id로 찾지 못함(없거나 삭제됨). */
 	GATHERING_PRODUCT_NOT_FOUND("GATHERING-006", "상품을 찾을 수 없습니다.", HttpStatus.NOT_FOUND),
+
+	/** 얼리버드 상품(EARLY_BIRD)으로 접수를 시도했으나 얼리버드가 소진됨(체크아웃 이후 소진된 경우). */
+	GATHERING_EARLY_BIRD_SOLD_OUT("GATHERING-007", "얼리버드가 마감되었습니다. 최신 금액으로 다시 시도해주세요.", HttpStatus.CONFLICT),
 }

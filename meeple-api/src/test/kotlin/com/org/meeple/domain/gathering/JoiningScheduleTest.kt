@@ -1,5 +1,6 @@
 package com.org.meeple.domain.gathering
 
+import com.org.meeple.common.gathering.GatheringProductType
 import com.org.meeple.common.gathering.GatheringScheduleStatus
 import com.org.meeple.common.user.Gender
 import com.org.meeple.core.common.error.BusinessException
@@ -39,11 +40,11 @@ class JoiningScheduleTest : DescribeSpec({
 
 	describe("register") {
 
-		context("예정 상태이고 여분이 남은 일정에 신청하면") {
+		context("정가(NORMAL) 상품으로 신청하면") {
 			it("정가로 접수하고 해당 성별 여분만 차감한다") {
 				val target: JoiningSchedule = schedule()
 
-				val pricing: JoinPricing = target.register(Gender.MALE)
+				val pricing: JoinPricing = target.register(Gender.MALE, GatheringProductType.NORMAL)
 
 				pricing.amount shouldBe 10000
 				pricing.earlyBirdApplied shouldBe false
@@ -52,11 +53,11 @@ class JoiningScheduleTest : DescribeSpec({
 			}
 		}
 
-		context("얼리버드가 유효한 일정에 신청하면") {
+		context("얼리버드(EARLY_BIRD) 상품으로 신청하고 얼리버드가 유효하면") {
 			it("얼리버드가로 접수하고 얼리버드 여분도 차감한다") {
 				val target: JoiningSchedule = schedule(earlyBirdRemaining = 2, earlyBirdFemaleFee = 5600)
 
-				val pricing: JoinPricing = target.register(Gender.FEMALE)
+				val pricing: JoinPricing = target.register(Gender.FEMALE, GatheringProductType.EARLY_BIRD)
 
 				pricing.amount shouldBe 5600 // 저장된 얼리버드가
 				pricing.earlyBirdApplied shouldBe true
@@ -65,7 +66,24 @@ class JoiningScheduleTest : DescribeSpec({
 			}
 		}
 
-		context("얼리버드가 소진되고 할인가가 있는 일정에 신청하면") {
+		context("얼리버드(EARLY_BIRD) 상품으로 신청했지만 얼리버드가 이미 소진되었으면") {
+			it("GATHERING_EARLY_BIRD_SOLD_OUT을 던지고 여분을 차감하지 않는다") {
+				val target: JoiningSchedule = schedule(
+					earlyBirdRemaining = 0,
+					earlyBirdMaleFee = 7000,
+					discountMaleFee = 9000,
+				)
+
+				val exception: BusinessException =
+					shouldThrow<BusinessException> { target.register(Gender.MALE, GatheringProductType.EARLY_BIRD) }
+
+				exception.errorCode shouldBe GatheringErrorCode.GATHERING_EARLY_BIRD_SOLD_OUT
+				target.maleRemaining shouldBe 4
+				target.earlyBirdRemaining shouldBe 0
+			}
+		}
+
+		context("할인가(DISCOUNT) 상품으로 신청하면") {
 			it("할인가로 접수하고 얼리버드 여분은 차감하지 않는다") {
 				val target: JoiningSchedule = schedule(
 					earlyBirdRemaining = 0,
@@ -73,11 +91,12 @@ class JoiningScheduleTest : DescribeSpec({
 					discountMaleFee = 9000,
 				)
 
-				val pricing: JoinPricing = target.register(Gender.MALE)
+				val pricing: JoinPricing = target.register(Gender.MALE, GatheringProductType.DISCOUNT)
 
 				pricing.amount shouldBe 9000
 				pricing.earlyBirdApplied shouldBe false
 				target.earlyBirdRemaining shouldBe 0
+				target.maleRemaining shouldBe 3
 			}
 		}
 
@@ -85,7 +104,8 @@ class JoiningScheduleTest : DescribeSpec({
 			it("GATHERING_SCHEDULE_NOT_OPEN을 던지고 여분을 차감하지 않는다") {
 				val target: JoiningSchedule = schedule(status = GatheringScheduleStatus.COMPLETED)
 
-				val exception: BusinessException = shouldThrow<BusinessException> { target.register(Gender.MALE) }
+				val exception: BusinessException =
+					shouldThrow<BusinessException> { target.register(Gender.MALE, GatheringProductType.NORMAL) }
 
 				exception.errorCode shouldBe GatheringErrorCode.GATHERING_SCHEDULE_NOT_OPEN
 				target.maleRemaining shouldBe 4
@@ -96,7 +116,8 @@ class JoiningScheduleTest : DescribeSpec({
 			it("GATHERING_SOLD_OUT을 던진다") {
 				val target: JoiningSchedule = schedule(maleRemaining = 0)
 
-				val exception: BusinessException = shouldThrow<BusinessException> { target.register(Gender.MALE) }
+				val exception: BusinessException =
+					shouldThrow<BusinessException> { target.register(Gender.MALE, GatheringProductType.NORMAL) }
 
 				exception.errorCode shouldBe GatheringErrorCode.GATHERING_SOLD_OUT
 			}
@@ -106,7 +127,7 @@ class JoiningScheduleTest : DescribeSpec({
 			it("정상 접수한다") {
 				val target: JoiningSchedule = schedule(maleRemaining = 0, femaleRemaining = 1)
 
-				val pricing: JoinPricing = target.register(Gender.FEMALE)
+				val pricing: JoinPricing = target.register(Gender.FEMALE, GatheringProductType.NORMAL)
 
 				pricing.amount shouldBe 8000
 				target.femaleRemaining shouldBe 0

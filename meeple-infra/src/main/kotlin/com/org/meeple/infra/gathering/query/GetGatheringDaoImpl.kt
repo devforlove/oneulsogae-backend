@@ -114,6 +114,7 @@ class GetGatheringDaoImpl(
 					product.gatheringId,
 					product.scheduleId,
 					product.gender,
+					product.type,
 				),
 			)
 			.from(product)

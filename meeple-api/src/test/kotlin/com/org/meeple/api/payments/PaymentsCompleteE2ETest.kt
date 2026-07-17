@@ -30,9 +30,10 @@ import io.kotest.matchers.shouldBe
  *
  * 무검증 결제완료 접수: 본인 프로필 성별을 강제해 참가를 승인대기(PENDING)로 등록하고 결제 기록을 남긴다.
  * 상품은 productId로 지정한다(모임 상세 응답의 schedules[].productId).
+ * - 결제액은 요청한 상품(productId)의 티어 저장가로 확정한다(체크아웃에서 본 금액과 일치).
  * - 성별 여분·얼리버드 여분을 접수 시점에 차감한다(PENDING도 정원 포함).
- * - 매진 409(GATHERING-004), 예정 아닌 일정 409(GATHERING-003), 중복 접수 409(GATHERING-005),
- *   상품 없음 404(GATHERING-006), 타성별 상품 400(PAYMENTS-003), 성별 미확정 400(PAYMENTS-002).
+ * - 매진 409(GATHERING-004), 얼리버드 소진 409(GATHERING-007), 예정 아닌 일정 409(GATHERING-003),
+ *   중복 접수 409(GATHERING-005), 상품 없음 404(GATHERING-006), 타성별 상품 400(PAYMENTS-003), 성별 미확정 400(PAYMENTS-002).
  * - 거절/취소 행은 재접수 시 PENDING으로 되살린다.
  */
 class PaymentsCompleteE2ETest : AbstractIntegrationSupport({
@@ -91,19 +92,28 @@ class PaymentsCompleteE2ETest : AbstractIntegrationSupport({
 		return IntegrationUtil.getQuery().selectFrom(schedule).where(schedule.id.eq(scheduleId)).fetchOne()
 	}
 
+	// 일정의 특정 성별·티어 상품 id를 조회한다.
+	fun productIdOf(scheduleId: Long, gender: Gender, type: GatheringProductType): Long {
+		val product: QGatheringProductEntity = QGatheringProductEntity.gatheringProductEntity
+		return IntegrationUtil.getQuery().selectFrom(product)
+			.where(product.scheduleId.eq(scheduleId), product.gender.eq(gender), product.type.eq(type))
+			.fetchOne()!!.id!!
+	}
+
 	describe("POST /payments/v1/complete") {
 
-		context("성별이 확정된 유저가 얼리버드 유효 일정에 결제완료하면") {
-			it("PENDING 참가·결제 기록을 남기고 성별·얼리버드 여분을 차감한다") {
+		context("성별이 확정된 유저가 얼리버드 상품(EARLY_BIRD)으로 결제완료하면") {
+			it("얼리버드가로 PENDING 참가·결제 기록을 남기고 성별·얼리버드 여분을 차감한다") {
 				val userId: Long = persistUserWithGender(providerId = "pay-complete-1", gender = Gender.MALE)
-				val (gatheringId: Long, scheduleId: Long, productId: Long) = persistGatheringWithSchedule(
+				val (gatheringId: Long, scheduleId: Long, _: Long) = persistGatheringWithSchedule(
 					earlyBirdDiscountRate = 30,
 					earlyBirdCapacity = 2,
 				)
+				val earlyBirdProductId: Long = productIdOf(scheduleId, Gender.MALE, GatheringProductType.EARLY_BIRD)
 
 				post("/payments/v1/complete") {
 					bearer(accessTokenFor(userId))
-					jsonBody("""{"productId": $productId}""")
+					jsonBody("""{"productId": $earlyBirdProductId}""")
 				} expect {
 					status(200)
 					body("success", true)
@@ -126,7 +136,52 @@ class PaymentsCompleteE2ETest : AbstractIntegrationSupport({
 				saved?.amount shouldBe 7000
 				saved?.gender shouldBe Gender.MALE
 				// 가격 근거: 요청에 쓴 상품 id가 결제 기록에 남는다.
-				saved?.productId shouldBe productId
+				saved?.productId shouldBe earlyBirdProductId
+			}
+		}
+
+		context("정가 상품(NORMAL)으로 결제완료하면") {
+			it("얼리버드가 유효해도 요청한 정가로 접수하고 얼리버드 여분을 차감하지 않는다") {
+				val userId: Long = persistUserWithGender(providerId = "pay-complete-normal", gender = Gender.MALE)
+				val (gatheringId: Long, scheduleId: Long, normalProductId: Long) = persistGatheringWithSchedule(
+					earlyBirdDiscountRate = 30,
+					earlyBirdCapacity = 2,
+				)
+
+				post("/payments/v1/complete") {
+					bearer(accessTokenFor(userId))
+					jsonBody("""{"productId": $normalProductId}""")
+				} expect {
+					status(200)
+					body("data.amount", 10000)
+				}
+
+				findMember(scheduleId, userId)?.earlyBirdApplied shouldBe false
+				findSchedule(scheduleId)?.earlyBirdRemaining shouldBe 2
+			}
+		}
+
+		context("얼리버드 상품(EARLY_BIRD)으로 결제완료하지만 얼리버드가 이미 소진되었으면") {
+			it("409 GATHERING-007을 반환하고 아무것도 저장하지 않는다") {
+				val userId: Long = persistUserWithGender(providerId = "pay-complete-eb-soldout", gender = Gender.MALE)
+				val (gatheringId: Long, scheduleId: Long, _: Long) = persistGatheringWithSchedule(
+					earlyBirdDiscountRate = 30,
+					earlyBirdCapacity = 2,
+					earlyBirdRemaining = 0,
+				)
+				val earlyBirdProductId: Long = productIdOf(scheduleId, Gender.MALE, GatheringProductType.EARLY_BIRD)
+
+				post("/payments/v1/complete") {
+					bearer(accessTokenFor(userId))
+					jsonBody("""{"productId": $earlyBirdProductId}""")
+				} expect {
+					status(409)
+					body("error.code", "GATHERING-007")
+				}
+
+				findMember(scheduleId, userId) shouldBe null
+				findSchedule(scheduleId)?.maleRemaining shouldBe 4
+				findSchedule(scheduleId)?.earlyBirdRemaining shouldBe 0
 			}
 		}
 

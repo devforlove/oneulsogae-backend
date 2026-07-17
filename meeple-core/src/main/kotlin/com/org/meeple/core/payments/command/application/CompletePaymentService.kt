@@ -51,6 +51,7 @@ class CompletePaymentService(
 				scheduleId = product.scheduleId,
 				userId = userId,
 				gender = gender,
+				type = product.type,
 			),
 		)
 

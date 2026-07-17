@@ -1,5 +1,6 @@
 package com.org.meeple.core.gathering.command.domain
 
+import com.org.meeple.common.gathering.GatheringProductType
 import com.org.meeple.common.gathering.GatheringScheduleStatus
 import com.org.meeple.common.user.Gender
 import com.org.meeple.core.common.error.BusinessException
@@ -26,20 +27,35 @@ class JoiningSchedule(
 	val discountFemaleFee: Int?,
 ) {
 
-	/** [gender] 성별로 접수한다. 검증 통과 시 확정가를 계산하고 해당 성별 여분(얼리버드 적용 시 얼리버드 여분 포함)을 차감한다. */
-	fun register(gender: Gender): JoinPricing {
+	/**
+	 * [gender] 성별로 [type] 티어 상품을 접수한다. 결제액은 요청 티어의 저장가로 확정한다
+	 * (체크아웃에서 본 상품과 실결제 금액을 일치시킨다).
+	 * 얼리버드 티어(EARLY_BIRD)인데 체크아웃 이후 소진됐으면 접수를 거부한다.
+	 * 검증 통과 시 해당 성별 여분(얼리버드 티어면 얼리버드 여분도)을 차감한다.
+	 */
+	fun register(gender: Gender, type: GatheringProductType): JoinPricing {
 		validateRegistrable(gender)
-		val earlyBirdFee: Int? = earlyBirdFeeFor(gender)
-		val amount: Int = earlyBirdFee
-			?: (if (earlyBirdSoldOut()) discountFeeFor(gender) else null)
-			?: feeFor(gender)
+		val amount: Int = priceFor(gender, type)
 		decrementRemaining(gender)
-		val earlyBirdApplied: Boolean = earlyBirdFee != null
+		val earlyBirdApplied: Boolean = type == GatheringProductType.EARLY_BIRD
 		if (earlyBirdApplied) {
 			earlyBirdRemaining = checkNotNull(earlyBirdRemaining) - 1
 		}
 		return JoinPricing(amount = amount, earlyBirdApplied = earlyBirdApplied)
 	}
+
+	// 요청 티어의 저장가. 얼리버드 티어인데 소진됐으면 거부한다.
+	private fun priceFor(gender: Gender, type: GatheringProductType): Int =
+		when (type) {
+			GatheringProductType.EARLY_BIRD -> {
+				if (earlyBirdSoldOut()) {
+					throw BusinessException(GatheringErrorCode.GATHERING_EARLY_BIRD_SOLD_OUT)
+				}
+				checkNotNull(earlyBirdFeeFor(gender)) { "얼리버드 상품 가격이 없습니다: $id" }
+			}
+			GatheringProductType.DISCOUNT -> checkNotNull(discountFeeFor(gender)) { "할인가 상품이 없습니다: $id" }
+			GatheringProductType.NORMAL -> feeFor(gender)
+		}
 
 	private fun validateRegistrable(gender: Gender) {
 		if (status != GatheringScheduleStatus.SCHEDULED) {
