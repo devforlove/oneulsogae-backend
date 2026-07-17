@@ -15,6 +15,7 @@ import com.org.meeple.core.payments.command.application.port.`in`.result.Complet
 import com.org.meeple.core.payments.command.application.port.out.PaymentGatewayPort
 import com.org.meeple.core.payments.command.application.port.out.SavePaymentPort
 import com.org.meeple.core.payments.command.domain.Payment
+import com.org.meeple.core.payments.command.domain.PaymentStatus
 import com.org.meeple.core.user.query.service.port.`in`.GetUserDetailUseCase
 import org.springframework.stereotype.Service
 
@@ -74,6 +75,7 @@ class CompletePaymentService(
 				gender = gender,
 				amount = registered.amount,
 				paymentKey = command.paymentKey,
+				status = PaymentStatus.APPROVED,
 			),
 		)
 		return CompletePaymentResult(amount = registered.amount)

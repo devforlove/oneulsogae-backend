@@ -11,6 +11,7 @@ import com.org.meeple.infra.fixture.GatheringScheduleEntityFixture
 import com.org.meeple.infra.fixture.IntegrationUtil
 import com.org.meeple.infra.fixture.UserDetailEntityFixture
 import com.org.meeple.infra.fixture.UserEntityFixture
+import com.org.meeple.core.payments.command.domain.PaymentStatus
 import com.org.meeple.infra.payments.command.entity.PaymentEntity
 import org.hamcrest.Matchers.contains
 import org.hamcrest.Matchers.hasSize
@@ -41,7 +42,7 @@ class AdminGatheringMemberListE2ETest : AbstractIntegrationSupport({
 					),
 				)
 				IntegrationUtil.persist(
-					PaymentEntity(userId = firstUserId, gatheringId = gatheringId, scheduleId = scheduleId, productId = 1L, paymentKey = "pay_key_admin_1", gender = Gender.MALE, amount = 10000),
+					PaymentEntity(userId = firstUserId, gatheringId = gatheringId, scheduleId = scheduleId, productId = 1L, paymentKey = "pay_key_admin_1", gender = Gender.MALE, amount = 10000, status = PaymentStatus.APPROVED),
 				)
 
 				val secondUserId: Long = IntegrationUtil.persist(UserEntityFixture.create(providerId = "admin-list-2")).id!!
@@ -54,10 +55,10 @@ class AdminGatheringMemberListE2ETest : AbstractIntegrationSupport({
 				)
 				// 재접수 이력: 과거 8000 → 최신 5600. 최신 금액이 조인되어야 한다.
 				IntegrationUtil.persist(
-					PaymentEntity(userId = secondUserId, gatheringId = gatheringId, scheduleId = scheduleId, productId = 2L, paymentKey = "pay_key_admin_2", gender = Gender.FEMALE, amount = 8000),
+					PaymentEntity(userId = secondUserId, gatheringId = gatheringId, scheduleId = scheduleId, productId = 2L, paymentKey = "pay_key_admin_2", gender = Gender.FEMALE, amount = 8000, status = PaymentStatus.APPROVED),
 				)
 				IntegrationUtil.persist(
-					PaymentEntity(userId = secondUserId, gatheringId = gatheringId, scheduleId = scheduleId, productId = 2L, paymentKey = "pay_key_admin_3", gender = Gender.FEMALE, amount = 5600),
+					PaymentEntity(userId = secondUserId, gatheringId = gatheringId, scheduleId = scheduleId, productId = 2L, paymentKey = "pay_key_admin_3", gender = Gender.FEMALE, amount = 5600, status = PaymentStatus.APPROVED),
 				)
 
 				get("/admin/v1/gatherings/schedules/$scheduleId/members") {

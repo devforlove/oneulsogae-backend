@@ -1,6 +1,7 @@
 package com.org.meeple.infra.payments.command.entity
 
 import com.org.meeple.common.user.Gender
+import com.org.meeple.core.payments.command.domain.PaymentStatus
 import com.org.meeple.infra.common.BaseEntity
 import jakarta.persistence.Column
 import jakarta.persistence.Entity
@@ -11,7 +12,7 @@ import jakarta.persistence.Table
 import org.hibernate.annotations.SQLRestriction
 
 /**
- * 결제 기록 한 건. PG 최종 승인(confirm) 성공 건만 저장한다 — 결제수단 등 상세는 없고 접수 내용(누가·어느 일정·얼마)만 보관한다.
+ * 결제 기록 한 건. 접수 시점에 PENDING으로 저장하고 PG 승인 결과로 APPROVED/FAILED로 전이한다 — 결제수단 등 상세는 없고 접수 내용(누가·어느 일정·얼마)만 보관한다.
  * 재접수(거절 후 다시 결제완료)마다 새 행이 쌓인다 — (schedule_id, user_id)는 유니크가 아니다.
  * (schedule_id, user_id) 인덱스로 일정별 참가자 목록의 결제금액 조인을 커버한다.
  */
@@ -38,8 +39,8 @@ class PaymentEntity(
 	@Column(name = "product_id", nullable = false)
 	val productId: Long,
 
-	/** PG 거래 식별자(paymentKey). PG 최종 승인(confirm) 성공 건만 저장된다. */
-	@Column(name = "payment_key", nullable = false)
+	/** PG 거래 식별자(paymentKey). PG 인증마다 고유 — 이중 제출의 이중 기록을 막기 위해 유니크다. */
+	@Column(name = "payment_key", nullable = false, unique = true)
 	val paymentKey: String,
 
 	/** 접수 성별(금액 티어 근거). */
@@ -50,4 +51,9 @@ class PaymentEntity(
 	/** 서버 확정 실결제가(원). */
 	@Column(name = "amount", nullable = false)
 	val amount: Int,
+
+	/** 결제(PG 청구) 라이프사이클 상태. */
+	@Enumerated(EnumType.STRING)
+	@Column(name = "status", nullable = false, columnDefinition = "varchar(50)")
+	var status: PaymentStatus,
 ) : BaseEntity()
