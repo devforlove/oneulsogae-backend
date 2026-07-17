@@ -35,6 +35,11 @@ class GatheringMember(
 		this.earlyBirdApplied = earlyBirdApplied
 	}
 
+	/** PG 승인 실패로 방금 접수를 취소한다(→ 참가취소). 차감 여분 복원은 서비스가 일정 도메인으로 처리한다. */
+	fun cancel() {
+		this.status = GatheringMemberStatus.CANCELED
+	}
+
 	companion object {
 
 		/** 승인대기 상태의 신규 참가자를 생성한다. */

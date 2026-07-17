@@ -44,6 +44,14 @@ class JoiningSchedule(
 		return JoinPricing(amount = amount, earlyBirdApplied = earlyBirdApplied)
 	}
 
+	/** [register]로 차감한 여분을 되돌린다(PG 승인 실패 보상). 성별 여분 +1, [earlyBirdApplied]면 얼리버드 여분도 +1. */
+	fun restore(gender: Gender, earlyBirdApplied: Boolean) {
+		if (gender == Gender.MALE) maleRemaining += 1 else femaleRemaining += 1
+		if (earlyBirdApplied) {
+			earlyBirdRemaining = checkNotNull(earlyBirdRemaining) + 1
+		}
+	}
+
 	// 요청 티어의 저장가. 얼리버드 티어인데 소진됐으면 거부한다.
 	private fun priceFor(gender: Gender, type: GatheringProductType): Int =
 		when (type) {

@@ -81,4 +81,14 @@ class GatheringMemberTest : DescribeSpec({
 			target.earlyBirdApplied shouldBe true
 		}
 	}
+
+	describe("cancel") {
+		it("승인대기 접수를 취소하면 참가취소(CANCELED)로 전이한다") {
+			val target: GatheringMember = member(GatheringMemberStatus.PENDING)
+
+			target.cancel()
+
+			target.status shouldBe GatheringMemberStatus.CANCELED
+		}
+	}
 })

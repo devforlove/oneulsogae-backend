@@ -134,4 +134,27 @@ class JoiningScheduleTest : DescribeSpec({
 			}
 		}
 	}
+
+	describe("restore") {
+
+		it("얼리버드로 접수한 자리를 되돌리면 성별·얼리버드 여분이 모두 복원된다") {
+			val target: JoiningSchedule = schedule(earlyBirdRemaining = 1, earlyBirdMaleFee = 7000)
+			target.register(Gender.MALE, GatheringProductType.EARLY_BIRD) // male 3, eb 0
+
+			target.restore(Gender.MALE, earlyBirdApplied = true)
+
+			target.maleRemaining shouldBe 4
+			target.earlyBirdRemaining shouldBe 1
+		}
+
+		it("정가로 접수한 자리를 되돌리면 성별 여분만 복원하고 얼리버드는 건드리지 않는다") {
+			val target: JoiningSchedule = schedule(earlyBirdRemaining = 2)
+			target.register(Gender.FEMALE, GatheringProductType.NORMAL) // female 3
+
+			target.restore(Gender.FEMALE, earlyBirdApplied = false)
+
+			target.femaleRemaining shouldBe 4
+			target.earlyBirdRemaining shouldBe 2
+		}
+	}
 })
