@@ -19,6 +19,9 @@ dependencies {
 	api("org.springframework.boot:spring-boot-starter-data-jpa")
 	// KCP 거래등록/결과조회 HTTP 어댑터용 RestClient. (Boot BOM이 버전 관리)
 	implementation("org.springframework:spring-web")
+	// StubPaymentGatewayAdapter가 RequestContextHolder로 현재 요청의 HttpServletRequest를 읽는다.
+	// 실제 서블릿 컨테이너는 최종 애플리케이션(meeple-api의 spring-boot-starter-webmvc)이 런타임에 제공하므로 compileOnly로 둔다.
+	compileOnly("jakarta.servlet:jakarta.servlet-api")
 	// KCP 본인확인 V2 암복호화 라이브러리(utils.Crypto: encryptJson/decryptJson). Maven 미배포 → 로컬 JAR.
 	// JDK(javax.crypto/Base64)만 의존하므로 추가 전이 의존성 없음. (KcpCertCryptoPort 실구현이 사용)
 	implementation(files("libs/crypto-1.0.0.jar"))

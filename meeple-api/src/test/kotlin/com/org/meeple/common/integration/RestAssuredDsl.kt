@@ -38,6 +38,11 @@ class HttpRequestSpec {
 		spec.body(json)
 	}
 
+	/** 임의 요청 헤더를 추가한다. (예: 스텁 제어용 X-Stub-Pg-Confirm) */
+	fun header(name: String, value: String) {
+		spec.header(name, value)
+	}
+
 	/** 302 등 리다이렉트 응답을 자동으로 따라가지 않고 그대로 검증하고 싶을 때 호출한다. */
 	fun noRedirect() {
 		spec.redirects().follow(false)
