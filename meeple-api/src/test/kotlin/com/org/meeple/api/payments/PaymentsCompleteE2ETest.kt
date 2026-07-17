@@ -21,6 +21,7 @@ import com.org.meeple.infra.gathering.command.entity.GatheringScheduleEntity
 import com.org.meeple.infra.gathering.command.entity.QGatheringMemberEntity
 import com.org.meeple.infra.gathering.command.entity.QGatheringProductEntity
 import com.org.meeple.infra.gathering.command.entity.QGatheringScheduleEntity
+import com.org.meeple.core.payments.command.domain.PaymentStatus
 import com.org.meeple.infra.payments.command.entity.PaymentEntity
 import com.org.meeple.infra.payments.command.entity.QPaymentEntity
 import io.kotest.matchers.shouldBe
@@ -138,6 +139,7 @@ class PaymentsCompleteE2ETest : AbstractIntegrationSupport({
 				// 가격 근거: 요청에 쓴 상품 id가 결제 기록에 남는다.
 				saved?.productId shouldBe earlyBirdProductId
 				saved?.paymentKey shouldBe "pay_key_1"
+				saved?.status shouldBe PaymentStatus.APPROVED
 			}
 		}
 
@@ -300,7 +302,7 @@ class PaymentsCompleteE2ETest : AbstractIntegrationSupport({
 		}
 
 		context("PG 승인(confirm)이 실패하면") {
-			it("402 PAYMENTS-004를 반환하고 좌석·여분을 복원하며 결제 기록을 남기지 않는다") {
+			it("402 PAYMENTS-004를 반환하고 좌석·여분을 복원하며 결제 기록을 FAILED로 남긴다") {
 				val userId: Long = persistUserWithGender(providerId = "pay-complete-confirm-fail", gender = Gender.MALE)
 				val (gatheringId: Long, scheduleId: Long, normalProductId: Long) = persistGatheringWithSchedule()
 
@@ -313,14 +315,16 @@ class PaymentsCompleteE2ETest : AbstractIntegrationSupport({
 					body("error.code", "PAYMENTS-004")
 				}
 
-				// 좌석 복원: 여분 원복, 참가는 CANCELED, 결제 기록 없음
+				// 좌석 복원: 여분 원복, 참가는 CANCELED. 결제 기록은 FAILED로 보존(이력 추적).
 				findSchedule(scheduleId)?.maleRemaining shouldBe 4
 				findMember(scheduleId, userId)?.status shouldBe GatheringMemberStatus.CANCELED
 
 				val payment: QPaymentEntity = QPaymentEntity.paymentEntity
-				IntegrationUtil.getQuery().selectFrom(payment)
+				val failed: PaymentEntity? = IntegrationUtil.getQuery().selectFrom(payment)
 					.where(payment.scheduleId.eq(scheduleId), payment.userId.eq(userId))
-					.fetchOne() shouldBe null
+					.fetchOne()
+				failed?.status shouldBe PaymentStatus.FAILED
+				failed?.paymentKey shouldBe "pay_key_fail"
 			}
 		}
 
