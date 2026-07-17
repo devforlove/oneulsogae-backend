@@ -28,7 +28,7 @@ import io.kotest.matchers.shouldBe
 /**
  * `POST /payments/v1/complete` E2E 테스트.
  *
- * 무검증 결제완료 접수: 본인 프로필 성별을 강제해 참가를 승인대기(PENDING)로 등록하고 결제 기록을 남긴다.
+ * 좌석 확보 후 PG 승인을 거쳐 결제완료를 접수한다: 본인 프로필 성별을 강제해 참가를 승인대기(PENDING)로 등록하고 결제 기록을 남긴다.
  * 상품은 productId로 지정한다(모임 상세 응답의 schedules[].productId).
  * - 결제액은 요청한 상품(productId)의 티어 저장가로 확정한다(체크아웃에서 본 금액과 일치).
  * - 성별 여분·얼리버드 여분을 접수 시점에 차감한다(PENDING도 정원 포함).
