@@ -2,9 +2,11 @@ package com.org.meeple.api.payments
 
 import com.org.meeple.api.payments.request.CompletePaymentRequest
 import com.org.meeple.api.payments.response.CheckoutResponse
+import com.org.meeple.api.payments.response.CoinCheckoutResponse
 import com.org.meeple.api.payments.response.CompletePaymentResponse
 import com.org.meeple.auth.AuthUser
 import com.org.meeple.auth.LoginUser
+import com.org.meeple.core.coin.query.service.port.`in`.GetCoinCheckoutUseCase
 import com.org.meeple.core.common.error.BusinessException
 import com.org.meeple.core.common.response.ApiResponse
 import com.org.meeple.core.gathering.query.dto.GatheringDetailView
@@ -15,6 +17,7 @@ import com.org.meeple.core.payments.PaymentsErrorCode
 import com.org.meeple.core.payments.command.application.port.`in`.CompletePaymentUseCase
 import com.org.meeple.core.payments.query.dto.CheckoutView
 import com.org.meeple.core.payments.query.service.port.`in`.GetCheckoutUseCase
+import com.org.meeple.core.payments.query.service.port.`in`.GetPaymentMethodsUseCase
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.tags.Tag
 import jakarta.validation.Valid
@@ -32,6 +35,8 @@ class PaymentsController(
 	private val getCheckoutUseCase: GetCheckoutUseCase,
 	private val getGatheringsUseCase: GetGatheringsUseCase,
 	private val completePaymentUseCase: CompletePaymentUseCase,
+	private val getCoinCheckoutUseCase: GetCoinCheckoutUseCase,
+	private val getPaymentMethodsUseCase: GetPaymentMethodsUseCase,
 ) {
 
 	/**
@@ -57,6 +62,22 @@ class PaymentsController(
 			?: throw BusinessException(PaymentsErrorCode.CHECKOUT_PRODUCT_NOT_FOUND)
 		return ApiResponse.success(CheckoutResponse.of(user.id, checkout, gathering, schedule, product.gender))
 	}
+
+	/** 코인 구매 직전 체크아웃 데이터(구매할 코인 아이템 + 구매방법)를 조회한다. */
+	@Operation(
+		summary = "코인 체크아웃 조회",
+		description = "구매할 코인 아이템(itemId)과 활성 구매방법(결제수단) 목록을 반환한다. 코인 상품 없음 404(COIN-004).",
+	)
+	@GetMapping("/coin/checkout")
+	fun getCoinCheckout(
+		@RequestParam itemId: Long,
+	): ApiResponse<CoinCheckoutResponse> =
+		ApiResponse.success(
+			CoinCheckoutResponse.of(
+				getCoinCheckoutUseCase.getCheckout(itemId),
+				getPaymentMethodsUseCase.getActiveMethods(),
+			),
+		)
 
 	/**
 	 * 결제완료를 접수한다. 본인 프로필 성별을 강제해 좌석을 확보(승인대기 PENDING)한 뒤 PG 최종 승인(confirm)을 받고

@@ -1,4 +1,4 @@
-package com.org.meeple.api.coin
+package com.org.meeple.api.payments
 
 import com.org.meeple.common.integration.AbstractIntegrationSupport
 import com.org.meeple.common.integration.expect
@@ -12,7 +12,7 @@ import org.hamcrest.Matchers.contains
 import org.hamcrest.Matchers.hasSize
 
 /**
- * `GET /coins/v1/checkout` E2E 테스트.
+ * `GET /payments/v1/coin/checkout` E2E 테스트.
  *
  * 코인 구매 직전 체크아웃 화면 데이터를 조회한다: 구매하려는 코인 아이템(itemId) + 구매방법(활성 결제수단)을 내려준다.
  * - 아이템은 요청 itemId의 가격 필드(정가·할인가·코인개수·1개당가·할인율)를 그대로 반환한다.
@@ -21,7 +21,7 @@ import org.hamcrest.Matchers.hasSize
  */
 class CoinCheckoutE2ETest : AbstractIntegrationSupport({
 
-	describe("GET /coins/v1/checkout") {
+	describe("GET /payments/v1/coin/checkout") {
 
 		context("존재하는 코인 아이템으로 체크아웃을 조회하면") {
 			it("아이템 정보와 활성 구매방법(노출 순서)을 반환한다") {
@@ -34,7 +34,7 @@ class CoinCheckoutE2ETest : AbstractIntegrationSupport({
 				IntegrationUtil.persist(PaymentMethodEntityFixture.create(code = "BANK_TRANSFER", name = "무통장입금", displayOrder = 1))
 				IntegrationUtil.persist(PaymentMethodEntityFixture.create(code = "KAKAO_PAY", name = "카카오페이", displayOrder = 3, active = false))
 
-				get("/coins/v1/checkout?itemId=$itemId") {
+				get("/payments/v1/coin/checkout?itemId=$itemId") {
 					bearer(accessTokenFor(9001L))
 				} expect {
 					status(200)
@@ -54,7 +54,7 @@ class CoinCheckoutE2ETest : AbstractIntegrationSupport({
 
 		context("존재하지 않는 itemId로 체크아웃을 조회하면") {
 			it("404 COIN-004를 반환한다") {
-				get("/coins/v1/checkout?itemId=999999") {
+				get("/payments/v1/coin/checkout?itemId=999999") {
 					bearer(accessTokenFor(9002L))
 				} expect {
 					status(404)

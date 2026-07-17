@@ -1,6 +1,6 @@
-package com.org.meeple.api.coin.response
+package com.org.meeple.api.payments.response
 
-import com.org.meeple.api.payments.response.PaymentMethodResponse
+import com.org.meeple.api.coin.response.CoinItemResponse
 import com.org.meeple.core.coin.query.dto.CoinItem
 import com.org.meeple.core.payments.query.dto.PaymentMethodViews
 
