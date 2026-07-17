@@ -72,11 +72,12 @@ class OfflineGatheringDetailE2ETest : AbstractIntegrationSupport({
 				discountMaleFee = 9000,
 				discountFemaleFee = 7000,
 			).map { product: GatheringProductEntity -> IntegrationUtil.persist(product) }
-			val maleProductId: Long = products.first { product: GatheringProductEntity ->
-				product.gender == Gender.MALE && product.type == GatheringProductType.NORMAL
+			// 얼리버드가 유효한 일정이라 응답 productId는 EARLY_BIRD 상품 id다(실결제가와 같은 행).
+			val maleEarlyBirdProductId: Long = products.first { product: GatheringProductEntity ->
+				product.gender == Gender.MALE && product.type == GatheringProductType.EARLY_BIRD
 			}.id!!
-			val femaleProductId: Long = products.first { product: GatheringProductEntity ->
-				product.gender == Gender.FEMALE && product.type == GatheringProductType.NORMAL
+			val femaleEarlyBirdProductId: Long = products.first { product: GatheringProductEntity ->
+				product.gender == Gender.FEMALE && product.type == GatheringProductType.EARLY_BIRD
 			}.id!!
 
 			get("/offline/v1/gatherings/$id") { } expect {
@@ -106,13 +107,13 @@ class OfflineGatheringDetailE2ETest : AbstractIntegrationSupport({
 				body("data.schedules[0].fee", 10000)
 				body("data.schedules[0].earlyBirdFee", 7000)
 				body("data.schedules[0].discountFee", null)
-				body("data.schedules[0].productId", maleProductId.toInt())
+				body("data.schedules[0].productId", maleEarlyBirdProductId.toInt())
 				// 같은 일정의 여성 아이템 — 여성 참가비. 얼리버드가 = 8000×0.7=5600.
 				body("data.schedules[1].gender", "FEMALE")
 				body("data.schedules[1].fee", 8000)
 				body("data.schedules[1].earlyBirdFee", 5600)
 				body("data.schedules[1].discountFee", null)
-				body("data.schedules[1].productId", femaleProductId.toInt())
+				body("data.schedules[1].productId", femaleEarlyBirdProductId.toInt())
 				// 두 번째 일정(2999-06-01, 특가 없음) 남성 아이템 — 얼리버드가 없으니 정상가만.
 				body("data.schedules[2].gender", "MALE")
 				body("data.schedules[2].status", "COMPLETED")

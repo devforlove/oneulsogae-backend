@@ -49,18 +49,31 @@ data class GatheringScheduleView(
 
 	/** [gender] 성별의 서버 확정 실결제가: 얼리버드 유효 → 얼리버드가, 소진 & 할인가 존재 → 할인가, 그 외 → 정가. */
 	fun salePriceFor(gender: Gender): Int =
-		earlyBirdFeeFor(gender)
-			?: (if (earlyBirdSoldOut) discountFeeFor(gender) else null)
-			?: feeFor(gender)
+		appliedProductFor(gender)?.price ?: feeFor(gender)
 
-	/** [gender] 성별의 정가(NORMAL) 상품 id. 프론트가 체크아웃·결제완료에 넘길 상품 식별자다. */
+	/**
+	 * [gender] 성별의 적용 티어 상품 id — [salePriceFor]와 같은 행을 가리킨다.
+	 * 얼리버드 유효 → EARLY_BIRD, 소진 & 할인가 존재 → DISCOUNT, 그 외 → NORMAL.
+	 * 프론트가 체크아웃·결제완료에 넘길 상품 식별자다.
+	 */
 	fun productIdFor(gender: Gender): Long =
-		checkNotNull(
-			products.firstOrNull { product: GatheringProductView ->
-				product.gender == gender && product.type == GatheringProductType.NORMAL
-			}?.id,
-		) { "정가 상품이 없습니다: $id" }
+		appliedProductFor(gender)?.id
+			?: checkNotNull(productFor(gender, GatheringProductType.NORMAL)?.id) { "정가 상품이 없습니다: $id" }
+
+	// 적용 중인 프로모션 티어 상품(정가 제외). 얼리버드 유효 → EARLY_BIRD 행, 소진 → DISCOUNT 행, 해당 행이 없거나 티어가 없으면 null(정가 적용).
+	private fun appliedProductFor(gender: Gender): GatheringProductView? {
+		if (earlyBirdRemaining != null && !earlyBirdSoldOut) {
+			return productFor(gender, GatheringProductType.EARLY_BIRD)
+		}
+		if (earlyBirdSoldOut) {
+			return productFor(gender, GatheringProductType.DISCOUNT)
+		}
+		return null
+	}
+
+	private fun productFor(gender: Gender, type: GatheringProductType): GatheringProductView? =
+		products.firstOrNull { product: GatheringProductView -> product.gender == gender && product.type == type }
 
 	private fun priceFor(gender: Gender, type: GatheringProductType): Int? =
-		products.firstOrNull { product: GatheringProductView -> product.gender == gender && product.type == type }?.price
+		productFor(gender, type)?.price
 }

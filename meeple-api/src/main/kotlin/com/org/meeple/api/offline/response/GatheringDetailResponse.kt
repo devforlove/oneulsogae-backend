@@ -38,7 +38,8 @@ data class GatheringDetailResponse(
 	 * - 얼리버드가 남아있으면(remaining > 0): 정상가([fee])·얼리버드가([earlyBirdFee]), 할인가([discountFee])는 null.
 	 * - 얼리버드가 모두 소진되면(remaining <= 0): 정상가([fee])·할인가([discountFee])를 내리고 [earlyBirdFee]는 null.
 	 * [status]는 일정 상태이되, 해당 성별 정원이 모두 소진되면 소진됨(SOLD_OUT)으로 내려간다.
-	 * [productId]는 이 성별의 정가(NORMAL) 상품 id로, 체크아웃·결제완료 요청에 그대로 쓴다.
+	 * [productId]는 이 성별의 적용 티어 상품 id(얼리버드 유효 → EARLY_BIRD, 소진 & 할인가 존재 → DISCOUNT, 그 외 NORMAL)로,
+	 * 노출 중인 실결제가와 같은 행을 가리키며 체크아웃·결제완료 요청에 그대로 쓴다.
 	 */
 	data class Schedule(
 		val scheduleId: Long,
