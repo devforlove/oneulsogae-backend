@@ -70,10 +70,12 @@ class PaymentsController(
 	)
 	@GetMapping("/coin/checkout")
 	fun getCoinCheckout(
+		@LoginUser user: AuthUser,
 		@RequestParam itemId: Long,
 	): ApiResponse<CoinCheckoutResponse> =
 		ApiResponse.success(
 			CoinCheckoutResponse.of(
+				user.id,
 				getCoinCheckoutUseCase.getCheckout(itemId),
 				getPaymentMethodsUseCase.getActiveMethods(),
 			),

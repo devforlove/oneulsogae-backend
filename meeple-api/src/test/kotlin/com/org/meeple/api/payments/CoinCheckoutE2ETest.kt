@@ -39,6 +39,7 @@ class CoinCheckoutE2ETest : AbstractIntegrationSupport({
 				} expect {
 					status(200)
 					body("success", true)
+					body("data.userId", 9001)
 					body("data.item.id", itemId.toInt())
 					body("data.item.coinAmount", 100)
 					body("data.item.price", 12000)
