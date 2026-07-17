@@ -11,7 +11,7 @@ import jakarta.persistence.Table
 import org.hibernate.annotations.SQLRestriction
 
 /**
- * 결제 기록 한 건. 무검증 접수 단계라 결제수단·PG 정보 없이 접수 내용(누가·어느 일정·얼마)만 보관한다.
+ * 결제 기록 한 건. PG 최종 승인(confirm) 성공 건만 저장한다 — 결제수단 등 상세는 없고 접수 내용(누가·어느 일정·얼마)만 보관한다.
  * 재접수(거절 후 다시 결제완료)마다 새 행이 쌓인다 — (schedule_id, user_id)는 유니크가 아니다.
  * (schedule_id, user_id) 인덱스로 일정별 참가자 목록의 결제금액 조인을 커버한다.
  */
@@ -38,7 +38,7 @@ class PaymentEntity(
 	@Column(name = "product_id", nullable = false)
 	val productId: Long,
 
-	/** PG 거래 식별자(paymentKey). 승인 성공 건만 저장된다. */
+	/** PG 거래 식별자(paymentKey). PG 최종 승인(confirm) 성공 건만 저장된다. */
 	@Column(name = "payment_key", nullable = false)
 	val paymentKey: String,
 

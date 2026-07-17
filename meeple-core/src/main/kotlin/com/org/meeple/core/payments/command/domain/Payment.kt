@@ -3,7 +3,7 @@ package com.org.meeple.core.payments.command.domain
 import com.org.meeple.common.user.Gender
 
 /**
- * 결제 기록(command 도메인 모델). 무검증 접수 단계라 결제수단·PG 검증 정보 없이
+ * 결제 기록(command 도메인 모델). PG 최종 승인(confirm) 성공 건만 남기며, 결제수단 등 상세는 없고
  * 누가(userId)·무엇을(gathering/schedule/product/gender)·얼마에(amount, 서버 확정가) 접수했는지만 남긴다.
  * [productId]는 결제완료 요청의 상품 id(가격 근거) — 좌석 차감 추적(earlyBirdApplied)은 gathering_members가 가진다.
  * [paymentKey]는 PG 거래 식별자다.

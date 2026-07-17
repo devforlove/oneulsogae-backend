@@ -1,4 +1,4 @@
--- 결제 기록 테이블. 무검증 접수 단계: 결제수단·PG 정보 없이 접수 내용(누가·어느 일정·성별·확정가)만 보관한다.
+-- 결제 기록 테이블. PG 최종 승인(confirm) 성공 건만 저장한다: 접수 내용(누가·어느 일정·성별·확정가·payment_key)만 보관한다.
 -- 참가 상태의 원장은 gathering_members.status이며 payments에는 상태 컬럼을 두지 않는다.
 CREATE TABLE payments (
     id BIGINT AUTO_INCREMENT PRIMARY KEY,

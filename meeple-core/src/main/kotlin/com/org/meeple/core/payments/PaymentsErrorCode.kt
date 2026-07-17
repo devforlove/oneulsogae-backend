@@ -21,4 +21,7 @@ enum class PaymentsErrorCode(
 
 	/** 결제완료 접수의 productId가 본인 프로필 성별의 상품이 아님. */
 	PAYMENT_PRODUCT_GENDER_MISMATCH("PAYMENTS-003", "본인 성별의 상품이 아닙니다.", HttpStatus.BAD_REQUEST),
+
+	/** PG 최종 승인(confirm) 실패. 좌석은 복원되고 청구되지 않는다. */
+	PAYMENT_CONFIRM_FAILED("PAYMENTS-004", "결제 승인에 실패했습니다. 다시 시도해주세요.", HttpStatus.PAYMENT_REQUIRED),
 }

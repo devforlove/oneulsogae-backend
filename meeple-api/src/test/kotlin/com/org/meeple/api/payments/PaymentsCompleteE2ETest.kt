@@ -299,6 +299,31 @@ class PaymentsCompleteE2ETest : AbstractIntegrationSupport({
 			}
 		}
 
+		context("PG 승인(confirm)이 실패하면") {
+			it("402 PAYMENTS-004를 반환하고 좌석·여분을 복원하며 결제 기록을 남기지 않는다") {
+				val userId: Long = persistUserWithGender(providerId = "pay-complete-confirm-fail", gender = Gender.MALE)
+				val (gatheringId: Long, scheduleId: Long, normalProductId: Long) = persistGatheringWithSchedule()
+
+				post("/payments/v1/complete") {
+					bearer(accessTokenFor(userId))
+					header("X-Stub-Pg-Confirm", "fail")
+					jsonBody("""{"productId": $normalProductId, "paymentKey": "pay_key_fail"}""")
+				} expect {
+					status(402)
+					body("error.code", "PAYMENTS-004")
+				}
+
+				// 좌석 복원: 여분 원복, 참가는 CANCELED, 결제 기록 없음
+				findSchedule(scheduleId)?.maleRemaining shouldBe 4
+				findMember(scheduleId, userId)?.status shouldBe GatheringMemberStatus.CANCELED
+
+				val payment: QPaymentEntity = QPaymentEntity.paymentEntity
+				IntegrationUtil.getQuery().selectFrom(payment)
+					.where(payment.scheduleId.eq(scheduleId), payment.userId.eq(userId))
+					.fetchOne() shouldBe null
+			}
+		}
+
 		context("타성별 상품의 productId로 결제완료하면") {
 			it("400 PAYMENTS-003을 반환하고 아무것도 저장하지 않는다") {
 				val userId: Long = persistUserWithGender(providerId = "pay-complete-gm", gender = Gender.FEMALE)

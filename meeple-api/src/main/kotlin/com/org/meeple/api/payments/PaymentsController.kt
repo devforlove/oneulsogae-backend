@@ -59,15 +59,17 @@ class PaymentsController(
 	}
 
 	/**
-	 * 결제완료를 접수한다. 무검증 접수: 본인 프로필 성별을 강제해 참가를 승인대기(PENDING)로 등록하고
+	 * 결제완료를 접수한다. 본인 프로필 성별을 강제해 좌석을 확보(승인대기 PENDING)한 뒤 PG 최종 승인(confirm)을 받고
 	 * 서버 확정가로 결제 기록을 남긴다. 운영자 승인 후 참가(JOINED)로 전환된다.
 	 */
 	@Operation(
 		summary = "결제완료 접수",
-		description = "결제 완료를 접수해 참가를 승인대기로 등록한다. 상품은 productId로 지정한다(모임 상세 응답의 schedules[].productId). " +
+		description = "결제 완료를 접수해 좌석을 확보(승인대기로 등록)하고 PG 최종 승인(confirm)까지 받아야 결제 기록을 남긴다. " +
+			"상품은 productId로 지정한다(모임 상세 응답의 schedules[].productId). " +
 			"성별 여분·얼리버드 여분을 접수 시점에 차감한다. " +
 			"상품 없음 404(GATHERING-006), 타성별 상품 400(PAYMENTS-003), 판매 중 아님 409(GATHERING-003), " +
-			"매진 409(GATHERING-004), 중복 접수 409(GATHERING-005), 성별 미확정 400(PAYMENTS-002).",
+			"매진 409(GATHERING-004), 중복 접수 409(GATHERING-005), 성별 미확정 400(PAYMENTS-002), " +
+			"결제 승인 실패 402(PAYMENTS-004).",
 	)
 	@PostMapping("/complete")
 	fun complete(
