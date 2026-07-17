@@ -97,7 +97,7 @@ class OfflineGatheringDetailE2ETest : AbstractIntegrationSupport({
 				// 비로그인이라 각 일정이 남/녀 두 아이템으로 펼쳐진다. (일정 시작 오름차순, 같은 일정은 남성→여성)
 				body("data.schedules", hasSize<Any>(4))
 				body("data.schedules.gender", contains("MALE", "FEMALE", "MALE", "FEMALE"))
-				// 첫 일정(2999-01-01) 남성 아이템 — 얼리버드가 남아있어(remaining 5) 정상가·얼리버드가만, 할인가는 null.
+				// 첫 일정(2999-01-01) 남성 아이템 — 얼리버드가 남아있어(remaining 5) 정상가·할인가(=얼리버드가), isEarlyBird=true.
 				// 얼리버드가 = 정상가 × (100 - 할인율30) / 100 → 남성 10000×0.7=7000.
 				body("data.schedules[0].gender", "MALE")
 				body("data.schedules[0].genderDescription", "남성")
@@ -105,22 +105,22 @@ class OfflineGatheringDetailE2ETest : AbstractIntegrationSupport({
 				body("data.schedules[0].status", "SCHEDULED")
 				body("data.schedules[0].statusDescription", "예정")
 				body("data.schedules[0].fee", 10000)
-				body("data.schedules[0].earlyBirdFee", 7000)
-				body("data.schedules[0].discountFee", null)
+				body("data.schedules[0].discountFee", 7000)
+				body("data.schedules[0].isEarlyBird", true)
 				body("data.schedules[0].productId", maleEarlyBirdProductId.toInt())
 				// 같은 일정의 여성 아이템 — 여성 참가비. 얼리버드가 = 8000×0.7=5600.
 				body("data.schedules[1].gender", "FEMALE")
 				body("data.schedules[1].fee", 8000)
-				body("data.schedules[1].earlyBirdFee", 5600)
-				body("data.schedules[1].discountFee", null)
+				body("data.schedules[1].discountFee", 5600)
+				body("data.schedules[1].isEarlyBird", true)
 				body("data.schedules[1].productId", femaleEarlyBirdProductId.toInt())
 				// 두 번째 일정(2999-06-01, 특가 없음) 남성 아이템 — 얼리버드가 없으니 정상가만.
 				body("data.schedules[2].gender", "MALE")
 				body("data.schedules[2].status", "COMPLETED")
 				body("data.schedules[2].statusDescription", "종료")
 				body("data.schedules[2].fee", 10000)
-				body("data.schedules[2].earlyBirdFee", null)
 				body("data.schedules[2].discountFee", null)
+				body("data.schedules[2].isEarlyBird", false)
 				// 비로그인 조회이므로 조회자 성별은 null이다.
 				body("data.viewerGender", null)
 			}
@@ -190,15 +190,15 @@ class OfflineGatheringDetailE2ETest : AbstractIntegrationSupport({
 
 			get("/offline/v1/gatherings/$id") { } expect {
 				status(200)
-				// 남성 아이템 — 얼리버드 소진 → 얼리버드가 null, 정상가·할인가 노출.
+				// 남성 아이템 — 얼리버드 소진 → 정상가·일반 할인가 노출, isEarlyBird=false.
 				body("data.schedules[0].gender", "MALE")
 				body("data.schedules[0].fee", 10000)
-				body("data.schedules[0].earlyBirdFee", null)
 				body("data.schedules[0].discountFee", 9000)
+				body("data.schedules[0].isEarlyBird", false)
 			}
 		}
 
-		it("얼리버드 남은 개수가 null이면(티어 없음) 할인율이 있어도 earlyBirdFee는 내려가지 않는다") {
+		it("얼리버드 남은 개수가 null이면(티어 없음) 할인율이 있어도 discountFee는 내려가지 않는다") {
 			val id: Long = IntegrationUtil.persist(
 				GatheringEntityFixture.create(title = "얼리버드 티어 없음", status = GatheringStatus.RECRUITING),
 			).id!!
@@ -220,11 +220,11 @@ class OfflineGatheringDetailE2ETest : AbstractIntegrationSupport({
 
 			get("/offline/v1/gatherings/$id") { } expect {
 				status(200)
-				// 얼리버드 티어가 없으므로(remaining null) 정상가만, 얼리버드가·할인가는 null.
+				// 얼리버드 티어가 없으므로(remaining null) 정상가만, discountFee는 null, isEarlyBird=false.
 				body("data.schedules[0].gender", "MALE")
 				body("data.schedules[0].fee", 10000)
-				body("data.schedules[0].earlyBirdFee", null)
 				body("data.schedules[0].discountFee", null)
+				body("data.schedules[0].isEarlyBird", false)
 			}
 		}
 

@@ -12,7 +12,7 @@ import java.time.LocalDateTime
  * [viewerGender]는 로그인한 상태로 조회했을 때만 채워지는 조회자 성별이다. (비로그인이거나 성별 미설정이면 null)
  *
  * [schedules]는 유저에게 셀렉트박스로 보여줄 목록이라, 한 일정을 성별([Schedule.gender])로 나눈 아이템으로 내려준다.
- * 유저는 한 성별이므로 각 아이템은 해당 성별의 참가비(정상가·얼리버드·할인가)만 담는다.
+ * 유저는 한 성별이므로 각 아이템은 해당 성별의 참가비(정상가·할인가)만 담는다.
  * 로그인 상태(성별 확정)면 조회자 성별 아이템만, 비로그인이면 남/녀 두 아이템을 모두 포함한다. (일정 시작 시각 오름차순, 같은 일정은 남성→여성 순)
  */
 data class GatheringDetailResponse(
@@ -33,10 +33,11 @@ data class GatheringDetailResponse(
 
 	/**
 	 * 성별로 나뉜 일정 한 건(셀렉트박스 아이템). 같은 일정([scheduleId])이라도 남/녀는 별개 아이템이다.
-	 * 참가비는 이 아이템의 성별([gender]) 값만 담되, 얼리버드 남은 개수([GatheringScheduleView.earlyBirdRemaining])에 따라 노출 티어가 달라진다:
-	 * - 얼리버드 티어가 없으면(remaining null): 정상가([fee])만, [earlyBirdFee]·[discountFee]는 null.
-	 * - 얼리버드가 남아있으면(remaining > 0): 정상가([fee])·얼리버드가([earlyBirdFee]), 할인가([discountFee])는 null.
-	 * - 얼리버드가 모두 소진되면(remaining <= 0): 정상가([fee])·할인가([discountFee])를 내리고 [earlyBirdFee]는 null.
+	 * 참가비는 이 아이템의 성별([gender]) 값만 담되, 얼리버드 남은 개수([GatheringScheduleView.earlyBirdRemaining])에 따라 노출 티어가 달라진다.
+	 * 얼리버드가와 일반 할인가는 동시에 노출되지 않으므로 [discountFee] 하나로 합치고, 그 값이 얼리버드가인지를 [isEarlyBird]로 구분한다:
+	 * - 얼리버드 티어가 없으면(remaining null): 정상가([fee])만, [discountFee]는 null, [isEarlyBird]=false.
+	 * - 얼리버드가 남아있으면(remaining > 0): 정상가([fee])·얼리버드가([discountFee]), [isEarlyBird]=true.
+	 * - 얼리버드가 모두 소진되면(remaining <= 0): 정상가([fee])·일반 할인가([discountFee]), [isEarlyBird]=false.
 	 * [status]는 일정 상태이되, 해당 성별 정원이 모두 소진되면 소진됨(SOLD_OUT)으로 내려간다.
 	 * [productId]는 이 성별의 적용 티어 상품 id(얼리버드 유효 → EARLY_BIRD, 소진 & 할인가 존재 → DISCOUNT, 그 외 NORMAL)로,
 	 * 노출 중인 실결제가와 같은 행을 가리키며 체크아웃·결제완료 요청에 그대로 쓴다.
@@ -49,8 +50,8 @@ data class GatheringDetailResponse(
 		val startAt: LocalDateTime,
 		val endAt: LocalDateTime?,
 		val fee: Int?,
-		val earlyBirdFee: Int?,
 		val discountFee: Int?,
+		val isEarlyBird: Boolean,
 		val status: GatheringScheduleItemStatus,
 		val statusDescription: String,
 	) {
@@ -58,6 +59,7 @@ data class GatheringDetailResponse(
 			/** [view] 일정을 [gender] 성별 아이템으로 만든다. (해당 성별의 참가비·정원 소진 여부를 반영한다. 금액 티어 계산은 [GatheringScheduleView]에 캡슐화되어 있다) */
 			fun of(view: GatheringScheduleView, gender: Gender): Schedule {
 				val status: GatheringScheduleItemStatus = GatheringScheduleItemStatus.of(view.status, view.soldOutFor(gender))
+				val earlyBirdFee: Int? = view.earlyBirdFeeFor(gender)
 				return Schedule(
 					scheduleId = view.id,
 					gender = gender,
@@ -66,8 +68,8 @@ data class GatheringDetailResponse(
 					startAt = view.startAt,
 					endAt = view.endAt,
 					fee = view.feeFor(gender),
-					earlyBirdFee = view.earlyBirdFeeFor(gender),
-					discountFee = if (view.earlyBirdSoldOut) view.discountFeeFor(gender) else null,
+					discountFee = earlyBirdFee ?: if (view.earlyBirdSoldOut) view.discountFeeFor(gender) else null,
+					isEarlyBird = earlyBirdFee != null,
 					status = status,
 					statusDescription = status.description,
 				)
