@@ -9,6 +9,7 @@ import com.org.meeple.infra.gathering.command.entity.QGatheringEntity
 import com.org.meeple.infra.gathering.command.entity.QGatheringMemberEntity
 import com.org.meeple.infra.gathering.command.entity.QGatheringProfileEntity
 import com.org.meeple.infra.gathering.command.entity.QGatheringScheduleEntity
+import com.org.meeple.infra.gathering.command.entity.QMemberVerificationEntity
 import com.org.meeple.infra.payments.command.entity.QPaymentEntity
 import com.org.meeple.infra.user.command.entity.QUserDetailEntity
 import com.querydsl.core.types.Projections
@@ -42,6 +43,8 @@ class GetAdminGatheringMemberDaoImpl(
 		val gathering: QGatheringEntity = QGatheringEntity.gatheringEntity
 		val schedule: QGatheringScheduleEntity = QGatheringScheduleEntity.gatheringScheduleEntity
 		val profile: QGatheringProfileEntity = QGatheringProfileEntity.gatheringProfileEntity
+		val verification: QMemberVerificationEntity = QMemberVerificationEntity.memberVerificationEntity
+		val latestVerification: QMemberVerificationEntity = QMemberVerificationEntity("latestVerification")
 
 		val views: List<AdminGatheringMemberView> = queryFactory
 			.select(
@@ -58,6 +61,7 @@ class GetAdminGatheringMemberDaoImpl(
 					gathering.title,
 					schedule.startAt,
 					profile.id.isNotNull(),
+					verification.id,
 				),
 			)
 			.from(member)
@@ -75,6 +79,13 @@ class GetAdminGatheringMemberDaoImpl(
 			.leftJoin(gathering).on(gathering.id.eq(member.gatheringId))
 			.leftJoin(schedule).on(schedule.id.eq(member.scheduleId))
 			.leftJoin(profile).on(profile.userId.eq(member.userId))
+			.leftJoin(verification).on(
+				verification.id.eq(
+					JPAExpressions.select(latestVerification.id.max())
+						.from(latestVerification)
+						.where(latestVerification.userId.eq(member.userId)),
+				),
+			)
 			.where(scheduleIdEq(member, scheduleId), statusEq(member, status))
 			.orderBy(member.id.asc())
 			.offset(offset)

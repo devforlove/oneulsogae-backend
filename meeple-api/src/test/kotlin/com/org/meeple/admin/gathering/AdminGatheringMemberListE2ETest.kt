@@ -9,11 +9,20 @@ import com.org.meeple.infra.fixture.GatheringEntityFixture
 import com.org.meeple.infra.fixture.GatheringMemberEntityFixture
 import com.org.meeple.infra.fixture.GatheringProfileEntityFixture
 import com.org.meeple.infra.fixture.GatheringScheduleEntityFixture
+import com.org.meeple.infra.fixture.MemberVerificationEntityFixture
 import com.org.meeple.infra.fixture.IntegrationUtil
 import com.org.meeple.infra.fixture.UserDetailEntityFixture
 import com.org.meeple.infra.fixture.UserEntityFixture
 import com.org.meeple.core.payments.command.domain.PaymentStatus
+import com.org.meeple.infra.gathering.command.entity.QGatheringEntity
+import com.org.meeple.infra.gathering.command.entity.QGatheringMemberEntity
+import com.org.meeple.infra.gathering.command.entity.QGatheringProfileEntity
+import com.org.meeple.infra.gathering.command.entity.QGatheringScheduleEntity
+import com.org.meeple.infra.gathering.command.entity.QMemberVerificationEntity
 import com.org.meeple.infra.payments.command.entity.PaymentEntity
+import com.org.meeple.infra.payments.command.entity.QPaymentEntity
+import com.org.meeple.infra.user.command.entity.QUserDetailEntity
+import com.org.meeple.infra.user.command.entity.QUserEntity
 import org.hamcrest.Matchers.contains
 import org.hamcrest.Matchers.hasSize
 
@@ -38,6 +47,8 @@ class AdminGatheringMemberListE2ETest : AbstractIntegrationSupport({
 				IntegrationUtil.persist(UserDetailEntityFixture.create(userId = firstUserId, nickname = "첫째"))
 				// 첫째만 회원 인증(gathering_profile) 완료 → memberVerified true.
 				IntegrationUtil.persist(GatheringProfileEntityFixture.create(userId = firstUserId))
+				// 첫째의 멤버 인증 제출 → memberVerificationId로 노출된다.
+				val firstVerificationId: Long = IntegrationUtil.persist(MemberVerificationEntityFixture.create(userId = firstUserId)).id!!
 				IntegrationUtil.persist(
 					GatheringMemberEntityFixture.create(
 						gatheringId = gatheringId, scheduleId = scheduleId, userId = firstUserId,
@@ -77,6 +88,8 @@ class AdminGatheringMemberListE2ETest : AbstractIntegrationSupport({
 					body("data.content.gender", contains("MALE", "FEMALE"))
 					// 첫째만 회원 인증 완료.
 					body("data.content.memberVerified", contains(true, false))
+					// 첫째는 멤버 인증 제출 id, 둘째는 제출 이력 없어 null.
+					body("data.content.memberVerificationId", contains(firstVerificationId.toInt(), null))
 				}
 
 				// status 필터: PENDING만.
@@ -108,5 +121,16 @@ class AdminGatheringMemberListE2ETest : AbstractIntegrationSupport({
 				}
 			}
 		}
+	}
+
+	afterTest {
+		IntegrationUtil.deleteAll(QMemberVerificationEntity.memberVerificationEntity)
+		IntegrationUtil.deleteAll(QGatheringProfileEntity.gatheringProfileEntity)
+		IntegrationUtil.deleteAll(QGatheringMemberEntity.gatheringMemberEntity)
+		IntegrationUtil.deleteAll(QPaymentEntity.paymentEntity)
+		IntegrationUtil.deleteAll(QGatheringScheduleEntity.gatheringScheduleEntity)
+		IntegrationUtil.deleteAll(QGatheringEntity.gatheringEntity)
+		IntegrationUtil.deleteAll(QUserDetailEntity.userDetailEntity)
+		IntegrationUtil.deleteAll(QUserEntity.userEntity)
 	}
 })
