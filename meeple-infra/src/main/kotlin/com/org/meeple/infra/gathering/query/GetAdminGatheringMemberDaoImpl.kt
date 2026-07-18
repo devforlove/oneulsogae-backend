@@ -5,8 +5,10 @@ import com.org.meeple.admin.gathering.query.dto.AdminGatheringMemberDetailView
 import com.org.meeple.admin.gathering.query.dto.AdminGatheringMemberView
 import com.org.meeple.admin.gathering.query.dto.AdminGatheringMemberViews
 import com.org.meeple.common.gathering.GatheringMemberStatus
+import com.org.meeple.infra.gathering.command.entity.QGatheringEntity
 import com.org.meeple.infra.gathering.command.entity.QGatheringMemberEntity
 import com.org.meeple.infra.gathering.command.entity.QGatheringProfileEntity
+import com.org.meeple.infra.gathering.command.entity.QGatheringScheduleEntity
 import com.org.meeple.infra.payments.command.entity.QPaymentEntity
 import com.org.meeple.infra.user.command.entity.QUserDetailEntity
 import com.querydsl.core.types.Projections
@@ -28,7 +30,7 @@ class GetAdminGatheringMemberDaoImpl(
 ) : GetAdminGatheringMemberDao {
 
 	override fun findPage(
-		scheduleId: Long,
+		scheduleId: Long?,
 		offset: Long,
 		limit: Int,
 		status: GatheringMemberStatus?,
@@ -37,6 +39,8 @@ class GetAdminGatheringMemberDaoImpl(
 		val detail: QUserDetailEntity = QUserDetailEntity.userDetailEntity
 		val payment: QPaymentEntity = QPaymentEntity.paymentEntity
 		val latestPayment: QPaymentEntity = QPaymentEntity("latestPayment")
+		val gathering: QGatheringEntity = QGatheringEntity.gatheringEntity
+		val schedule: QGatheringScheduleEntity = QGatheringScheduleEntity.gatheringScheduleEntity
 
 		val views: List<AdminGatheringMemberView> = queryFactory
 			.select(
@@ -49,6 +53,9 @@ class GetAdminGatheringMemberDaoImpl(
 					member.status,
 					payment.amount,
 					member.createdAt,
+					member.scheduleId,
+					gathering.title,
+					schedule.startAt,
 				),
 			)
 			.from(member)
@@ -63,7 +70,9 @@ class GetAdminGatheringMemberDaoImpl(
 						),
 				),
 			)
-			.where(member.scheduleId.eq(scheduleId), statusEq(member, status))
+			.leftJoin(gathering).on(gathering.id.eq(member.gatheringId))
+			.leftJoin(schedule).on(schedule.id.eq(member.scheduleId))
+			.where(scheduleIdEq(member, scheduleId), statusEq(member, status))
 			.orderBy(member.id.asc())
 			.offset(offset)
 			.limit(limit.toLong())
@@ -71,12 +80,12 @@ class GetAdminGatheringMemberDaoImpl(
 		return AdminGatheringMemberViews(values = views)
 	}
 
-	override fun count(scheduleId: Long, status: GatheringMemberStatus?): Long {
+	override fun count(scheduleId: Long?, status: GatheringMemberStatus?): Long {
 		val member: QGatheringMemberEntity = QGatheringMemberEntity.gatheringMemberEntity
 		return queryFactory
 			.select(member.count())
 			.from(member)
-			.where(member.scheduleId.eq(scheduleId), statusEq(member, status))
+			.where(scheduleIdEq(member, scheduleId), statusEq(member, status))
 			.fetchOne() ?: 0L
 	}
 
@@ -100,6 +109,13 @@ class GetAdminGatheringMemberDaoImpl(
 			.where(member.id.eq(memberId), member.scheduleId.eq(scheduleId))
 			.fetchOne()
 	}
+
+	/** scheduleId가 있으면 동등 조건(그 일정만), 없으면 null(=where 무시, 전역 조회). */
+	private fun scheduleIdEq(
+		member: QGatheringMemberEntity,
+		scheduleId: Long?,
+	): BooleanExpression? =
+		scheduleId?.let { member.scheduleId.eq(it) }
 
 	/** status가 있으면 동등 조건, 없으면 null(=where 무시). */
 	private fun statusEq(

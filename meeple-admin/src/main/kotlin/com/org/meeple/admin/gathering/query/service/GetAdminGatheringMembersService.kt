@@ -35,6 +35,19 @@ class GetAdminGatheringMembersService(
 		)
 	}
 
+	override fun searchMembers(page: Int, size: Int, status: GatheringMemberStatus?): AdminGatheringMemberPage {
+		val pageNumber: Int = page.coerceAtLeast(0)
+		val pageSize: Int = size.coerceIn(1, MAX_PAGE_SIZE)
+		val offset: Long = pageNumber.toLong() * pageSize
+
+		return AdminGatheringMemberPage(
+			content = getAdminGatheringMemberDao.findPage(null, offset, pageSize, status),
+			page = pageNumber,
+			size = pageSize,
+			totalElements = getAdminGatheringMemberDao.count(null, status),
+		)
+	}
+
 	override fun getMemberProfile(scheduleId: Long, memberId: Long): AdminGatheringMemberDetailView =
 		getAdminGatheringMemberDao.findMemberProfile(scheduleId, memberId)
 			?: throw AdminException(
