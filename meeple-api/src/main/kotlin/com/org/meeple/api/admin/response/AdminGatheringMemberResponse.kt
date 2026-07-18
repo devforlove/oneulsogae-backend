@@ -21,6 +21,8 @@ data class AdminGatheringMemberResponse(
 	val scheduleId: Long,
 	val gatheringTitle: String,
 	val scheduleStartAt: LocalDateTime,
+	/** 회원 인증(gathering_profile) 완료 여부. true면 승인 가능. */
+	val memberVerified: Boolean,
 ) {
 
 	companion object {
@@ -37,6 +39,7 @@ data class AdminGatheringMemberResponse(
 				scheduleId = view.scheduleId,
 				gatheringTitle = view.gatheringTitle,
 				scheduleStartAt = view.scheduleStartAt,
+				memberVerified = view.memberVerified,
 			)
 	}
 }

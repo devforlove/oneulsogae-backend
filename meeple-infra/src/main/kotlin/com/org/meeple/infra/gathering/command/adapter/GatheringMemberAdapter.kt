@@ -49,6 +49,7 @@ class GatheringMemberAdapter(
 			.map { entity: GatheringMemberEntity ->
 				AdminGatheringMember(
 					id = checkNotNull(entity.id),
+					userId = entity.userId,
 					scheduleId = entity.scheduleId,
 					gender = entity.gender,
 					status = entity.status,

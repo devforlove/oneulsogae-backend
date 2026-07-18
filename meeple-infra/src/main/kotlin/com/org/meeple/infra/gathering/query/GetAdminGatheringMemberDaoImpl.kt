@@ -41,6 +41,7 @@ class GetAdminGatheringMemberDaoImpl(
 		val latestPayment: QPaymentEntity = QPaymentEntity("latestPayment")
 		val gathering: QGatheringEntity = QGatheringEntity.gatheringEntity
 		val schedule: QGatheringScheduleEntity = QGatheringScheduleEntity.gatheringScheduleEntity
+		val profile: QGatheringProfileEntity = QGatheringProfileEntity.gatheringProfileEntity
 
 		val views: List<AdminGatheringMemberView> = queryFactory
 			.select(
@@ -56,6 +57,7 @@ class GetAdminGatheringMemberDaoImpl(
 					member.scheduleId,
 					gathering.title,
 					schedule.startAt,
+					profile.id.isNotNull(),
 				),
 			)
 			.from(member)
@@ -72,6 +74,7 @@ class GetAdminGatheringMemberDaoImpl(
 			)
 			.leftJoin(gathering).on(gathering.id.eq(member.gatheringId))
 			.leftJoin(schedule).on(schedule.id.eq(member.scheduleId))
+			.leftJoin(profile).on(profile.userId.eq(member.userId))
 			.where(scheduleIdEq(member, scheduleId), statusEq(member, status))
 			.orderBy(member.id.asc())
 			.offset(offset)

@@ -46,4 +46,7 @@ enum class AdminErrorCode(
 
 	/** 승인대기 상태가 아닌 참가 신청을 승인/거절함. */
 	GATHERING_MEMBER_INVALID_STATUS_TRANSITION("GATHER-020", "승인대기 상태의 신청만 승인/거절할 수 있습니다.", HttpStatus.CONFLICT),
+
+	/** 회원 인증(gathering_profile)을 마치지 않은 유저의 참가 신청을 승인하려 함. */
+	GATHERING_MEMBER_NOT_VERIFIED("GATHER-021", "회원 인증을 마친 유저만 승인할 수 있습니다.", HttpStatus.CONFLICT),
 }

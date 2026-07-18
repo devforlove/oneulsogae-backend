@@ -8,6 +8,7 @@ import com.org.meeple.common.user.Gender
 import com.org.meeple.infra.fixture.GatheringEntityFixture
 import com.org.meeple.infra.fixture.GatheringMemberEntityFixture
 import com.org.meeple.infra.fixture.GatheringProductEntityFixture
+import com.org.meeple.infra.fixture.GatheringProfileEntityFixture
 import com.org.meeple.infra.fixture.GatheringScheduleEntityFixture
 import com.org.meeple.infra.fixture.IntegrationUtil
 import com.org.meeple.infra.gathering.command.entity.GatheringMemberEntity
@@ -15,6 +16,7 @@ import com.org.meeple.infra.gathering.command.entity.GatheringProductEntity
 import com.org.meeple.infra.gathering.command.entity.GatheringScheduleEntity
 import com.org.meeple.infra.gathering.command.entity.QGatheringMemberEntity
 import com.org.meeple.infra.gathering.command.entity.QGatheringProductEntity
+import com.org.meeple.infra.gathering.command.entity.QGatheringProfileEntity
 import com.org.meeple.infra.gathering.command.entity.QGatheringScheduleEntity
 import io.kotest.matchers.shouldBe
 
@@ -28,7 +30,8 @@ import io.kotest.matchers.shouldBe
 class AdminGatheringMemberE2ETest : AbstractIntegrationSupport({
 
 	// 일정(여분 3/4 — 접수 1건 차감 상태) + PENDING 참가 신청을 저장하고 (scheduleId, memberId)를 돌려준다.
-	fun persistPendingMember(earlyBirdApplied: Boolean = false): Pair<Long, Long> {
+	// [verified]면 신청 유저(1000L)의 회원 인증(gathering_profile)도 함께 심는다(승인 가능 상태).
+	fun persistPendingMember(earlyBirdApplied: Boolean = false, verified: Boolean = true): Pair<Long, Long> {
 		val gatheringId: Long = IntegrationUtil.persist(GatheringEntityFixture.create()).id!!
 		val scheduleId: Long = IntegrationUtil.persist(
 			GatheringScheduleEntityFixture.create(
@@ -44,6 +47,9 @@ class AdminGatheringMemberE2ETest : AbstractIntegrationSupport({
 			scheduleId = scheduleId,
 			earlyBirdDiscountRate = if (earlyBirdApplied) 30 else null,
 		).forEach { product: GatheringProductEntity -> IntegrationUtil.persist(product) }
+		if (verified) {
+			IntegrationUtil.persist(GatheringProfileEntityFixture.create(userId = 1000L))
+		}
 		val memberId: Long = IntegrationUtil.persist(
 			GatheringMemberEntityFixture.create(
 				gatheringId = gatheringId,
@@ -98,6 +104,21 @@ class AdminGatheringMemberE2ETest : AbstractIntegrationSupport({
 					status(409)
 					body("error.code", "GATHER-020")
 				}
+			}
+		}
+
+		context("회원 인증(gathering_profile)이 없는 유저의 신청을 승인하면") {
+			it("409 GATHER-021을 반환하고 상태를 바꾸지 않는다") {
+				val (scheduleId: Long, memberId: Long) = persistPendingMember(verified = false)
+
+				post("/admin/v1/gatherings/schedules/$scheduleId/members/$memberId/approve") {
+					bearer(adminAccessTokenFor(1L))
+				} expect {
+					status(409)
+					body("error.code", "GATHER-021")
+				}
+
+				findMember(memberId)?.status shouldBe GatheringMemberStatus.PENDING
 			}
 		}
 
@@ -163,6 +184,8 @@ class AdminGatheringMemberE2ETest : AbstractIntegrationSupport({
 	}
 
 	afterTest {
+		IntegrationUtil.deleteAll(QGatheringMemberEntity.gatheringMemberEntity)
+		IntegrationUtil.deleteAll(QGatheringProfileEntity.gatheringProfileEntity)
 		IntegrationUtil.deleteAll(QGatheringProductEntity.gatheringProductEntity)
 	}
 })

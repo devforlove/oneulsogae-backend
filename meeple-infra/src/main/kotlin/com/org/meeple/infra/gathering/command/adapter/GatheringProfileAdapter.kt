@@ -1,5 +1,6 @@
 package com.org.meeple.infra.gathering.command.adapter
 
+import com.org.meeple.admin.gathering.command.application.port.out.ExistsGatheringProfilePort
 import com.org.meeple.admin.memberverification.command.application.port.out.SaveGatheringProfilePort
 import com.org.meeple.core.gathering.command.application.port.out.UpdateGatheringProfilePort
 import com.org.meeple.infra.gathering.command.entity.GatheringProfileEntity
@@ -10,12 +11,13 @@ import java.time.LocalDate
 /**
  * 모임 프로필(gathering_profile) 엔티티의 out-port 어댑터. (엔티티당 어댑터 하나)
  * admin 멤버 인증 승인의 [SaveGatheringProfilePort](유저당 1건 upsert)와,
- * 프로필 변경 동기화의 [UpdateGatheringProfilePort](유저 유래 필드 최신화)를 함께 구현한다.
+ * 프로필 변경 동기화의 [UpdateGatheringProfilePort](유저 유래 필드 최신화),
+ * 회원 인증 여부 조회 [ExistsGatheringProfilePort]를 함께 구현한다.
  */
 @Component
 class GatheringProfileAdapter(
 	private val gatheringProfileJpaRepository: GatheringProfileJpaRepository,
-) : SaveGatheringProfilePort, UpdateGatheringProfilePort {
+) : SaveGatheringProfilePort, UpdateGatheringProfilePort, ExistsGatheringProfilePort {
 
 	override fun save(
 		userId: Long,
@@ -52,4 +54,8 @@ class GatheringProfileAdapter(
 		entity.height = height
 		gatheringProfileJpaRepository.save(entity)
 	}
+
+	// 회원 인증 여부: gathering_profile 행 존재 여부.
+	override fun existsByUserId(userId: Long): Boolean =
+		gatheringProfileJpaRepository.existsByUserId(userId)
 }

@@ -8,6 +8,7 @@ import java.time.LocalDateTime
  * 어드민 참가 신청 목록의 한 행(read model).
  * [amount]는 (schedule, user)의 최신 결제 기록 금액(기록이 없으면 null — 픽스처 등 예외 상황).
  * [scheduleId]·[gatheringTitle]·[scheduleStartAt]은 전역(모임 무관) 목록에서 어느 모임·일정의 신청인지 알기 위한 맥락이다.
+ * [memberVerified]는 회원 인증(gathering_profile) 완료 여부다(승인 가능 여부 표시용).
  */
 data class AdminGatheringMemberView(
 	val memberId: Long,
@@ -20,4 +21,5 @@ data class AdminGatheringMemberView(
 	val scheduleId: Long,
 	val gatheringTitle: String,
 	val scheduleStartAt: LocalDateTime,
+	val memberVerified: Boolean,
 )

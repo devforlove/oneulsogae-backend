@@ -11,4 +11,7 @@ interface GatheringProfileJpaRepository : JpaRepository<GatheringProfileEntity, 
 
 	/** 유저의 모임 프로필 1건. (user_id 유니크 — upsert 판단용) */
 	fun findByUserId(userId: Long): GatheringProfileEntity?
+
+	/** 유저의 모임 프로필(회원 인증 승인) 존재 여부. */
+	fun existsByUserId(userId: Long): Boolean
 }

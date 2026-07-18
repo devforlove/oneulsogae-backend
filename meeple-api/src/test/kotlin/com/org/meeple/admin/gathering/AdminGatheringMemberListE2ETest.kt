@@ -7,6 +7,7 @@ import com.org.meeple.common.integration.get
 import com.org.meeple.common.user.Gender
 import com.org.meeple.infra.fixture.GatheringEntityFixture
 import com.org.meeple.infra.fixture.GatheringMemberEntityFixture
+import com.org.meeple.infra.fixture.GatheringProfileEntityFixture
 import com.org.meeple.infra.fixture.GatheringScheduleEntityFixture
 import com.org.meeple.infra.fixture.IntegrationUtil
 import com.org.meeple.infra.fixture.UserDetailEntityFixture
@@ -35,6 +36,8 @@ class AdminGatheringMemberListE2ETest : AbstractIntegrationSupport({
 
 				val firstUserId: Long = IntegrationUtil.persist(UserEntityFixture.create(providerId = "admin-list-1")).id!!
 				IntegrationUtil.persist(UserDetailEntityFixture.create(userId = firstUserId, nickname = "첫째"))
+				// 첫째만 회원 인증(gathering_profile) 완료 → memberVerified true.
+				IntegrationUtil.persist(GatheringProfileEntityFixture.create(userId = firstUserId))
 				IntegrationUtil.persist(
 					GatheringMemberEntityFixture.create(
 						gatheringId = gatheringId, scheduleId = scheduleId, userId = firstUserId,
@@ -72,6 +75,8 @@ class AdminGatheringMemberListE2ETest : AbstractIntegrationSupport({
 					body("data.content.status", contains("PENDING", "JOINED"))
 					body("data.content.amount", contains(10000, 5600))
 					body("data.content.gender", contains("MALE", "FEMALE"))
+					// 첫째만 회원 인증 완료.
+					body("data.content.memberVerified", contains(true, false))
 				}
 
 				// status 필터: PENDING만.
