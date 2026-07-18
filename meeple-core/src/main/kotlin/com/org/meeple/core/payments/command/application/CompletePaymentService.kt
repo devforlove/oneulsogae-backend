@@ -12,6 +12,7 @@ import com.org.meeple.core.payments.PaymentsErrorCode
 import com.org.meeple.core.payments.command.application.port.`in`.CompletePaymentUseCase
 import com.org.meeple.core.payments.command.application.port.`in`.command.CompletePaymentCommand
 import com.org.meeple.core.payments.command.application.port.`in`.result.CompletePaymentResult
+import com.org.meeple.core.payments.command.application.port.out.PaymentConfirmResult
 import com.org.meeple.core.payments.command.application.port.out.PaymentGatewayPort
 import com.org.meeple.core.payments.command.application.port.out.SavePaymentPort
 import com.org.meeple.core.payments.command.application.port.out.UpdatePaymentStatusPort
@@ -77,10 +78,10 @@ class CompletePaymentService(
 		)
 
 		// ③ PG 최종 승인 (트랜잭션 밖).
-		val approved: Boolean = paymentGatewayPort.confirm(command.paymentKey, command.orderId, registered.amount)
-		if (!approved) {
-			// ④-실패: 기록을 FAILED로 남기고(이력 보존) 좌석 복원 후 402.
-			updatePaymentStatusPort.updateStatus(payment.id!!, PaymentStatus.FAILED)
+		val confirmed: PaymentConfirmResult = paymentGatewayPort.confirm(command.paymentKey, command.orderId, registered.amount)
+		if (!confirmed.approved) {
+			// ④-실패: 기록을 FAILED로 남기고(사유·이력 보존) 좌석 복원 후 402.
+			updatePaymentStatusPort.updateStatus(payment.id!!, PaymentStatus.FAILED, confirmed.failReason)
 			releaseGatheringSeatUseCase.release(product.scheduleId, userId)
 			throw BusinessException(PaymentsErrorCode.PAYMENT_CONFIRM_FAILED)
 		}

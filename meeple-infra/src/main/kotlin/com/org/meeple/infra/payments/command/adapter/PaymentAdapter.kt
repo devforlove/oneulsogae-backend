@@ -47,9 +47,13 @@ class PaymentAdapter(
 	}
 
 	@Transactional
-	override fun updateStatus(paymentId: Long, status: PaymentStatus) {
+	override fun updateStatus(paymentId: Long, status: PaymentStatus, failReason: String?) {
 		val entity: PaymentEntity = paymentJpaRepository.findById(paymentId)
 			.orElseThrow { IllegalStateException("결제 기록을 찾을 수 없습니다: $paymentId") }
 		entity.status = status
+		// 실패 사유는 있을 때만 기록한다(성공 전이는 null → 기존 값 유지). 컬럼 길이 초과분은 잘라 저장 실패를 막는다.
+		if (failReason != null) {
+			entity.failReason = failReason.take(PaymentEntity.FAIL_REASON_MAX_LENGTH)
+		}
 	}
 }

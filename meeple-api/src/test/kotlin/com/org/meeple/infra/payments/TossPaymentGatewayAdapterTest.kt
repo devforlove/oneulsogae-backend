@@ -8,6 +8,7 @@ import com.github.tomakehurst.wiremock.client.WireMock.post
 import com.github.tomakehurst.wiremock.client.WireMock.postRequestedFor
 import com.github.tomakehurst.wiremock.client.WireMock.urlEqualTo
 import com.github.tomakehurst.wiremock.core.WireMockConfiguration
+import com.org.meeple.core.payments.command.application.port.out.PaymentConfirmResult
 import com.org.meeple.infra.payments.command.adapter.TossPaymentGatewayAdapter
 import io.kotest.core.spec.style.DescribeSpec
 import io.kotest.matchers.shouldBe
@@ -41,7 +42,7 @@ class TossPaymentGatewayAdapterTest : DescribeSpec({
 	afterSpec { server.stop() }
 
 	describe("confirm") {
-		it("토스가 2xx로 승인하면 true를 반환하고, Basic 인증·paymentKey·orderId·amount를 담아 요청한다") {
+		it("토스가 2xx로 승인하면 approved=true·failReason=null을 반환하고, Basic 인증·paymentKey·orderId·amount를 담아 요청한다") {
 			server.stubFor(
 				post(urlEqualTo("/v1/payments/confirm")).willReturn(
 					aResponse().withStatus(200)
@@ -50,8 +51,10 @@ class TossPaymentGatewayAdapterTest : DescribeSpec({
 				),
 			)
 
-			adapter.confirm(paymentKey = "pk_1", orderId = "order_1", amount = 30000) shouldBe true
+			val result: PaymentConfirmResult = adapter.confirm(paymentKey = "pk_1", orderId = "order_1", amount = 30000)
 
+			result.approved shouldBe true
+			result.failReason shouldBe null
 			server.verify(
 				postRequestedFor(urlEqualTo("/v1/payments/confirm"))
 					.withHeader(HttpHeaders.AUTHORIZATION, equalTo("Basic $basicToken"))
@@ -59,16 +62,20 @@ class TossPaymentGatewayAdapterTest : DescribeSpec({
 			)
 		}
 
-		it("토스가 4xx로 거절하면 false를 반환한다") {
+		it("토스가 4xx로 거절하면 approved=false와 함께 응답 원문을 failReason으로 반환한다") {
+			val body = """{"code":"REJECT_ACCOUNT_PAYMENT","message":"결제가 거절되었습니다."}"""
 			server.stubFor(
 				post(urlEqualTo("/v1/payments/confirm")).willReturn(
 					aResponse().withStatus(400)
 						.withHeader("Content-Type", "application/json")
-						.withBody("""{"code":"REJECT_ACCOUNT_PAYMENT","message":"결제가 거절되었습니다."}"""),
+						.withBody(body),
 				),
 			)
 
-			adapter.confirm(paymentKey = "pk_2", orderId = "order_2", amount = 30000) shouldBe false
+			val result: PaymentConfirmResult = adapter.confirm(paymentKey = "pk_2", orderId = "order_2", amount = 30000)
+
+			result.approved shouldBe false
+			result.failReason shouldBe body
 		}
 	}
 })

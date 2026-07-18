@@ -22,6 +22,7 @@ import com.org.meeple.infra.gathering.command.entity.QGatheringMemberEntity
 import com.org.meeple.infra.gathering.command.entity.QGatheringProductEntity
 import com.org.meeple.infra.gathering.command.entity.QGatheringScheduleEntity
 import com.org.meeple.core.payments.command.domain.PaymentStatus
+import com.org.meeple.infra.payments.command.adapter.StubPaymentGatewayAdapter
 import com.org.meeple.infra.payments.command.entity.PaymentEntity
 import com.org.meeple.infra.payments.command.entity.QPaymentEntity
 import io.kotest.matchers.shouldBe
@@ -326,6 +327,7 @@ class PaymentsCompleteE2ETest : AbstractIntegrationSupport({
 					.fetchOne()
 				failed?.status shouldBe PaymentStatus.FAILED
 				failed?.paymentKey shouldBe "pay_key_fail"
+				failed?.failReason shouldBe StubPaymentGatewayAdapter.STUB_FAIL_REASON
 			}
 		}
 

@@ -1,5 +1,6 @@
 package com.org.meeple.infra.payments.command.adapter
 
+import com.org.meeple.core.payments.command.application.port.out.PaymentConfirmResult
 import com.org.meeple.core.payments.command.application.port.out.PaymentGatewayPort
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
@@ -24,7 +25,7 @@ class TossPaymentGatewayAdapter(
 	private val tossRestClient: RestClient,
 ) : PaymentGatewayPort {
 
-	override fun confirm(paymentKey: String, orderId: String, amount: Int): Boolean =
+	override fun confirm(paymentKey: String, orderId: String, amount: Int): PaymentConfirmResult =
 		try {
 			tossRestClient.post()
 				.uri("/v1/payments/confirm")
@@ -32,11 +33,11 @@ class TossPaymentGatewayAdapter(
 				.body(mapOf("paymentKey" to paymentKey, "orderId" to orderId, "amount" to amount))
 				.retrieve()
 				.toBodilessEntity()
-			true
+			PaymentConfirmResult(approved = true, failReason = null)
 		} catch (e: RestClientResponseException) {
-			// 토스가 명시적으로 거절(금액 불일치·이미 처리됨·인증 만료 등). 서비스가 좌석 복원 후 402로 응답한다.
+			// 토스가 명시적으로 거절(금액 불일치·이미 처리됨·인증 만료 등). 응답 원문을 실패 사유로 남긴다. 서비스가 좌석 복원 후 402.
 			log.warn("토스 결제 승인 거절: orderId={}, status={}, body={}", orderId, e.statusCode, e.responseBodyAsString)
-			false
+			PaymentConfirmResult(approved = false, failReason = e.responseBodyAsString)
 		}
 
 	companion object {

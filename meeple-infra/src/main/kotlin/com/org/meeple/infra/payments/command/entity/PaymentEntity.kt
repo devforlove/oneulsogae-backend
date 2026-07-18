@@ -60,4 +60,13 @@ class PaymentEntity(
 	@Enumerated(EnumType.STRING)
 	@Column(name = "status", nullable = false, columnDefinition = "varchar(50)")
 	var status: PaymentStatus,
-) : BaseEntity()
+
+	/** PG 승인 실패 사유(응답 원문). 실패 추적용이며 성공 시 null. 컬럼 길이 초과분은 저장 시 잘린다. */
+	@Column(name = "fail_reason", length = FAIL_REASON_MAX_LENGTH)
+	var failReason: String? = null,
+) : BaseEntity() {
+
+	companion object {
+		const val FAIL_REASON_MAX_LENGTH: Int = 1000
+	}
+}
