@@ -23,6 +23,8 @@ data class GatheringScheduleView(
 	val earlyBirdRemaining: Int?,
 	val status: GatheringScheduleStatus,
 	val products: List<GatheringProductView>,
+	// 이 일정의 참가자 로스터(승인대기·참가). 상세 조회 경로에서만 채우고, 체크아웃 경로는 빈 리스트로 둔다.
+	val participants: List<GatheringParticipantView> = emptyList(),
 ) {
 
 	/** 얼리버드 소진 여부. 티어가 있고([earlyBirdRemaining] non-null) 남은 개수가 0 이하일 때만 true. */

@@ -1,8 +1,10 @@
 package com.org.meeple.infra.gathering.query
 
+import com.org.meeple.common.gathering.GatheringMemberStatus
 import com.org.meeple.common.gathering.GatheringStatus
 import com.org.meeple.core.gathering.query.dao.GetGatheringDao
 import com.org.meeple.core.gathering.query.dto.GatheringDetailView
+import com.org.meeple.core.gathering.query.dto.GatheringParticipantView
 import com.org.meeple.core.gathering.query.dto.GatheringProductIdentity
 import com.org.meeple.core.gathering.query.dto.GatheringProductView
 import com.org.meeple.core.gathering.query.dto.GatheringScheduleView
@@ -11,8 +13,10 @@ import com.org.meeple.core.gathering.query.dto.GatheringViews
 import com.org.meeple.infra.gathering.command.entity.GatheringProductEntity
 import com.org.meeple.infra.gathering.command.entity.GatheringScheduleEntity
 import com.org.meeple.infra.gathering.command.entity.QGatheringEntity
+import com.org.meeple.infra.gathering.command.entity.QGatheringMemberEntity
 import com.org.meeple.infra.gathering.command.entity.QGatheringProductEntity
 import com.org.meeple.infra.gathering.command.entity.QGatheringScheduleEntity
+import com.org.meeple.infra.user.command.entity.QUserDetailEntity
 import com.querydsl.core.types.Projections
 import com.querydsl.jpa.impl.JPAQueryFactory
 import org.springframework.stereotype.Component
@@ -102,6 +106,36 @@ class GetGatheringDaoImpl(
 				products = productsBySchedule[row.id] ?: emptyList(),
 			)
 		}
+	}
+
+	override fun findParticipantsByScheduleIds(scheduleIds: List<Long>): List<GatheringParticipantView> {
+		if (scheduleIds.isEmpty()) return emptyList()
+
+		val member: QGatheringMemberEntity = QGatheringMemberEntity.gatheringMemberEntity
+		val userDetail: QUserDetailEntity = QUserDetailEntity.userDetailEntity
+		// WHERE의 schedule_id IN은 유니크 인덱스 ux_schedule_id_user_id의 선두 컬럼이라 일정별 seek를 탄다.
+		// 프로필 누락(user_details 없음)에도 참가자 행은 남겨야 하므로 left join으로 조인한다.
+		return queryFactory
+			.select(
+				Projections.constructor(
+					GatheringParticipantView::class.java,
+					member.scheduleId,
+					member.userId,
+					member.status,
+					member.gender,
+					userDetail.nickname,
+					userDetail.profileImageCode,
+					userDetail.birthday,
+				),
+			)
+			.from(member)
+			.leftJoin(userDetail).on(userDetail.userId.eq(member.userId))
+			.where(
+				member.scheduleId.`in`(scheduleIds),
+				member.status.`in`(GatheringMemberStatus.PENDING, GatheringMemberStatus.JOINED),
+			)
+			.orderBy(member.scheduleId.asc(), member.id.asc())
+			.fetch()
 	}
 
 	override fun findProductById(productId: Long): GatheringProductIdentity? {

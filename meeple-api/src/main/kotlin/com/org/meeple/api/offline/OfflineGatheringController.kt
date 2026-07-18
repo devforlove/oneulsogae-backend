@@ -6,6 +6,7 @@ import com.org.meeple.auth.AuthUser
 import com.org.meeple.auth.LoginUser
 import com.org.meeple.common.user.Gender
 import com.org.meeple.core.common.response.ApiResponse
+import com.org.meeple.core.common.time.TimeGenerator
 import com.org.meeple.core.gathering.query.service.port.`in`.GetGatheringsUseCase
 import com.org.meeple.core.user.query.service.port.`in`.GetUserDetailUseCase
 import io.swagger.v3.oas.annotations.Operation
@@ -28,6 +29,7 @@ import org.springframework.web.bind.annotation.RestController
 class OfflineGatheringController(
 	private val getGatheringsUseCase: GetGatheringsUseCase,
 	private val getUserDetailUseCase: GetUserDetailUseCase,
+	private val timeGenerator: TimeGenerator,
 ) {
 
 	@Operation(
@@ -44,7 +46,9 @@ class OfflineGatheringController(
 		summary = "모집중 모임 상세 조회",
 		description = "모집중(RECRUITING) 모임 한 건의 상세를 id로 조회한다. 소개·인원(최소/최대)·참가비 3티어" +
 			"(정상가 남/녀, 얼리버드 남/녀+적용 인원, 할인가 남/녀)와 imageUrl(presigned)·region·title, " +
-			"모임 일정 목록(schedules, 시작 시각 오름차순)을 포함한다. 없거나 모집중이 아니면 404(GATHERING-001). " +
+			"모임 일정 목록(schedules, 시작 시각 오름차순)을 포함한다. 각 일정은 참가자 로스터(participants, 승인대기·참가)를 담는다 — " +
+			"참가(JOINED)는 프로필(닉네임·프로필이미지·나이)을 포함하고, 승인대기(PENDING)는 유저 상세 없이 성별·상태만 내려간다. " +
+			"없거나 모집중이 아니면 404(GATHERING-001). " +
 			"인증은 선택이며, 토큰이 있으면 조회자 성별(viewerGender)을 함께 내려준다(비로그인/성별 미설정 시 null).",
 	)
 	@GetMapping("/{id}")
@@ -52,7 +56,13 @@ class OfflineGatheringController(
 		@PathVariable id: Long,
 		@LoginUser authUser: AuthUser?,
 	): ApiResponse<GatheringDetailResponse> =
-		ApiResponse.success(GatheringDetailResponse.of(getGatheringsUseCase.getGathering(id), viewerGenderOf(authUser)))
+		ApiResponse.success(
+			GatheringDetailResponse.of(
+				getGatheringsUseCase.getGatheringWithParticipants(id),
+				viewerGenderOf(authUser),
+				timeGenerator.today(),
+			),
+		)
 
 	// 로그인 상태면 조회자 성별을 best-effort로 조회한다. (비로그인이거나 프로필/성별 미설정이면 null)
 	private fun viewerGenderOf(authUser: AuthUser?): Gender? =

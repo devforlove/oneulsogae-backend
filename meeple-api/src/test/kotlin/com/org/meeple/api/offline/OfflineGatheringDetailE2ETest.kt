@@ -1,5 +1,6 @@
 package com.org.meeple.api.offline
 
+import com.org.meeple.common.gathering.GatheringMemberStatus
 import com.org.meeple.common.gathering.GatheringProductType
 import com.org.meeple.common.gathering.GatheringScheduleStatus
 import com.org.meeple.common.gathering.GatheringStatus
@@ -9,17 +10,20 @@ import com.org.meeple.common.integration.expect
 import com.org.meeple.common.integration.get
 import com.org.meeple.common.user.Gender
 import com.org.meeple.infra.fixture.GatheringEntityFixture
+import com.org.meeple.infra.fixture.GatheringMemberEntityFixture
 import com.org.meeple.infra.fixture.GatheringProductEntityFixture
 import com.org.meeple.infra.fixture.GatheringScheduleEntityFixture
 import com.org.meeple.infra.fixture.IntegrationUtil
 import com.org.meeple.infra.fixture.UserDetailEntityFixture
 import com.org.meeple.infra.gathering.command.entity.GatheringProductEntity
 import com.org.meeple.infra.gathering.command.entity.QGatheringEntity
+import com.org.meeple.infra.gathering.command.entity.QGatheringMemberEntity
 import com.org.meeple.infra.gathering.command.entity.QGatheringProductEntity
 import com.org.meeple.infra.gathering.command.entity.QGatheringScheduleEntity
 import com.org.meeple.infra.user.command.entity.QUserDetailEntity
 import org.hamcrest.Matchers.contains
 import org.hamcrest.Matchers.hasSize
+import org.hamcrest.Matchers.notNullValue
 import java.time.LocalDateTime
 
 /**
@@ -294,9 +298,65 @@ class OfflineGatheringDetailE2ETest : AbstractIntegrationSupport({
 				body("error.code", "GATHERING-001")
 			}
 		}
+
+		it("일정별 참가자 로스터를 내려준다 — JOINED는 프로필·나이 포함, PENDING은 프로필 없이, 거절·취소는 제외") {
+			val id: Long = IntegrationUtil.persist(
+				GatheringEntityFixture.create(title = "참가자 있는 모임", status = GatheringStatus.RECRUITING),
+			).id!!
+			val scheduleId: Long = IntegrationUtil.persist(
+				GatheringScheduleEntityFixture.create(gatheringId = id, startAt = LocalDateTime.of(2999, 1, 1, 18, 0, 0)),
+			).id!!
+			GatheringProductEntityFixture.tierSet(gatheringId = id, scheduleId = scheduleId, maleFee = 10000, femaleFee = 8000)
+				.forEach { product: GatheringProductEntity -> IntegrationUtil.persist(product) }
+
+			// 참가(JOINED, 남) — 프로필 노출 대상. 먼저 저장해 로스터 첫 항목이 되게 한다(member.id asc 정렬).
+			IntegrationUtil.persist(
+				UserDetailEntityFixture.create(userId = 8101L, nickname = "참가유저", profileImageCode = "img_01", gender = Gender.MALE),
+			)
+			IntegrationUtil.persist(
+				GatheringMemberEntityFixture.create(gatheringId = id, scheduleId = scheduleId, userId = 8101L, gender = Gender.MALE, status = GatheringMemberStatus.JOINED),
+			)
+			// 승인대기(PENDING, 여) — user_details가 있어도 프로필은 비워 내려간다.
+			IntegrationUtil.persist(
+				UserDetailEntityFixture.create(userId = 8102L, nickname = "대기유저", profileImageCode = "img_02", gender = Gender.FEMALE),
+			)
+			IntegrationUtil.persist(
+				GatheringMemberEntityFixture.create(gatheringId = id, scheduleId = scheduleId, userId = 8102L, gender = Gender.FEMALE, status = GatheringMemberStatus.PENDING),
+			)
+			// 거절·취소 — 로스터에서 제외.
+			IntegrationUtil.persist(
+				GatheringMemberEntityFixture.create(gatheringId = id, scheduleId = scheduleId, userId = 8103L, gender = Gender.MALE, status = GatheringMemberStatus.REJECTED),
+			)
+			IntegrationUtil.persist(
+				GatheringMemberEntityFixture.create(gatheringId = id, scheduleId = scheduleId, userId = 8104L, gender = Gender.FEMALE, status = GatheringMemberStatus.CANCELED),
+			)
+
+			// 비로그인 → 남/녀 두 아이템, 로스터는 성별과 무관한 전체(중복)라 두 아이템 모두 동일하게 2명.
+			get("/offline/v1/gatherings/$id") { } expect {
+				status(200)
+				body("data.schedules", hasSize<Any>(2))
+				body("data.schedules[0].participants", hasSize<Any>(2))
+				body("data.schedules[1].participants", hasSize<Any>(2))
+				// JOINED — 프로필·나이 노출.
+				body("data.schedules[0].participants[0].status", "JOINED")
+				body("data.schedules[0].participants[0].userId", 8101)
+				body("data.schedules[0].participants[0].gender", "MALE")
+				body("data.schedules[0].participants[0].nickname", "참가유저")
+				body("data.schedules[0].participants[0].profileImageCode", "img_01")
+				body("data.schedules[0].participants[0].age", notNullValue())
+				// PENDING — 성별·상태만, 유저 상세는 비운다.
+				body("data.schedules[0].participants[1].status", "PENDING")
+				body("data.schedules[0].participants[1].gender", "FEMALE")
+				body("data.schedules[0].participants[1].userId", null)
+				body("data.schedules[0].participants[1].nickname", null)
+				body("data.schedules[0].participants[1].profileImageCode", null)
+				body("data.schedules[0].participants[1].age", null)
+			}
+		}
 	}
 
 	afterTest {
+		IntegrationUtil.deleteAll(QGatheringMemberEntity.gatheringMemberEntity)
 		IntegrationUtil.deleteAll(QGatheringProductEntity.gatheringProductEntity)
 		IntegrationUtil.deleteAll(QGatheringScheduleEntity.gatheringScheduleEntity)
 		IntegrationUtil.deleteAll(QGatheringEntity.gatheringEntity)

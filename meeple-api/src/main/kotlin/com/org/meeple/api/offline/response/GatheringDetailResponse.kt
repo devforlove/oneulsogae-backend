@@ -1,9 +1,13 @@
 package com.org.meeple.api.offline.response
 
+import com.org.meeple.common.gathering.GatheringMemberStatus
 import com.org.meeple.common.gathering.GatheringType
 import com.org.meeple.common.user.Gender
+import com.org.meeple.core.common.time.ageAt
 import com.org.meeple.core.gathering.query.dto.GatheringDetailView
+import com.org.meeple.core.gathering.query.dto.GatheringParticipantView
 import com.org.meeple.core.gathering.query.dto.GatheringScheduleView
+import java.time.LocalDate
 import java.time.LocalDateTime
 
 /**
@@ -54,10 +58,12 @@ data class GatheringDetailResponse(
 		val isEarlyBird: Boolean,
 		val status: GatheringScheduleItemStatus,
 		val statusDescription: String,
+		// 이 일정의 참가자 로스터(승인대기·참가). 성별과 무관한 전체 로스터라, 비로그인의 남/녀 두 아이템에 동일하게 담긴다.
+		val participants: List<Participant>,
 	) {
 		companion object {
 			/** [view] 일정을 [gender] 성별 아이템으로 만든다. (해당 성별의 참가비·정원 소진 여부를 반영한다. 금액 티어 계산은 [GatheringScheduleView]에 캡슐화되어 있다) */
-			fun of(view: GatheringScheduleView, gender: Gender): Schedule {
+			fun of(view: GatheringScheduleView, gender: Gender, today: LocalDate): Schedule {
 				val status: GatheringScheduleItemStatus = GatheringScheduleItemStatus.of(view.status, view.soldOutFor(gender))
 				val earlyBirdFee: Int? = view.earlyBirdFeeFor(gender)
 				return Schedule(
@@ -72,8 +78,52 @@ data class GatheringDetailResponse(
 					isEarlyBird = earlyBirdFee != null,
 					status = status,
 					statusDescription = status.description,
+					participants = view.participants.map { participant: GatheringParticipantView -> Participant.of(participant, today) },
 				)
 			}
+		}
+	}
+
+	/**
+	 * 일정 참가자 한 명. 참가(JOINED)는 프로필(닉네임·프로필이미지·나이)을 포함하고,
+	 * 승인대기(PENDING)는 유저 상세를 비운 익명 자리(성별·상태만)로 내려간다.
+	 */
+	data class Participant(
+		val userId: Long?,
+		val status: GatheringMemberStatus,
+		val statusDescription: String,
+		val gender: Gender,
+		val genderDescription: String,
+		val nickname: String?,
+		val profileImageCode: String?,
+		val age: Int?,
+	) {
+		companion object {
+			/** JOINED만 프로필을 채우고, PENDING은 유저 상세(식별·프로필)를 비운다. (나이는 [today] 기준으로 생일에서 파생) */
+			fun of(view: GatheringParticipantView, today: LocalDate): Participant =
+				when (view.status) {
+					GatheringMemberStatus.JOINED -> Participant(
+						userId = view.userId,
+						status = view.status,
+						statusDescription = view.status.description,
+						gender = view.gender,
+						genderDescription = view.gender.description,
+						nickname = view.nickname,
+						profileImageCode = view.profileImageCode,
+						age = view.birthday?.ageAt(today),
+					)
+
+					else -> Participant(
+						userId = null,
+						status = view.status,
+						statusDescription = view.status.description,
+						gender = view.gender,
+						genderDescription = view.gender.description,
+						nickname = null,
+						profileImageCode = null,
+						age = null,
+					)
+				}
 		}
 	}
 
@@ -82,8 +132,9 @@ data class GatheringDetailResponse(
 		/**
 		 * [viewerGender]는 로그인 조회 시에만 채운다(비로그인이면 null).
 		 * 일정은 [viewerGender]가 있으면 그 성별 아이템만, 없으면 남/녀 두 아이템으로 펼친다.
+		 * [today]는 참가자 나이(생일 파생) 계산 기준일이다.
 		 */
-		fun of(view: GatheringDetailView, viewerGender: Gender?): GatheringDetailResponse {
+		fun of(view: GatheringDetailView, viewerGender: Gender?, today: LocalDate): GatheringDetailResponse {
 			val genders: List<Gender> = viewerGender?.let { listOf(it) } ?: listOf(Gender.MALE, Gender.FEMALE)
 			return GatheringDetailResponse(
 				id = view.id,
@@ -96,7 +147,7 @@ data class GatheringDetailResponse(
 				minParticipants = view.minParticipants,
 				maxParticipants = view.maxParticipants,
 				schedules = view.schedules.flatMap { schedule: GatheringScheduleView ->
-					genders.map { gender: Gender -> Schedule.of(schedule, gender) }
+					genders.map { gender: Gender -> Schedule.of(schedule, gender, today) }
 				},
 				viewerGender = viewerGender,
 			)

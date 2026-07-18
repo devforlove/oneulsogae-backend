@@ -1,6 +1,7 @@
 package com.org.meeple.core.gathering.query.dao
 
 import com.org.meeple.core.gathering.query.dto.GatheringDetailView
+import com.org.meeple.core.gathering.query.dto.GatheringParticipantView
 import com.org.meeple.core.gathering.query.dto.GatheringProductIdentity
 import com.org.meeple.core.gathering.query.dto.GatheringScheduleView
 import com.org.meeple.core.gathering.query.dto.GatheringViews
@@ -22,4 +23,10 @@ interface GetGatheringDao {
 
 	/** 상품 한 건의 식별 정보를 id로 조회한다. 없으면 null. (soft delete 제외) */
 	fun findProductById(productId: Long): GatheringProductIdentity?
+
+	/**
+	 * [scheduleIds] 일정들의 참가자(승인대기·참가)를 프로필과 함께 조회한다. (거절·취소 제외, soft delete 제외)
+	 * 비면 조회 없이 빈 리스트. 서비스가 scheduleId로 묶어 일정별 로스터로 만든다.
+	 */
+	fun findParticipantsByScheduleIds(scheduleIds: List<Long>): List<GatheringParticipantView>
 }

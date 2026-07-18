@@ -5,7 +5,9 @@ import com.org.meeple.core.common.error.BusinessException
 import com.org.meeple.core.gathering.GatheringErrorCode
 import com.org.meeple.core.gathering.query.dao.GetGatheringDao
 import com.org.meeple.core.gathering.query.dto.GatheringDetailView
+import com.org.meeple.core.gathering.query.dto.GatheringParticipantView
 import com.org.meeple.core.gathering.query.dto.GatheringProductIdentity
+import com.org.meeple.core.gathering.query.dto.GatheringScheduleView
 import com.org.meeple.core.gathering.query.dto.GatheringView
 import com.org.meeple.core.gathering.query.dto.GatheringViews
 import com.org.meeple.core.gathering.query.dto.GroupedGatherings
@@ -43,6 +45,21 @@ class GetGatheringsService(
 		return view.copy(
 			imageUrl = presignedUrlOf(view.imageKey),
 			schedules = getGatheringDao.findSchedulesByGatheringId(id),
+		)
+	}
+
+	override fun getGatheringWithParticipants(id: Long): GatheringDetailView {
+		val view: GatheringDetailView = getGatheringDao.findRecruitingDetailById(id)
+			?: throw BusinessException(GatheringErrorCode.GATHERING_NOT_FOUND, "모임을 찾을 수 없습니다: $id")
+		val schedules: List<GatheringScheduleView> = getGatheringDao.findSchedulesByGatheringId(id)
+		val participantsBySchedule: Map<Long, List<GatheringParticipantView>> = getGatheringDao
+			.findParticipantsByScheduleIds(schedules.map { schedule: GatheringScheduleView -> schedule.id })
+			.groupBy { participant: GatheringParticipantView -> participant.scheduleId }
+		return view.copy(
+			imageUrl = presignedUrlOf(view.imageKey),
+			schedules = schedules.map { schedule: GatheringScheduleView ->
+				schedule.copy(participants = participantsBySchedule[schedule.id] ?: emptyList())
+			},
 		)
 	}
 
