@@ -331,26 +331,26 @@ class OfflineGatheringDetailE2ETest : AbstractIntegrationSupport({
 				GatheringMemberEntityFixture.create(gatheringId = id, scheduleId = scheduleId, userId = 8104L, gender = Gender.FEMALE, status = GatheringMemberStatus.CANCELED),
 			)
 
-			// 비로그인 → 남/녀 두 아이템, 로스터는 성별과 무관한 전체(중복)라 두 아이템 모두 동일하게 2명.
+			// 비로그인 → 남/녀 두 아이템, 로스터는 성별과 무관한 전체(중복)라 두 아이템 모두 male 1·female 1.
 			get("/offline/v1/gatherings/$id") { } expect {
 				status(200)
 				body("data.schedules", hasSize<Any>(2))
-				body("data.schedules[0].participants", hasSize<Any>(2))
-				body("data.schedules[1].participants", hasSize<Any>(2))
-				// JOINED — 프로필·나이 노출.
-				body("data.schedules[0].participants[0].status", "JOINED")
-				body("data.schedules[0].participants[0].userId", 8101)
-				body("data.schedules[0].participants[0].gender", "MALE")
-				body("data.schedules[0].participants[0].nickname", "참가유저")
-				body("data.schedules[0].participants[0].profileImageCode", "img_01")
-				body("data.schedules[0].participants[0].age", notNullValue())
-				// PENDING — 성별·상태만, 유저 상세는 비운다.
-				body("data.schedules[0].participants[1].status", "PENDING")
-				body("data.schedules[0].participants[1].gender", "FEMALE")
-				body("data.schedules[0].participants[1].userId", null)
-				body("data.schedules[0].participants[1].nickname", null)
-				body("data.schedules[0].participants[1].profileImageCode", null)
-				body("data.schedules[0].participants[1].age", null)
+				body("data.schedules[0].participants.male", hasSize<Any>(1))
+				body("data.schedules[0].participants.female", hasSize<Any>(1))
+				body("data.schedules[1].participants.male", hasSize<Any>(1))
+				body("data.schedules[1].participants.female", hasSize<Any>(1))
+				// JOINED(남) — 프로필·나이 노출, 성별은 그룹(male)이 표현.
+				body("data.schedules[0].participants.male[0].status", "JOINED")
+				body("data.schedules[0].participants.male[0].userId", 8101)
+				body("data.schedules[0].participants.male[0].nickname", "참가유저")
+				body("data.schedules[0].participants.male[0].profileImageCode", "img_01")
+				body("data.schedules[0].participants.male[0].age", notNullValue())
+				// PENDING(여) — 상태만, 유저 상세는 비운다.
+				body("data.schedules[0].participants.female[0].status", "PENDING")
+				body("data.schedules[0].participants.female[0].userId", null)
+				body("data.schedules[0].participants.female[0].nickname", null)
+				body("data.schedules[0].participants.female[0].profileImageCode", null)
+				body("data.schedules[0].participants.female[0].age", null)
 			}
 		}
 	}

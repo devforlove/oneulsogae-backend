@@ -58,8 +58,8 @@ data class GatheringDetailResponse(
 		val isEarlyBird: Boolean,
 		val status: GatheringScheduleItemStatus,
 		val statusDescription: String,
-		// 이 일정의 참가자 로스터(승인대기·참가). 성별과 무관한 전체 로스터라, 비로그인의 남/녀 두 아이템에 동일하게 담긴다.
-		val participants: List<Participant>,
+		// 이 일정의 참가자 로스터(승인대기·참가)를 성별로 그룹핑. 성별과 무관한 전체 로스터라, 비로그인의 남/녀 두 아이템에 동일하게 담긴다.
+		val participants: ScheduleParticipants,
 	) {
 		companion object {
 			/** [view] 일정을 [gender] 성별 아이템으로 만든다. (해당 성별의 참가비·정원 소진 여부를 반영한다. 금액 티어 계산은 [GatheringScheduleView]에 캡슐화되어 있다) */
@@ -78,22 +78,37 @@ data class GatheringDetailResponse(
 					isEarlyBird = earlyBirdFee != null,
 					status = status,
 					statusDescription = status.description,
-					participants = view.participants.map { participant: GatheringParticipantView -> Participant.of(participant, today) },
+					participants = ScheduleParticipants.of(view.participants, today),
+				)
+			}
+		}
+	}
+
+	/** 일정 참가자 로스터를 성별로 그룹핑한다. 해당 성별 참가자가 없으면 빈 배열. */
+	data class ScheduleParticipants(
+		val male: List<Participant>,
+		val female: List<Participant>,
+	) {
+		companion object {
+			fun of(views: List<GatheringParticipantView>, today: LocalDate): ScheduleParticipants {
+				val byGender: Map<Gender, List<GatheringParticipantView>> =
+					views.groupBy { view: GatheringParticipantView -> view.gender }
+				return ScheduleParticipants(
+					male = byGender[Gender.MALE].orEmpty().map { view: GatheringParticipantView -> Participant.of(view, today) },
+					female = byGender[Gender.FEMALE].orEmpty().map { view: GatheringParticipantView -> Participant.of(view, today) },
 				)
 			}
 		}
 	}
 
 	/**
-	 * 일정 참가자 한 명. 참가(JOINED)는 프로필(닉네임·프로필이미지·나이)을 포함하고,
-	 * 승인대기(PENDING)는 유저 상세를 비운 익명 자리(성별·상태만)로 내려간다.
+	 * 일정 참가자 한 명. 성별은 상위 그룹([ScheduleParticipants.male]/[ScheduleParticipants.female])이 나타내므로 항목엔 담지 않는다.
+	 * 참가(JOINED)는 프로필(닉네임·프로필이미지·나이)을 포함하고, 승인대기(PENDING)는 유저 상세를 비운 익명 자리(상태만)로 내려간다.
 	 */
 	data class Participant(
 		val userId: Long?,
 		val status: GatheringMemberStatus,
 		val statusDescription: String,
-		val gender: Gender,
-		val genderDescription: String,
 		val nickname: String?,
 		val profileImageCode: String?,
 		val age: Int?,
@@ -106,8 +121,6 @@ data class GatheringDetailResponse(
 						userId = view.userId,
 						status = view.status,
 						statusDescription = view.status.description,
-						gender = view.gender,
-						genderDescription = view.gender.description,
 						nickname = view.nickname,
 						profileImageCode = view.profileImageCode,
 						age = view.birthday?.ageAt(today),
@@ -117,8 +130,6 @@ data class GatheringDetailResponse(
 						userId = null,
 						status = view.status,
 						statusDescription = view.status.description,
-						gender = view.gender,
-						genderDescription = view.gender.description,
 						nickname = null,
 						profileImageCode = null,
 						age = null,
