@@ -6,7 +6,9 @@ import com.org.meeple.auth.PrincipalDetails
 import com.org.meeple.auth.jwt.TokenProvider
 import com.org.meeple.common.config.TestDatabaseContainersConfig
 import com.org.meeple.common.config.TestFileStorageConfig
+import com.org.meeple.common.config.FakePaymentGateway
 import com.org.meeple.common.config.TestKcpConfig
+import com.org.meeple.common.config.TestPaymentGatewayConfig
 import com.org.meeple.common.config.TestRedisContainersConfig
 import com.org.meeple.common.config.TestRegionShufflerConfig
 import com.org.meeple.common.config.TestWireMockConfig
@@ -64,6 +66,7 @@ import org.springframework.security.core.authority.SimpleGrantedAuthority
 	TestRegionShufflerConfig::class,
 	TestFileStorageConfig::class,
 	TestKcpConfig::class,
+	TestPaymentGatewayConfig::class,
 	IntegrationUtil::class,
 )
 abstract class AbstractIntegrationSupport(
@@ -87,6 +90,8 @@ abstract class AbstractIntegrationSupport(
 		beforeEach { RestAssured.port = port }
 		// 테스트 사이 WireMock 스텁/요청 기록 초기화. (DB 정리는 각 테스트의 afterTest에서 IntegrationUtil.deleteAll로 수행)
 		afterEach { wireMock.resetAll() }
+		// 테스트 사이 PG 페이크 결과를 기본(승인)으로 되돌린다. 실패 케이스를 세팅한 테스트가 다음 테스트로 새지 않게 한다.
+		afterEach { FakePaymentGateway.result = FakePaymentGateway.APPROVED }
 		// 생성자 람다 본문(describe/afterTest 등)을 이 인스턴스를 리시버로 실행한다.
 		body()
 	}

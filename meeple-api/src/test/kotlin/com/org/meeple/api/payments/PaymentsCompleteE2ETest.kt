@@ -4,6 +4,7 @@ import com.org.meeple.common.gathering.GatheringMemberStatus
 import com.org.meeple.common.gathering.GatheringProductType
 import com.org.meeple.common.gathering.GatheringScheduleStatus
 import com.org.meeple.common.gathering.GatheringStatus
+import com.org.meeple.common.config.FakePaymentGateway
 import com.org.meeple.common.integration.AbstractIntegrationSupport
 import com.org.meeple.common.integration.expect
 import com.org.meeple.common.integration.post
@@ -22,7 +23,6 @@ import com.org.meeple.infra.gathering.command.entity.QGatheringMemberEntity
 import com.org.meeple.infra.gathering.command.entity.QGatheringProductEntity
 import com.org.meeple.infra.gathering.command.entity.QGatheringScheduleEntity
 import com.org.meeple.core.payments.command.domain.PaymentStatus
-import com.org.meeple.infra.payments.command.adapter.StubPaymentGatewayAdapter
 import com.org.meeple.infra.payments.command.entity.PaymentEntity
 import com.org.meeple.infra.payments.command.entity.QPaymentEntity
 import io.kotest.matchers.shouldBe
@@ -307,10 +307,10 @@ class PaymentsCompleteE2ETest : AbstractIntegrationSupport({
 			it("402 PAYMENTS-004를 반환하고 좌석·여분을 복원하며 결제 기록을 FAILED로 남긴다") {
 				val userId: Long = persistUserWithGender(providerId = "pay-complete-confirm-fail", gender = Gender.MALE)
 				val (gatheringId: Long, scheduleId: Long, normalProductId: Long) = persistGatheringWithSchedule()
+				FakePaymentGateway.result = FakePaymentGateway.REJECTED
 
 				post("/payments/v1/complete") {
 					bearer(accessTokenFor(userId))
-					header("X-Stub-Pg-Confirm", "fail")
 					jsonBody("""{"productId": $normalProductId, "paymentKey": "pay_key_fail", "orderId": "ord_pay_key_fail"}""")
 				} expect {
 					status(402)
@@ -327,7 +327,7 @@ class PaymentsCompleteE2ETest : AbstractIntegrationSupport({
 					.fetchOne()
 				failed?.status shouldBe PaymentStatus.FAILED
 				failed?.paymentKey shouldBe "pay_key_fail"
-				failed?.failReason shouldBe StubPaymentGatewayAdapter.STUB_FAIL_REASON
+				failed?.failReason shouldBe FakePaymentGateway.REJECTED.failReason
 			}
 		}
 
