@@ -127,6 +127,7 @@ class GetGatheringDaoImpl(
 					profile.jobDetail,
 					profile.birthday,
 					profile.height,
+					profile.profileImageCode,
 				),
 			)
 			.from(member)

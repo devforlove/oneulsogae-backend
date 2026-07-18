@@ -321,6 +321,7 @@ class OfflineGatheringDetailE2ETest : AbstractIntegrationSupport({
 					jobDetail = "미플 백엔드 개발자",
 					birthday = LocalDate.of(1996, 1, 1),
 					height = 175,
+					profileImageCode = "img_01",
 				),
 			)
 			IntegrationUtil.persist(
@@ -356,6 +357,7 @@ class OfflineGatheringDetailE2ETest : AbstractIntegrationSupport({
 				body("data.schedules[0].participants.male[0].jobDetail", "미플 백엔드 개발자")
 				body("data.schedules[0].participants.male[0].age", notNullValue())
 				body("data.schedules[0].participants.male[0].height", 175)
+				body("data.schedules[0].participants.male[0].profileImageCode", "img_01")
 				// PENDING(여) — 상태만, gathering_profile이 있어도 프로필은 비운다.
 				body("data.schedules[0].participants.female[0].status", "PENDING")
 				body("data.schedules[0].participants.female[0].userId", null)
@@ -363,6 +365,7 @@ class OfflineGatheringDetailE2ETest : AbstractIntegrationSupport({
 				body("data.schedules[0].participants.female[0].jobDetail", null)
 				body("data.schedules[0].participants.female[0].age", null)
 				body("data.schedules[0].participants.female[0].height", null)
+				body("data.schedules[0].participants.female[0].profileImageCode", null)
 			}
 		}
 	}

@@ -113,9 +113,10 @@ data class GatheringDetailResponse(
 		val jobDetail: String?,
 		val age: Int?,
 		val height: Int?,
+		val profileImageCode: String?,
 	) {
 		companion object {
-			/** JOINED만 프로필(gathering_profile 유래 직종·직장상세·나이·키)을 채우고, PENDING은 상태만 남긴다. (나이는 [today] 기준으로 생일에서 파생) */
+			/** JOINED만 프로필(gathering_profile 유래 직종·직장상세·나이·키·프로필이미지)을 채우고, PENDING은 상태만 남긴다. (나이는 [today] 기준으로 생일에서 파생) */
 			fun of(view: GatheringParticipantView, today: LocalDate): Participant =
 				when (view.status) {
 					GatheringMemberStatus.JOINED -> Participant(
@@ -126,6 +127,7 @@ data class GatheringDetailResponse(
 						jobDetail = view.jobDetail,
 						age = view.birthday?.ageAt(today),
 						height = view.height,
+						profileImageCode = view.profileImageCode,
 					)
 
 					else -> Participant(
@@ -136,6 +138,7 @@ data class GatheringDetailResponse(
 						jobDetail = null,
 						age = null,
 						height = null,
+						profileImageCode = null,
 					)
 				}
 		}

@@ -32,6 +32,10 @@ class GatheringProfileEntity(
 	@Column(name = "job_detail", nullable = false, length = 100)
 	var jobDetail: String,
 
+	/** 프로필 이미지 코드. 승인 시점 user_details에서 가져온 값. 없으면 null. */
+	@Column(name = "profile_image_code", length = 50)
+	var profileImageCode: String? = null,
+
 	/** 생일. 나이는 조회 시점에 계산한다. 생일 미상이면 null. */
 	@Column(name = "birthday")
 	var birthday: LocalDate? = null,

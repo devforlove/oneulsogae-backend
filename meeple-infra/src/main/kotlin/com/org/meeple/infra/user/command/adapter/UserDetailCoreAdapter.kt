@@ -60,8 +60,14 @@ class UserDetailCoreAdapter(
 		userDetailJpaRepository.save(entity)
 	}
 
-	// 멤버 인증 승인: gathering_profile 스냅샷에 담을 생일·키를 조회한다. (없으면 null)
+	// 멤버 인증 승인: gathering_profile 스냅샷에 담을 생일·키·프로필이미지코드를 조회한다. (없으면 null)
 	override fun findProfileSource(userId: Long): VerifiedUserProfile? =
 		userDetailJpaRepository.findByUserId(userId)
-			?.let { entity: UserDetailEntity -> VerifiedUserProfile(birthday = entity.birthday, height = entity.height) }
+			?.let { entity: UserDetailEntity ->
+				VerifiedUserProfile(
+					birthday = entity.birthday,
+					height = entity.height,
+					profileImageCode = entity.profileImageCode,
+				)
+			}
 }

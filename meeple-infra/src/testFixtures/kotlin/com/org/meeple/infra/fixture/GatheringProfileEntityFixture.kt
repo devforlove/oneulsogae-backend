@@ -14,6 +14,7 @@ object GatheringProfileEntityFixture {
 		jobDetail: String = "테스트회사 백엔드 개발자",
 		birthday: LocalDate? = LocalDate.of(1996, 1, 1),
 		height: Int? = 175,
+		profileImageCode: String? = "img_01",
 	): GatheringProfileEntity =
 		GatheringProfileEntity(
 			userId = userId,
@@ -21,5 +22,6 @@ object GatheringProfileEntityFixture {
 			jobDetail = jobDetail,
 			birthday = birthday,
 			height = height,
+			profileImageCode = profileImageCode,
 		)
 }

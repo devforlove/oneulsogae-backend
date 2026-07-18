@@ -42,7 +42,14 @@ class ReviewMemberVerificationService(
 		updateMatchUserCompanyNamePort.updateCompanyName(verification.userId, companyName)
 
 		val profile: VerifiedUserProfile? = getVerifiedUserProfilePort.findProfileSource(verification.userId)
-		saveGatheringProfilePort.save(verification.userId, jobCategory, jobDetail, profile?.birthday, profile?.height)
+		saveGatheringProfilePort.save(
+			verification.userId,
+			jobCategory,
+			jobDetail,
+			profile?.birthday,
+			profile?.height,
+			profile?.profileImageCode,
+		)
 	}
 
 	override fun reject(id: Long, reason: String?) {

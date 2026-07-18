@@ -20,4 +20,5 @@ data class GatheringParticipantView(
 	val jobDetail: String?,
 	val birthday: LocalDate?,
 	val height: Int?,
+	val profileImageCode: String?,
 )

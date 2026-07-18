@@ -15,13 +15,21 @@ class GatheringProfileAdapter(
 	private val gatheringProfileJpaRepository: GatheringProfileJpaRepository,
 ) : SaveGatheringProfilePort {
 
-	override fun save(userId: Long, jobCategory: String, jobDetail: String, birthday: LocalDate?, height: Int?) {
+	override fun save(
+		userId: Long,
+		jobCategory: String,
+		jobDetail: String,
+		birthday: LocalDate?,
+		height: Int?,
+		profileImageCode: String?,
+	) {
 		val entity: GatheringProfileEntity = gatheringProfileJpaRepository.findByUserId(userId)
 			?.also { existing: GatheringProfileEntity ->
 				existing.jobCategory = jobCategory
 				existing.jobDetail = jobDetail
 				existing.birthday = birthday
 				existing.height = height
+				existing.profileImageCode = profileImageCode
 			}
 			?: GatheringProfileEntity(
 				userId = userId,
@@ -29,6 +37,7 @@ class GatheringProfileAdapter(
 				jobDetail = jobDetail,
 				birthday = birthday,
 				height = height,
+				profileImageCode = profileImageCode,
 			)
 		gatheringProfileJpaRepository.save(entity)
 	}

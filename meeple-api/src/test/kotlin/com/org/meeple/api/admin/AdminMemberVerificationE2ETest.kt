@@ -145,8 +145,10 @@ class AdminMemberVerificationE2ETest : AbstractIntegrationSupport({
 
 		it("승인하면 status=APPROVED로 바꾸고 회사명(user_details·match_user)·gathering_profile(직종·직장상세·생일·키)을 확정한다 (200)") {
 			val userId: Long = IntegrationUtil.persist(UserEntityFixture.create(providerId = "mv-approve")).id!!
-			// user_details: 회사명 null, 키 175, 생일(픽스처 기본 1996-01-01) → gathering_profile에 생일·키가 저장된다.
-			IntegrationUtil.persist(UserDetailEntityFixture.create(userId = userId, nickname = "인증유저", companyName = null, height = 175))
+			// user_details: 회사명 null, 키 175, 생일(픽스처 기본 1996-01-01), 프로필이미지 img_07 → gathering_profile에 생일·키·프로필이미지가 저장된다.
+			IntegrationUtil.persist(
+				UserDetailEntityFixture.create(userId = userId, nickname = "인증유저", companyName = null, height = 175, profileImageCode = "img_07"),
+			)
 			IntegrationUtil.persist(MatchUserEntityFixture.create(userId = userId, companyName = "이전회사"))
 			val id: Long = IntegrationUtil.persist(
 				MemberVerificationEntityFixture.create(userId = userId, status = MemberVerificationStatus.PENDING),
@@ -171,6 +173,7 @@ class AdminMemberVerificationE2ETest : AbstractIntegrationSupport({
 			profile.jobDetail shouldBe "미플 백엔드 개발자"
 			profile.height shouldBe 175
 			profile.birthday shouldBe LocalDate.of(1996, 1, 1)
+			profile.profileImageCode shouldBe "img_07"
 		}
 
 		it("필수 입력(회사명 등)이 비면 400이다") {
