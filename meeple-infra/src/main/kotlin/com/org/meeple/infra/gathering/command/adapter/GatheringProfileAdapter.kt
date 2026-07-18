@@ -4,6 +4,7 @@ import com.org.meeple.admin.memberverification.command.application.port.out.Save
 import com.org.meeple.infra.gathering.command.entity.GatheringProfileEntity
 import com.org.meeple.infra.gathering.command.repository.GatheringProfileJpaRepository
 import org.springframework.stereotype.Component
+import java.time.LocalDate
 
 /**
  * 모임 프로필(gathering_profile) 엔티티의 out-port 어댑터. (엔티티당 어댑터 하나)
@@ -14,19 +15,19 @@ class GatheringProfileAdapter(
 	private val gatheringProfileJpaRepository: GatheringProfileJpaRepository,
 ) : SaveGatheringProfilePort {
 
-	override fun save(userId: Long, jobCategory: String, jobDetail: String, age: Int?, height: Int?) {
+	override fun save(userId: Long, jobCategory: String, jobDetail: String, birthday: LocalDate?, height: Int?) {
 		val entity: GatheringProfileEntity = gatheringProfileJpaRepository.findByUserId(userId)
 			?.also { existing: GatheringProfileEntity ->
 				existing.jobCategory = jobCategory
 				existing.jobDetail = jobDetail
-				existing.age = age
+				existing.birthday = birthday
 				existing.height = height
 			}
 			?: GatheringProfileEntity(
 				userId = userId,
 				jobCategory = jobCategory,
 				jobDetail = jobDetail,
-				age = age,
+				birthday = birthday,
 				height = height,
 			)
 		gatheringProfileJpaRepository.save(entity)

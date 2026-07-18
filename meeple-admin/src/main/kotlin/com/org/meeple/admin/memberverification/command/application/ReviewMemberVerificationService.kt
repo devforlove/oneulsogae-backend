@@ -2,7 +2,6 @@ package com.org.meeple.admin.memberverification.command.application
 
 import com.org.meeple.admin.common.error.AdminErrorCode
 import com.org.meeple.admin.common.error.AdminException
-import com.org.meeple.admin.common.time.TimeGenerator
 import com.org.meeple.admin.memberverification.command.application.port.`in`.ReviewMemberVerificationUseCase
 import com.org.meeple.admin.memberverification.command.application.port.out.GetMemberVerificationPort
 import com.org.meeple.admin.memberverification.command.application.port.out.GetVerifiedUserProfilePort
@@ -14,7 +13,6 @@ import com.org.meeple.admin.memberverification.command.application.port.out.Veri
 import com.org.meeple.admin.memberverification.command.domain.AdminMemberVerification
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
-import java.time.Period
 
 /**
  * [ReviewMemberVerificationUseCase] 구현. 어드민이 멤버 인증을 승인/반려한다.
@@ -22,7 +20,7 @@ import java.time.Period
  *  - 상태를 APPROVED로.
  *  - 회사명([companyName])을 유저 프로필(user_details)과 매칭 읽기 모델(match_user)에 확정한다.
  *    (같은-회사 소개 차단이 스테일해지지 않게 함. match_user 행이 없으면 no-op)
- *  - 직종·직장 상세와, user_details에서 가져온 나이(생일→승인 시점 기준 계산)·키를 gathering_profile에 저장한다.
+ *  - 직종·직장 상세와, user_details에서 가져온 생일·키를 gathering_profile에 저장한다. (나이는 조회 시 생일로부터 계산)
  * 반려: 상태를 REJECTED로 바꾸고 사유를 남긴다.
  */
 @Service
@@ -34,7 +32,6 @@ class ReviewMemberVerificationService(
 	private val updateMatchUserCompanyNamePort: UpdateMatchUserCompanyNamePort,
 	private val getVerifiedUserProfilePort: GetVerifiedUserProfilePort,
 	private val saveGatheringProfilePort: SaveGatheringProfilePort,
-	private val timeGenerator: TimeGenerator,
 ) : ReviewMemberVerificationUseCase {
 
 	override fun approve(id: Long, companyName: String, jobCategory: String, jobDetail: String) {
@@ -45,8 +42,7 @@ class ReviewMemberVerificationService(
 		updateMatchUserCompanyNamePort.updateCompanyName(verification.userId, companyName)
 
 		val profile: VerifiedUserProfile? = getVerifiedUserProfilePort.findProfileSource(verification.userId)
-		val age: Int? = profile?.birthday?.let { birthday -> Period.between(birthday, timeGenerator.today()).years }
-		saveGatheringProfilePort.save(verification.userId, jobCategory, jobDetail, age, profile?.height)
+		saveGatheringProfilePort.save(verification.userId, jobCategory, jobDetail, profile?.birthday, profile?.height)
 	}
 
 	override fun reject(id: Long, reason: String?) {

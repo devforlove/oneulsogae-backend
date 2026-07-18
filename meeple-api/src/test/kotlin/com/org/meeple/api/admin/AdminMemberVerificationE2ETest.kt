@@ -20,8 +20,8 @@ import com.org.meeple.infra.user.command.entity.QUserDetailEntity
 import com.org.meeple.infra.user.command.entity.QUserEntity
 import com.org.meeple.infra.user.command.entity.UserDetailEntity
 import io.kotest.matchers.shouldBe
-import io.kotest.matchers.shouldNotBe
 import org.hamcrest.Matchers.hasSize
+import java.time.LocalDate
 
 /**
  * 어드민 멤버 인증 심사 E2E 테스트.
@@ -143,9 +143,9 @@ class AdminMemberVerificationE2ETest : AbstractIntegrationSupport({
 
 	describe("POST /admin/v1/member-verifications/{id}/approve") {
 
-		it("승인하면 status=APPROVED로 바꾸고 회사명(user_details·match_user)·gathering_profile(직종·직장상세·나이·키)을 확정한다 (200)") {
+		it("승인하면 status=APPROVED로 바꾸고 회사명(user_details·match_user)·gathering_profile(직종·직장상세·생일·키)을 확정한다 (200)") {
 			val userId: Long = IntegrationUtil.persist(UserEntityFixture.create(providerId = "mv-approve")).id!!
-			// user_details: 회사명 null, 키 175, 생일(픽스처 기본 1996-01-01) → gathering_profile에 나이·키가 스냅샷된다.
+			// user_details: 회사명 null, 키 175, 생일(픽스처 기본 1996-01-01) → gathering_profile에 생일·키가 저장된다.
 			IntegrationUtil.persist(UserDetailEntityFixture.create(userId = userId, nickname = "인증유저", companyName = null, height = 175))
 			IntegrationUtil.persist(MatchUserEntityFixture.create(userId = userId, companyName = "이전회사"))
 			val id: Long = IntegrationUtil.persist(
@@ -165,12 +165,12 @@ class AdminMemberVerificationE2ETest : AbstractIntegrationSupport({
 			val detail: UserDetailEntity = detailByUserId(userId)
 			detail.companyName shouldBe "미플"
 			matchUserByUserId(userId).companyName shouldBe "미플"
-			// 직종·직장상세·나이·키는 gathering_profile에 저장(나이는 생일 스냅샷, 키는 user_details에서 가져옴).
+			// 직종·직장상세·생일·키는 gathering_profile에 저장(나이는 조회 시 생일로부터 계산). 생일·키는 user_details에서 가져옴.
 			val profile: GatheringProfileEntity = gatheringProfileByUserId(userId)
 			profile.jobCategory shouldBe "IT·개발직"
 			profile.jobDetail shouldBe "미플 백엔드 개발자"
 			profile.height shouldBe 175
-			profile.age shouldNotBe null
+			profile.birthday shouldBe LocalDate.of(1996, 1, 1)
 		}
 
 		it("필수 입력(회사명 등)이 비면 400이다") {
