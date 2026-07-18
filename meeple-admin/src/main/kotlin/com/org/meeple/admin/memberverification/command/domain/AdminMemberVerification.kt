@@ -15,4 +15,8 @@ data class AdminMemberVerification(
 	/** 승인. 이전에 반려로 남았을 수 있는 사유를 초기화한다. */
 	fun approve(): AdminMemberVerification =
 		copy(status = MemberVerificationStatus.APPROVED, rejectionReason = null)
+
+	/** 반려. 사유([reason], 선택)를 함께 남긴다. */
+	fun reject(reason: String?): AdminMemberVerification =
+		copy(status = MemberVerificationStatus.REJECTED, rejectionReason = reason)
 }

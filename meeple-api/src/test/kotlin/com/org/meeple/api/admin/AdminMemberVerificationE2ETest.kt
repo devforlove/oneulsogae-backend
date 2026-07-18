@@ -147,6 +147,52 @@ class AdminMemberVerificationE2ETest : AbstractIntegrationSupport({
 		}
 	}
 
+	describe("POST /admin/v1/member-verifications/{id}/reject") {
+
+		it("반려하면 status=REJECTED로 바꾸고 사유를 저장한다 (200)") {
+			val userId: Long = IntegrationUtil.persist(UserEntityFixture.create(providerId = "mv-reject")).id!!
+			val id: Long = IntegrationUtil.persist(
+				MemberVerificationEntityFixture.create(userId = userId, status = MemberVerificationStatus.PENDING),
+			).id!!
+
+			post("/admin/v1/member-verifications/$id/reject") {
+				bearer(adminAccessTokenFor(9901L))
+				jsonBody("""{"reason":"서류가 흐릿합니다"}""")
+			} expect {
+				status(200)
+				body("success", true)
+			}
+
+			val rejected: MemberVerificationEntity = verificationById(id)
+			rejected.status shouldBe MemberVerificationStatus.REJECTED
+			rejected.rejectionReason shouldBe "서류가 흐릿합니다"
+		}
+
+		it("사유 없이도 반려할 수 있다 (200)") {
+			val userId: Long = IntegrationUtil.persist(UserEntityFixture.create(providerId = "mv-reject-noreason")).id!!
+			val id: Long = IntegrationUtil.persist(
+				MemberVerificationEntityFixture.create(userId = userId, status = MemberVerificationStatus.PENDING),
+			).id!!
+
+			post("/admin/v1/member-verifications/$id/reject") {
+				bearer(adminAccessTokenFor(9901L))
+			} expect {
+				status(200)
+			}
+
+			verificationById(id).status shouldBe MemberVerificationStatus.REJECTED
+		}
+
+		it("없는 id면 404다 (MEMBER-VERIFICATION-001)") {
+			post("/admin/v1/member-verifications/999999/reject") {
+				bearer(adminAccessTokenFor(9901L))
+			} expect {
+				status(404)
+				body("error.code", "MEMBER-VERIFICATION-001")
+			}
+		}
+	}
+
 	afterTest {
 		IntegrationUtil.deleteAll(QMemberVerificationEntity.memberVerificationEntity)
 		IntegrationUtil.deleteAll(QUserDetailEntity.userDetailEntity)

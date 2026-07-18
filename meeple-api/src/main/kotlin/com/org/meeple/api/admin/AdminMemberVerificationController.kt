@@ -1,16 +1,19 @@
 package com.org.meeple.api.admin
 
-import com.org.meeple.admin.memberverification.command.application.port.`in`.ApproveMemberVerificationUseCase
+import com.org.meeple.admin.memberverification.command.application.port.`in`.ReviewMemberVerificationUseCase
 import com.org.meeple.admin.memberverification.query.service.port.`in`.GetAdminMemberVerificationsUseCase
+import com.org.meeple.api.admin.request.AdminRejectMemberVerificationRequest
 import com.org.meeple.api.admin.response.AdminMemberVerificationDetailResponse
 import com.org.meeple.api.admin.response.AdminMemberVerificationPageResponse
 import com.org.meeple.common.gathering.MemberVerificationStatus
 import com.org.meeple.core.common.response.ApiResponse
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.tags.Tag
+import jakarta.validation.Valid
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.PostMapping
+import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RequestParam
 import org.springframework.web.bind.annotation.RestController
@@ -24,7 +27,7 @@ import org.springframework.web.bind.annotation.RestController
 @RequestMapping("/admin/v1/member-verifications")
 class AdminMemberVerificationController(
 	private val getAdminMemberVerificationsUseCase: GetAdminMemberVerificationsUseCase,
-	private val approveMemberVerificationUseCase: ApproveMemberVerificationUseCase,
+	private val reviewMemberVerificationUseCase: ReviewMemberVerificationUseCase,
 ) {
 
 	@Operation(
@@ -65,7 +68,20 @@ class AdminMemberVerificationController(
 	fun approve(
 		@PathVariable id: Long,
 	): ApiResponse<Unit> {
-		approveMemberVerificationUseCase.approve(id)
+		reviewMemberVerificationUseCase.approve(id)
+		return ApiResponse.success()
+	}
+
+	@Operation(
+		summary = "멤버 인증 반려",
+		description = "멤버 인증을 반려(REJECTED)하고 사유(선택, 최대 500자)를 저장한다. 없으면 404(MEMBER-VERIFICATION-001).",
+	)
+	@PostMapping("/{id}/reject")
+	fun reject(
+		@PathVariable id: Long,
+		@RequestBody(required = false) @Valid request: AdminRejectMemberVerificationRequest?,
+	): ApiResponse<Unit> {
+		reviewMemberVerificationUseCase.reject(id, request?.reason)
 		return ApiResponse.success()
 	}
 }
