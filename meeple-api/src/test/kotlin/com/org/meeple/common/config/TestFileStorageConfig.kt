@@ -2,6 +2,7 @@ package com.org.meeple.common.config
 
 import com.org.meeple.admin.companyverification.query.service.port.out.CompanyVerificationImageUrlPort
 import com.org.meeple.admin.gathering.command.application.port.out.UploadGatheringImagePort
+import com.org.meeple.admin.memberverification.query.service.port.out.MemberVerificationImageUrlPort
 import com.org.meeple.admin.gathering.query.service.port.out.GatheringImageUrlPort as AdminGatheringImageUrlPort
 import com.org.meeple.core.gathering.command.application.port.out.FileStoragePort as GatheringFileStoragePort
 import com.org.meeple.core.gathering.query.service.port.out.GatheringImageUrlPort as UserGatheringImageUrlPort
@@ -35,6 +36,11 @@ class TestFileStorageConfig {
 	@Primary
 	fun fakeCompanyVerificationImageUrlPort(): CompanyVerificationImageUrlPort =
 		CompanyVerificationImageUrlPort { imageKey: String -> "https://presigned.test/$imageKey" }
+
+	@Bean
+	@Primary
+	fun fakeMemberVerificationImageUrlPort(): MemberVerificationImageUrlPort =
+		MemberVerificationImageUrlPort { imageKey: String -> "https://presigned.test/$imageKey" }
 
 	@Bean
 	@Primary
