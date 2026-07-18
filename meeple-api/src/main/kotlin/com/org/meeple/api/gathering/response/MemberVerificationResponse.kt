@@ -1,8 +1,8 @@
-package com.org.meeple.api.user.response
+package com.org.meeple.api.gathering.response
 
-import com.org.meeple.common.user.MemberVerificationStatus
-import com.org.meeple.core.user.command.domain.MemberVerification
-import com.org.meeple.core.user.query.dto.MemberVerificationView
+import com.org.meeple.common.gathering.MemberVerificationStatus
+import com.org.meeple.core.gathering.command.domain.MemberVerification
+import com.org.meeple.core.gathering.query.dto.MemberVerificationView
 
 /**
  * 멤버 인증(본인인증) 제출/조회 응답.

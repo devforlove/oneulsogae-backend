@@ -1,4 +1,4 @@
-package com.org.meeple.core.user.command.application.port.`in`.command
+package com.org.meeple.core.gathering.command.application.port.`in`.command
 
 /**
  * 멤버 인증(본인인증) 제출 명령. 컨트롤러(api)가 MultipartFile·폼 필드에서 값을 뽑아 넘긴다.

@@ -1,7 +1,7 @@
-package com.org.meeple.infra.user.command.mapper
+package com.org.meeple.infra.gathering.command.mapper
 
-import com.org.meeple.core.user.command.domain.MemberVerification
-import com.org.meeple.infra.user.command.entity.MemberVerificationEntity
+import com.org.meeple.core.gathering.command.domain.MemberVerification
+import com.org.meeple.infra.gathering.command.entity.MemberVerificationEntity
 
 /** 영속성 엔티티 -> 도메인 모델 */
 fun MemberVerificationEntity.toDomain(): MemberVerification =

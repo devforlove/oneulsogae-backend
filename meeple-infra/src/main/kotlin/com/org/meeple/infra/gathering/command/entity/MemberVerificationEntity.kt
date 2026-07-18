@@ -1,6 +1,6 @@
-package com.org.meeple.infra.user.command.entity
+package com.org.meeple.infra.gathering.command.entity
 
-import com.org.meeple.common.user.MemberVerificationStatus
+import com.org.meeple.common.gathering.MemberVerificationStatus
 import com.org.meeple.infra.common.BaseEntity
 import jakarta.persistence.Column
 import jakarta.persistence.Entity
@@ -13,7 +13,7 @@ import org.hibernate.annotations.SQLRestriction
 /**
  * 멤버 인증(본인인증) 제출을 추적하는 영속성 엔티티.
  * 직업 정보(직종·직장명/직종/직급)와 사진 3종(얼굴·신분증·서류)의 S3 오브젝트 키, 심사 상태(status)를 보관한다.
- * (파일 자체는 S3에 비공개 저장) 도메인 로직은 [com.org.meeple.core.user.command.domain.MemberVerification] 모델에 정의한다.
+ * (파일 자체는 S3에 비공개 저장) 도메인 로직은 [com.org.meeple.core.gathering.command.domain.MemberVerification] 모델에 정의한다.
  */
 @Entity
 @SQLRestriction("deleted_at is null")

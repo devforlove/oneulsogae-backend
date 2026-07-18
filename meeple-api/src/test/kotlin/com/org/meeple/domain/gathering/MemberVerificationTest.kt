@@ -1,9 +1,9 @@
-package com.org.meeple.domain.user
+package com.org.meeple.domain.gathering
 
-import com.org.meeple.common.user.MemberVerificationStatus
+import com.org.meeple.common.gathering.MemberVerificationStatus
 import com.org.meeple.core.common.error.BusinessException
-import com.org.meeple.core.user.UserErrorCode
-import com.org.meeple.core.user.command.domain.MemberVerification
+import com.org.meeple.core.gathering.GatheringErrorCode
+import com.org.meeple.core.gathering.command.domain.MemberVerification
 import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.core.spec.style.DescribeSpec
 import io.kotest.matchers.shouldBe
@@ -56,34 +56,34 @@ class MemberVerificationTest : DescribeSpec({
 			MemberVerification.validatePhoto("image/png", 1_000)
 		}
 
-		it("허용하지 않는 형식(gif)이면 INVALID_MEMBER_PHOTO_TYPE을 던진다") {
+		it("허용하지 않는 형식(gif)이면 MEMBER_VERIFICATION_INVALID_PHOTO_TYPE을 던진다") {
 			shouldThrow<BusinessException> {
 				MemberVerification.validatePhoto("image/gif", 1_000)
-			}.errorCode shouldBe UserErrorCode.INVALID_MEMBER_PHOTO_TYPE
+			}.errorCode shouldBe GatheringErrorCode.MEMBER_VERIFICATION_INVALID_PHOTO_TYPE
 		}
 
 		it("사진에 PDF는 허용하지 않는다") {
 			shouldThrow<BusinessException> {
 				MemberVerification.validatePhoto("application/pdf", 1_000)
-			}.errorCode shouldBe UserErrorCode.INVALID_MEMBER_PHOTO_TYPE
+			}.errorCode shouldBe GatheringErrorCode.MEMBER_VERIFICATION_INVALID_PHOTO_TYPE
 		}
 
-		it("contentType이 null이면 INVALID_MEMBER_PHOTO_TYPE을 던진다") {
+		it("contentType이 null이면 MEMBER_VERIFICATION_INVALID_PHOTO_TYPE을 던진다") {
 			shouldThrow<BusinessException> {
 				MemberVerification.validatePhoto(null, 1_000)
-			}.errorCode shouldBe UserErrorCode.INVALID_MEMBER_PHOTO_TYPE
+			}.errorCode shouldBe GatheringErrorCode.MEMBER_VERIFICATION_INVALID_PHOTO_TYPE
 		}
 
-		it("빈 파일(size<=0)이면 EMPTY_IMAGE를 던진다") {
+		it("빈 파일(size<=0)이면 MEMBER_VERIFICATION_EMPTY_FILE을 던진다") {
 			shouldThrow<BusinessException> {
 				MemberVerification.validatePhoto("image/jpeg", 0)
-			}.errorCode shouldBe UserErrorCode.EMPTY_IMAGE
+			}.errorCode shouldBe GatheringErrorCode.MEMBER_VERIFICATION_EMPTY_FILE
 		}
 
-		it("10MB를 넘으면 IMAGE_TOO_LARGE를 던진다") {
+		it("10MB를 넘으면 MEMBER_VERIFICATION_FILE_TOO_LARGE를 던진다") {
 			shouldThrow<BusinessException> {
 				MemberVerification.validatePhoto("image/png", MemberVerification.MAX_FILE_SIZE_BYTES + 1)
-			}.errorCode shouldBe UserErrorCode.IMAGE_TOO_LARGE
+			}.errorCode shouldBe GatheringErrorCode.MEMBER_VERIFICATION_FILE_TOO_LARGE
 		}
 	}
 
@@ -94,22 +94,22 @@ class MemberVerificationTest : DescribeSpec({
 			MemberVerification.validateDocument("application/pdf", 1_000)
 		}
 
-		it("허용하지 않는 형식(gif)이면 INVALID_IMAGE_TYPE을 던진다") {
+		it("허용하지 않는 형식(gif)이면 MEMBER_VERIFICATION_INVALID_DOCUMENT_TYPE을 던진다") {
 			shouldThrow<BusinessException> {
 				MemberVerification.validateDocument("image/gif", 1_000)
-			}.errorCode shouldBe UserErrorCode.INVALID_IMAGE_TYPE
+			}.errorCode shouldBe GatheringErrorCode.MEMBER_VERIFICATION_INVALID_DOCUMENT_TYPE
 		}
 
-		it("빈 파일(size<=0)이면 EMPTY_IMAGE를 던진다") {
+		it("빈 파일(size<=0)이면 MEMBER_VERIFICATION_EMPTY_FILE을 던진다") {
 			shouldThrow<BusinessException> {
 				MemberVerification.validateDocument("application/pdf", 0)
-			}.errorCode shouldBe UserErrorCode.EMPTY_IMAGE
+			}.errorCode shouldBe GatheringErrorCode.MEMBER_VERIFICATION_EMPTY_FILE
 		}
 
-		it("10MB를 넘으면 IMAGE_TOO_LARGE를 던진다") {
+		it("10MB를 넘으면 MEMBER_VERIFICATION_FILE_TOO_LARGE를 던진다") {
 			shouldThrow<BusinessException> {
 				MemberVerification.validateDocument("application/pdf", MemberVerification.MAX_FILE_SIZE_BYTES + 1)
-			}.errorCode shouldBe UserErrorCode.IMAGE_TOO_LARGE
+			}.errorCode shouldBe GatheringErrorCode.MEMBER_VERIFICATION_FILE_TOO_LARGE
 		}
 	}
 
@@ -118,28 +118,28 @@ class MemberVerificationTest : DescribeSpec({
 			MemberVerification.validateJobInfo("IT·개발직", "미플 백엔드 개발자")
 		}
 
-		it("직종이 공백이면 INVALID_JOB_INFO를 던진다") {
+		it("직종이 공백이면 MEMBER_VERIFICATION_INVALID_JOB_INFO를 던진다") {
 			shouldThrow<BusinessException> {
 				MemberVerification.validateJobInfo(" ", "미플 백엔드 개발자")
-			}.errorCode shouldBe UserErrorCode.INVALID_JOB_INFO
+			}.errorCode shouldBe GatheringErrorCode.MEMBER_VERIFICATION_INVALID_JOB_INFO
 		}
 
-		it("직종이 30자를 넘으면 INVALID_JOB_INFO를 던진다") {
+		it("직종이 30자를 넘으면 MEMBER_VERIFICATION_INVALID_JOB_INFO를 던진다") {
 			shouldThrow<BusinessException> {
 				MemberVerification.validateJobInfo("가".repeat(31), "미플 백엔드 개발자")
-			}.errorCode shouldBe UserErrorCode.INVALID_JOB_INFO
+			}.errorCode shouldBe GatheringErrorCode.MEMBER_VERIFICATION_INVALID_JOB_INFO
 		}
 
-		it("직장명/직종/직급이 공백이면 INVALID_JOB_INFO를 던진다") {
+		it("직장명/직종/직급이 공백이면 MEMBER_VERIFICATION_INVALID_JOB_INFO를 던진다") {
 			shouldThrow<BusinessException> {
 				MemberVerification.validateJobInfo("IT·개발직", " ")
-			}.errorCode shouldBe UserErrorCode.INVALID_JOB_INFO
+			}.errorCode shouldBe GatheringErrorCode.MEMBER_VERIFICATION_INVALID_JOB_INFO
 		}
 
-		it("직장명/직종/직급이 100자를 넘으면 INVALID_JOB_INFO를 던진다") {
+		it("직장명/직종/직급이 100자를 넘으면 MEMBER_VERIFICATION_INVALID_JOB_INFO를 던진다") {
 			shouldThrow<BusinessException> {
 				MemberVerification.validateJobInfo("IT·개발직", "가".repeat(101))
-			}.errorCode shouldBe UserErrorCode.INVALID_JOB_INFO
+			}.errorCode shouldBe GatheringErrorCode.MEMBER_VERIFICATION_INVALID_JOB_INFO
 		}
 	}
 

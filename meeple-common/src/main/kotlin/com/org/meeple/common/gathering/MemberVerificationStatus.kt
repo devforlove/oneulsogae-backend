@@ -1,4 +1,4 @@
-package com.org.meeple.common.user
+package com.org.meeple.common.gathering
 
 /**
  * 멤버 인증(본인인증)의 심사 상태.

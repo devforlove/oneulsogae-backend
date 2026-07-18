@@ -1,8 +1,8 @@
-package com.org.meeple.core.user.command.domain
+package com.org.meeple.core.gathering.command.domain
 
-import com.org.meeple.common.user.MemberVerificationStatus
+import com.org.meeple.common.gathering.MemberVerificationStatus
 import com.org.meeple.core.common.error.BusinessException
-import com.org.meeple.core.user.UserErrorCode
+import com.org.meeple.core.gathering.GatheringErrorCode
 
 /**
  * 멤버 인증(본인인증) 도메인 모델.
@@ -73,51 +73,51 @@ data class MemberVerification(
 
 		/**
 		 * 직업 정보 검증. 직종([jobCategory])·직장명/직종/직급([jobDetail])이 공백이거나
-		 * 각 최대 길이를 넘으면 [UserErrorCode.INVALID_JOB_INFO].
+		 * 각 최대 길이를 넘으면 [GatheringErrorCode.MEMBER_VERIFICATION_INVALID_JOB_INFO].
 		 */
 		fun validateJobInfo(jobCategory: String, jobDetail: String) {
 			if (jobCategory.isBlank() || jobCategory.length > MAX_JOB_CATEGORY_LENGTH) {
-				throw BusinessException(UserErrorCode.INVALID_JOB_INFO)
+				throw BusinessException(GatheringErrorCode.MEMBER_VERIFICATION_INVALID_JOB_INFO)
 			}
 			if (jobDetail.isBlank() || jobDetail.length > MAX_JOB_DETAIL_LENGTH) {
-				throw BusinessException(UserErrorCode.INVALID_JOB_INFO)
+				throw BusinessException(GatheringErrorCode.MEMBER_VERIFICATION_INVALID_JOB_INFO)
 			}
 		}
 
 		/**
 		 * 업로드한 사진(얼굴·신분증) 파일이 멤버 인증에 쓸 수 있는지 검증한다. (업로드 전에 호출해 잘못된 파일이 S3에 올라가지 않게 한다)
-		 * - 빈 파일: [UserErrorCode.EMPTY_IMAGE]
-		 * - 허용하지 않는 형식: [UserErrorCode.INVALID_MEMBER_PHOTO_TYPE]
-		 * - 크기 초과: [UserErrorCode.IMAGE_TOO_LARGE]
+		 * - 빈 파일: [GatheringErrorCode.MEMBER_VERIFICATION_EMPTY_FILE]
+		 * - 허용하지 않는 형식: [GatheringErrorCode.MEMBER_VERIFICATION_INVALID_PHOTO_TYPE]
+		 * - 크기 초과: [GatheringErrorCode.MEMBER_VERIFICATION_FILE_TOO_LARGE]
 		 */
 		fun validatePhoto(contentType: String?, size: Long) {
-			validateUpload(contentType, size, PHOTO_CONTENT_TYPES, UserErrorCode.INVALID_MEMBER_PHOTO_TYPE)
+			validateUpload(contentType, size, PHOTO_CONTENT_TYPES, GatheringErrorCode.MEMBER_VERIFICATION_INVALID_PHOTO_TYPE)
 		}
 
 		/**
 		 * 업로드한 서류 파일이 멤버 인증에 쓸 수 있는지 검증한다.
-		 * - 빈 파일: [UserErrorCode.EMPTY_IMAGE]
-		 * - 허용하지 않는 형식: [UserErrorCode.INVALID_IMAGE_TYPE]
-		 * - 크기 초과: [UserErrorCode.IMAGE_TOO_LARGE]
+		 * - 빈 파일: [GatheringErrorCode.MEMBER_VERIFICATION_EMPTY_FILE]
+		 * - 허용하지 않는 형식: [GatheringErrorCode.MEMBER_VERIFICATION_INVALID_DOCUMENT_TYPE]
+		 * - 크기 초과: [GatheringErrorCode.MEMBER_VERIFICATION_FILE_TOO_LARGE]
 		 */
 		fun validateDocument(contentType: String?, size: Long) {
-			validateUpload(contentType, size, DOCUMENT_CONTENT_TYPES, UserErrorCode.INVALID_IMAGE_TYPE)
+			validateUpload(contentType, size, DOCUMENT_CONTENT_TYPES, GatheringErrorCode.MEMBER_VERIFICATION_INVALID_DOCUMENT_TYPE)
 		}
 
 		private fun validateUpload(
 			contentType: String?,
 			size: Long,
 			allowedContentTypes: Set<String>,
-			invalidTypeErrorCode: UserErrorCode,
+			invalidTypeErrorCode: GatheringErrorCode,
 		) {
 			if (size <= 0L) {
-				throw BusinessException(UserErrorCode.EMPTY_IMAGE)
+				throw BusinessException(GatheringErrorCode.MEMBER_VERIFICATION_EMPTY_FILE)
 			}
 			if (contentType == null || contentType.lowercase() !in allowedContentTypes) {
 				throw BusinessException(invalidTypeErrorCode)
 			}
 			if (size > MAX_FILE_SIZE_BYTES) {
-				throw BusinessException(UserErrorCode.IMAGE_TOO_LARGE)
+				throw BusinessException(GatheringErrorCode.MEMBER_VERIFICATION_FILE_TOO_LARGE)
 			}
 		}
 

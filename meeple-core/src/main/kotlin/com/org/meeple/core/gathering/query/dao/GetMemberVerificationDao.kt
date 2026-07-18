@@ -1,6 +1,6 @@
-package com.org.meeple.core.user.query.dao
+package com.org.meeple.core.gathering.query.dao
 
-import com.org.meeple.core.user.query.dto.MemberVerificationView
+import com.org.meeple.core.gathering.query.dto.MemberVerificationView
 
 /**
  * 멤버 인증(본인인증) 조회 dao(query out-port 인터페이스). 구현은 infra가 담당한다.

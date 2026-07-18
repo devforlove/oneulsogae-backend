@@ -1,19 +1,19 @@
-package com.org.meeple.api.user
+package com.org.meeple.api.gathering
 
+import com.org.meeple.common.gathering.MemberVerificationStatus
 import com.org.meeple.common.integration.AbstractIntegrationSupport
-import com.org.meeple.common.user.MemberVerificationStatus
 import com.org.meeple.infra.fixture.IntegrationUtil
 import com.org.meeple.infra.fixture.MemberVerificationEntityFixture
 import com.org.meeple.infra.fixture.UserEntityFixture
-import com.org.meeple.infra.user.command.entity.MemberVerificationEntity
-import com.org.meeple.infra.user.command.entity.QMemberVerificationEntity
+import com.org.meeple.infra.gathering.command.entity.MemberVerificationEntity
+import com.org.meeple.infra.gathering.command.entity.QMemberVerificationEntity
 import com.org.meeple.infra.user.command.entity.QUserEntity
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.string.shouldStartWith
 import io.restassured.RestAssured
 
 /**
- * `POST /users/v1/member-verifications`·`GET /users/v1/member-verifications/me` E2E 테스트. (멀티파트 업로드)
+ * `POST /gatherings/v1/member-verifications`·`GET /gatherings/v1/member-verifications/me` E2E 테스트. (멀티파트 업로드)
  * 직업 정보와 사진 3종(얼굴·신분증·서류)을 제출하면 member_verifications에 오브젝트 키 3개·PENDING이 저장되는지,
  * 잘못된 사진 형식·직업 정보가 각각 막히는지, 내 최신 제출 조회(없으면 data null)가 동작하는지 검증한다.
  * (실제 S3 업로드는 [com.org.meeple.common.config.TestFileStorageConfig]의 페이크로 대체)
@@ -28,7 +28,7 @@ class MemberVerificationE2ETest : AbstractIntegrationSupport({
 		return IntegrationUtil.getQuery().selectFrom(v).where(v.userId.eq(userId)).orderBy(v.id.desc()).fetchFirst()
 	}
 
-	describe("POST /users/v1/member-verifications") {
+	describe("POST /gatherings/v1/member-verifications") {
 
 		context("직업 정보와 사진 3종을 제출하면") {
 			it("member_verifications에 오브젝트 키 3개·직업 정보·PENDING으로 저장하고 200을 반환한다") {
@@ -41,7 +41,7 @@ class MemberVerificationE2ETest : AbstractIntegrationSupport({
 					.multiPart("documentImage", "badge.pdf", "fake-doc-bytes".toByteArray(), "application/pdf")
 					.multiPart("jobCategory", "IT·개발직", "text/plain;charset=UTF-8")
 					.multiPart("jobDetail", "미플 백엔드 개발자", "text/plain;charset=UTF-8")
-					.post("/users/v1/member-verifications")
+					.post("/gatherings/v1/member-verifications")
 					.then()
 					.statusCode(200)
 					.body("success", org.hamcrest.Matchers.equalTo(true))
@@ -58,7 +58,7 @@ class MemberVerificationE2ETest : AbstractIntegrationSupport({
 		}
 
 		context("허용하지 않는 형식(gif)의 얼굴 사진을 제출하면") {
-			it("400(USER-032)을 반환하고 저장하지 않는다") {
+			it("400(GATHERING-008)을 반환하고 저장하지 않는다") {
 				val userId: Long = persistUser("member-verification-2")
 
 				RestAssured.given()
@@ -68,18 +68,18 @@ class MemberVerificationE2ETest : AbstractIntegrationSupport({
 					.multiPart("documentImage", "badge.pdf", "fake-doc-bytes".toByteArray(), "application/pdf")
 					.multiPart("jobCategory", "IT·개발직", "text/plain;charset=UTF-8")
 					.multiPart("jobDetail", "미플 백엔드 개발자", "text/plain;charset=UTF-8")
-					.post("/users/v1/member-verifications")
+					.post("/gatherings/v1/member-verifications")
 					.then()
 					.statusCode(400)
 					.body("success", org.hamcrest.Matchers.equalTo(false))
-					.body("error.code", org.hamcrest.Matchers.equalTo("USER-032"))
+					.body("error.code", org.hamcrest.Matchers.equalTo("GATHERING-008"))
 
 				latestVerificationOf(userId) shouldBe null
 			}
 		}
 
 		context("직장명/직종/직급을 공백으로 제출하면") {
-			it("400(USER-033)을 반환하고 저장하지 않는다") {
+			it("400(GATHERING-012)을 반환하고 저장하지 않는다") {
 				val userId: Long = persistUser("member-verification-3")
 
 				RestAssured.given()
@@ -89,10 +89,10 @@ class MemberVerificationE2ETest : AbstractIntegrationSupport({
 					.multiPart("documentImage", "badge.pdf", "fake-doc-bytes".toByteArray(), "application/pdf")
 					.multiPart("jobCategory", "IT·개발직", "text/plain;charset=UTF-8")
 					.multiPart("jobDetail", " ", "text/plain;charset=UTF-8")
-					.post("/users/v1/member-verifications")
+					.post("/gatherings/v1/member-verifications")
 					.then()
 					.statusCode(400)
-					.body("error.code", org.hamcrest.Matchers.equalTo("USER-033"))
+					.body("error.code", org.hamcrest.Matchers.equalTo("GATHERING-012"))
 
 				latestVerificationOf(userId) shouldBe null
 			}
@@ -106,14 +106,14 @@ class MemberVerificationE2ETest : AbstractIntegrationSupport({
 					.multiPart("documentImage", "badge.pdf", "fake".toByteArray(), "application/pdf")
 					.multiPart("jobCategory", "IT·개발직")
 					.multiPart("jobDetail", "미플 백엔드 개발자")
-					.post("/users/v1/member-verifications")
+					.post("/gatherings/v1/member-verifications")
 					.then()
 					.statusCode(401)
 			}
 		}
 	}
 
-	describe("GET /users/v1/member-verifications/me") {
+	describe("GET /gatherings/v1/member-verifications/me") {
 
 		context("제출 이력이 있는 유저가 조회하면") {
 			it("최신 제출 1건을 반환한다") {
@@ -131,7 +131,7 @@ class MemberVerificationE2ETest : AbstractIntegrationSupport({
 
 				RestAssured.given()
 					.header("Authorization", "Bearer ${accessTokenFor(userId)}")
-					.get("/users/v1/member-verifications/me")
+					.get("/gatherings/v1/member-verifications/me")
 					.then()
 					.statusCode(200)
 					.body("success", org.hamcrest.Matchers.equalTo(true))
@@ -148,7 +148,7 @@ class MemberVerificationE2ETest : AbstractIntegrationSupport({
 
 				RestAssured.given()
 					.header("Authorization", "Bearer ${accessTokenFor(userId)}")
-					.get("/users/v1/member-verifications/me")
+					.get("/gatherings/v1/member-verifications/me")
 					.then()
 					.statusCode(200)
 					.body("success", org.hamcrest.Matchers.equalTo(true))

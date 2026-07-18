@@ -1,6 +1,6 @@
-package com.org.meeple.core.user.query.service.port.`in`
+package com.org.meeple.core.gathering.query.service.port.`in`
 
-import com.org.meeple.core.user.query.dto.MemberVerificationView
+import com.org.meeple.core.gathering.query.dto.MemberVerificationView
 
 /**
  * 내 멤버 인증(본인인증) 조회 인포트(유스케이스).

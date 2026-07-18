@@ -1,9 +1,9 @@
-package com.org.meeple.infra.user.query
+package com.org.meeple.infra.gathering.query
 
-import com.org.meeple.core.user.query.dao.GetMemberVerificationDao
-import com.org.meeple.core.user.query.dto.MemberVerificationView
-import com.org.meeple.infra.user.command.entity.MemberVerificationEntity
-import com.org.meeple.infra.user.command.repository.MemberVerificationJpaRepository
+import com.org.meeple.core.gathering.query.dao.GetMemberVerificationDao
+import com.org.meeple.core.gathering.query.dto.MemberVerificationView
+import com.org.meeple.infra.gathering.command.entity.MemberVerificationEntity
+import com.org.meeple.infra.gathering.command.repository.MemberVerificationJpaRepository
 import org.springframework.stereotype.Component
 
 /**

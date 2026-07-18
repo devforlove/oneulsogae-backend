@@ -34,4 +34,20 @@ enum class GatheringErrorCode(
 
 	/** 얼리버드 상품(EARLY_BIRD)으로 접수를 시도했으나 얼리버드가 소진됨(체크아웃 이후 소진된 경우). */
 	GATHERING_EARLY_BIRD_SOLD_OUT("GATHERING-007", "얼리버드가 마감되었습니다. 최신 금액으로 다시 시도해주세요.", HttpStatus.CONFLICT),
+
+	// 멤버 인증(member_verifications)
+	/** 얼굴·신분증 사진이 허용 형식(JPEG·PNG)이 아님. */
+	MEMBER_VERIFICATION_INVALID_PHOTO_TYPE("GATHERING-008", "지원하지 않는 사진 형식입니다. JPEG·PNG만 업로드할 수 있습니다.", HttpStatus.BAD_REQUEST),
+
+	/** 직장 인증 서류가 허용 형식(JPEG·PNG·PDF)이 아님. */
+	MEMBER_VERIFICATION_INVALID_DOCUMENT_TYPE("GATHERING-009", "지원하지 않는 파일 형식입니다. JPEG·PNG·PDF만 업로드할 수 있습니다.", HttpStatus.BAD_REQUEST),
+
+	/** 업로드 파일이 비어 있음. */
+	MEMBER_VERIFICATION_EMPTY_FILE("GATHERING-010", "파일이 비어 있습니다.", HttpStatus.BAD_REQUEST),
+
+	/** 업로드 파일이 최대 크기(10MB)를 초과함. */
+	MEMBER_VERIFICATION_FILE_TOO_LARGE("GATHERING-011", "파일이 너무 큽니다. 최대 10MB까지 업로드할 수 있습니다.", HttpStatus.PAYLOAD_TOO_LARGE),
+
+	/** 직업 정보(직종·직장명/직종/직급)가 공백이거나 최대 길이를 초과함. */
+	MEMBER_VERIFICATION_INVALID_JOB_INFO("GATHERING-012", "직업 정보를 입력해 주세요. (직종 최대 30자, 직장명/직종/직급 최대 100자)", HttpStatus.BAD_REQUEST),
 }

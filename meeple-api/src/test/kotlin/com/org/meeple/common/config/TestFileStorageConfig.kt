@@ -3,8 +3,9 @@ package com.org.meeple.common.config
 import com.org.meeple.admin.companyverification.query.service.port.out.CompanyVerificationImageUrlPort
 import com.org.meeple.admin.gathering.command.application.port.out.UploadGatheringImagePort
 import com.org.meeple.admin.gathering.query.service.port.out.GatheringImageUrlPort as AdminGatheringImageUrlPort
+import com.org.meeple.core.gathering.command.application.port.out.FileStoragePort as GatheringFileStoragePort
 import com.org.meeple.core.gathering.query.service.port.out.GatheringImageUrlPort as UserGatheringImageUrlPort
-import com.org.meeple.core.user.command.application.port.out.FileStoragePort
+import com.org.meeple.core.user.command.application.port.out.FileStoragePort as UserFileStoragePort
 import org.springframework.boot.test.context.TestConfiguration
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Primary
@@ -22,8 +23,13 @@ class TestFileStorageConfig {
 
 	@Bean
 	@Primary
-	fun fakeFileStoragePort(): FileStoragePort =
-		FileStoragePort { key: String, _: ByteArray, _: String -> key }
+	fun fakeFileStoragePort(): UserFileStoragePort =
+		UserFileStoragePort { key: String, _: ByteArray, _: String -> key }
+
+	@Bean
+	@Primary
+	fun fakeGatheringFileStoragePort(): GatheringFileStoragePort =
+		GatheringFileStoragePort { key: String, _: ByteArray, _: String -> key }
 
 	@Bean
 	@Primary

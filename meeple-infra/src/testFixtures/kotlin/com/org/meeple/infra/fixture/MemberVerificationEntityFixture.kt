@@ -1,7 +1,7 @@
 package com.org.meeple.infra.fixture
 
-import com.org.meeple.common.user.MemberVerificationStatus
-import com.org.meeple.infra.user.command.entity.MemberVerificationEntity
+import com.org.meeple.common.gathering.MemberVerificationStatus
+import com.org.meeple.infra.gathering.command.entity.MemberVerificationEntity
 
 /**
  * [MemberVerificationEntity] 테스트 픽스처.

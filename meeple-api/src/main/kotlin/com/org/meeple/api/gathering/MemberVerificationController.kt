@@ -1,12 +1,12 @@
-package com.org.meeple.api.user
+package com.org.meeple.api.gathering
 
-import com.org.meeple.api.user.response.MemberVerificationResponse
+import com.org.meeple.api.gathering.response.MemberVerificationResponse
 import com.org.meeple.auth.AuthUser
 import com.org.meeple.auth.LoginUser
 import com.org.meeple.core.common.response.ApiResponse
-import com.org.meeple.core.user.command.application.port.`in`.SubmitMemberVerificationUseCase
-import com.org.meeple.core.user.command.application.port.`in`.command.SubmitMemberVerificationCommand
-import com.org.meeple.core.user.query.service.port.`in`.GetMyMemberVerificationUseCase
+import com.org.meeple.core.gathering.command.application.port.`in`.SubmitMemberVerificationUseCase
+import com.org.meeple.core.gathering.command.application.port.`in`.command.SubmitMemberVerificationCommand
+import com.org.meeple.core.gathering.query.service.port.`in`.GetMyMemberVerificationUseCase
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.tags.Tag
 import org.springframework.http.MediaType
@@ -18,14 +18,14 @@ import org.springframework.web.bind.annotation.RestController
 import org.springframework.web.multipart.MultipartFile
 
 /**
- * 멤버 인증(본인인증) 엔드포인트. (인증 필요)
+ * 멤버 인증(본인인증) 엔드포인트. 모임 참여를 위한 인증이라 gathering 도메인이 소유한다. (인증 필요)
  * - POST /member-verifications: 직업 정보(직종·직장명/직종/직급)와 사진 3종(얼굴·신분증·서류)을 업로드해 심사(PENDING)를 접수한다.
  *   파일은 S3에 비공개로 저장되고 DB에는 오브젝트 키만 남는다. 자동 검증이 불가능해 어드민 심사로 승인/반려된다.
  * - GET /member-verifications/me: 내 최신 제출 1건을 조회한다. (없으면 data null)
  */
 @RestController
-@RequestMapping("/users/v1")
-@Tag(name = "유저 멤버 인증", description = "멤버 인증(본인인증) 제출·조회 엔드포인트 (인증 필요)")
+@RequestMapping("/gatherings/v1")
+@Tag(name = "멤버 인증", description = "멤버 인증(본인인증) 제출·조회 엔드포인트 (인증 필요)")
 class MemberVerificationController(
 	private val submitMemberVerificationUseCase: SubmitMemberVerificationUseCase,
 	private val getMyMemberVerificationUseCase: GetMyMemberVerificationUseCase,

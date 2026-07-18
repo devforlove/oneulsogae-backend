@@ -1,8 +1,8 @@
-package com.org.meeple.core.user.query.service
+package com.org.meeple.core.gathering.query.service
 
-import com.org.meeple.core.user.query.dao.GetMemberVerificationDao
-import com.org.meeple.core.user.query.dto.MemberVerificationView
-import com.org.meeple.core.user.query.service.port.`in`.GetMyMemberVerificationUseCase
+import com.org.meeple.core.gathering.query.dao.GetMemberVerificationDao
+import com.org.meeple.core.gathering.query.dto.MemberVerificationView
+import com.org.meeple.core.gathering.query.service.port.`in`.GetMyMemberVerificationUseCase
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 

@@ -56,8 +56,4 @@ enum class UserErrorCode(
 	IDENTITY_NOT_ADULT("USER-029", "만 19세 이상만 가입할 수 있습니다.", HttpStatus.BAD_REQUEST),
 	IDENTITY_ALREADY_REGISTERED("USER-030", "이미 본인확인으로 가입된 사용자입니다.", HttpStatus.CONFLICT),
 	IDENTITY_VERIFICATION_NOT_ONBOARDING("USER-031", "본인확인은 온보딩 중에만 시작할 수 있습니다.", HttpStatus.CONFLICT),
-
-	// 멤버 인증(member_verifications)
-	INVALID_MEMBER_PHOTO_TYPE("USER-032", "지원하지 않는 사진 형식입니다. JPEG·PNG만 업로드할 수 있습니다.", HttpStatus.BAD_REQUEST),
-	INVALID_JOB_INFO("USER-033", "직업 정보를 입력해 주세요. (직종 최대 30자, 직장명/직종/직급 최대 100자)", HttpStatus.BAD_REQUEST),
 }
