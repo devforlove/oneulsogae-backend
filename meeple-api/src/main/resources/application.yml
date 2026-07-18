@@ -98,6 +98,11 @@ app:
     web-siteid: ${KCP_WEB_SITEID:J12345678901}
     base-url: ${KCP_BASE_URL:https://testcert.kcp.co.kr}
     ret-url: ${KCP_RET_URL:http://localhost:3000/api/onboarding/identity/callback}
+  # 토스페이먼츠 결제 승인. prod 프로파일에서만 실어댑터가 활성화된다(local·test는 스텁).
+  # 기본값은 테스트 시크릿키다. 라이브 전환 시 TOSS_SECRET_KEY 환경변수로 실키를 주입한다.
+  toss:
+    secret-key: ${TOSS_SECRET_KEY:test_sk_XZYkKL4Mrj1lzXL6gAzWV0zJwlEW}
+    base-url: ${TOSS_BASE_URL:https://api.tosspayments.com}
   identity:
     ci-encryption-key: ${IDENTITY_CI_KEY:}
 
