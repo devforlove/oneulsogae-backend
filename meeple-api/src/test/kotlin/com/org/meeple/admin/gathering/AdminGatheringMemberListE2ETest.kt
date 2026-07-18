@@ -66,11 +66,23 @@ class AdminGatheringMemberListE2ETest : AbstractIntegrationSupport({
 				} expect {
 					status(200)
 					body("success", true)
-					body("data", hasSize<Any>(2))
-					body("data.nickname", contains("첫째", "둘째"))
-					body("data.status", contains("PENDING", "JOINED"))
-					body("data.amount", contains(10000, 5600))
-					body("data.gender", contains("MALE", "FEMALE"))
+					body("data.totalElements", 2)
+					body("data.content", hasSize<Any>(2))
+					body("data.content.nickname", contains("첫째", "둘째"))
+					body("data.content.status", contains("PENDING", "JOINED"))
+					body("data.content.amount", contains(10000, 5600))
+					body("data.content.gender", contains("MALE", "FEMALE"))
+				}
+
+				// status 필터: PENDING만.
+				get("/admin/v1/gatherings/schedules/$scheduleId/members?status=PENDING") {
+					bearer(adminAccessTokenFor(1L))
+				} expect {
+					status(200)
+					body("data.totalElements", 1)
+					body("data.content", hasSize<Any>(1))
+					body("data.content[0].status", "PENDING")
+					body("data.content[0].nickname", "첫째")
 				}
 			}
 		}
@@ -86,7 +98,8 @@ class AdminGatheringMemberListE2ETest : AbstractIntegrationSupport({
 					bearer(adminAccessTokenFor(1L))
 				} expect {
 					status(200)
-					body("data", hasSize<Any>(0))
+					body("data.totalElements", 0)
+					body("data.content", hasSize<Any>(0))
 				}
 			}
 		}
