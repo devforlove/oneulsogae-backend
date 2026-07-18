@@ -63,14 +63,6 @@ class UserDetailEntity(
 	@Column(name = "job", length = 100)
 	var job: String? = null,
 
-	/** 직종. 멤버 인증 승인 시 어드민이 확정한다. (예: "IT·개발직") */
-	@Column(name = "job_category", length = 30)
-	var jobCategory: String? = null,
-
-	/** 직장명/직종/직급 상세. 멤버 인증 승인 시 어드민이 확정한다. */
-	@Column(name = "job_detail", length = 100)
-	var jobDetail: String? = null,
-
 	/** 활동지역 id(regions FK). 표시용 지역명은 응답 시 regions join으로 내려준다. */
 	@Column(name = "region_id")
 	var regionId: Long? = null,
@@ -139,8 +131,6 @@ class UserDetailEntity(
 		gender = null
 		phoneNumber = null
 		job = null
-		jobCategory = null
-		jobDetail = null
 		regionId = null
 		introduction = null
 		traits = emptyList()

@@ -10,7 +10,9 @@ import com.org.meeple.infra.fixture.MatchUserEntityFixture
 import com.org.meeple.infra.fixture.MemberVerificationEntityFixture
 import com.org.meeple.infra.fixture.UserDetailEntityFixture
 import com.org.meeple.infra.fixture.UserEntityFixture
+import com.org.meeple.infra.gathering.command.entity.GatheringProfileEntity
 import com.org.meeple.infra.gathering.command.entity.MemberVerificationEntity
+import com.org.meeple.infra.gathering.command.entity.QGatheringProfileEntity
 import com.org.meeple.infra.gathering.command.entity.QMemberVerificationEntity
 import com.org.meeple.infra.matchuser.command.entity.MatchUserEntity
 import com.org.meeple.infra.matchuser.command.entity.QMatchUserEntity
@@ -18,6 +20,7 @@ import com.org.meeple.infra.user.command.entity.QUserDetailEntity
 import com.org.meeple.infra.user.command.entity.QUserEntity
 import com.org.meeple.infra.user.command.entity.UserDetailEntity
 import io.kotest.matchers.shouldBe
+import io.kotest.matchers.shouldNotBe
 import org.hamcrest.Matchers.hasSize
 
 /**
@@ -42,6 +45,11 @@ class AdminMemberVerificationE2ETest : AbstractIntegrationSupport({
 	fun matchUserByUserId(userId: Long): MatchUserEntity {
 		val m: QMatchUserEntity = QMatchUserEntity.matchUserEntity
 		return IntegrationUtil.getQuery().selectFrom(m).where(m.userId.eq(userId)).fetchOne()!!
+	}
+
+	fun gatheringProfileByUserId(userId: Long): GatheringProfileEntity {
+		val p: QGatheringProfileEntity = QGatheringProfileEntity.gatheringProfileEntity
+		return IntegrationUtil.getQuery().selectFrom(p).where(p.userId.eq(userId)).fetchOne()!!
 	}
 
 	describe("GET /admin/v1/member-verifications") {
@@ -135,9 +143,10 @@ class AdminMemberVerificationE2ETest : AbstractIntegrationSupport({
 
 	describe("POST /admin/v1/member-verifications/{id}/approve") {
 
-		it("승인하면 status=APPROVED로 바꾸고 프로필(회사명·직종·직장상세)·match_user 회사명을 확정한다 (200)") {
+		it("승인하면 status=APPROVED로 바꾸고 회사명(user_details·match_user)·gathering_profile(직종·직장상세·나이·키)을 확정한다 (200)") {
 			val userId: Long = IntegrationUtil.persist(UserEntityFixture.create(providerId = "mv-approve")).id!!
-			IntegrationUtil.persist(UserDetailEntityFixture.create(userId = userId, nickname = "인증유저", companyName = null))
+			// user_details: 회사명 null, 키 175, 생일(픽스처 기본 1996-01-01) → gathering_profile에 나이·키가 스냅샷된다.
+			IntegrationUtil.persist(UserDetailEntityFixture.create(userId = userId, nickname = "인증유저", companyName = null, height = 175))
 			IntegrationUtil.persist(MatchUserEntityFixture.create(userId = userId, companyName = "이전회사"))
 			val id: Long = IntegrationUtil.persist(
 				MemberVerificationEntityFixture.create(userId = userId, status = MemberVerificationStatus.PENDING),
@@ -152,11 +161,16 @@ class AdminMemberVerificationE2ETest : AbstractIntegrationSupport({
 			}
 
 			verificationById(id).status shouldBe MemberVerificationStatus.APPROVED
+			// 회사명만 user_details·match_user에 확정.
 			val detail: UserDetailEntity = detailByUserId(userId)
 			detail.companyName shouldBe "미플"
-			detail.jobCategory shouldBe "IT·개발직"
-			detail.jobDetail shouldBe "미플 백엔드 개발자"
 			matchUserByUserId(userId).companyName shouldBe "미플"
+			// 직종·직장상세·나이·키는 gathering_profile에 저장(나이는 생일 스냅샷, 키는 user_details에서 가져옴).
+			val profile: GatheringProfileEntity = gatheringProfileByUserId(userId)
+			profile.jobCategory shouldBe "IT·개발직"
+			profile.jobDetail shouldBe "미플 백엔드 개발자"
+			profile.height shouldBe 175
+			profile.age shouldNotBe null
 		}
 
 		it("필수 입력(회사명 등)이 비면 400이다") {
@@ -232,6 +246,7 @@ class AdminMemberVerificationE2ETest : AbstractIntegrationSupport({
 	}
 
 	afterTest {
+		IntegrationUtil.deleteAll(QGatheringProfileEntity.gatheringProfileEntity)
 		IntegrationUtil.deleteAll(QMemberVerificationEntity.memberVerificationEntity)
 		IntegrationUtil.deleteAll(QMatchUserEntity.matchUserEntity)
 		IntegrationUtil.deleteAll(QUserDetailEntity.userDetailEntity)

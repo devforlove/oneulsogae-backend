@@ -31,10 +31,6 @@ data class UserDetail(
 	val gender: Gender? = null,
 	val phoneNumber: String? = null,
 	val job: String? = null,
-	/** 직종. 멤버 인증 승인 시 어드민이 확정한다. */
-	val jobCategory: String? = null,
-	/** 직장명/직종/직급 상세. 멤버 인증 승인 시 어드민이 확정한다. */
-	val jobDetail: String? = null,
 	/** 활동지역 id(regions FK). 서비스가 regionId로 받아 채운다. (표시용 지역명은 응답 시 regions join으로 내려준다) */
 	val regionId: Long? = null,
 	val introduction: String? = null,
