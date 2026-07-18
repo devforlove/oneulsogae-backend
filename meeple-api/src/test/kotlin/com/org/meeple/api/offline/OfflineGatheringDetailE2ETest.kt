@@ -12,6 +12,7 @@ import com.org.meeple.common.user.Gender
 import com.org.meeple.infra.fixture.GatheringEntityFixture
 import com.org.meeple.infra.fixture.GatheringMemberEntityFixture
 import com.org.meeple.infra.fixture.GatheringProductEntityFixture
+import com.org.meeple.infra.fixture.GatheringProfileEntityFixture
 import com.org.meeple.infra.fixture.GatheringScheduleEntityFixture
 import com.org.meeple.infra.fixture.IntegrationUtil
 import com.org.meeple.infra.fixture.UserDetailEntityFixture
@@ -19,8 +20,10 @@ import com.org.meeple.infra.gathering.command.entity.GatheringProductEntity
 import com.org.meeple.infra.gathering.command.entity.QGatheringEntity
 import com.org.meeple.infra.gathering.command.entity.QGatheringMemberEntity
 import com.org.meeple.infra.gathering.command.entity.QGatheringProductEntity
+import com.org.meeple.infra.gathering.command.entity.QGatheringProfileEntity
 import com.org.meeple.infra.gathering.command.entity.QGatheringScheduleEntity
 import com.org.meeple.infra.user.command.entity.QUserDetailEntity
+import java.time.LocalDate
 import org.hamcrest.Matchers.contains
 import org.hamcrest.Matchers.hasSize
 import org.hamcrest.Matchers.notNullValue
@@ -310,15 +313,22 @@ class OfflineGatheringDetailE2ETest : AbstractIntegrationSupport({
 				.forEach { product: GatheringProductEntity -> IntegrationUtil.persist(product) }
 
 			// 참가(JOINED, 남) — 프로필 노출 대상. 먼저 저장해 로스터 첫 항목이 되게 한다(member.id asc 정렬).
+			// 프로필 데이터는 gathering_profile에서 온다(멤버 인증 승인으로 생성).
 			IntegrationUtil.persist(
-				UserDetailEntityFixture.create(userId = 8101L, nickname = "참가유저", profileImageCode = "img_01", gender = Gender.MALE),
+				GatheringProfileEntityFixture.create(
+					userId = 8101L,
+					jobCategory = "IT·개발직",
+					jobDetail = "미플 백엔드 개발자",
+					birthday = LocalDate.of(1996, 1, 1),
+					height = 175,
+				),
 			)
 			IntegrationUtil.persist(
 				GatheringMemberEntityFixture.create(gatheringId = id, scheduleId = scheduleId, userId = 8101L, gender = Gender.MALE, status = GatheringMemberStatus.JOINED),
 			)
-			// 승인대기(PENDING, 여) — user_details가 있어도 프로필은 비워 내려간다.
+			// 승인대기(PENDING, 여) — gathering_profile이 있어도 프로필은 비워 내려간다.
 			IntegrationUtil.persist(
-				UserDetailEntityFixture.create(userId = 8102L, nickname = "대기유저", profileImageCode = "img_02", gender = Gender.FEMALE),
+				GatheringProfileEntityFixture.create(userId = 8102L, jobCategory = "공무원", jobDetail = "행정직 7급"),
 			)
 			IntegrationUtil.persist(
 				GatheringMemberEntityFixture.create(gatheringId = id, scheduleId = scheduleId, userId = 8102L, gender = Gender.FEMALE, status = GatheringMemberStatus.PENDING),
@@ -339,24 +349,27 @@ class OfflineGatheringDetailE2ETest : AbstractIntegrationSupport({
 				body("data.schedules[0].participants.female", hasSize<Any>(1))
 				body("data.schedules[1].participants.male", hasSize<Any>(1))
 				body("data.schedules[1].participants.female", hasSize<Any>(1))
-				// JOINED(남) — 프로필·나이 노출, 성별은 그룹(male)이 표현.
+				// JOINED(남) — gathering_profile 프로필(직종·직장상세·나이·키) 노출, 성별은 그룹(male)이 표현.
 				body("data.schedules[0].participants.male[0].status", "JOINED")
 				body("data.schedules[0].participants.male[0].userId", 8101)
-				body("data.schedules[0].participants.male[0].nickname", "참가유저")
-				body("data.schedules[0].participants.male[0].profileImageCode", "img_01")
+				body("data.schedules[0].participants.male[0].jobCategory", "IT·개발직")
+				body("data.schedules[0].participants.male[0].jobDetail", "미플 백엔드 개발자")
 				body("data.schedules[0].participants.male[0].age", notNullValue())
-				// PENDING(여) — 상태만, 유저 상세는 비운다.
+				body("data.schedules[0].participants.male[0].height", 175)
+				// PENDING(여) — 상태만, gathering_profile이 있어도 프로필은 비운다.
 				body("data.schedules[0].participants.female[0].status", "PENDING")
 				body("data.schedules[0].participants.female[0].userId", null)
-				body("data.schedules[0].participants.female[0].nickname", null)
-				body("data.schedules[0].participants.female[0].profileImageCode", null)
+				body("data.schedules[0].participants.female[0].jobCategory", null)
+				body("data.schedules[0].participants.female[0].jobDetail", null)
 				body("data.schedules[0].participants.female[0].age", null)
+				body("data.schedules[0].participants.female[0].height", null)
 			}
 		}
 	}
 
 	afterTest {
 		IntegrationUtil.deleteAll(QGatheringMemberEntity.gatheringMemberEntity)
+		IntegrationUtil.deleteAll(QGatheringProfileEntity.gatheringProfileEntity)
 		IntegrationUtil.deleteAll(QGatheringProductEntity.gatheringProductEntity)
 		IntegrationUtil.deleteAll(QGatheringScheduleEntity.gatheringScheduleEntity)
 		IntegrationUtil.deleteAll(QGatheringEntity.gatheringEntity)

@@ -109,30 +109,33 @@ data class GatheringDetailResponse(
 		val userId: Long?,
 		val status: GatheringMemberStatus,
 		val statusDescription: String,
-		val nickname: String?,
-		val profileImageCode: String?,
+		val jobCategory: String?,
+		val jobDetail: String?,
 		val age: Int?,
+		val height: Int?,
 	) {
 		companion object {
-			/** JOINED만 프로필을 채우고, PENDING은 유저 상세(식별·프로필)를 비운다. (나이는 [today] 기준으로 생일에서 파생) */
+			/** JOINED만 프로필(gathering_profile 유래 직종·직장상세·나이·키)을 채우고, PENDING은 상태만 남긴다. (나이는 [today] 기준으로 생일에서 파생) */
 			fun of(view: GatheringParticipantView, today: LocalDate): Participant =
 				when (view.status) {
 					GatheringMemberStatus.JOINED -> Participant(
 						userId = view.userId,
 						status = view.status,
 						statusDescription = view.status.description,
-						nickname = view.nickname,
-						profileImageCode = view.profileImageCode,
+						jobCategory = view.jobCategory,
+						jobDetail = view.jobDetail,
 						age = view.birthday?.ageAt(today),
+						height = view.height,
 					)
 
 					else -> Participant(
 						userId = null,
 						status = view.status,
 						statusDescription = view.status.description,
-						nickname = null,
-						profileImageCode = null,
+						jobCategory = null,
+						jobDetail = null,
 						age = null,
+						height = null,
 					)
 				}
 		}

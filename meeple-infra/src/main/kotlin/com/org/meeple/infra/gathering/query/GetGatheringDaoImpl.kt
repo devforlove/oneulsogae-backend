@@ -15,8 +15,8 @@ import com.org.meeple.infra.gathering.command.entity.GatheringScheduleEntity
 import com.org.meeple.infra.gathering.command.entity.QGatheringEntity
 import com.org.meeple.infra.gathering.command.entity.QGatheringMemberEntity
 import com.org.meeple.infra.gathering.command.entity.QGatheringProductEntity
+import com.org.meeple.infra.gathering.command.entity.QGatheringProfileEntity
 import com.org.meeple.infra.gathering.command.entity.QGatheringScheduleEntity
-import com.org.meeple.infra.user.command.entity.QUserDetailEntity
 import com.querydsl.core.types.Projections
 import com.querydsl.jpa.impl.JPAQueryFactory
 import org.springframework.stereotype.Component
@@ -112,9 +112,9 @@ class GetGatheringDaoImpl(
 		if (scheduleIds.isEmpty()) return emptyList()
 
 		val member: QGatheringMemberEntity = QGatheringMemberEntity.gatheringMemberEntity
-		val userDetail: QUserDetailEntity = QUserDetailEntity.userDetailEntity
+		val profile: QGatheringProfileEntity = QGatheringProfileEntity.gatheringProfileEntity
 		// WHERE의 schedule_id IN은 유니크 인덱스 ux_schedule_id_user_id의 선두 컬럼이라 일정별 seek를 탄다.
-		// 프로필 누락(user_details 없음)에도 참가자 행은 남겨야 하므로 left join으로 조인한다.
+		// 프로필(멤버 인증 승인으로 생성) 누락에도 참가자 행은 남겨야 하므로 gathering_profile을 left join으로 조인한다.
 		return queryFactory
 			.select(
 				Projections.constructor(
@@ -123,13 +123,14 @@ class GetGatheringDaoImpl(
 					member.userId,
 					member.status,
 					member.gender,
-					userDetail.nickname,
-					userDetail.profileImageCode,
-					userDetail.birthday,
+					profile.jobCategory,
+					profile.jobDetail,
+					profile.birthday,
+					profile.height,
 				),
 			)
 			.from(member)
-			.leftJoin(userDetail).on(userDetail.userId.eq(member.userId))
+			.leftJoin(profile).on(profile.userId.eq(member.userId))
 			.where(
 				member.scheduleId.`in`(scheduleIds),
 				member.status.`in`(GatheringMemberStatus.PENDING, GatheringMemberStatus.JOINED),
