@@ -1,6 +1,7 @@
 package com.org.meeple.infra.matchuser.command.adapter
 
 import com.org.meeple.admin.companyverification.command.application.port.out.UpdateMatchUserCompanyNamePort
+import com.org.meeple.admin.memberverification.command.application.port.out.UpdateMatchUserCompanyNamePort as UpdateMatchUserCompanyNameOnMemberVerificationPort
 import com.org.meeple.common.user.Gender
 import com.org.meeple.core.matchuser.command.application.port.out.DeleteMatchUserPort
 import com.org.meeple.core.solomatch.command.application.port.out.GetMatchCandidatePort
@@ -34,7 +35,7 @@ class MatchUserAdapter(
 	private val regionProximityRegistry: RegionProximityRegistry,
 	private val populatedRegionRegistry: PopulatedRegionRegistry,
 	private val queryFactory: JPAQueryFactory,
-) : GetMatchCandidatePort, SaveMatchUserPort, GetMatchUserPort, DeleteMatchUserPort, UpdateMatchUserCompanyNamePort {
+) : GetMatchCandidatePort, SaveMatchUserPort, GetMatchUserPort, DeleteMatchUserPort, UpdateMatchUserCompanyNamePort, UpdateMatchUserCompanyNameOnMemberVerificationPort {
 
 	/**
 	 * 요청자([requesterId])에게 "반대 성별([gender])·최근 로그인([loginAfter] 이후)·재소개 이력 없음" 후보 1명을 반환한다.

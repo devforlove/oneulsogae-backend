@@ -6,13 +6,17 @@ import com.org.meeple.common.integration.expect
 import com.org.meeple.common.integration.get
 import com.org.meeple.common.integration.post
 import com.org.meeple.infra.fixture.IntegrationUtil
+import com.org.meeple.infra.fixture.MatchUserEntityFixture
 import com.org.meeple.infra.fixture.MemberVerificationEntityFixture
 import com.org.meeple.infra.fixture.UserDetailEntityFixture
 import com.org.meeple.infra.fixture.UserEntityFixture
 import com.org.meeple.infra.gathering.command.entity.MemberVerificationEntity
 import com.org.meeple.infra.gathering.command.entity.QMemberVerificationEntity
+import com.org.meeple.infra.matchuser.command.entity.MatchUserEntity
+import com.org.meeple.infra.matchuser.command.entity.QMatchUserEntity
 import com.org.meeple.infra.user.command.entity.QUserDetailEntity
 import com.org.meeple.infra.user.command.entity.QUserEntity
+import com.org.meeple.infra.user.command.entity.UserDetailEntity
 import io.kotest.matchers.shouldBe
 import org.hamcrest.Matchers.hasSize
 
@@ -28,6 +32,16 @@ class AdminMemberVerificationE2ETest : AbstractIntegrationSupport({
 	fun verificationById(id: Long): MemberVerificationEntity {
 		val v: QMemberVerificationEntity = QMemberVerificationEntity.memberVerificationEntity
 		return IntegrationUtil.getQuery().selectFrom(v).where(v.id.eq(id)).fetchOne()!!
+	}
+
+	fun detailByUserId(userId: Long): UserDetailEntity {
+		val d: QUserDetailEntity = QUserDetailEntity.userDetailEntity
+		return IntegrationUtil.getQuery().selectFrom(d).where(d.userId.eq(userId)).fetchOne()!!
+	}
+
+	fun matchUserByUserId(userId: Long): MatchUserEntity {
+		val m: QMatchUserEntity = QMatchUserEntity.matchUserEntity
+		return IntegrationUtil.getQuery().selectFrom(m).where(m.userId.eq(userId)).fetchOne()!!
 	}
 
 	describe("GET /admin/v1/member-verifications") {
@@ -121,25 +135,49 @@ class AdminMemberVerificationE2ETest : AbstractIntegrationSupport({
 
 	describe("POST /admin/v1/member-verifications/{id}/approve") {
 
-		it("승인하면 status=APPROVED로 바꾼다 (200)") {
+		it("승인하면 status=APPROVED로 바꾸고 프로필(회사명·직종·직장상세)·match_user 회사명을 확정한다 (200)") {
 			val userId: Long = IntegrationUtil.persist(UserEntityFixture.create(providerId = "mv-approve")).id!!
+			IntegrationUtil.persist(UserDetailEntityFixture.create(userId = userId, nickname = "인증유저", companyName = null))
+			IntegrationUtil.persist(MatchUserEntityFixture.create(userId = userId, companyName = "이전회사"))
 			val id: Long = IntegrationUtil.persist(
 				MemberVerificationEntityFixture.create(userId = userId, status = MemberVerificationStatus.PENDING),
 			).id!!
 
 			post("/admin/v1/member-verifications/$id/approve") {
 				bearer(adminAccessTokenFor(9901L))
+				jsonBody("""{"companyName":"미플","jobCategory":"IT·개발직","jobDetail":"미플 백엔드 개발자"}""")
 			} expect {
 				status(200)
 				body("success", true)
 			}
 
 			verificationById(id).status shouldBe MemberVerificationStatus.APPROVED
+			val detail: UserDetailEntity = detailByUserId(userId)
+			detail.companyName shouldBe "미플"
+			detail.jobCategory shouldBe "IT·개발직"
+			detail.jobDetail shouldBe "미플 백엔드 개발자"
+			matchUserByUserId(userId).companyName shouldBe "미플"
+		}
+
+		it("필수 입력(회사명 등)이 비면 400이다") {
+			val userId: Long = IntegrationUtil.persist(UserEntityFixture.create(providerId = "mv-approve-blank")).id!!
+			val id: Long = IntegrationUtil.persist(
+				MemberVerificationEntityFixture.create(userId = userId, status = MemberVerificationStatus.PENDING),
+			).id!!
+
+			post("/admin/v1/member-verifications/$id/approve") {
+				bearer(adminAccessTokenFor(9901L))
+				jsonBody("""{"companyName":"","jobCategory":"IT·개발직","jobDetail":"미플 백엔드 개발자"}""")
+			} expect {
+				status(400)
+				body("success", false)
+			}
 		}
 
 		it("없는 id면 404다 (MEMBER-VERIFICATION-001)") {
 			post("/admin/v1/member-verifications/999999/approve") {
 				bearer(adminAccessTokenFor(9901L))
+				jsonBody("""{"companyName":"미플","jobCategory":"IT·개발직","jobDetail":"미플 백엔드 개발자"}""")
 			} expect {
 				status(404)
 				body("error.code", "MEMBER-VERIFICATION-001")
@@ -195,6 +233,7 @@ class AdminMemberVerificationE2ETest : AbstractIntegrationSupport({
 
 	afterTest {
 		IntegrationUtil.deleteAll(QMemberVerificationEntity.memberVerificationEntity)
+		IntegrationUtil.deleteAll(QMatchUserEntity.matchUserEntity)
 		IntegrationUtil.deleteAll(QUserDetailEntity.userDetailEntity)
 		IntegrationUtil.deleteAll(QUserEntity.userEntity)
 	}

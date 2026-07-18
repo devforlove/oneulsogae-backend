@@ -2,6 +2,7 @@ package com.org.meeple.api.admin
 
 import com.org.meeple.admin.memberverification.command.application.port.`in`.ReviewMemberVerificationUseCase
 import com.org.meeple.admin.memberverification.query.service.port.`in`.GetAdminMemberVerificationsUseCase
+import com.org.meeple.api.admin.request.AdminApproveMemberVerificationRequest
 import com.org.meeple.api.admin.request.AdminRejectMemberVerificationRequest
 import com.org.meeple.api.admin.response.AdminMemberVerificationDetailResponse
 import com.org.meeple.api.admin.response.AdminMemberVerificationPageResponse
@@ -62,13 +63,15 @@ class AdminMemberVerificationController(
 
 	@Operation(
 		summary = "멤버 인증 승인",
-		description = "멤버 인증을 승인(APPROVED)한다. 없으면 404(MEMBER-VERIFICATION-001).",
+		description = "멤버 인증을 승인(APPROVED)하고 어드민이 확정한 회사명·직종·직장 상세를 유저 프로필에 반영한다(회사명은 매칭 읽기 모델에도). " +
+			"없으면 404(MEMBER-VERIFICATION-001), 입력 누락 시 400.",
 	)
 	@PostMapping("/{id}/approve")
 	fun approve(
 		@PathVariable id: Long,
+		@RequestBody @Valid request: AdminApproveMemberVerificationRequest,
 	): ApiResponse<Unit> {
-		reviewMemberVerificationUseCase.approve(id)
+		reviewMemberVerificationUseCase.approve(id, request.companyName!!, request.jobCategory!!, request.jobDetail!!)
 		return ApiResponse.success()
 	}
 

@@ -1,6 +1,7 @@
 package com.org.meeple.infra.user.command.adapter
 
 import com.org.meeple.admin.companyverification.command.application.port.out.UpdateUserCompanyNamePort
+import com.org.meeple.admin.memberverification.command.application.port.out.UpdateUserVerifiedProfilePort
 import com.org.meeple.core.user.command.application.port.out.AnonymizeUserDetailPort
 import com.org.meeple.core.user.command.application.port.out.GetUserDetailPort
 import com.org.meeple.core.user.command.application.port.out.SaveUserDetailPort
@@ -20,7 +21,7 @@ import org.springframework.stereotype.Component
 @Component
 class UserDetailCoreAdapter(
 	private val userDetailJpaRepository: UserDetailJpaRepository,
-) : GetUserDetailPort, SaveUserDetailPort, AnonymizeUserDetailPort, UpdateUserCompanyNamePort {
+) : GetUserDetailPort, SaveUserDetailPort, AnonymizeUserDetailPort, UpdateUserCompanyNamePort, UpdateUserVerifiedProfilePort {
 
 	override fun findByUserId(userId: Long): UserDetail? =
 		userDetailJpaRepository.findByUserId(userId)?.toDomain()
@@ -47,6 +48,16 @@ class UserDetailCoreAdapter(
 		val entity: UserDetailEntity = userDetailJpaRepository.findByUserId(userId)
 			?: throw IllegalStateException("사용자 프로필을 찾을 수 없습니다: $userId")
 		entity.companyName = companyName
+		userDetailJpaRepository.save(entity)
+	}
+
+	// 멤버 인증 승인: 어드민이 확정한 회사명·직종·직장 상세를 프로필에 반영한다. (정상 유저에겐 user_details 행이 항상 존재)
+	override fun updateVerifiedProfile(userId: Long, companyName: String, jobCategory: String, jobDetail: String) {
+		val entity: UserDetailEntity = userDetailJpaRepository.findByUserId(userId)
+			?: throw IllegalStateException("사용자 프로필을 찾을 수 없습니다: $userId")
+		entity.companyName = companyName
+		entity.jobCategory = jobCategory
+		entity.jobDetail = jobDetail
 		userDetailJpaRepository.save(entity)
 	}
 }
