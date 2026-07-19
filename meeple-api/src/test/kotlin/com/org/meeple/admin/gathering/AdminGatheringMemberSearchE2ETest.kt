@@ -1,4 +1,5 @@
 package com.org.meeple.admin.gathering
+import io.kotest.core.annotation.Ignored
 
 import com.org.meeple.common.gathering.GatheringMemberStatus
 import com.org.meeple.common.integration.AbstractIntegrationSupport
@@ -29,6 +30,7 @@ import java.time.LocalDateTime
  * 전역 조회라 다른 스펙이 남긴 참가 신청에 오염될 수 있어, 각 테스트 시작 시 gathering_member를 비워
  * 결정적인 개수를 보장한다. afterTest로 생성물을 정리한다.
  */
+@Ignored  // [모임 미노출] 모임 엔드포인트 404로 비활성화. 재노출 시 제거.
 class AdminGatheringMemberSearchE2ETest : AbstractIntegrationSupport({
 
 	describe("GET /admin/v1/gatherings/members") {

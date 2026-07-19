@@ -50,7 +50,8 @@ class PaymentsController(
 			"상품은 productId로 지정한다(모임 상세 응답의 schedules[].productId). 본인인증 전 사용자는 주문자 필드가 null일 수 있다. " +
 			"상품 없음 404(GATHERING-006), 모임 없음/모집중 아님 404(GATHERING-001), 일정 미매칭 404(PAYMENTS-001).",
 	)
-	@GetMapping("/checkout")
+	// [모임 기능 미노출] 모임 결제 체크아웃 — 매핑 주석 처리로 라우트 미등록(호출 시 404). 코인 체크아웃(/coin/checkout)은 유지. 재노출 시 주석 해제.
+	// @GetMapping("/checkout")
 	fun getCheckout(
 		@LoginUser user: AuthUser,
 		@RequestParam productId: Long,
@@ -94,7 +95,8 @@ class PaymentsController(
 			"매진 409(GATHERING-004), 중복 접수 409(GATHERING-005), 성별 미확정 400(PAYMENTS-002), " +
 			"결제 승인 실패 402(PAYMENTS-004).",
 	)
-	@PostMapping("/complete")
+	// [모임 기능 미노출] 모임 결제완료 접수 — 매핑 주석 처리로 라우트 미등록(호출 시 404). 재노출 시 주석 해제.
+	// @PostMapping("/complete")
 	fun complete(
 		@LoginUser user: AuthUser,
 		@RequestBody @Valid request: CompletePaymentRequest,

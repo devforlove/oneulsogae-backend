@@ -1,4 +1,5 @@
 package com.org.meeple.admin.gathering
+import io.kotest.core.annotation.Ignored
 
 import com.org.meeple.common.gathering.GatheringMemberStatus
 import com.org.meeple.common.integration.AbstractIntegrationSupport
@@ -32,6 +33,7 @@ import org.hamcrest.Matchers.hasSize
  * 일정별 참가 신청 목록(신청 id·유저·닉네임·성별·상태·결제금액·신청 시각)을 신청 순(id 오름차순)으로 반환한다.
  * 결제금액은 (schedule, user)의 최신 결제 기록에서 조인한다(재접수 시 최신 금액). ROLE_ADMIN 전용.
  */
+@Ignored  // [모임 미노출] 모임 엔드포인트 404로 비활성화. 재노출 시 제거.
 class AdminGatheringMemberListE2ETest : AbstractIntegrationSupport({
 
 	describe("GET /admin/v1/gatherings/schedules/{scheduleId}/members") {

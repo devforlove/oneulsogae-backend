@@ -28,8 +28,7 @@ class CreateTargetReportE2ETest : AbstractIntegrationSupport({
 	fun persistUser(providerId: String): Long =
 		IntegrationUtil.persist(UserEntityFixture.create(providerId = providerId)).id!!
 
-	// 초대중(INVITING) 팀을 만들고 teamId를 돌려준다.
-	// [미팅 기능 미노출] 팀 엔드포인트(POST /teams/v1/invitation)가 비활성화되어 API 대신 엔티티를 직접 적재한다.
+	// 초대중(INVITING) 팀을 만들고 teamId를 돌려준다. (신고 대상 준비 — 팀 엔티티를 직접 적재)
 	fun invitingTeam(): Long =
 		IntegrationUtil.persist(
 			TeamEntity(name = "우리팀", gender = Gender.MALE, regionId = 1L, introduction = "함께 즐겁게 활동할 팀이에요", status = TeamStatus.INVITING),

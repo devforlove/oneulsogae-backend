@@ -29,16 +29,12 @@ import com.org.meeple.infra.teammatch.command.entity.TeamMatchEntity
 import io.kotest.matchers.shouldBe
 import java.time.LocalDate
 import java.time.LocalDateTime
-import io.kotest.core.annotation.Ignored
 
 /**
  * `POST /team-matches/v1/{teamMatchId}/interest` E2E. (팀 매칭 신청/수락 통합 엔드포인트)
  * 결성(ACTIVE)된 두 팀을 초대→수락으로 만들고, 두 팀을 묶은 팀 매칭을 준비한 뒤 관심을 보낸다.
  * 실서버(RANDOM_PORT) + Testcontainers(MySQL/Redis, 분산 락 포함)를 기동하고 HTTP를 호출한다.
  */
-// [미팅 기능 미노출] 팀 매칭 컨트롤러(@RestController)가 주석 처리되어 엔드포인트가 404를 반환하므로 이 스펙을 비활성화한다.
-// 기능 노출 시 컨트롤러 복구와 함께 @Ignored를 제거한다.
-@Ignored
 class SendTeamInterestE2ETest : AbstractIntegrationSupport({
 
 	fun persistMatchUser(userId: Long, gender: Gender) {

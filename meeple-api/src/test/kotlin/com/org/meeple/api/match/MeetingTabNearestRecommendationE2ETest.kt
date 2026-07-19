@@ -38,7 +38,6 @@ import org.hamcrest.Matchers.nullValue
 import org.springframework.beans.factory.annotation.Autowired
 import java.time.LocalDate
 import java.time.LocalDateTime
-import io.kotest.core.annotation.Ignored
 
 /**
  * 회사 이메일 인증으로 온보딩이 완료될 때 가까운 추천 팀을 적재하는 E2E 테스트.
@@ -46,9 +45,6 @@ import io.kotest.core.annotation.Ignored
  * 인증이 완료되면 match_user가 적재·커밋된 뒤(AFTER_COMMIT), 유저와 가장 가까운 반대 성별 ACTIVE 팀을 추천(recommended_teams)으로 적재한다.
  * 지역 매칭 스냅샷(근접·유저 분포·팀 분포)은 기동 시 1회 적재되므로, 테스트에서 지역·팀을 넣은 뒤 [RegionProximityPort.refresh]로 함께 갱신한다.
  */
-// [미팅 기능 미노출] 팀 매칭 컨트롤러(@RestController)가 주석 처리되어 엔드포인트가 404를 반환하므로 이 스펙을 비활성화한다.
-// 기능 노출 시 컨트롤러 복구와 함께 @Ignored를 제거한다.
-@Ignored
 class MeetingTabNearestRecommendationE2ETest : AbstractIntegrationSupport() {
 
 	@Autowired
@@ -91,10 +87,31 @@ class MeetingTabNearestRecommendationE2ETest : AbstractIntegrationSupport() {
 			IntegrationUtil.persist(UserDetailEntityFixture.create(userId = userId, gender = gender, regionId = regionId))
 		}
 
-		fun verifyCompanyEmail(userId: Long) {
-			post("/users/v1/onboarding/company-email/verifications/confirm") {
+		// 온보딩 완료를 요청해 정식 가입(ACTIVE) 처리한다. 가입 완료 시점에 match_user 적재·첫 소개·가까운 팀 추천이 처리된다.
+		fun completeOnboarding(userId: Long, regionId: Long) {
+			post("/users/v1/onboarding/complete") {
 				bearer(accessTokenFor(userId))
-				jsonBody("""{"code": "123456"}""")
+				jsonBody(
+					"""
+					{
+					  "nickname": "철수",
+					  "birthday": "1996-01-01",
+					  "height": 175,
+					  "gender": "MALE",
+					  "phoneNumber": "010-1234-5678",
+					  "job": "개발자",
+					  "regionId": $regionId,
+					  "introduction": "안녕하세요 잘 부탁드립니다.",
+					  "traits": ["성실함"],
+					  "interests": ["영화"],
+					  "maritalStatus": "SINGLE",
+					  "smokingStatus": "NON_SMOKER",
+					  "religion": "NONE",
+					  "drinkingStatus": "SOMETIMES",
+					  "bodyType": "MALE_NORMAL"
+					}
+					""".trimIndent(),
+				)
 			} expect {
 				status(200)
 				body("success", true)
@@ -137,9 +154,9 @@ class MeetingTabNearestRecommendationE2ETest : AbstractIntegrationSupport() {
 					// 후보 팀 적재 후 지역 매칭 스냅샷(근접·팀 분포)을 갱신한다. (팀 분포 스냅샷이 강남에 FEMALE 팀이 있음을 알아야 그 지역을 건너뛰지 않는다)
 					regionProximityPort.refresh()
 
-					verifyCompanyEmail(me)
+					completeOnboarding(me, nearRegionId)
 
-					// 인증 완료 직후 가장 가까운 팀이 recommended_teams에 적재됐는지 확인한다.
+					// 가입 완료 직후 가장 가까운 팀이 recommended_teams에 적재됐는지 확인한다.
 					recommendedTeamIdOf(me) shouldBe nearTeamId
 
 					// 적재된 추천이 미팅탭 조회에 카드로 내려온다. (GET 자체는 부수효과 없음)
@@ -166,7 +183,7 @@ class MeetingTabNearestRecommendationE2ETest : AbstractIntegrationSupport() {
 
 					regionProximityPort.refresh()
 
-					verifyCompanyEmail(me)
+					completeOnboarding(me, regionId)
 
 					recommendedTeamIdOf(me).shouldBeNull()
 

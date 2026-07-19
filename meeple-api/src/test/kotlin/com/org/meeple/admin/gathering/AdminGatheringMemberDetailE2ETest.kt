@@ -1,4 +1,5 @@
 package com.org.meeple.admin.gathering
+import io.kotest.core.annotation.Ignored
 
 import com.org.meeple.common.gathering.GatheringMemberStatus
 import com.org.meeple.common.integration.AbstractIntegrationSupport
@@ -23,6 +24,7 @@ import org.hamcrest.Matchers.notNullValue
  * 신청 유저의 모임 프로필(직종·직장상세·나이·키·프로필이미지)을 gathering_profile에서 조회한다.
  * 신청이 없으면 404(GATHER-019), 프로필이 없으면(멤버 인증 미승인) 필드가 null. ROLE_ADMIN 전용.
  */
+@Ignored  // [모임 미노출] 모임 엔드포인트 404로 비활성화. 재노출 시 제거.
 class AdminGatheringMemberDetailE2ETest : AbstractIntegrationSupport({
 
 	describe("GET /admin/v1/gatherings/schedules/{scheduleId}/members/{memberId}") {

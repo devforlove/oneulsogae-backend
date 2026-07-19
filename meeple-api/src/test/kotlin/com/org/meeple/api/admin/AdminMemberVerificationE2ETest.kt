@@ -1,4 +1,5 @@
 package com.org.meeple.api.admin
+import io.kotest.core.annotation.Ignored
 
 import com.org.meeple.common.gathering.MemberVerificationStatus
 import com.org.meeple.common.integration.AbstractIntegrationSupport
@@ -30,6 +31,7 @@ import java.time.LocalDate
  * - POST /admin/v1/member-verifications/{id}/approve: status를 APPROVED로. 없으면 404.
  * (presigned URL은 TestFileStorageConfig의 페이크로 대체 — https://presigned.test/<imageKey>)
  */
+@Ignored  // [모임 미노출] 모임 엔드포인트 404로 비활성화. 재노출 시 제거.
 class AdminMemberVerificationE2ETest : AbstractIntegrationSupport({
 
 	fun verificationById(id: Long): MemberVerificationEntity {

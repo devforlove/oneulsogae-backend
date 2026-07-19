@@ -40,8 +40,7 @@ import java.time.LocalDateTime
  *
  * 가입이 완료되면 같은 트랜잭션에서 매칭 읽기 모델(match_user)이 동기 적재된 뒤,
  * 가까운 반대 성별 후보로 1:1 소개(solo_matches, PROPOSED·ONBOARDING)를 적재한다.
- * [미팅 기능 미노출] 팀 추천(recommended_teams) 적재는 온보딩 호출이 주석 처리되어 현재 동작하지 않으며,
- * 여기서는 "적재되지 않음"을 검증한다. (기능 노출 시 원래 검증으로 복구)
+ * 가입 완료 시점에 가까운 반대 성별 ACTIVE 팀이 있으면 팀 추천(recommended_teams)도 함께 적재된다.
  * 지역 매칭 스냅샷(근접·유저/팀 분포)은 기동 시 1회 적재되므로, 테스트에서 지역·후보·팀을 넣은 뒤 [RegionProximityPort.refresh]로 함께 갱신한다.
  */
 class OnboardingMatchRecommendationE2ETest : AbstractIntegrationSupport() {
@@ -168,7 +167,7 @@ class OnboardingMatchRecommendationE2ETest : AbstractIntegrationSupport() {
 			}
 
 			context("가까운 반대 성별 ACTIVE 팀(=여성 팀원)이 있으면") {
-				it("1:1 소개만 적재된다 (팀 추천은 미팅 기능 미노출로 비활성화)") {
+				it("1:1 소개와 가까운 팀 추천이 함께 적재된다") {
 					val regionId: Long = IntegrationUtil.persist(
 						RegionEntityFixture.create(sido = "서울특별시", sigungu = "강남구", latitude = 37.5172, longitude = 127.0473),
 					).id!!
@@ -184,9 +183,9 @@ class OnboardingMatchRecommendationE2ETest : AbstractIntegrationSupport() {
 
 					completeOnboarding(me, regionId)
 
-					// [미팅 기능 미노출] 온보딩 팀 추천 호출이 주석 처리되어 추천이 적재되지 않아야 한다.
-					recommendedTeamIdOf(me).shouldBeNull()
-					// 1:1 소개는 그대로 적재됐다. (상대는 팀의 여성 팀원 중 하나 — 로그인 시각 동점이라 둘 중 하나)
+					// 가입 완료 직후 가까운 반대 성별 ACTIVE 팀이 추천으로 적재된다.
+					recommendedTeamIdOf(me) shouldBe teamId
+					// 1:1 소개도 함께 적재됐다. (상대는 팀의 여성 팀원 중 하나 — 로그인 시각 동점이라 둘 중 하나)
 					proposedOnboardingPartnerOf(me) shouldBeIn listOf(8201L, 8202L)
 				}
 			}

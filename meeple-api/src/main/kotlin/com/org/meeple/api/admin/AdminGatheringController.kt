@@ -36,7 +36,8 @@ import org.springframework.web.multipart.MultipartFile
  * - POST /{id}/status: 상태 변경(활성화 RECRUITING·취소 CANCELED). 없으면 404(GATHER-008), 전이 불가면 409(GATHER-013).
  */
 @Tag(name = "어드민 모임", description = "어드민 백오피스 모임 조회·등록. ROLE_ADMIN 토큰만 접근할 수 있다.")
-@RestController
+// [모임 기능 미노출] 오프라인·모임(gathering) 기능은 출시 시점에 노출하지 않는다. @RestController 주석 처리로 빈 미등록(호출 시 404). 재노출 시 주석 해제.
+// @RestController
 @RequestMapping("/admin/v1/gatherings")
 class AdminGatheringController(
 	private val createAdminGatheringUseCase: CreateAdminGatheringUseCase,

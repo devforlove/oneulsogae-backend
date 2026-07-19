@@ -23,7 +23,8 @@ import org.springframework.web.multipart.MultipartFile
  *   파일은 S3에 비공개로 저장되고 DB에는 오브젝트 키만 남는다. 자동 검증이 불가능해 어드민 심사로 승인/반려된다.
  * - GET /member-verifications/me: 내 최신 제출 1건을 조회한다. (없으면 data null)
  */
-@RestController
+// [모임 기능 미노출] 오프라인·모임(gathering) 기능은 출시 시점에 노출하지 않는다. @RestController 주석 처리로 빈 미등록(호출 시 404). 재노출 시 주석 해제.
+// @RestController
 @RequestMapping("/gatherings/v1")
 @Tag(name = "멤버 인증", description = "멤버 인증(본인인증) 제출·조회 엔드포인트 (인증 필요)")
 class MemberVerificationController(

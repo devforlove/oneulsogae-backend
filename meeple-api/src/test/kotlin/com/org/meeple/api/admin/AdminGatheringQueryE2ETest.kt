@@ -1,4 +1,5 @@
 package com.org.meeple.api.admin
+import io.kotest.core.annotation.Ignored
 
 import com.org.meeple.common.gathering.GatheringScheduleStatus
 import com.org.meeple.common.gathering.GatheringStatus
@@ -24,6 +25,7 @@ import java.time.LocalDateTime
  * - GET /admin/v1/gatherings: 최신순(created_at desc, id desc) 페이징. 목록 행은 소개·참가비 상세 제외.
  * - GET /admin/v1/gatherings/{id}: 상세(소개·참가비 상세 포함), 없는 id 404(GATHER-008).
  */
+@Ignored  // [모임 미노출] 모임 엔드포인트 404로 비활성화. 재노출 시 제거.
 class AdminGatheringQueryE2ETest : AbstractIntegrationSupport({
 
 	describe("GET /admin/v1/gatherings") {

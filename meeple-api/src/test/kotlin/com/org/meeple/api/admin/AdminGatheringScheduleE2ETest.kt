@@ -1,4 +1,5 @@
 package com.org.meeple.api.admin
+import io.kotest.core.annotation.Ignored
 
 import com.org.meeple.common.gathering.GatheringProductType
 import com.org.meeple.common.gathering.GatheringScheduleStatus
@@ -24,6 +25,7 @@ import org.hamcrest.Matchers.notNullValue
  * - POST /admin/v1/gatherings/{gatheringId}/schedules : 일정 생성(예정)
  * - POST /admin/v1/gatherings/{gatheringId}/schedules/{scheduleId}/status : 상태 전이
  */
+@Ignored  // [모임 미노출] 모임 엔드포인트 404로 비활성화. 재노출 시 제거.
 class AdminGatheringScheduleE2ETest : AbstractIntegrationSupport({
 
 	fun persistGathering(): Long =

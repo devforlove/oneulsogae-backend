@@ -1,4 +1,5 @@
 package com.org.meeple.api.admin
+import io.kotest.core.annotation.Ignored
 
 import com.org.meeple.common.gathering.GatheringStatus
 import com.org.meeple.common.gathering.GatheringType
@@ -17,6 +18,7 @@ import org.hamcrest.Matchers.notNullValue
  * 운영 생성(user_id null)으로 저장하고, 대표 이미지는 S3 오브젝트 키로 저장되는지 검증한다.
  * (실제 S3 업로드는 [com.org.meeple.common.config.TestFileStorageConfig]의 페이크로 대체 — 넘긴 key를 그대로 저장)
  */
+@Ignored  // [모임 미노출] 모임 엔드포인트 404로 비활성화. 재노출 시 제거.
 class AdminGatheringCreateE2ETest : AbstractIntegrationSupport({
 
 	val validRequest: String =

@@ -21,11 +21,13 @@ class OpenApiDocsE2ETest : AbstractIntegrationSupport({
 				get("/v3/api-docs") expect {
 					status(200)
 					body("openapi", startsWith("3"))
-					// [미팅 기능 미노출] 팀 엔드포인트가 비활성화되어 노출 중인 경로로 검증한다. (노출 시 /teams/v1/invitation으로 복구)
 					body("paths", hasKey("/users/v1/ideal-type"))
-					// [미팅 기능 미노출] 팀 매칭 컨트롤러가 실제로 등록되지 않았는지 함께 검증한다. (노출 시 이 두 줄 제거)
-					body("paths", not(hasKey("/teams/v1/invitation")))
-					body("paths", not(hasKey("/team-matches/v1/meeting-tab")))
+					// 미팅(2:2 팀 매칭) 엔드포인트가 활성화되어 문서에 포함된다.
+					body("paths", hasKey("/teams/v1/invitation"))
+					body("paths", hasKey("/team-matches/v1/meeting-tab"))
+					// 모임(오프라인/gathering) 엔드포인트는 비활성화되어 문서에 포함되지 않는다.
+					body("paths", not(hasKey("/offline/v1/gatherings")))
+					body("paths", not(hasKey("/gatherings/v1/member-verifications")))
 				}
 			}
 		}

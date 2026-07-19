@@ -24,7 +24,8 @@ import org.springframework.web.bind.annotation.RestController
  *   비인증 공개지만 토큰이 있으면 조회자 성별(viewerGender)을 함께 내려준다.
  */
 @Tag(name = "오프라인 모임", description = "비인증 공개 모임 조회 엔드포인트. 모집중 모임을 타입별로 그룹핑해 내려준다.")
-@RestController
+// [모임 기능 미노출] 오프라인·모임(gathering) 기능은 출시 시점에 노출하지 않는다. @RestController 주석 처리로 빈 미등록(호출 시 404). 재노출 시 주석 해제.
+// @RestController
 @RequestMapping("/offline/v1/gatherings")
 class OfflineGatheringController(
 	private val getGatheringsUseCase: GetGatheringsUseCase,

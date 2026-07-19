@@ -1,4 +1,5 @@
 package com.org.meeple.api.offline
+import io.kotest.core.annotation.Ignored
 
 import com.org.meeple.common.gathering.GatheringStatus
 import com.org.meeple.common.gathering.GatheringType
@@ -17,6 +18,7 @@ import org.hamcrest.Matchers.hasSize
  *   타입 내 최신 등록순. 항목은 id·imageUrl(presigned)·region·title을 포함한다.
  * (presigned URL은 TestFileStorageConfig의 페이크로 대체 — https://presigned.test/<imageKey>)
  */
+@Ignored  // [모임 미노출] 모임 엔드포인트 404로 비활성화. 재노출 시 제거.
 class OfflineGatheringQueryE2ETest : AbstractIntegrationSupport({
 
 	describe("GET /offline/v1/gatherings") {

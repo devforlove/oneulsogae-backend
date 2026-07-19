@@ -19,7 +19,6 @@ import com.org.meeple.infra.teammatch.command.entity.TeamMemberEntity
 import com.org.meeple.infra.user.command.entity.QUserDetailEntity
 import io.kotest.matchers.collections.shouldContainExactlyInAnyOrder
 import io.kotest.matchers.shouldBe
-import io.kotest.core.annotation.Ignored
 
 /**
  * `POST /teams/v1/invitation` E2E 테스트. (팀 초대/결성 엔드포인트)
@@ -28,9 +27,6 @@ import io.kotest.core.annotation.Ignored
  * 구성원 성별은 match 도메인 소유 읽기 모델(match_user)에서 읽으므로, 두 사용자의 match_user 행을 준비한다. (행이 없으면 매칭 불가)
  * 실제 서버(RANDOM_PORT) + Testcontainers(MySQL/Redis)를 기동하고 HTTP를 호출한다.
  */
-// [미팅 기능 미노출] 팀 매칭 컨트롤러(@RestController)가 주석 처리되어 엔드포인트가 404를 반환하므로 이 스펙을 비활성화한다.
-// 기능 노출 시 컨트롤러 복구와 함께 @Ignored를 제거한다.
-@Ignored
 class InviteTeamE2ETest : AbstractIntegrationSupport({
 
 	// 매칭 읽기 모델(match_user) 행을 저장한다. (성별 조회 대상)

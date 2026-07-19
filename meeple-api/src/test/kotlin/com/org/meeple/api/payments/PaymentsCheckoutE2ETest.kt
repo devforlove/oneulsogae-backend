@@ -1,4 +1,5 @@
 package com.org.meeple.api.payments
+import io.kotest.core.annotation.Ignored
 
 import com.org.meeple.common.gathering.GatheringProductType
 import com.org.meeple.common.gathering.GatheringStatus
@@ -39,6 +40,7 @@ import java.time.LocalDateTime
  * - 없는 productId는 404(GATHERING-006), 모임 없음/모집중 아님은 404(GATHERING-001), 일정 미매칭은 404(PAYMENTS-001).
  * (presigned URL은 TestFileStorageConfig의 페이크 — https://presigned.test/<imageKey>)
  */
+@Ignored  // [모임 미노출] 모임 엔드포인트 404로 비활성화. 재노출 시 제거.
 class PaymentsCheckoutE2ETest : AbstractIntegrationSupport({
 
 	// 모집중 모임 + 일정 + 상품을 저장하고 (gatheringId, scheduleId, 남성 NORMAL productId)를 돌려준다.

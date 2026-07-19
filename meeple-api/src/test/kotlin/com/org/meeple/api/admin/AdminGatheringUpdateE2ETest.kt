@@ -1,4 +1,5 @@
 package com.org.meeple.api.admin
+import io.kotest.core.annotation.Ignored
 
 import com.org.meeple.common.gathering.GatheringStatus
 import com.org.meeple.common.gathering.GatheringType
@@ -18,6 +19,7 @@ import org.hamcrest.Matchers.equalTo
  * 전체 데이터를 교체하고, 이미지 파트가 없으면 기존 이미지를 유지하며, status는 보존한다.
  * (실제 S3 업로드는 [com.org.meeple.common.config.TestFileStorageConfig]의 페이크로 대체)
  */
+@Ignored  // [모임 미노출] 모임 엔드포인트 404로 비활성화. 재노출 시 제거.
 class AdminGatheringUpdateE2ETest : AbstractIntegrationSupport({
 
 	val updateRequest: String =

@@ -17,16 +17,12 @@ import com.org.meeple.infra.user.command.entity.QUserDetailEntity
 import org.hamcrest.Matchers.hasSize
 import org.hamcrest.Matchers.notNullValue
 import java.time.LocalDate
-import io.kotest.core.annotation.Ignored
 
 /**
  * `GET /teams/v1/received-invitations` E2E 테스트. (내가 받은 초대 리스트)
  * 요청자가 INVITED 구성원인 INVITING 팀들을 초대자 프로필과 함께 최신순으로 반환한다.
  * 내가 owner(ACTIVE)인 팀·수락(ACTIVE)된 팀·미소속 팀은 제외된다.
  */
-// [미팅 기능 미노출] 팀 매칭 컨트롤러(@RestController)가 주석 처리되어 엔드포인트가 404를 반환하므로 이 스펙을 비활성화한다.
-// 기능 노출 시 컨트롤러 복구와 함께 @Ignored를 제거한다.
-@Ignored
 class GetReceivedInvitationsE2ETest : AbstractIntegrationSupport({
 
 	// 표시용 프로필을 match_user(닉네임·프로필이미지·나이) + user_details(직업·회사명·키·지역·자기소개)에 저장한다. (성별 MALE 고정)

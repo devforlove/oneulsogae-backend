@@ -17,16 +17,12 @@ import com.org.meeple.infra.teammatch.command.entity.QTeamEntity
 import com.org.meeple.infra.teammatch.command.entity.QTeamMemberEntity
 import com.org.meeple.infra.user.command.entity.QUserDetailEntity
 import io.kotest.matchers.shouldBe
-import io.kotest.core.annotation.Ignored
 
 /**
  * `DELETE /teams/v1/{teamId}` E2E 테스트. (결성된 팀에서 구성원이 떠나기 — 두 단계)
  * - 1단계(첫 구성원 탈퇴): 남은 팀원이 있어 팀은 DISBANDED로 남고(소프트 삭제 안 함), 남은 팀원에게 알림이 간다.
  * - 2단계(마지막 구성원 탈퇴): 팀이 DEACTIVATED로 소프트 삭제되어 활성 조회에서 사라진다.
  */
-// [미팅 기능 미노출] 팀 매칭 컨트롤러(@RestController)가 주석 처리되어 엔드포인트가 404를 반환하므로 이 스펙을 비활성화한다.
-// 기능 노출 시 컨트롤러 복구와 함께 @Ignored를 제거한다.
-@Ignored
 class DisbandTeamE2ETest : AbstractIntegrationSupport({
 
 	fun persistMatchUser(userId: Long, gender: Gender) {

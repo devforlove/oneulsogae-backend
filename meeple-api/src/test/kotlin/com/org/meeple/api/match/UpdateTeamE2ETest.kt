@@ -10,15 +10,11 @@ import com.org.meeple.infra.fixture.MatchUserEntityFixture
 import com.org.meeple.infra.matchuser.command.entity.QMatchUserEntity
 import com.org.meeple.infra.teammatch.command.entity.QTeamEntity
 import com.org.meeple.infra.teammatch.command.entity.QTeamMemberEntity
-import io.kotest.core.annotation.Ignored
 
 /**
  * `PUT /teams/v1/{teamId}` E2E 테스트. (팀 이름·소개·활동지역 수정)
  * 진행 중(INVITING)이거나 결성(ACTIVE)된 팀의 구성원이 표시 정보를 전체 교체한다.
  */
-// [미팅 기능 미노출] 팀 매칭 컨트롤러(@RestController)가 주석 처리되어 엔드포인트가 404를 반환하므로 이 스펙을 비활성화한다.
-// 기능 노출 시 컨트롤러 복구와 함께 @Ignored를 제거한다.
-@Ignored
 class UpdateTeamE2ETest : AbstractIntegrationSupport({
 
 	fun persistMatchUser(userId: Long, gender: Gender) {

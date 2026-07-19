@@ -24,7 +24,8 @@ import org.springframework.web.bind.annotation.RestController
  * 유저가 제출한 멤버 인증(얼굴·신분증·서류 + 직업 정보)을 조회·승인한다.
  */
 @Tag(name = "어드민 멤버 인증", description = "어드민 백오피스 멤버 인증(본인인증) 심사. ROLE_ADMIN 토큰만 접근할 수 있다.")
-@RestController
+// [모임 기능 미노출] 오프라인·모임(gathering) 기능은 출시 시점에 노출하지 않는다. @RestController 주석 처리로 빈 미등록(호출 시 404). 재노출 시 주석 해제.
+// @RestController
 @RequestMapping("/admin/v1/member-verifications")
 class AdminMemberVerificationController(
 	private val getAdminMemberVerificationsUseCase: GetAdminMemberVerificationsUseCase,

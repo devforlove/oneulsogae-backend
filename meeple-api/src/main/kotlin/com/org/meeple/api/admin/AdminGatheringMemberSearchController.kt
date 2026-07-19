@@ -18,7 +18,8 @@ import org.springframework.web.bind.annotation.RestController
  * 승인/거절·상세 조회는 일정 단위 엔드포인트(AdminGatheringMemberController)를 그대로 사용한다.
  */
 @Tag(name = "어드민 모임 참가 신청(전역)", description = "어드민 백오피스 전역 참가 신청 목록 조회. ROLE_ADMIN 토큰만 접근할 수 있다.")
-@RestController
+// [모임 기능 미노출] 오프라인·모임(gathering) 기능은 출시 시점에 노출하지 않는다. @RestController 주석 처리로 빈 미등록(호출 시 404). 재노출 시 주석 해제.
+// @RestController
 @RequestMapping("/admin/v1/gatherings/members")
 class AdminGatheringMemberSearchController(
     private val getAdminGatheringMembersUseCase: GetAdminGatheringMembersUseCase,

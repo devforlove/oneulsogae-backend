@@ -26,7 +26,8 @@ import org.springframework.web.bind.annotation.RestController
  * - POST /{memberId}/reject: 거절 + 일정 여분(성별·얼리버드) 복원. 에러는 승인과 동일.
  */
 @Tag(name = "어드민 모임 참가 신청", description = "어드민 백오피스 참가 신청 목록·상세 조회·승인·거절. ROLE_ADMIN 토큰만 접근할 수 있다.")
-@RestController
+// [모임 기능 미노출] 오프라인·모임(gathering) 기능은 출시 시점에 노출하지 않는다. @RestController 주석 처리로 빈 미등록(호출 시 404). 재노출 시 주석 해제.
+// @RestController
 @RequestMapping("/admin/v1/gatherings/schedules/{scheduleId}/members")
 class AdminGatheringMemberController(
 	private val approveGatheringMemberUseCase: ApproveGatheringMemberUseCase,

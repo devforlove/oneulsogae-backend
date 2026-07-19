@@ -41,12 +41,7 @@ import org.springframework.web.bind.annotation.RestController
  * - DELETE /{teamId}: 결성(ACTIVE)/해체중(DISBANDED) 팀에서 구성원이 떠난다. (남은 팀원이 있으면 DISBANDED, 마지막이면 DEACTIVATED·매칭 종료)
  */
 @Tag(name = "팀 매칭", description = "2:2(팀) 매칭의 팀 엔드포인트. 팀 초대·수락·철회·해체 및 초대 가능 유저 검색을 제공한다.")
-// [미팅 기능 미노출] 미팅(2:2 팀 매칭) 기능은 구현은 완료됐지만 출시 시점에는 노출하지 않는다.
-// @RestController를 주석 처리해 빈 등록을 막아 /teams/v1 전체 엔드포인트가 열리지 않게 한다. (호출 시 404)
-// 기능을 노출할 때 아래 @RestController 주석을 해제하고, 함께 비활성화한 지점(TeamMatchController·
-// TeamMatchBatchScheduler·RecommendedTeamBatchScheduler·VerifyCompanyEmailService의 팀 추천 호출)과
-// @Ignored 처리한 팀 E2E 테스트를 같이 복구한다.
-// @RestController
+@RestController
 @RequestMapping("/teams/v1")
 class TeamController(
 	private val inviteTeamUseCase: InviteTeamUseCase,

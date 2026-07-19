@@ -1,4 +1,5 @@
 package com.org.meeple.api.payments
+import io.kotest.core.annotation.Ignored
 
 import com.org.meeple.common.gathering.GatheringMemberStatus
 import com.org.meeple.common.gathering.GatheringProductType
@@ -38,6 +39,7 @@ import io.kotest.matchers.shouldBe
  *   중복 접수 409(GATHERING-005), 상품 없음 404(GATHERING-006), 타성별 상품 400(PAYMENTS-003), 성별 미확정 400(PAYMENTS-002).
  * - 거절/취소 행은 재접수 시 PENDING으로 되살린다.
  */
+@Ignored  // [모임 미노출] 모임 엔드포인트 404로 비활성화. 재노출 시 제거.
 class PaymentsCompleteE2ETest : AbstractIntegrationSupport({
 
 	// 성별이 확정된 유저를 저장하고 userId를 돌려준다.

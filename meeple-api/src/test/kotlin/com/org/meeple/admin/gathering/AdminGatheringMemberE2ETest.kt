@@ -1,4 +1,5 @@
 package com.org.meeple.admin.gathering
+import io.kotest.core.annotation.Ignored
 
 import com.org.meeple.common.gathering.GatheringMemberStatus
 import com.org.meeple.common.integration.AbstractIntegrationSupport
@@ -27,6 +28,7 @@ import io.kotest.matchers.shouldBe
  * 거절: PENDING → REJECTED + 성별 여분(얼리버드 적용분 포함) 복원.
  * PENDING 아닌 신청 409(GATHER-020), 없는 신청/일정 불일치 404(GATHER-019). ROLE_ADMIN 전용.
  */
+@Ignored  // [모임 미노출] 모임 엔드포인트 404로 비활성화. 재노출 시 제거.
 class AdminGatheringMemberE2ETest : AbstractIntegrationSupport({
 
 	// 일정(여분 3/4 — 접수 1건 차감 상태) + PENDING 참가 신청을 저장하고 (scheduleId, memberId)를 돌려준다.

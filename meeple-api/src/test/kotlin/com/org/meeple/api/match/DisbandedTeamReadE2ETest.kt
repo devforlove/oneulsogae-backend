@@ -34,7 +34,6 @@ import org.hamcrest.Matchers.hasSize
 import org.hamcrest.Matchers.nullValue
 import java.time.LocalDate
 import java.time.LocalDateTime
-import io.kotest.core.annotation.Ignored
 
 /**
  * 팀 해체(=구성원 탈퇴) 이후의 조회 동작 E2E.
@@ -44,9 +43,6 @@ import io.kotest.core.annotation.Ignored
  * - 미팅탭: 떠난 본인은 ACTIVE 구성원이 아니라 `myTeam=null`, 추천 슬롯이 "매칭된 상대 팀"에서 추천 팀 경로(시드 없으면 빈 리스트)로 되돌아간다.
  * - 채팅방 목록: 성사(MATCHED) 매칭이던 방에서 떠난 본인의 참가만 비활성화돼 본인 목록에서 사라지고, 남은 팀원·상대 팀에는 그대로 남는다.
  */
-// [미팅 기능 미노출] 팀 매칭 컨트롤러(@RestController)가 주석 처리되어 엔드포인트가 404를 반환하므로 이 스펙을 비활성화한다.
-// 기능 노출 시 컨트롤러 복구와 함께 @Ignored를 제거한다.
-@Ignored
 class DisbandedTeamReadE2ETest : AbstractIntegrationSupport({
 
 	fun persistMatchUser(userId: Long, gender: Gender = Gender.MALE) {

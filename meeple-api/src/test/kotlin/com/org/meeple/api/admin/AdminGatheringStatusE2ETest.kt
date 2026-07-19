@@ -1,4 +1,5 @@
 package com.org.meeple.api.admin
+import io.kotest.core.annotation.Ignored
 
 import com.org.meeple.common.gathering.GatheringStatus
 import com.org.meeple.common.integration.AbstractIntegrationSupport
@@ -14,6 +15,7 @@ import io.kotest.matchers.shouldBe
  * 어드민 모임 상태 변경 API E2E 테스트. (POST /admin/v1/gatherings/{id}/status)
  * 모임은 생성 시 활성화(RECRUITING)이므로 취소(CANCELED)만 지원한다. 전이 불가 409, 없으면 404.
  */
+@Ignored  // [모임 미노출] 모임 엔드포인트 404로 비활성화. 재노출 시 제거.
 class AdminGatheringStatusE2ETest : AbstractIntegrationSupport({
 
 	fun savedById(id: Long): GatheringEntity {

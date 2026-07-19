@@ -1,4 +1,5 @@
 package com.org.meeple.api.gathering
+import io.kotest.core.annotation.Ignored
 
 import com.org.meeple.common.gathering.MemberVerificationStatus
 import com.org.meeple.common.integration.AbstractIntegrationSupport
@@ -18,6 +19,7 @@ import io.restassured.RestAssured
  * 잘못된 사진 형식·직업 정보가 각각 막히는지, 내 최신 제출 조회(없으면 data null)가 동작하는지 검증한다.
  * (실제 S3 업로드는 [com.org.meeple.common.config.TestFileStorageConfig]의 페이크로 대체)
  */
+@Ignored  // [모임 미노출] 모임 엔드포인트 404로 비활성화. 재노출 시 제거.
 class MemberVerificationE2ETest : AbstractIntegrationSupport({
 
 	fun persistUser(providerId: String): Long =
