@@ -67,7 +67,7 @@ private fun findNearestRandomTeam(target: RecommendableSoloUser, pool: TeamPool)
 
 ## 컴포넌트 변경
 
-### meeple-scheduler
+### oneulsogae-scheduler
 
 | 구분 | 대상 |
 |---|---|
@@ -85,7 +85,7 @@ private fun findNearestRandomTeam(target: RecommendableSoloUser, pool: TeamPool)
 | ♻️ 개명 | `command/adapter/RecommendTeamBatchJob` → `RecommendedTeamBatchJob` (의존 in-port 교체) |
 | ♻️ 재사용 | `RegionProximityPort`, `RegionShuffler`, `SaveRecommendedTeamPort`, `TimeGenerator` |
 
-### meeple-infra
+### oneulsogae-infra
 
 | 구분 | 대상 |
 |---|---|
@@ -94,14 +94,14 @@ private fun findNearestRandomTeam(target: RecommendableSoloUser, pool: TeamPool)
 | ✨ 신규 | `query/GetRecommendedTeamRecordDaoImpl`: `recommended_teams`에서 `recommended_date = date and deleted_at is null`인 `user_id` 집합 |
 | ♻️ 그대로 | `command/adapter/RecommendedTeamAdapter.replace` (upsert 변경 없음) |
 
-### meeple-api
+### oneulsogae-api
 
 | 구분 | 대상 |
 |---|---|
 | ♻️ 개명 | `scheduler/match/RecommendTeamBatchScheduler` → `RecommendedTeamBatchScheduler` |
 | ♻️ 개명 | `api/admin/AdminRecommendTeamBatchController` → `AdminRecommendedTeamBatchController` (HTTP 경로 `/admin/v1/teams/recommend-batch`는 **유지**) |
 | ♻️ 개명 | `api/admin/response/RecommendTeamBatchResponse` → `RecommendedTeamBatchResponse` |
-| 🔧 변경 | `application.yml`: `meeple.match.recommend-team-batch.cron` → `recommended-team-batch.cron`, env `MEEPLE_RECOMMEND_TEAM_BATCH_CRON` → `MEEPLE_RECOMMENDED_TEAM_BATCH_CRON` (기본 `0 0 4 * * *` 유지) |
+| 🔧 변경 | `application.yml`: `oneulsogae.match.recommend-team-batch.cron` → `recommended-team-batch.cron`, env `ONEULSOGAE_RECOMMEND_TEAM_BATCH_CRON` → `ONEULSOGAE_RECOMMENDED_TEAM_BATCH_CRON` (기본 `0 0 4 * * *` 유지) |
 
 > 개명은 사용자가 요청한 `RecommendedTeamBatch` 네이밍 통일을 위한 것. HTTP 엔드포인트 경로와 cron 기본값은 바꾸지 않는다.
 
@@ -114,8 +114,8 @@ private fun findNearestRandomTeam(target: RecommendableSoloUser, pool: TeamPool)
 
 ## 테스트 (솔로 배치와 동일 전략)
 
-- **유닛(Kotest, `meeple-api/src/test/.../scheduler/match/`)**: `TeamPoolTest` — `teamIdsOf`가 같은 `(gender, regionId)` 버킷의 teamId를 반환하고 다른 성별/권역과 섞이지 않음. (`MatchPoolTest` 패턴)
-- **통합(`meeple-api/src/test/.../api/scheduler/`)**: `RunRecommendedTeamBatchIntegrationTest` — 실 컨텍스트 + Testcontainers. `TestRegionShufflerConfig`(항등 셔플)로 근접 우선이 결정적. 시나리오:
+- **유닛(Kotest, `oneulsogae-api/src/test/.../scheduler/match/`)**: `TeamPoolTest` — `teamIdsOf`가 같은 `(gender, regionId)` 버킷의 teamId를 반환하고 다른 성별/권역과 섞이지 않음. (`MatchPoolTest` 패턴)
+- **통합(`oneulsogae-api/src/test/.../api/scheduler/`)**: `RunRecommendedTeamBatchIntegrationTest` — 실 컨텍스트 + Testcontainers. `TestRegionShufflerConfig`(항등 셔플)로 근접 우선이 결정적. 시나리오:
   - 반대 성별·가까운 권역 ACTIVE 팀 → 그 팀 추천 적재
   - 반대 성별 후보 팀 없음 → skip
   - 가까운/먼 권역 모두 후보 → 가까운 권역 팀 추천

@@ -38,7 +38,7 @@ PG 승인 **이전에** `paymentKey`를 담은 결제 기록을 `PENDING` 상태
 ## 상태 모델
 
 - 신규 enum `PaymentStatus { PENDING, APPROVED, FAILED }`
-  - 위치: `meeple-core` `payments/command/domain/PaymentStatus.kt` (payments 전용 — `meeple-common`이 아님. 현재 다른 모듈이 이 상태를 공유하지 않는다)
+  - 위치: `oneulsogae-core` `payments/command/domain/PaymentStatus.kt` (payments 전용 — `oneulsogae-common`이 아님. 현재 다른 모듈이 이 상태를 공유하지 않는다)
 - `Payment` 도메인 모델에 `status: PaymentStatus` 필드 추가.
 - `payments.status` 컬럼 신설. **이는 "payments에 상태 컬럼 없음"이라는 기존 결정(memory: payment-complete-pending-approval)을 이번에 뒤집는 것**이다. 사유: PG 청구 라이프사이클의 durable 원장이 필요해졌다.
 
@@ -92,10 +92,10 @@ ALTER TABLE payments
 
 ## 영향 범위
 
-- `meeple-core`: `Payment`, `PaymentStatus`(신규), `SavePaymentPort`(변화 없음, 의미만 확장), `UpdatePaymentStatusPort`(신규), `CompletePaymentService`.
-- `meeple-infra`: `PaymentEntity`(status var + unique), `PaymentAdapter`(save에 status, updateStatus 구현).
+- `oneulsogae-core`: `Payment`, `PaymentStatus`(신규), `SavePaymentPort`(변화 없음, 의미만 확장), `UpdatePaymentStatusPort`(신규), `CompletePaymentService`.
+- `oneulsogae-infra`: `PaymentEntity`(status var + unique), `PaymentAdapter`(save에 status, updateStatus 구현).
 - `docs/migration/payments.sql`.
-- `meeple-api` 테스트: `PaymentsCompleteE2ETest`.
+- `oneulsogae-api` 테스트: `PaymentsCompleteE2ETest`.
 - **API 응답 계약 변화 없음** — `CompletePaymentResult`(amount)는 그대로. 프론트엔드 대응 불필요.
 
 ## 잔여 한계(범위 밖, 후속)

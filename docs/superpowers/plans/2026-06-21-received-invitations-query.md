@@ -24,14 +24,14 @@
 
 | 파일 | 책임 | Task |
 |---|---|---|
-| `meeple-core/.../match/query/dto/ReceivedInvitation.kt` | read model(`ReceivedInvitation`,`ReceivedInvitationInviter`) | 1 |
-| `meeple-core/.../match/query/service/port/in/GetReceivedInvitationsUseCase.kt` | in-port | 1 |
-| `meeple-core/.../match/query/dao/GetReceivedInvitationsDao.kt` | query out-port | 1 |
-| `meeple-core/.../match/query/service/GetReceivedInvitationsService.kt` | UseCase 구현 | 1 |
-| `meeple-infra/.../match/query/GetReceivedInvitationsDaoImpl.kt` | QueryDSL 구현 | 1 |
-| `meeple-api/.../match/response/ReceivedInvitationResponse.kt` | 응답 DTO(+nested Inviter) | 2 |
-| `meeple-api/.../match/TeamController.kt` | `getReceivedInvitations()` 추가 | 2 |
-| `meeple-api/.../test/.../match/GetReceivedInvitationsE2ETest.kt` | E2E | 2 |
+| `oneulsogae-core/.../match/query/dto/ReceivedInvitation.kt` | read model(`ReceivedInvitation`,`ReceivedInvitationInviter`) | 1 |
+| `oneulsogae-core/.../match/query/service/port/in/GetReceivedInvitationsUseCase.kt` | in-port | 1 |
+| `oneulsogae-core/.../match/query/dao/GetReceivedInvitationsDao.kt` | query out-port | 1 |
+| `oneulsogae-core/.../match/query/service/GetReceivedInvitationsService.kt` | UseCase 구현 | 1 |
+| `oneulsogae-infra/.../match/query/GetReceivedInvitationsDaoImpl.kt` | QueryDSL 구현 | 1 |
+| `oneulsogae-api/.../match/response/ReceivedInvitationResponse.kt` | 응답 DTO(+nested Inviter) | 2 |
+| `oneulsogae-api/.../match/TeamController.kt` | `getReceivedInvitations()` 추가 | 2 |
+| `oneulsogae-api/.../test/.../match/GetReceivedInvitationsE2ETest.kt` | E2E | 2 |
 
 ---
 
@@ -40,11 +40,11 @@
 요청자가 INVITED 구성원인 INVITING 팀들을 초대자 프로필과 함께 조회하는 query 경로를 구현한다. (HTTP 경계는 Task 2)
 
 **Files:**
-- Create: `meeple-core/src/main/kotlin/com/org/meeple/core/match/query/dto/ReceivedInvitation.kt`
-- Create: `meeple-core/src/main/kotlin/com/org/meeple/core/match/query/service/port/in/GetReceivedInvitationsUseCase.kt`
-- Create: `meeple-core/src/main/kotlin/com/org/meeple/core/match/query/dao/GetReceivedInvitationsDao.kt`
-- Create: `meeple-core/src/main/kotlin/com/org/meeple/core/match/query/service/GetReceivedInvitationsService.kt`
-- Create: `meeple-infra/src/main/kotlin/com/org/meeple/infra/match/query/GetReceivedInvitationsDaoImpl.kt`
+- Create: `oneulsogae-core/src/main/kotlin/com/org/oneulsogae/core/match/query/dto/ReceivedInvitation.kt`
+- Create: `oneulsogae-core/src/main/kotlin/com/org/oneulsogae/core/match/query/service/port/in/GetReceivedInvitationsUseCase.kt`
+- Create: `oneulsogae-core/src/main/kotlin/com/org/oneulsogae/core/match/query/dao/GetReceivedInvitationsDao.kt`
+- Create: `oneulsogae-core/src/main/kotlin/com/org/oneulsogae/core/match/query/service/GetReceivedInvitationsService.kt`
+- Create: `oneulsogae-infra/src/main/kotlin/com/org/oneulsogae/infra/match/query/GetReceivedInvitationsDaoImpl.kt`
 
 **Interfaces:**
 - Produces (Task 2가 사용):
@@ -54,12 +54,12 @@
 
 - [ ] **Step 1: read model DTO 작성**
 
-`meeple-core/src/main/kotlin/com/org/meeple/core/match/query/dto/ReceivedInvitation.kt`:
+`oneulsogae-core/src/main/kotlin/com/org/oneulsogae/core/match/query/dto/ReceivedInvitation.kt`:
 
 ```kotlin
-package com.org.meeple.core.match.query.dto
+package com.org.oneulsogae.core.match.query.dto
 
-import com.org.meeple.common.user.Gender
+import com.org.oneulsogae.common.user.Gender
 
 /**
  * 내가 받은 초대 한 건(read model). 초대받은(INVITED) 유저가 보는, 대기 중(INVITING) 팀과 초대자 프로필.
@@ -86,12 +86,12 @@ data class ReceivedInvitationInviter(
 
 - [ ] **Step 2: in-port(UseCase) 작성**
 
-`meeple-core/src/main/kotlin/com/org/meeple/core/match/query/service/port/in/GetReceivedInvitationsUseCase.kt`:
+`oneulsogae-core/src/main/kotlin/com/org/oneulsogae/core/match/query/service/port/in/GetReceivedInvitationsUseCase.kt`:
 
 ```kotlin
-package com.org.meeple.core.match.query.service.port.`in`
+package com.org.oneulsogae.core.match.query.service.port.`in`
 
-import com.org.meeple.core.match.query.dto.ReceivedInvitation
+import com.org.oneulsogae.core.match.query.dto.ReceivedInvitation
 
 /**
  * 내가 받은 초대 리스트를 조회하는 유스케이스(인포트).
@@ -106,12 +106,12 @@ interface GetReceivedInvitationsUseCase {
 
 - [ ] **Step 3: out-port(Dao) 작성**
 
-`meeple-core/src/main/kotlin/com/org/meeple/core/match/query/dao/GetReceivedInvitationsDao.kt`:
+`oneulsogae-core/src/main/kotlin/com/org/oneulsogae/core/match/query/dao/GetReceivedInvitationsDao.kt`:
 
 ```kotlin
-package com.org.meeple.core.match.query.dao
+package com.org.oneulsogae.core.match.query.dao
 
-import com.org.meeple.core.match.query.dto.ReceivedInvitation
+import com.org.oneulsogae.core.match.query.dto.ReceivedInvitation
 
 /**
  * 내가 받은 초대 리스트 조회 dao(query out-port). 실제 QueryDSL 구현은 infra가 담당한다.
@@ -126,14 +126,14 @@ interface GetReceivedInvitationsDao {
 
 - [ ] **Step 4: query service 작성**
 
-`meeple-core/src/main/kotlin/com/org/meeple/core/match/query/service/GetReceivedInvitationsService.kt`:
+`oneulsogae-core/src/main/kotlin/com/org/oneulsogae/core/match/query/service/GetReceivedInvitationsService.kt`:
 
 ```kotlin
-package com.org.meeple.core.match.query.service
+package com.org.oneulsogae.core.match.query.service
 
-import com.org.meeple.core.match.query.dao.GetReceivedInvitationsDao
-import com.org.meeple.core.match.query.dto.ReceivedInvitation
-import com.org.meeple.core.match.query.service.port.`in`.GetReceivedInvitationsUseCase
+import com.org.oneulsogae.core.match.query.dao.GetReceivedInvitationsDao
+import com.org.oneulsogae.core.match.query.dto.ReceivedInvitation
+import com.org.oneulsogae.core.match.query.service.port.`in`.GetReceivedInvitationsUseCase
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 
@@ -154,22 +154,22 @@ class GetReceivedInvitationsService(
 
 - [ ] **Step 5: infra QueryDSL daoImpl 작성**
 
-`meeple-infra/src/main/kotlin/com/org/meeple/infra/match/query/GetReceivedInvitationsDaoImpl.kt`:
+`oneulsogae-infra/src/main/kotlin/com/org/oneulsogae/infra/match/query/GetReceivedInvitationsDaoImpl.kt`:
 
 `me`(나=INVITED)와 `owner`(초대자=ACTIVE)는 같은 team_members를 self-join하므로 **서로 다른 별칭 인스턴스**를 쓴다.
 
 ```kotlin
-package com.org.meeple.infra.match.query
+package com.org.oneulsogae.infra.match.query
 
-import com.org.meeple.common.match.TeamMemberStatus
-import com.org.meeple.common.match.TeamStatus
-import com.org.meeple.core.match.query.dao.GetReceivedInvitationsDao
-import com.org.meeple.core.match.query.dto.ReceivedInvitation
-import com.org.meeple.core.match.query.dto.ReceivedInvitationInviter
-import com.org.meeple.infra.match.command.entity.QMatchUserEntity
-import com.org.meeple.infra.match.command.entity.QTeamEntity
-import com.org.meeple.infra.match.command.entity.QTeamMemberEntity
-import com.org.meeple.infra.user.command.entity.QUserDetailEntity
+import com.org.oneulsogae.common.match.TeamMemberStatus
+import com.org.oneulsogae.common.match.TeamStatus
+import com.org.oneulsogae.core.match.query.dao.GetReceivedInvitationsDao
+import com.org.oneulsogae.core.match.query.dto.ReceivedInvitation
+import com.org.oneulsogae.core.match.query.dto.ReceivedInvitationInviter
+import com.org.oneulsogae.infra.match.command.entity.QMatchUserEntity
+import com.org.oneulsogae.infra.match.command.entity.QTeamEntity
+import com.org.oneulsogae.infra.match.command.entity.QTeamMemberEntity
+import com.org.oneulsogae.infra.user.command.entity.QUserDetailEntity
 import com.querydsl.core.types.Projections
 import com.querydsl.jpa.impl.JPAQueryFactory
 import org.springframework.stereotype.Component
@@ -229,14 +229,14 @@ class GetReceivedInvitationsDaoImpl(
 
 - [ ] **Step 6: 컴파일 검증**
 
-Run: `./gradlew :meeple-infra:compileKotlin`
-Expected: BUILD SUCCESSFUL (meeple-infra가 core에 의존하므로 core query 슬라이스도 함께 컴파일된다)
+Run: `./gradlew :oneulsogae-infra:compileKotlin`
+Expected: BUILD SUCCESSFUL (oneulsogae-infra가 core에 의존하므로 core query 슬라이스도 함께 컴파일된다)
 
 - [ ] **Step 7: Commit**
 
 ```bash
-git add meeple-core/src/main/kotlin/com/org/meeple/core/match/query \
-        meeple-infra/src/main/kotlin/com/org/meeple/infra/match/query/GetReceivedInvitationsDaoImpl.kt
+git add oneulsogae-core/src/main/kotlin/com/org/oneulsogae/core/match/query \
+        oneulsogae-infra/src/main/kotlin/com/org/oneulsogae/infra/match/query/GetReceivedInvitationsDaoImpl.kt
 git commit -m "feat: 받은 초대 리스트 조회 query 슬라이스(core·infra)"
 ```
 
@@ -247,9 +247,9 @@ git commit -m "feat: 받은 초대 리스트 조회 query 슬라이스(core·inf
 `GET /teams/v1/received-invitations`를 추가하고 E2E로 동작을 검증한다.
 
 **Files:**
-- Create: `meeple-api/src/main/kotlin/com/org/meeple/api/match/response/ReceivedInvitationResponse.kt`
-- Modify: `meeple-api/src/main/kotlin/com/org/meeple/api/match/TeamController.kt`
-- Create (test): `meeple-api/src/test/kotlin/com/org/meeple/api/match/GetReceivedInvitationsE2ETest.kt`
+- Create: `oneulsogae-api/src/main/kotlin/com/org/oneulsogae/api/match/response/ReceivedInvitationResponse.kt`
+- Modify: `oneulsogae-api/src/main/kotlin/com/org/oneulsogae/api/match/TeamController.kt`
+- Create (test): `oneulsogae-api/src/test/kotlin/com/org/oneulsogae/api/match/GetReceivedInvitationsE2ETest.kt`
 
 **Interfaces:**
 - Consumes (Task 1에서):
@@ -258,13 +258,13 @@ git commit -m "feat: 받은 초대 리스트 조회 query 슬라이스(core·inf
 
 - [ ] **Step 1: 응답 DTO 작성**
 
-`meeple-api/src/main/kotlin/com/org/meeple/api/match/response/ReceivedInvitationResponse.kt`:
+`oneulsogae-api/src/main/kotlin/com/org/oneulsogae/api/match/response/ReceivedInvitationResponse.kt`:
 
 ```kotlin
-package com.org.meeple.api.match.response
+package com.org.oneulsogae.api.match.response
 
-import com.org.meeple.common.user.Gender
-import com.org.meeple.core.match.query.dto.ReceivedInvitation
+import com.org.oneulsogae.common.user.Gender
+import com.org.oneulsogae.core.match.query.dto.ReceivedInvitation
 
 /**
  * 내가 받은 초대 한 건 응답. 팀 메타와 초대자(owner) 프로필을 담는다.
@@ -313,9 +313,9 @@ data class ReceivedInvitationResponse(
 
 1. import 추가:
 ```kotlin
-import com.org.meeple.api.match.response.ReceivedInvitationResponse
-import com.org.meeple.core.match.query.dto.ReceivedInvitation
-import com.org.meeple.core.match.query.service.port.`in`.GetReceivedInvitationsUseCase
+import com.org.oneulsogae.api.match.response.ReceivedInvitationResponse
+import com.org.oneulsogae.core.match.query.dto.ReceivedInvitation
+import com.org.oneulsogae.core.match.query.service.port.`in`.GetReceivedInvitationsUseCase
 ```
 
 2. 생성자에 의존성 추가 (`getSentInvitationUseCase` 다음 줄):
@@ -342,23 +342,23 @@ import com.org.meeple.core.match.query.service.port.`in`.GetReceivedInvitationsU
 
 - [ ] **Step 3: E2E 테스트 작성**
 
-`meeple-api/src/test/kotlin/com/org/meeple/api/match/GetReceivedInvitationsE2ETest.kt`:
+`oneulsogae-api/src/test/kotlin/com/org/oneulsogae/api/match/GetReceivedInvitationsE2ETest.kt`:
 
 ```kotlin
-package com.org.meeple.api.match
+package com.org.oneulsogae.api.match
 
-import com.org.meeple.common.integration.AbstractIntegrationSupport
-import com.org.meeple.common.integration.expect
-import com.org.meeple.common.integration.get
-import com.org.meeple.common.integration.post
-import com.org.meeple.common.user.Gender
-import com.org.meeple.infra.fixture.IntegrationUtil
-import com.org.meeple.infra.fixture.MatchUserEntityFixture
-import com.org.meeple.infra.fixture.UserDetailEntityFixture
-import com.org.meeple.infra.match.command.entity.QMatchUserEntity
-import com.org.meeple.infra.match.command.entity.QTeamEntity
-import com.org.meeple.infra.match.command.entity.QTeamMemberEntity
-import com.org.meeple.infra.user.command.entity.QUserDetailEntity
+import com.org.oneulsogae.common.integration.AbstractIntegrationSupport
+import com.org.oneulsogae.common.integration.expect
+import com.org.oneulsogae.common.integration.get
+import com.org.oneulsogae.common.integration.post
+import com.org.oneulsogae.common.user.Gender
+import com.org.oneulsogae.infra.fixture.IntegrationUtil
+import com.org.oneulsogae.infra.fixture.MatchUserEntityFixture
+import com.org.oneulsogae.infra.fixture.UserDetailEntityFixture
+import com.org.oneulsogae.infra.match.command.entity.QMatchUserEntity
+import com.org.oneulsogae.infra.match.command.entity.QTeamEntity
+import com.org.oneulsogae.infra.match.command.entity.QTeamMemberEntity
+import com.org.oneulsogae.infra.user.command.entity.QUserDetailEntity
 import org.hamcrest.Matchers.hasSize
 
 /**
@@ -503,15 +503,15 @@ class GetReceivedInvitationsE2ETest : AbstractIntegrationSupport({
 
 - [ ] **Step 4: E2E 테스트 실행 (통과 확인)**
 
-Run: `./gradlew :meeple-api:test --tests "com.org.meeple.api.match.GetReceivedInvitationsE2ETest"`
+Run: `./gradlew :oneulsogae-api:test --tests "com.org.oneulsogae.api.match.GetReceivedInvitationsE2ETest"`
 Expected: BUILD SUCCESSFUL — 5개 테스트(여러 초대 최신순+프로필 / owner 빈 배열 / 수락 후 빈 배열 / 없음 빈 배열 / 미인증 401) 모두 PASS
 
 - [ ] **Step 5: Commit**
 
 ```bash
-git add meeple-api/src/main/kotlin/com/org/meeple/api/match/response/ReceivedInvitationResponse.kt \
-        meeple-api/src/main/kotlin/com/org/meeple/api/match/TeamController.kt \
-        meeple-api/src/test/kotlin/com/org/meeple/api/match/GetReceivedInvitationsE2ETest.kt
+git add oneulsogae-api/src/main/kotlin/com/org/oneulsogae/api/match/response/ReceivedInvitationResponse.kt \
+        oneulsogae-api/src/main/kotlin/com/org/oneulsogae/api/match/TeamController.kt \
+        oneulsogae-api/src/test/kotlin/com/org/oneulsogae/api/match/GetReceivedInvitationsE2ETest.kt
 git commit -m "feat: 받은 초대 리스트 조회 엔드포인트(GET /teams/v1/received-invitations)"
 ```
 

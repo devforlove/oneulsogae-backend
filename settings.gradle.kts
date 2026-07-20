@@ -1,10 +1,10 @@
 rootProject.name = "meeple-backend"
 
-include("meeple-api")
-include("meeple-core")
-include("meeple-infra")
-include("meeple-chatting")
-include("meeple-common")
-include("meeple-scheduler")
-include("meeple-auth")
-include("meeple-admin")
+include("oneulsogae-api")
+include("oneulsogae-core")
+include("oneulsogae-infra")
+include("oneulsogae-chatting")
+include("oneulsogae-common")
+include("oneulsogae-scheduler")
+include("oneulsogae-auth")
+include("oneulsogae-admin")

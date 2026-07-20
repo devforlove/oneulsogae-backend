@@ -13,7 +13,7 @@
 ## Global Constraints
 
 - SES 관련 빈(`SesConfig`·`SesVerificationMailSender`·어댑터 2개)은 전부 `@Profile("prod")`, 로깅 스텁 2개는 `@Profile("!prod")` — 어느 프로파일에서도 포트당 구현 빈이 정확히 1개여야 한다.
-- 메일 문구(스펙 명시, 그대로): 제목 `[미플] 회사 이메일 인증번호`/`[미플] 학교 이메일 인증번호`, 본문은 `인증번호: {code}` + 안내 3줄, UTF-8 텍스트.
+- 메일 문구(스펙 명시, 그대로): 제목 `[오늘의 소개] 회사 이메일 인증번호`/`[오늘의 소개] 학교 이메일 인증번호`, 본문은 `인증번호: {code}` + 안내 3줄, UTF-8 텍스트.
 - 발송 실패는 예외 그대로 전파(래핑 금지).
 - 코드 스타일: 탭 들여쓰기, trailing comma, 변수·반환 타입 명시.
 - 커밋 1회: `feat(user): 이메일 인증번호 SES 발송 어댑터 추가` + `Co-Authored-By: Claude Fable 5 <noreply@anthropic.com>` 트레일러 (Task 2에서 회귀 GREEN 확인 후).
@@ -23,15 +23,15 @@
 ### Task 1: SES 의존성·설정·어댑터 구현 + 스텁 프로파일 분리
 
 **Files:**
-- Modify: `meeple-infra/build.gradle.kts` (sesv2 의존성 추가)
-- Create: `meeple-infra/src/main/kotlin/com/org/meeple/infra/config/SesProperties.kt`
-- Create: `meeple-infra/src/main/kotlin/com/org/meeple/infra/config/SesConfig.kt`
-- Create: `meeple-infra/src/main/kotlin/com/org/meeple/infra/user/command/adapter/SesVerificationMailSender.kt`
-- Create: `meeple-infra/src/main/kotlin/com/org/meeple/infra/user/command/adapter/SesCompanyEmailVerificationSender.kt`
-- Create: `meeple-infra/src/main/kotlin/com/org/meeple/infra/user/command/adapter/SesUniversityEmailVerificationSender.kt`
-- Modify: `meeple-infra/src/main/kotlin/com/org/meeple/infra/user/command/adapter/LoggingCompanyEmailVerificationSender.kt`
-- Modify: `meeple-infra/src/main/kotlin/com/org/meeple/infra/user/command/adapter/LoggingUniversityEmailVerificationSender.kt`
-- Modify: `meeple-api/src/main/resources/application.yml` (app.ses 블록)
+- Modify: `oneulsogae-infra/build.gradle.kts` (sesv2 의존성 추가)
+- Create: `oneulsogae-infra/src/main/kotlin/com/org/oneulsogae/infra/config/SesProperties.kt`
+- Create: `oneulsogae-infra/src/main/kotlin/com/org/oneulsogae/infra/config/SesConfig.kt`
+- Create: `oneulsogae-infra/src/main/kotlin/com/org/oneulsogae/infra/user/command/adapter/SesVerificationMailSender.kt`
+- Create: `oneulsogae-infra/src/main/kotlin/com/org/oneulsogae/infra/user/command/adapter/SesCompanyEmailVerificationSender.kt`
+- Create: `oneulsogae-infra/src/main/kotlin/com/org/oneulsogae/infra/user/command/adapter/SesUniversityEmailVerificationSender.kt`
+- Modify: `oneulsogae-infra/src/main/kotlin/com/org/oneulsogae/infra/user/command/adapter/LoggingCompanyEmailVerificationSender.kt`
+- Modify: `oneulsogae-infra/src/main/kotlin/com/org/oneulsogae/infra/user/command/adapter/LoggingUniversityEmailVerificationSender.kt`
+- Modify: `oneulsogae-api/src/main/resources/application.yml` (app.ses 블록)
 
 **Interfaces:**
 - Consumes: 기존 out-port `SendCompanyEmailVerificationPort`/`SendUniversityEmailVerificationPort`(`send(toEmail: String, code: String)`), AWS SDK BOM
@@ -39,7 +39,7 @@
 
 - [ ] **Step 1: build.gradle.kts에 sesv2 의존성 추가**
 
-`meeple-infra/build.gradle.kts`에서 기존 블록:
+`oneulsogae-infra/build.gradle.kts`에서 기존 블록:
 
 ```kotlin
 	implementation(platform("software.amazon.awssdk:bom:2.46.21"))
@@ -55,10 +55,10 @@
 
 - [ ] **Step 2: SesProperties 작성**
 
-`meeple-infra/src/main/kotlin/com/org/meeple/infra/config/SesProperties.kt` 전체 내용:
+`oneulsogae-infra/src/main/kotlin/com/org/oneulsogae/infra/config/SesProperties.kt` 전체 내용:
 
 ```kotlin
-package com.org.meeple.infra.config
+package com.org.oneulsogae.infra.config
 
 import org.springframework.boot.context.properties.ConfigurationProperties
 
@@ -73,10 +73,10 @@ data class SesProperties(
 
 - [ ] **Step 3: SesConfig 작성**
 
-`meeple-infra/src/main/kotlin/com/org/meeple/infra/config/SesConfig.kt` 전체 내용:
+`oneulsogae-infra/src/main/kotlin/com/org/oneulsogae/infra/config/SesConfig.kt` 전체 내용:
 
 ```kotlin
-package com.org.meeple.infra.config
+package com.org.oneulsogae.infra.config
 
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
@@ -108,12 +108,12 @@ class SesConfig(
 
 - [ ] **Step 4: 공용 발송 컴포넌트 작성**
 
-`meeple-infra/src/main/kotlin/com/org/meeple/infra/user/command/adapter/SesVerificationMailSender.kt` 전체 내용:
+`oneulsogae-infra/src/main/kotlin/com/org/oneulsogae/infra/user/command/adapter/SesVerificationMailSender.kt` 전체 내용:
 
 ```kotlin
-package com.org.meeple.infra.user.command.adapter
+package com.org.oneulsogae.infra.user.command.adapter
 
-import com.org.meeple.infra.config.SesProperties
+import com.org.oneulsogae.infra.config.SesProperties
 import org.springframework.context.annotation.Profile
 import org.springframework.stereotype.Component
 import software.amazon.awssdk.services.sesv2.SesV2Client
@@ -164,9 +164,9 @@ class SesVerificationMailSender(
 `SesCompanyEmailVerificationSender.kt` 전체 내용:
 
 ```kotlin
-package com.org.meeple.infra.user.command.adapter
+package com.org.oneulsogae.infra.user.command.adapter
 
-import com.org.meeple.core.user.command.application.port.out.SendCompanyEmailVerificationPort
+import com.org.oneulsogae.core.user.command.application.port.out.SendCompanyEmailVerificationPort
 import org.springframework.context.annotation.Profile
 import org.springframework.stereotype.Component
 
@@ -180,11 +180,11 @@ class SesCompanyEmailVerificationSender(
 	override fun send(toEmail: String, code: String) {
 		mailSender.send(
 			toEmail = toEmail,
-			subject = "[미플] 회사 이메일 인증번호",
+			subject = "[오늘의 소개] 회사 이메일 인증번호",
 			body = """
 				|인증번호: $code
 				|
-				|미플에서 요청하신 회사 이메일 인증번호입니다.
+				|오늘의 소개에서 요청하신 회사 이메일 인증번호입니다.
 				|10분 안에 화면에 입력해 주세요.
 				|
 				|본인이 요청하지 않았다면 이 메일을 무시하셔도 됩니다.
@@ -197,9 +197,9 @@ class SesCompanyEmailVerificationSender(
 `SesUniversityEmailVerificationSender.kt` 전체 내용:
 
 ```kotlin
-package com.org.meeple.infra.user.command.adapter
+package com.org.oneulsogae.infra.user.command.adapter
 
-import com.org.meeple.core.user.command.application.port.out.SendUniversityEmailVerificationPort
+import com.org.oneulsogae.core.user.command.application.port.out.SendUniversityEmailVerificationPort
 import org.springframework.context.annotation.Profile
 import org.springframework.stereotype.Component
 
@@ -213,11 +213,11 @@ class SesUniversityEmailVerificationSender(
 	override fun send(toEmail: String, code: String) {
 		mailSender.send(
 			toEmail = toEmail,
-			subject = "[미플] 학교 이메일 인증번호",
+			subject = "[오늘의 소개] 학교 이메일 인증번호",
 			body = """
 				|인증번호: $code
 				|
-				|미플에서 요청하신 학교 이메일 인증번호입니다.
+				|오늘의 소개에서 요청하신 학교 이메일 인증번호입니다.
 				|10분 안에 화면에 입력해 주세요.
 				|
 				|본인이 요청하지 않았다면 이 메일을 무시하셔도 됩니다.
@@ -241,7 +241,7 @@ class LoggingCompanyEmailVerificationSender : SendCompanyEmailVerificationPort {
 
 - [ ] **Step 7: application.yml에 app.ses 블록 추가**
 
-`meeple-api/src/main/resources/application.yml`의 `app.s3` 블록 마지막 줄:
+`oneulsogae-api/src/main/resources/application.yml`의 `app.s3` 블록 마지막 줄:
 
 ```yaml
     secret-key: ${S3_SECRET_KEY:}
@@ -258,7 +258,7 @@ class LoggingCompanyEmailVerificationSender : SendCompanyEmailVerificationPort {
 
 - [ ] **Step 8: 컴파일 확인**
 
-Run: `./gradlew :meeple-infra:compileKotlin :meeple-api:compileKotlin`
+Run: `./gradlew :oneulsogae-infra:compileKotlin :oneulsogae-api:compileKotlin`
 Expected: BUILD SUCCESSFUL. **커밋하지 않는다** (Task 2에서 회귀 GREEN 후 커밋).
 
 ---
@@ -276,22 +276,22 @@ Expected: BUILD SUCCESSFUL. **커밋하지 않는다** (Task 2에서 회귀 GREE
 
 Run:
 ```bash
-./gradlew :meeple-api:test \
-  --tests "com.org.meeple.api.user.RequestCompanyEmailVerificationE2ETest" \
-  --tests "com.org.meeple.api.user.ConfirmCompanyEmailVerificationE2ETest" \
-  --tests "com.org.meeple.api.user.RequestUniversityEmailVerificationE2ETest" \
-  --tests "com.org.meeple.api.user.ConfirmUniversityEmailVerificationE2ETest"
+./gradlew :oneulsogae-api:test \
+  --tests "com.org.oneulsogae.api.user.RequestCompanyEmailVerificationE2ETest" \
+  --tests "com.org.oneulsogae.api.user.ConfirmCompanyEmailVerificationE2ETest" \
+  --tests "com.org.oneulsogae.api.user.RequestUniversityEmailVerificationE2ETest" \
+  --tests "com.org.oneulsogae.api.user.ConfirmUniversityEmailVerificationE2ETest"
 ```
 Expected: 전 케이스 PASS — test 프로파일은 `@Profile("!prod")` 로깅 스텁 경로를 그대로 쓴다. (여기서 실패하면 프로파일 분리가 잘못된 것 — 특히 SES 빈이 test에서 뜨려고 하면 안 된다)
 
 - [ ] **Step 2: 커밋**
 
 ```bash
-git add meeple-infra/build.gradle.kts \
-        meeple-infra/src/main/kotlin/com/org/meeple/infra/config/SesProperties.kt \
-        meeple-infra/src/main/kotlin/com/org/meeple/infra/config/SesConfig.kt \
-        meeple-infra/src/main/kotlin/com/org/meeple/infra/user/command/adapter/ \
-        meeple-api/src/main/resources/application.yml
+git add oneulsogae-infra/build.gradle.kts \
+        oneulsogae-infra/src/main/kotlin/com/org/oneulsogae/infra/config/SesProperties.kt \
+        oneulsogae-infra/src/main/kotlin/com/org/oneulsogae/infra/config/SesConfig.kt \
+        oneulsogae-infra/src/main/kotlin/com/org/oneulsogae/infra/user/command/adapter/ \
+        oneulsogae-api/src/main/resources/application.yml
 git commit -m "feat(user): 이메일 인증번호 SES 발송 어댑터 추가
 
 Co-Authored-By: Claude Fable 5 <noreply@anthropic.com>"

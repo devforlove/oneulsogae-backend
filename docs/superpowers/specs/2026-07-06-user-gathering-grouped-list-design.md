@@ -1,11 +1,11 @@
 # 유저용 타입별 그룹핑 모임 리스트 조회 API 설계
 
 작성일: 2026-07-06
-브랜치: feat/meeple-admin-module
+브랜치: feat/oneulsogae-admin-module
 
 ## 배경
 
-현재 `gathering` 도메인은 `meeple-admin` 모듈에만 존재한다(어드민 전용 `AdminGathering`, 운영자 생성/수정/상태변경). 일반 유저용 gathering 도메인은 없다. 유저가 앱에서 모집중인 모임을 **모임 타입별로 그룹핑된 리스트**로 조회할 수 있는 API를 신설한다.
+현재 `gathering` 도메인은 `oneulsogae-admin` 모듈에만 존재한다(어드민 전용 `AdminGathering`, 운영자 생성/수정/상태변경). 일반 유저용 gathering 도메인은 없다. 유저가 앱에서 모집중인 모임을 **모임 타입별로 그룹핑된 리스트**로 조회할 수 있는 API를 신설한다.
 
 유저는 모임을 생성하지 않는다(생성은 어드민만, `GatheringEntity.userId`는 nullable이며 운영 생성 시 null). 따라서 command 측은 만들지 않고 **조회 전용(query-only) 경로**만 추가한다. 같은 `gatherings` 테이블을 읽는 독립 read model이다.
 
@@ -22,7 +22,7 @@
 
 ## 아키텍처 (헥사고날 + CQRS query-only)
 
-### meeple-core — `com.org.meeple.gathering.query`
+### oneulsogae-core — `com.org.oneulsogae.gathering.query`
 
 - `dto/`
   - `GatheringView` — 단건 read model. 기존 `AdminGatheringView`와 동일하게 **`imageKey`(내부용)와 `imageUrl`을 모두 보유**하고, DAO 투영용 보조 생성자(`imageUrl` 인자 제외)로 `imageUrl = null`을 채운다.
@@ -39,7 +39,7 @@
 - `service/port/in/GetGatheringsUseCase` — `fun getGatherings(): GroupedGatherings`.
 - `service/port/out/GatheringImageUrlPort` — `fun presignedGetUrl(imageKey: String): String` (fun interface). 기존 admin `GatheringImageUrlPort`와 동일 시그니처지만 core 소속의 별도 인터페이스(core는 admin에 의존 불가).
 
-### meeple-api — `com.org.meeple.api.gathering`
+### oneulsogae-api — `com.org.oneulsogae.api.gathering`
 
 - `GatheringController` — `@RestController`, `GET /v1/gatherings`. `GetGatheringsUseCase` 주입. 반환 `ApiResponse<GatheringGroupListResponse>`.
 - `response/GatheringGroupListResponse`
@@ -48,7 +48,7 @@
   - `Item`: `id: Long`, `imageUrl: String?`, `region: String`, `title: String`, `gatheringAt: LocalDateTime`
   - `from(GroupedGatherings)` 팩토리로 read model → 응답 DTO 변환.
 
-### meeple-infra — `com.org.meeple.infra.gathering.query`
+### oneulsogae-infra — `com.org.oneulsogae.infra.gathering.query`
 
 - `GetGatheringDaoImpl` (`GetGatheringDao` 구현) — QueryDSL `JPAQueryFactory`로 `QGatheringEntity`에서 `GatheringView`로 `Projections.constructor` 직접 투영(imageKey 포함, imageUrl 제외 → 보조 생성자). `where(gatheringEntity.status.eq(RECRUITING))`, `orderBy(gatheringEntity.gatheringAt.asc())`. 엔티티 로드 없음.
 - presigned URL: 기존 `S3GatheringImageUrlAdapter`가 core `GatheringImageUrlPort`도 **함께 구현**(admin/core 두 인터페이스 모두 `presignedGetUrl(String): String`로 동일 시그니처 → 오버라이드 하나로 양쪽 충족, import alias 사용). 새 S3 어댑터를 만들지 않고 재사용한다.
@@ -63,7 +63,7 @@
   - 빈 타입은 빈 배열로 포함된다.
   - 그룹 순서가 전달한 타입 순서를 따른다.
   - 그룹 내 정렬(입력 순서) 유지.
-- **E2E(meeple-api, AbstractIntegrationSupport)** — `GET /v1/gatherings`
+- **E2E(oneulsogae-api, AbstractIntegrationSupport)** — `GET /v1/gatherings`
   - RECRUITING만 노출(DRAFT/CANCELED 등 제외).
   - 3개 타입 모두 응답에 존재, 모임 없는 타입은 빈 배열.
   - `gatheringAt` 임박순 정렬.

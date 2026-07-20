@@ -25,7 +25,7 @@
 
 ## AlarmType ↔ 카테고리 매핑
 
-`meeple-common`에 `NotificationCategory` enum 신설(`AlarmType` 옆).
+`oneulsogae-common`에 `NotificationCategory` enum 신설(`AlarmType` 옆).
 
 ```kotlin
 enum class NotificationCategory {
@@ -195,7 +195,7 @@ return saved
 - 게이트 판단은 notification 도메인 안에 캡슐화되어 alarm은 "이 알림에 대해 알림톡을 시도하라"만 호출한다.
 - `SaveAlarmService`가 배치(다수 유저)에서 호출되더라도 호출 단위가 알림 1건이므로 게이트도 1건씩 평가된다.
 
-## API (meeple-api)
+## API (oneulsogae-api)
 
 ```
 api/notification/
@@ -219,12 +219,12 @@ api/notification/
 - `NotificationCategory`(common) ← `AlarmType.category()`(common)에서 사용.
 - core notification 도메인은 common에만 의존.
 - alarm command(`SaveAlarmService`)가 notification in-port(`SendAlarmTalkUseCase`)에 의존 — 둘 다 core 내부라 모듈 경계 위반 없음.
-- infra notification 어댑터가 out-port 구현(`meeple-infra ──> core` 기존 방향 유지).
+- infra notification 어댑터가 out-port 구현(`oneulsogae-infra ──> core` 기존 방향 유지).
 
 ## 테스트 전략
 
 - **도메인 유닛(Kotest)**: `NotificationPreference.allows()` — push off → 전부 false, 카테고리별 on/off 조합, 기본값.
-- **E2E(meeple-api)**: 
+- **E2E(oneulsogae-api)**: 
   - `PUT` 후 `GET`이 같은 값을 반환(upsert·idempotent).
   - 행 없는 유저 `GET` → 기본값.
   - 알림 발생 → preference에 따라 `AlarmTalkSenderPort`가 호출/미호출(stub을 검증용으로 관찰하거나 테스트 더블로 대체).

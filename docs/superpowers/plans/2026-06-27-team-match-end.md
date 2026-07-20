@@ -14,7 +14,7 @@
 - 타입 명시(변수·반환·람다 파라미터), `LocalDateTime.now()` 직접 호출 금지(`TimeGenerator.now()` 주입), 도메인 규칙은 도메인 모델에 캡슐화.
 - 명령 경로: out-port·도메인은 `command` 패키지. 다른 도메인은 in-port로만 참조.
 - 도메인 모델은 불변(data class `copy`로 새 인스턴스 반환).
-- 도메인 유닛 테스트는 `meeple-api` 모듈의 `src/test/.../domain/match`에 위치(기존 `TeamMatchTest`/`MatchedTeamsTest`와 동일 위치).
+- 도메인 유닛 테스트는 `oneulsogae-api` 모듈의 `src/test/.../domain/match`에 위치(기존 `TeamMatchTest`/`MatchedTeamsTest`와 동일 위치).
 - 빌드/테스트: `./gradlew`.
 
 ---
@@ -22,10 +22,10 @@
 ### Task 1: 도메인 — MatchedTeam.leave + MatchedTeams 헬퍼 + 에러코드
 
 **Files:**
-- Modify: `meeple-core/src/main/kotlin/com/org/meeple/core/match/command/domain/MatchedTeam.kt`
-- Modify: `meeple-core/src/main/kotlin/com/org/meeple/core/match/command/domain/MatchedTeams.kt`
-- Modify: `meeple-core/src/main/kotlin/com/org/meeple/core/match/TeamMatchErrorCode.kt`
-- Test: `meeple-api/src/test/kotlin/com/org/meeple/domain/match/MatchedTeamsTest.kt`
+- Modify: `oneulsogae-core/src/main/kotlin/com/org/oneulsogae/core/match/command/domain/MatchedTeam.kt`
+- Modify: `oneulsogae-core/src/main/kotlin/com/org/oneulsogae/core/match/command/domain/MatchedTeams.kt`
+- Modify: `oneulsogae-core/src/main/kotlin/com/org/oneulsogae/core/match/TeamMatchErrorCode.kt`
+- Test: `oneulsogae-api/src/test/kotlin/com/org/oneulsogae/domain/match/MatchedTeamsTest.kt`
 
 **Interfaces:**
 - Produces:
@@ -76,13 +76,13 @@
 그리고 같은 파일 import에 다음을 추가:
 
 ```kotlin
-import com.org.meeple.core.match.command.domain.MatchedTeam
+import com.org.oneulsogae.core.match.command.domain.MatchedTeam
 import java.time.LocalDateTime
 ```
 
 - [ ] **Step 2: 테스트 실패 확인**
 
-Run: `./gradlew :meeple-api:test --tests "com.org.meeple.domain.match.MatchedTeamsTest"`
+Run: `./gradlew :oneulsogae-api:test --tests "com.org.oneulsogae.domain.match.MatchedTeamsTest"`
 Expected: 컴파일 에러/FAIL (`leave`/`isLastActiveTeam`/`allDeactivated` 미정의)
 
 - [ ] **Step 3: 도메인 구현** — `MatchedTeam.kt`의 `deactivate()` 아래에 추가:
@@ -112,7 +112,7 @@ Expected: 컴파일 에러/FAIL (`leave`/`isLastActiveTeam`/`allDeactivated` 미
 		values.all { matchedTeam: MatchedTeam -> matchedTeam.status == MatchedTeamStatus.DEACTIVE }
 ```
 
-`MatchedTeams.kt` 상단 import에 추가: `import com.org.meeple.common.match.MatchedTeamStatus`, `import java.time.LocalDateTime`
+`MatchedTeams.kt` 상단 import에 추가: `import com.org.oneulsogae.common.match.MatchedTeamStatus`, `import java.time.LocalDateTime`
 
 `TeamMatchErrorCode.kt`의 `TEAM_MATCH_ALREADY_CLOSED` 줄 아래에 추가:
 
@@ -122,16 +122,16 @@ Expected: 컴파일 에러/FAIL (`leave`/`isLastActiveTeam`/`allDeactivated` 미
 
 - [ ] **Step 4: 테스트 통과 확인**
 
-Run: `./gradlew :meeple-api:test --tests "com.org.meeple.domain.match.MatchedTeamsTest"`
+Run: `./gradlew :oneulsogae-api:test --tests "com.org.oneulsogae.domain.match.MatchedTeamsTest"`
 Expected: PASS
 
 - [ ] **Step 5: 커밋**
 
 ```bash
-git add meeple-core/src/main/kotlin/com/org/meeple/core/match/command/domain/MatchedTeam.kt \
-        meeple-core/src/main/kotlin/com/org/meeple/core/match/command/domain/MatchedTeams.kt \
-        meeple-core/src/main/kotlin/com/org/meeple/core/match/TeamMatchErrorCode.kt \
-        meeple-api/src/test/kotlin/com/org/meeple/domain/match/MatchedTeamsTest.kt
+git add oneulsogae-core/src/main/kotlin/com/org/oneulsogae/core/match/command/domain/MatchedTeam.kt \
+        oneulsogae-core/src/main/kotlin/com/org/oneulsogae/core/match/command/domain/MatchedTeams.kt \
+        oneulsogae-core/src/main/kotlin/com/org/oneulsogae/core/match/TeamMatchErrorCode.kt \
+        oneulsogae-api/src/test/kotlin/com/org/oneulsogae/domain/match/MatchedTeamsTest.kt
 git commit -m "feat(match): MatchedTeam/MatchedTeams 팀 종료(leave) 도메인 + 에러코드 추가"
 ```
 
@@ -140,8 +140,8 @@ git commit -m "feat(match): MatchedTeam/MatchedTeams 팀 종료(leave) 도메인
 ### Task 2: 도메인 — TeamMatch.validateTerminable / isLastActiveTeam / leave
 
 **Files:**
-- Modify: `meeple-core/src/main/kotlin/com/org/meeple/core/match/command/domain/TeamMatch.kt`
-- Test: `meeple-api/src/test/kotlin/com/org/meeple/domain/match/TeamMatchTest.kt`
+- Modify: `oneulsogae-core/src/main/kotlin/com/org/oneulsogae/core/match/command/domain/TeamMatch.kt`
+- Test: `oneulsogae-api/src/test/kotlin/com/org/oneulsogae/domain/match/TeamMatchTest.kt`
 
 **Interfaces:**
 - Consumes: `MatchedTeams.leave/isLastActiveTeam/allDeactivated` (Task 1), `TeamMatchErrorCode.TEAM_MATCH_NOT_MATCHED` (Task 1).
@@ -197,7 +197,7 @@ git commit -m "feat(match): MatchedTeam/MatchedTeams 팀 종료(leave) 도메인
 			val left: TeamMatch = matched().leave(10L, now)
 
 			left.status shouldBe MatchStatus.MATCHED
-			val ten: com.org.meeple.core.match.command.domain.MatchedTeam = left.matchedTeams.values.first { it.teamId == 10L }
+			val ten: com.org.oneulsogae.core.match.command.domain.MatchedTeam = left.matchedTeams.values.first { it.teamId == 10L }
 			ten.status shouldBe MatchedTeamStatus.DEACTIVE
 			ten.deletedAt shouldBe now
 			left.matchedTeams.values.first { it.teamId == 20L }.status shouldBe MatchedTeamStatus.ACTIVE
@@ -218,7 +218,7 @@ git commit -m "feat(match): MatchedTeam/MatchedTeams 팀 종료(leave) 도메인
 
 - [ ] **Step 2: 테스트 실패 확인**
 
-Run: `./gradlew :meeple-api:test --tests "com.org.meeple.domain.match.TeamMatchTest"`
+Run: `./gradlew :oneulsogae-api:test --tests "com.org.oneulsogae.domain.match.TeamMatchTest"`
 Expected: 컴파일 에러/FAIL (`validateTerminable`/`isLastActiveTeam`/`leave` 미정의)
 
 - [ ] **Step 3: 도메인 구현** — `TeamMatch.kt`의 `validateRespondable(...)` 아래에 추가:
@@ -261,14 +261,14 @@ Expected: 컴파일 에러/FAIL (`validateTerminable`/`isLastActiveTeam`/`leave`
 
 - [ ] **Step 4: 테스트 통과 확인**
 
-Run: `./gradlew :meeple-api:test --tests "com.org.meeple.domain.match.TeamMatchTest"`
+Run: `./gradlew :oneulsogae-api:test --tests "com.org.oneulsogae.domain.match.TeamMatchTest"`
 Expected: PASS
 
 - [ ] **Step 5: 커밋**
 
 ```bash
-git add meeple-core/src/main/kotlin/com/org/meeple/core/match/command/domain/TeamMatch.kt \
-        meeple-api/src/test/kotlin/com/org/meeple/domain/match/TeamMatchTest.kt
+git add oneulsogae-core/src/main/kotlin/com/org/oneulsogae/core/match/command/domain/TeamMatch.kt \
+        oneulsogae-api/src/test/kotlin/com/org/oneulsogae/domain/match/TeamMatchTest.kt
 git commit -m "feat(match): TeamMatch 종료(validateTerminable/leave/isLastActiveTeam) 도메인 추가"
 ```
 
@@ -277,9 +277,9 @@ git commit -m "feat(match): TeamMatch 종료(validateTerminable/leave/isLastActi
 ### Task 3: 알림 — AlarmType + TeamMatchEnded 이벤트 + 핸들러
 
 **Files:**
-- Modify: `meeple-common/src/main/kotlin/com/org/meeple/common/alarm/AlarmType.kt`
-- Create: `meeple-core/src/main/kotlin/com/org/meeple/core/match/command/domain/event/TeamMatchEnded.kt`
-- Modify: `meeple-core/src/main/kotlin/com/org/meeple/core/match/command/application/TeamMatchEventHandler.kt`
+- Modify: `oneulsogae-common/src/main/kotlin/com/org/oneulsogae/common/alarm/AlarmType.kt`
+- Create: `oneulsogae-core/src/main/kotlin/com/org/oneulsogae/core/match/command/domain/event/TeamMatchEnded.kt`
+- Modify: `oneulsogae-core/src/main/kotlin/com/org/oneulsogae/core/match/command/application/TeamMatchEventHandler.kt`
 
 **Interfaces:**
 - Produces:
@@ -299,7 +299,7 @@ git commit -m "feat(match): TeamMatch 종료(validateTerminable/leave/isLastActi
 - [ ] **Step 2: 이벤트 생성** — 새 파일 `TeamMatchEnded.kt`:
 
 ```kotlin
-package com.org.meeple.core.match.command.domain.event
+package com.org.oneulsogae.core.match.command.domain.event
 
 /**
  * 성사된 팀 매칭을 한 팀이 종료(나감)했을 때 발행되는 도메인 이벤트.
@@ -337,20 +337,20 @@ data class TeamMatchEnded(
 `TeamMatchEventHandler.kt` 상단 import에 추가:
 
 ```kotlin
-import com.org.meeple.core.match.command.domain.event.TeamMatchEnded
+import com.org.oneulsogae.core.match.command.domain.event.TeamMatchEnded
 ```
 
 - [ ] **Step 4: 컴파일 확인**
 
-Run: `./gradlew :meeple-core:compileKotlin`
+Run: `./gradlew :oneulsogae-core:compileKotlin`
 Expected: BUILD SUCCESSFUL
 
 - [ ] **Step 5: 커밋**
 
 ```bash
-git add meeple-common/src/main/kotlin/com/org/meeple/common/alarm/AlarmType.kt \
-        meeple-core/src/main/kotlin/com/org/meeple/core/match/command/domain/event/TeamMatchEnded.kt \
-        meeple-core/src/main/kotlin/com/org/meeple/core/match/command/application/TeamMatchEventHandler.kt
+git add oneulsogae-common/src/main/kotlin/com/org/oneulsogae/common/alarm/AlarmType.kt \
+        oneulsogae-core/src/main/kotlin/com/org/oneulsogae/core/match/command/domain/event/TeamMatchEnded.kt \
+        oneulsogae-core/src/main/kotlin/com/org/oneulsogae/core/match/command/application/TeamMatchEventHandler.kt
 git commit -m "feat(alarm): 팀 매칭 종료 알림(MANY_TO_MANY_MATCH_ENDED) 이벤트/핸들러 추가"
 ```
 
@@ -359,8 +359,8 @@ git commit -m "feat(alarm): 팀 매칭 종료 알림(MANY_TO_MANY_MATCH_ENDED) �
 ### Task 4: in-port + Service (EndTeamMatchService)
 
 **Files:**
-- Create: `meeple-core/src/main/kotlin/com/org/meeple/core/match/command/application/port/in/EndTeamMatchUseCase.kt`
-- Create: `meeple-core/src/main/kotlin/com/org/meeple/core/match/command/application/EndTeamMatchService.kt`
+- Create: `oneulsogae-core/src/main/kotlin/com/org/oneulsogae/core/match/command/application/port/in/EndTeamMatchUseCase.kt`
+- Create: `oneulsogae-core/src/main/kotlin/com/org/oneulsogae/core/match/command/application/EndTeamMatchService.kt`
 
 **Interfaces:**
 - Consumes: `TeamMatch.validateTerminable/isLastActiveTeam/leave` (Task 2), `TeamMatchEnded` (Task 3), 기존 `GetTeamMatchPort.findById`, `SaveTeamMatchPort.save`, `GetTeamPort.findById`, `Teams.findByActiveMember/opponentActiveMemberIds`, `Team.id/activeMemberIds`, `DeactivateChatRoomMemberUseCase.deactivate`, `DomainEventPublisher.publish`, `TimeGenerator.now`.
@@ -371,7 +371,7 @@ Service는 외부 협력자(채팅/알림/분산 락/DB)가 많아 유닛 테스
 - [ ] **Step 1: in-port 생성** — `EndTeamMatchUseCase.kt`:
 
 ```kotlin
-package com.org.meeple.core.match.command.application.port.`in`
+package com.org.oneulsogae.core.match.command.application.port.`in`
 
 /**
  * 팀 매칭 종료 인포트(유스케이스).
@@ -387,24 +387,24 @@ interface EndTeamMatchUseCase {
 - [ ] **Step 2: Service 생성** — `EndTeamMatchService.kt`:
 
 ```kotlin
-package com.org.meeple.core.match.command.application
+package com.org.oneulsogae.core.match.command.application
 
-import com.org.meeple.common.chat.ChatRoomMatchType
-import com.org.meeple.core.chat.command.application.port.`in`.DeactivateChatRoomMemberUseCase
-import com.org.meeple.core.common.error.BusinessException
-import com.org.meeple.core.common.event.DomainEventPublisher
-import com.org.meeple.core.common.lock.DistributedLock
-import com.org.meeple.core.common.lock.LockKeyConstraints
-import com.org.meeple.core.common.time.TimeGenerator
-import com.org.meeple.core.match.TeamMatchErrorCode
-import com.org.meeple.core.match.command.application.port.`in`.EndTeamMatchUseCase
-import com.org.meeple.core.match.command.application.port.out.GetTeamMatchPort
-import com.org.meeple.core.match.command.application.port.out.GetTeamPort
-import com.org.meeple.core.match.command.application.port.out.SaveTeamMatchPort
-import com.org.meeple.core.match.command.domain.Team
-import com.org.meeple.core.match.command.domain.TeamMatch
-import com.org.meeple.core.match.command.domain.Teams
-import com.org.meeple.core.match.command.domain.event.TeamMatchEnded
+import com.org.oneulsogae.common.chat.ChatRoomMatchType
+import com.org.oneulsogae.core.chat.command.application.port.`in`.DeactivateChatRoomMemberUseCase
+import com.org.oneulsogae.core.common.error.BusinessException
+import com.org.oneulsogae.core.common.event.DomainEventPublisher
+import com.org.oneulsogae.core.common.lock.DistributedLock
+import com.org.oneulsogae.core.common.lock.LockKeyConstraints
+import com.org.oneulsogae.core.common.time.TimeGenerator
+import com.org.oneulsogae.core.match.TeamMatchErrorCode
+import com.org.oneulsogae.core.match.command.application.port.`in`.EndTeamMatchUseCase
+import com.org.oneulsogae.core.match.command.application.port.out.GetTeamMatchPort
+import com.org.oneulsogae.core.match.command.application.port.out.GetTeamPort
+import com.org.oneulsogae.core.match.command.application.port.out.SaveTeamMatchPort
+import com.org.oneulsogae.core.match.command.domain.Team
+import com.org.oneulsogae.core.match.command.domain.TeamMatch
+import com.org.oneulsogae.core.match.command.domain.Teams
+import com.org.oneulsogae.core.match.command.domain.event.TeamMatchEnded
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import java.time.LocalDateTime
@@ -412,7 +412,7 @@ import java.time.LocalDateTime
 /**
  * [EndTeamMatchUseCase] 구현. 성사된 팀 매칭을 한 팀이 종료한다. (1:1 [EndMatchService] 미러)
  * 팀 매칭·참가 두 팀을 로드해 행위자가 속한 ACTIVE 팀을 식별하고, 종료 가능 상태를 검증한 뒤 처리한다:
- * 내 팀 참가([com.org.meeple.core.match.command.domain.MatchedTeam])만 비활성·소프트 삭제하고(상대도 모두 나갔으면 헤더까지 CLOSED·소프트 삭제),
+ * 내 팀 참가([com.org.oneulsogae.core.match.command.domain.MatchedTeam])만 비활성·소프트 삭제하고(상대도 모두 나갔으면 헤더까지 CLOSED·소프트 삭제),
  * 우리 팀원 전원을 채팅방에서 비활성화하며(남는 상대 팀엔 나감 안내), 방에 남는 상대 팀이 있으면 종료 알림을 발행한다.
  *
  * 상태 변경·채팅 처리는 같은 트랜잭션이라 한 단계라도 실패하면 함께 롤백된다. 알림만 커밋 후 best-effort([TeamMatchEventHandler])다.
@@ -466,14 +466,14 @@ class EndTeamMatchService(
 
 - [ ] **Step 3: 컴파일 확인**
 
-Run: `./gradlew :meeple-core:compileKotlin`
+Run: `./gradlew :oneulsogae-core:compileKotlin`
 Expected: BUILD SUCCESSFUL
 
 - [ ] **Step 4: 커밋**
 
 ```bash
-git add meeple-core/src/main/kotlin/com/org/meeple/core/match/command/application/port/in/EndTeamMatchUseCase.kt \
-        meeple-core/src/main/kotlin/com/org/meeple/core/match/command/application/EndTeamMatchService.kt
+git add oneulsogae-core/src/main/kotlin/com/org/oneulsogae/core/match/command/application/port/in/EndTeamMatchUseCase.kt \
+        oneulsogae-core/src/main/kotlin/com/org/oneulsogae/core/match/command/application/EndTeamMatchService.kt
 git commit -m "feat(match): 팀 매칭 종료 유스케이스/서비스(EndTeamMatchService) 추가"
 ```
 
@@ -482,8 +482,8 @@ git commit -m "feat(match): 팀 매칭 종료 유스케이스/서비스(EndTeamM
 ### Task 5: 컨트롤러 엔드포인트 + E2E 테스트
 
 **Files:**
-- Modify: `meeple-api/src/main/kotlin/com/org/meeple/api/match/TeamMatchController.kt`
-- Create: `meeple-api/src/test/kotlin/com/org/meeple/api/match/EndTeamMatchE2ETest.kt`
+- Modify: `oneulsogae-api/src/main/kotlin/com/org/oneulsogae/api/match/TeamMatchController.kt`
+- Create: `oneulsogae-api/src/test/kotlin/com/org/oneulsogae/api/match/EndTeamMatchE2ETest.kt`
 
 **Interfaces:**
 - Consumes: `EndTeamMatchUseCase.endTeamMatch` (Task 4).
@@ -519,45 +519,45 @@ git commit -m "feat(match): 팀 매칭 종료 유스케이스/서비스(EndTeamM
 import 추가:
 
 ```kotlin
-import com.org.meeple.core.match.command.application.port.`in`.EndTeamMatchUseCase
+import com.org.oneulsogae.core.match.command.application.port.`in`.EndTeamMatchUseCase
 import org.springframework.web.bind.annotation.DeleteMapping
 ```
 
 - [ ] **Step 2: E2E 테스트 작성** — `EndTeamMatchE2ETest.kt`:
 
 ```kotlin
-package com.org.meeple.api.match
+package com.org.oneulsogae.api.match
 
-import com.org.meeple.common.alarm.AlarmType
-import com.org.meeple.common.chat.ChatMessageType
-import com.org.meeple.common.chat.ChatRoomMatchType
-import com.org.meeple.common.chat.ChatRoomMemberStatus
-import com.org.meeple.common.integration.AbstractIntegrationSupport
-import com.org.meeple.common.integration.delete
-import com.org.meeple.common.integration.expect
-import com.org.meeple.common.match.MatchStatus
-import com.org.meeple.common.match.MatchedTeamStatus
-import com.org.meeple.common.match.TeamMatchType
-import com.org.meeple.common.match.TeamMemberStatus
-import com.org.meeple.common.match.TeamStatus
-import com.org.meeple.common.user.Gender
-import com.org.meeple.infra.alarm.command.entity.AlarmEntity
-import com.org.meeple.infra.alarm.command.entity.QAlarmEntity
-import com.org.meeple.infra.chat.command.entity.ChatMessageEntity
-import com.org.meeple.infra.chat.command.entity.QChatMessageEntity
-import com.org.meeple.infra.chat.command.entity.QChatRoomEntity
-import com.org.meeple.infra.chat.command.entity.QChatRoomMemberEntity
-import com.org.meeple.infra.fixture.ChatRoomEntityFixture
-import com.org.meeple.infra.fixture.ChatRoomMemberEntityFixture
-import com.org.meeple.infra.fixture.IntegrationUtil
-import com.org.meeple.infra.match.command.entity.MatchedTeamEntity
-import com.org.meeple.infra.match.command.entity.QMatchedTeamEntity
-import com.org.meeple.infra.match.command.entity.QTeamEntity
-import com.org.meeple.infra.match.command.entity.QTeamMatchEntity
-import com.org.meeple.infra.match.command.entity.QTeamMemberEntity
-import com.org.meeple.infra.match.command.entity.TeamEntity
-import com.org.meeple.infra.match.command.entity.TeamMatchEntity
-import com.org.meeple.infra.match.command.entity.TeamMemberEntity
+import com.org.oneulsogae.common.alarm.AlarmType
+import com.org.oneulsogae.common.chat.ChatMessageType
+import com.org.oneulsogae.common.chat.ChatRoomMatchType
+import com.org.oneulsogae.common.chat.ChatRoomMemberStatus
+import com.org.oneulsogae.common.integration.AbstractIntegrationSupport
+import com.org.oneulsogae.common.integration.delete
+import com.org.oneulsogae.common.integration.expect
+import com.org.oneulsogae.common.match.MatchStatus
+import com.org.oneulsogae.common.match.MatchedTeamStatus
+import com.org.oneulsogae.common.match.TeamMatchType
+import com.org.oneulsogae.common.match.TeamMemberStatus
+import com.org.oneulsogae.common.match.TeamStatus
+import com.org.oneulsogae.common.user.Gender
+import com.org.oneulsogae.infra.alarm.command.entity.AlarmEntity
+import com.org.oneulsogae.infra.alarm.command.entity.QAlarmEntity
+import com.org.oneulsogae.infra.chat.command.entity.ChatMessageEntity
+import com.org.oneulsogae.infra.chat.command.entity.QChatMessageEntity
+import com.org.oneulsogae.infra.chat.command.entity.QChatRoomEntity
+import com.org.oneulsogae.infra.chat.command.entity.QChatRoomMemberEntity
+import com.org.oneulsogae.infra.fixture.ChatRoomEntityFixture
+import com.org.oneulsogae.infra.fixture.ChatRoomMemberEntityFixture
+import com.org.oneulsogae.infra.fixture.IntegrationUtil
+import com.org.oneulsogae.infra.match.command.entity.MatchedTeamEntity
+import com.org.oneulsogae.infra.match.command.entity.QMatchedTeamEntity
+import com.org.oneulsogae.infra.match.command.entity.QTeamEntity
+import com.org.oneulsogae.infra.match.command.entity.QTeamMatchEntity
+import com.org.oneulsogae.infra.match.command.entity.QTeamMemberEntity
+import com.org.oneulsogae.infra.match.command.entity.TeamEntity
+import com.org.oneulsogae.infra.match.command.entity.TeamMatchEntity
+import com.org.oneulsogae.infra.match.command.entity.TeamMemberEntity
 import io.kotest.matchers.shouldBe
 import java.time.LocalDate
 import java.time.LocalDateTime
@@ -799,21 +799,21 @@ private fun alarmsOf(userId: Long): List<AlarmEntity> {
 
 - [ ] **Step 3: E2E 실행 (실패 → 통과)**
 
-Run: `./gradlew :meeple-api:test --tests "com.org.meeple.api.match.EndTeamMatchE2ETest"`
+Run: `./gradlew :oneulsogae-api:test --tests "com.org.oneulsogae.api.match.EndTeamMatchE2ETest"`
 Expected: 컨트롤러/서비스 미연결 시 FAIL → Step 1 반영 후 PASS
 
 > 참고: `accessTokenFor`/`delete`/`bearer`/`AbstractIntegrationSupport`/`IntegrationUtil`/`ChatRoomEntityFixture`/`ChatRoomMemberEntityFixture`는 기존 E2E(`EndMatchE2ETest`·`TeamMatchPromotionOnAcceptE2ETest`)에서 그대로 쓰는 것이다. `TeamEntity`/`TeamMemberEntity`/`TeamMatchEntity`/`MatchedTeamEntity`는 픽스처가 없어 생성자로 직접 만든다(프로모션 E2E와 동일 방식).
 
 - [ ] **Step 4: 전체 회귀 확인**
 
-Run: `./gradlew :meeple-api:test`
+Run: `./gradlew :oneulsogae-api:test`
 Expected: BUILD SUCCESSFUL (기존 테스트 포함 전부 통과)
 
 - [ ] **Step 5: 커밋**
 
 ```bash
-git add meeple-api/src/main/kotlin/com/org/meeple/api/match/TeamMatchController.kt \
-        meeple-api/src/test/kotlin/com/org/meeple/api/match/EndTeamMatchE2ETest.kt
+git add oneulsogae-api/src/main/kotlin/com/org/oneulsogae/api/match/TeamMatchController.kt \
+        oneulsogae-api/src/test/kotlin/com/org/oneulsogae/api/match/EndTeamMatchE2ETest.kt
 git commit -m "feat(match): 팀 매칭 종료 엔드포인트(DELETE /team-matches/v1/{teamMatchId}) + E2E"
 ```
 

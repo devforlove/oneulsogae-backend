@@ -19,19 +19,19 @@
 - productId는 타입 무관 식별자다(EARLY_BIRD/DISCOUNT 행 id도 같은 모임·일정·성별로 해석). 실결제가는 서버 티어 규칙으로 확정.
 - 체크아웃 응답(orderer·product·paymentMethods) 형태 불변. 상세 응답은 `productId` 필드 **추가만**(하위호환).
 - DDL 변경 없음.
-- 테스트 실행: `./gradlew :meeple-api:test --tests "<FQCN>"`. E2E는 Testcontainers(로컬 Docker).
+- 테스트 실행: `./gradlew :oneulsogae-api:test --tests "<FQCN>"`. E2E는 Testcontainers(로컬 Docker).
 
 ---
 
 ### Task 1: gathering query 확장 — getProduct(productId)
 
 **Files:**
-- Create: `meeple-core/src/main/kotlin/com/org/meeple/core/gathering/query/dto/GatheringProductIdentity.kt`
-- Modify: `meeple-core/src/main/kotlin/com/org/meeple/core/gathering/GatheringErrorCode.kt`
-- Modify: `meeple-core/src/main/kotlin/com/org/meeple/core/gathering/query/dao/GetGatheringDao.kt`
-- Modify: `meeple-core/src/main/kotlin/com/org/meeple/core/gathering/query/service/port/in/GetGatheringsUseCase.kt`
-- Modify: `meeple-core/src/main/kotlin/com/org/meeple/core/gathering/query/service/GetGatheringsService.kt`
-- Modify: `meeple-infra/src/main/kotlin/com/org/meeple/infra/gathering/query/GetGatheringDaoImpl.kt`
+- Create: `oneulsogae-core/src/main/kotlin/com/org/oneulsogae/core/gathering/query/dto/GatheringProductIdentity.kt`
+- Modify: `oneulsogae-core/src/main/kotlin/com/org/oneulsogae/core/gathering/GatheringErrorCode.kt`
+- Modify: `oneulsogae-core/src/main/kotlin/com/org/oneulsogae/core/gathering/query/dao/GetGatheringDao.kt`
+- Modify: `oneulsogae-core/src/main/kotlin/com/org/oneulsogae/core/gathering/query/service/port/in/GetGatheringsUseCase.kt`
+- Modify: `oneulsogae-core/src/main/kotlin/com/org/oneulsogae/core/gathering/query/service/GetGatheringsService.kt`
+- Modify: `oneulsogae-infra/src/main/kotlin/com/org/oneulsogae/infra/gathering/query/GetGatheringDaoImpl.kt`
 
 **Interfaces:**
 - Consumes: `QGatheringProductEntity`(기존), `BusinessException`/`ErrorCode`(기존)
@@ -45,9 +45,9 @@
 `GatheringProductIdentity.kt`:
 
 ```kotlin
-package com.org.meeple.core.gathering.query.dto
+package com.org.oneulsogae.core.gathering.query.dto
 
-import com.org.meeple.common.user.Gender
+import com.org.oneulsogae.common.user.Gender
 
 /**
  * 상품 한 건의 식별 정보 read model. productId로 (모임, 일정, 성별)을 해석한다.
@@ -122,18 +122,18 @@ data class GatheringProductIdentity(
 
 - [ ] **Step 3: 컴파일 확인**
 
-Run: `./gradlew :meeple-core:compileKotlin :meeple-infra:compileKotlin`
+Run: `./gradlew :oneulsogae-core:compileKotlin :oneulsogae-infra:compileKotlin`
 Expected: BUILD SUCCESSFUL (신규 메서드는 아직 소비처 없음 — E2E 검증은 Task 3·4에서)
 
 - [ ] **Step 4: 커밋**
 
 ```bash
-git add meeple-core/src/main/kotlin/com/org/meeple/core/gathering/query/dto/GatheringProductIdentity.kt \
-  meeple-core/src/main/kotlin/com/org/meeple/core/gathering/GatheringErrorCode.kt \
-  meeple-core/src/main/kotlin/com/org/meeple/core/gathering/query/dao/GetGatheringDao.kt \
-  meeple-core/src/main/kotlin/com/org/meeple/core/gathering/query/service/port/in/GetGatheringsUseCase.kt \
-  meeple-core/src/main/kotlin/com/org/meeple/core/gathering/query/service/GetGatheringsService.kt \
-  meeple-infra/src/main/kotlin/com/org/meeple/infra/gathering/query/GetGatheringDaoImpl.kt
+git add oneulsogae-core/src/main/kotlin/com/org/oneulsogae/core/gathering/query/dto/GatheringProductIdentity.kt \
+  oneulsogae-core/src/main/kotlin/com/org/oneulsogae/core/gathering/GatheringErrorCode.kt \
+  oneulsogae-core/src/main/kotlin/com/org/oneulsogae/core/gathering/query/dao/GetGatheringDao.kt \
+  oneulsogae-core/src/main/kotlin/com/org/oneulsogae/core/gathering/query/service/port/in/GetGatheringsUseCase.kt \
+  oneulsogae-core/src/main/kotlin/com/org/oneulsogae/core/gathering/query/service/GetGatheringsService.kt \
+  oneulsogae-infra/src/main/kotlin/com/org/oneulsogae/infra/gathering/query/GetGatheringDaoImpl.kt
 git commit -m "feat(gathering): productId로 모임·일정·성별을 해석하는 상품 단건 조회 추가"
 ```
 
@@ -142,12 +142,12 @@ git commit -m "feat(gathering): productId로 모임·일정·성별을 해석하
 ### Task 2: offline 상세 응답에 productId 추가 (하위호환)
 
 **Files:**
-- Modify: `meeple-core/src/main/kotlin/com/org/meeple/core/gathering/query/dto/GatheringProductView.kt`
-- Modify: `meeple-core/src/main/kotlin/com/org/meeple/core/gathering/query/dto/GatheringScheduleView.kt`
-- Modify: `meeple-infra/src/main/kotlin/com/org/meeple/infra/gathering/query/GetGatheringDaoImpl.kt`
-- Modify: `meeple-api/src/main/kotlin/com/org/meeple/api/offline/response/GatheringDetailResponse.kt`
-- Test(Create): `meeple-api/src/test/kotlin/com/org/meeple/domain/gathering/GatheringScheduleViewTest.kt`
-- Test(Modify): `meeple-api/src/test/kotlin/com/org/meeple/api/offline/OfflineGatheringDetailE2ETest.kt`
+- Modify: `oneulsogae-core/src/main/kotlin/com/org/oneulsogae/core/gathering/query/dto/GatheringProductView.kt`
+- Modify: `oneulsogae-core/src/main/kotlin/com/org/oneulsogae/core/gathering/query/dto/GatheringScheduleView.kt`
+- Modify: `oneulsogae-infra/src/main/kotlin/com/org/oneulsogae/infra/gathering/query/GetGatheringDaoImpl.kt`
+- Modify: `oneulsogae-api/src/main/kotlin/com/org/oneulsogae/api/offline/response/GatheringDetailResponse.kt`
+- Test(Create): `oneulsogae-api/src/test/kotlin/com/org/oneulsogae/domain/gathering/GatheringScheduleViewTest.kt`
+- Test(Modify): `oneulsogae-api/src/test/kotlin/com/org/oneulsogae/api/offline/OfflineGatheringDetailE2ETest.kt`
 
 **Interfaces:**
 - Consumes: 기존 `GatheringScheduleView(id, startAt, endAt, maleRemaining, femaleRemaining, earlyBirdCapacity, earlyBirdRemaining, status, products)`
@@ -158,16 +158,16 @@ git commit -m "feat(gathering): productId로 모임·일정·성별을 해석하
 
 - [ ] **Step 1: 유닛 테스트 작성 (실패 확인)**
 
-`meeple-api/src/test/kotlin/com/org/meeple/domain/gathering/GatheringScheduleViewTest.kt`:
+`oneulsogae-api/src/test/kotlin/com/org/oneulsogae/domain/gathering/GatheringScheduleViewTest.kt`:
 
 ```kotlin
-package com.org.meeple.domain.gathering
+package com.org.oneulsogae.domain.gathering
 
-import com.org.meeple.common.gathering.GatheringProductType
-import com.org.meeple.common.gathering.GatheringScheduleStatus
-import com.org.meeple.common.user.Gender
-import com.org.meeple.core.gathering.query.dto.GatheringProductView
-import com.org.meeple.core.gathering.query.dto.GatheringScheduleView
+import com.org.oneulsogae.common.gathering.GatheringProductType
+import com.org.oneulsogae.common.gathering.GatheringScheduleStatus
+import com.org.oneulsogae.common.user.Gender
+import com.org.oneulsogae.core.gathering.query.dto.GatheringProductView
+import com.org.oneulsogae.core.gathering.query.dto.GatheringScheduleView
 import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.core.spec.style.DescribeSpec
 import io.kotest.matchers.shouldBe
@@ -218,7 +218,7 @@ class GatheringScheduleViewTest : DescribeSpec({
 
 - [ ] **Step 2: 테스트 실패 확인**
 
-Run: `./gradlew :meeple-api:test --tests "com.org.meeple.domain.gathering.GatheringScheduleViewTest"`
+Run: `./gradlew :oneulsogae-api:test --tests "com.org.oneulsogae.domain.gathering.GatheringScheduleViewTest"`
 Expected: 컴파일 실패 (`GatheringProductView`에 `id` 파라미터 없음, `productIdFor` unresolved)
 
 - [ ] **Step 3: 구현**
@@ -226,10 +226,10 @@ Expected: 컴파일 실패 (`GatheringProductView`에 `id` 파라미터 없음, 
 `GatheringProductView.kt` 전체 교체:
 
 ```kotlin
-package com.org.meeple.core.gathering.query.dto
+package com.org.oneulsogae.core.gathering.query.dto
 
-import com.org.meeple.common.gathering.GatheringProductType
-import com.org.meeple.common.user.Gender
+import com.org.oneulsogae.common.gathering.GatheringProductType
+import com.org.oneulsogae.common.user.Gender
 
 /** 일정의 성별·티어별 가격 상품 한 건(read model). 금액은 저장된 확정가다. [id]는 체크아웃·결제완료의 상품 식별자다. */
 data class GatheringProductView(
@@ -274,7 +274,7 @@ data class GatheringProductView(
 
 - [ ] **Step 4: 유닛 테스트 통과 확인**
 
-Run: `./gradlew :meeple-api:test --tests "com.org.meeple.domain.gathering.GatheringScheduleViewTest"`
+Run: `./gradlew :oneulsogae-api:test --tests "com.org.oneulsogae.domain.gathering.GatheringScheduleViewTest"`
 Expected: PASS
 
 - [ ] **Step 5: E2E 단언 추가**
@@ -300,18 +300,18 @@ Expected: PASS
 
 (해당 파일의 기존 단언 스타일에 맞춰 인덱스·성별을 조정한다. `Gender`·`GatheringProductType` import 추가.)
 
-Run: `./gradlew :meeple-api:test --tests "com.org.meeple.api.offline.OfflineGatheringDetailE2ETest"`
+Run: `./gradlew :oneulsogae-api:test --tests "com.org.oneulsogae.api.offline.OfflineGatheringDetailE2ETest"`
 Expected: PASS
 
 - [ ] **Step 6: 커밋**
 
 ```bash
-git add meeple-core/src/main/kotlin/com/org/meeple/core/gathering/query/dto/GatheringProductView.kt \
-  meeple-core/src/main/kotlin/com/org/meeple/core/gathering/query/dto/GatheringScheduleView.kt \
-  meeple-infra/src/main/kotlin/com/org/meeple/infra/gathering/query/GetGatheringDaoImpl.kt \
-  meeple-api/src/main/kotlin/com/org/meeple/api/offline/response/GatheringDetailResponse.kt \
-  meeple-api/src/test/kotlin/com/org/meeple/domain/gathering/GatheringScheduleViewTest.kt \
-  meeple-api/src/test/kotlin/com/org/meeple/api/offline/OfflineGatheringDetailE2ETest.kt
+git add oneulsogae-core/src/main/kotlin/com/org/oneulsogae/core/gathering/query/dto/GatheringProductView.kt \
+  oneulsogae-core/src/main/kotlin/com/org/oneulsogae/core/gathering/query/dto/GatheringScheduleView.kt \
+  oneulsogae-infra/src/main/kotlin/com/org/oneulsogae/infra/gathering/query/GetGatheringDaoImpl.kt \
+  oneulsogae-api/src/main/kotlin/com/org/oneulsogae/api/offline/response/GatheringDetailResponse.kt \
+  oneulsogae-api/src/test/kotlin/com/org/oneulsogae/domain/gathering/GatheringScheduleViewTest.kt \
+  oneulsogae-api/src/test/kotlin/com/org/oneulsogae/api/offline/OfflineGatheringDetailE2ETest.kt
 git commit -m "feat(gathering): 모임 상세 일정 아이템에 상품 id(productId) 추가"
 ```
 
@@ -320,8 +320,8 @@ git commit -m "feat(gathering): 모임 상세 일정 아이템에 상품 id(prod
 ### Task 3: 체크아웃 API productId 전환 (breaking)
 
 **Files:**
-- Modify: `meeple-api/src/main/kotlin/com/org/meeple/api/payments/PaymentsController.kt`
-- Test(Modify): `meeple-api/src/test/kotlin/com/org/meeple/api/payments/PaymentsCheckoutE2ETest.kt`
+- Modify: `oneulsogae-api/src/main/kotlin/com/org/oneulsogae/api/payments/PaymentsController.kt`
+- Test(Modify): `oneulsogae-api/src/test/kotlin/com/org/oneulsogae/api/payments/PaymentsCheckoutE2ETest.kt`
 
 **Interfaces:**
 - Consumes: Task 1 `GetGatheringsUseCase.getProduct(productId): GatheringProductIdentity`
@@ -357,7 +357,7 @@ git commit -m "feat(gathering): 모임 상세 일정 아이템에 상품 id(prod
 	}
 ```
 
-import 변경: `com.org.meeple.core.gathering.query.dto.GatheringProductIdentity` 추가, `com.org.meeple.common.user.Gender` 제거(컨트롤러에서 더 이상 사용 안 함 — complete 쪽도 확인 후 미사용이면 제거).
+import 변경: `com.org.oneulsogae.core.gathering.query.dto.GatheringProductIdentity` 추가, `com.org.oneulsogae.common.user.Gender` 제거(컨트롤러에서 더 이상 사용 안 함 — complete 쪽도 확인 후 미사용이면 제거).
 
 - [ ] **Step 2: E2E 전환**
 
@@ -417,14 +417,14 @@ import 변경: `com.org.meeple.core.gathering.query.dto.GatheringProductIdentity
 
 - [ ] **Step 3: E2E 통과 확인**
 
-Run: `./gradlew :meeple-api:test --tests "com.org.meeple.api.payments.PaymentsCheckoutE2ETest"`
+Run: `./gradlew :oneulsogae-api:test --tests "com.org.oneulsogae.api.payments.PaymentsCheckoutE2ETest"`
 Expected: PASS
 
 - [ ] **Step 4: 커밋**
 
 ```bash
-git add meeple-api/src/main/kotlin/com/org/meeple/api/payments/PaymentsController.kt \
-  meeple-api/src/test/kotlin/com/org/meeple/api/payments/PaymentsCheckoutE2ETest.kt
+git add oneulsogae-api/src/main/kotlin/com/org/oneulsogae/api/payments/PaymentsController.kt \
+  oneulsogae-api/src/test/kotlin/com/org/oneulsogae/api/payments/PaymentsCheckoutE2ETest.kt
 git commit -m "feat(payments): 체크아웃 조회를 productId 단일 파라미터로 전환"
 ```
 
@@ -433,12 +433,12 @@ git commit -m "feat(payments): 체크아웃 조회를 productId 단일 파라미
 ### Task 4: 결제완료 API productId 전환 (breaking)
 
 **Files:**
-- Modify: `meeple-core/src/main/kotlin/com/org/meeple/core/payments/PaymentsErrorCode.kt`
-- Modify: `meeple-core/src/main/kotlin/com/org/meeple/core/payments/command/application/port/in/command/CompletePaymentCommand.kt`
-- Modify: `meeple-core/src/main/kotlin/com/org/meeple/core/payments/command/application/CompletePaymentService.kt`
-- Modify: `meeple-api/src/main/kotlin/com/org/meeple/api/payments/request/CompletePaymentRequest.kt`
-- Modify: `meeple-api/src/main/kotlin/com/org/meeple/api/payments/PaymentsController.kt` (@Operation description만)
-- Test(Modify): `meeple-api/src/test/kotlin/com/org/meeple/api/payments/PaymentsCompleteE2ETest.kt`
+- Modify: `oneulsogae-core/src/main/kotlin/com/org/oneulsogae/core/payments/PaymentsErrorCode.kt`
+- Modify: `oneulsogae-core/src/main/kotlin/com/org/oneulsogae/core/payments/command/application/port/in/command/CompletePaymentCommand.kt`
+- Modify: `oneulsogae-core/src/main/kotlin/com/org/oneulsogae/core/payments/command/application/CompletePaymentService.kt`
+- Modify: `oneulsogae-api/src/main/kotlin/com/org/oneulsogae/api/payments/request/CompletePaymentRequest.kt`
+- Modify: `oneulsogae-api/src/main/kotlin/com/org/oneulsogae/api/payments/PaymentsController.kt` (@Operation description만)
+- Test(Modify): `oneulsogae-api/src/test/kotlin/com/org/oneulsogae/api/payments/PaymentsCompleteE2ETest.kt`
 
 **Interfaces:**
 - Consumes: Task 1 `GetGatheringsUseCase.getProduct(productId): GatheringProductIdentity`
@@ -456,7 +456,7 @@ git commit -m "feat(payments): 체크아웃 조회를 productId 단일 파라미
 `CompletePaymentCommand.kt` 전체 교체:
 
 ```kotlin
-package com.org.meeple.core.payments.command.application.port.`in`.command
+package com.org.oneulsogae.core.payments.command.application.port.`in`.command
 
 /** 결제완료 접수 명령. 상품은 productId 하나로 지정한다. 성별은 받지 않는다 — 본인 프로필 성별을 서버가 강제한다. */
 data class CompletePaymentCommand(
@@ -467,9 +467,9 @@ data class CompletePaymentCommand(
 `CompletePaymentRequest.kt` 전체 교체:
 
 ```kotlin
-package com.org.meeple.api.payments.request
+package com.org.oneulsogae.api.payments.request
 
-import com.org.meeple.core.payments.command.application.port.`in`.command.CompletePaymentCommand
+import com.org.oneulsogae.core.payments.command.application.port.`in`.command.CompletePaymentCommand
 import jakarta.validation.constraints.NotNull
 
 /** 결제완료 접수 요청. 상품은 productId(모임 상세 응답의 schedules[].productId)로 지정한다. 성별은 받지 않는다(본인 프로필 성별을 서버가 강제). */
@@ -488,22 +488,22 @@ data class CompletePaymentRequest(
 `CompletePaymentService.kt` 전체 교체:
 
 ```kotlin
-package com.org.meeple.core.payments.command.application
+package com.org.oneulsogae.core.payments.command.application
 
-import com.org.meeple.common.user.Gender
-import com.org.meeple.core.common.error.BusinessException
-import com.org.meeple.core.gathering.command.application.port.`in`.RegisterGatheringMemberUseCase
-import com.org.meeple.core.gathering.command.application.port.`in`.command.RegisterGatheringMemberCommand
-import com.org.meeple.core.gathering.command.application.port.`in`.result.RegisterGatheringMemberResult
-import com.org.meeple.core.gathering.query.dto.GatheringProductIdentity
-import com.org.meeple.core.gathering.query.service.port.`in`.GetGatheringsUseCase
-import com.org.meeple.core.payments.PaymentsErrorCode
-import com.org.meeple.core.payments.command.application.port.`in`.CompletePaymentUseCase
-import com.org.meeple.core.payments.command.application.port.`in`.command.CompletePaymentCommand
-import com.org.meeple.core.payments.command.application.port.`in`.result.CompletePaymentResult
-import com.org.meeple.core.payments.command.application.port.out.SavePaymentPort
-import com.org.meeple.core.payments.command.domain.Payment
-import com.org.meeple.core.user.query.service.port.`in`.GetUserDetailUseCase
+import com.org.oneulsogae.common.user.Gender
+import com.org.oneulsogae.core.common.error.BusinessException
+import com.org.oneulsogae.core.gathering.command.application.port.`in`.RegisterGatheringMemberUseCase
+import com.org.oneulsogae.core.gathering.command.application.port.`in`.command.RegisterGatheringMemberCommand
+import com.org.oneulsogae.core.gathering.command.application.port.`in`.result.RegisterGatheringMemberResult
+import com.org.oneulsogae.core.gathering.query.dto.GatheringProductIdentity
+import com.org.oneulsogae.core.gathering.query.service.port.`in`.GetGatheringsUseCase
+import com.org.oneulsogae.core.payments.PaymentsErrorCode
+import com.org.oneulsogae.core.payments.command.application.port.`in`.CompletePaymentUseCase
+import com.org.oneulsogae.core.payments.command.application.port.`in`.command.CompletePaymentCommand
+import com.org.oneulsogae.core.payments.command.application.port.`in`.result.CompletePaymentResult
+import com.org.oneulsogae.core.payments.command.application.port.out.SavePaymentPort
+import com.org.oneulsogae.core.payments.command.domain.Payment
+import com.org.oneulsogae.core.user.query.service.port.`in`.GetUserDetailUseCase
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 
@@ -619,23 +619,23 @@ class CompletePaymentService(
 
 - [ ] **Step 4: E2E 통과 확인**
 
-Run: `./gradlew :meeple-api:test --tests "com.org.meeple.api.payments.PaymentsCompleteE2ETest"`
+Run: `./gradlew :oneulsogae-api:test --tests "com.org.oneulsogae.api.payments.PaymentsCompleteE2ETest"`
 Expected: PASS
 
 - [ ] **Step 5: 전체 회귀 확인**
 
-Run: `./gradlew :meeple-api:test`
+Run: `./gradlew :oneulsogae-api:test`
 Expected: PASS (체크아웃·offline·어드민 포함 전체)
 
 - [ ] **Step 6: 커밋**
 
 ```bash
-git add meeple-core/src/main/kotlin/com/org/meeple/core/payments/PaymentsErrorCode.kt \
-  meeple-core/src/main/kotlin/com/org/meeple/core/payments/command/application/port/in/command/CompletePaymentCommand.kt \
-  meeple-core/src/main/kotlin/com/org/meeple/core/payments/command/application/CompletePaymentService.kt \
-  meeple-api/src/main/kotlin/com/org/meeple/api/payments/request/CompletePaymentRequest.kt \
-  meeple-api/src/main/kotlin/com/org/meeple/api/payments/PaymentsController.kt \
-  meeple-api/src/test/kotlin/com/org/meeple/api/payments/PaymentsCompleteE2ETest.kt
+git add oneulsogae-core/src/main/kotlin/com/org/oneulsogae/core/payments/PaymentsErrorCode.kt \
+  oneulsogae-core/src/main/kotlin/com/org/oneulsogae/core/payments/command/application/port/in/command/CompletePaymentCommand.kt \
+  oneulsogae-core/src/main/kotlin/com/org/oneulsogae/core/payments/command/application/CompletePaymentService.kt \
+  oneulsogae-api/src/main/kotlin/com/org/oneulsogae/api/payments/request/CompletePaymentRequest.kt \
+  oneulsogae-api/src/main/kotlin/com/org/oneulsogae/api/payments/PaymentsController.kt \
+  oneulsogae-api/src/test/kotlin/com/org/oneulsogae/api/payments/PaymentsCompleteE2ETest.kt
 git commit -m "feat(payments): 결제완료 접수를 productId 기반으로 전환하고 타성별 상품 거부"
 ```
 

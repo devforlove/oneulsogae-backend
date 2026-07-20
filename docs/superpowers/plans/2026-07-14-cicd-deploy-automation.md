@@ -26,7 +26,7 @@
 - Modify: `.dockerignore`
 
 **Interfaces:**
-- Produces: `ghcr.io/devforlove/meeple-backend` 이미지가 `meeple-api/build/libs/*.jar`(부트 jar)을 `/app/app.jar`로 담아 `java -jar app.jar`로 기동. Task 4의 build-push 단계가 이 Dockerfile을 컨텍스트 `.`로 빌드한다.
+- Produces: `ghcr.io/devforlove/meeple-backend` 이미지가 `oneulsogae-api/build/libs/*.jar`(부트 jar)을 `/app/app.jar`로 담아 `java -jar app.jar`로 기동. Task 4의 build-push 단계가 이 Dockerfile을 컨텍스트 `.`로 빌드한다.
 
 - [ ] **Step 1: Dockerfile을 런타임 전용으로 교체**
 
@@ -37,7 +37,7 @@
 # (기존의 이미지 내 gradle 빌드 제거 → arm64 빌드 시 QEMU로 gradle을 돌리지 않아 빠르다)
 FROM amazoncorretto:21
 WORKDIR /app
-COPY meeple-api/build/libs/*.jar app.jar
+COPY oneulsogae-api/build/libs/*.jar app.jar
 EXPOSE 8080
 ENV JAVA_OPTS="-Xms512m -Xmx1024m"
 ENTRYPOINT ["sh","-c","java $JAVA_OPTS -jar app.jar"]
@@ -53,8 +53,8 @@ ENTRYPOINT ["sh","-c","java $JAVA_OPTS -jar app.jar"]
 .gradle
 .idea
 **/build
-# CI/로컬이 미리 만든 meeple-api 부트 jar만 예외로 빌드 컨텍스트에 포함한다(런타임 Dockerfile이 COPY).
-!meeple-api/build/libs/*.jar
+# CI/로컬이 미리 만든 oneulsogae-api 부트 jar만 예외로 빌드 컨텍스트에 포함한다(런타임 Dockerfile이 COPY).
+!oneulsogae-api/build/libs/*.jar
 *.iml
 # 로컬 개발용 파일 (운영 이미지에 불필요)
 docker-compose.yml
@@ -63,17 +63,17 @@ docker/
 
 - [ ] **Step 3: jar 빌드**
 
-Run: `./gradlew :meeple-api:bootJar`
-Expected: `BUILD SUCCESSFUL`, `meeple-api/build/libs/`에 `*.jar` 1개 생성.
+Run: `./gradlew :oneulsogae-api:bootJar`
+Expected: `BUILD SUCCESSFUL`, `oneulsogae-api/build/libs/`에 `*.jar` 1개 생성.
 
-확인: `ls meeple-api/build/libs/*.jar` → jar 파일 경로 출력.
+확인: `ls oneulsogae-api/build/libs/*.jar` → jar 파일 경로 출력.
 
 - [ ] **Step 4: 로컬 Docker 빌드로 Dockerfile+dockerignore 검증**
 
-Run: `docker build -t meeple-verify .`
-Expected: 빌드 성공(`COPY meeple-api/build/libs/*.jar app.jar` 통과). 실패 시 `.dockerignore`가 jar을 제외한 것이므로 Step 2 재확인.
+Run: `docker build -t oneulsogae-verify .`
+Expected: 빌드 성공(`COPY oneulsogae-api/build/libs/*.jar app.jar` 통과). 실패 시 `.dockerignore`가 jar을 제외한 것이므로 Step 2 재확인.
 
-확인: `docker run --rm meeple-verify sh -c 'ls -l /app/app.jar'` → `/app/app.jar` 존재 출력.
+확인: `docker run --rm oneulsogae-verify sh -c 'ls -l /app/app.jar'` → `/app/app.jar` 존재 출력.
 
 - [ ] **Step 5: 커밋**
 
@@ -82,7 +82,7 @@ git add Dockerfile .dockerignore
 git commit -m "build: Dockerfile을 런타임 전용(jar COPY)으로 교체
 
 - 이미지 내 gradle 빌드 제거, 미리 만든 부트 jar만 COPY
-- .dockerignore에 meeple-api 부트 jar 예외 추가
+- .dockerignore에 oneulsogae-api 부트 jar 예외 추가
 
 Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>"
 ```
@@ -96,14 +96,14 @@ Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>"
 **Files:** 없음 (AWS 콘솔)
 
 **Interfaces:**
-- Produces: IAM 역할 `meeple-github-deploy-role`의 ARN(`arn:aws:iam::<ACCOUNT_ID>:role/meeple-github-deploy-role`). Task 3의 `AWS_ROLE_ARN` 변수, Task 4의 `role-to-assume`가 소비.
+- Produces: IAM 역할 `oneulsogae-github-deploy-role`의 ARN(`arn:aws:iam::<ACCOUNT_ID>:role/oneulsogae-github-deploy-role`). Task 3의 `AWS_ROLE_ARN` 변수, Task 4의 `role-to-assume`가 소비.
 
 - [ ] **Step 1: 계정 ID·인스턴스 ID 확보**
 
 ```bash
 aws sts get-caller-identity --query Account --output text            # <ACCOUNT_ID>
 aws ec2 describe-instances --region ap-northeast-2 \
-  --filters "Name=tag:Name,Values=meeple-api" \
+  --filters "Name=tag:Name,Values=oneulsogae-api" \
   --query "Reservations[].Instances[].InstanceId" --output text        # <EC2_INSTANCE_ID>
 ```
 (로컬 맥에 aws CLI가 설정돼 있어야 함. 없으면 콘솔 EC2/우상단 계정에서 확인)
@@ -134,7 +134,7 @@ IAM → 역할 → 역할 생성 → 사용자 지정 신뢰 정책. 아래 JSON
 }
 ```
 
-역할 이름: `meeple-github-deploy-role`.
+역할 이름: `oneulsogae-github-deploy-role`.
 
 - [ ] **Step 4: 권한 정책 연결 (최소 권한)**
 
@@ -165,8 +165,8 @@ IAM → 역할 → 역할 생성 → 사용자 지정 신뢰 정책. 아래 JSON
 
 - [ ] **Step 5: 역할 생성 확인**
 
-Run: `aws iam get-role --role-name meeple-github-deploy-role --query "Role.Arn" --output text`
-Expected: `arn:aws:iam::<ACCOUNT_ID>:role/meeple-github-deploy-role` 출력. 이 ARN을 Task 3에서 사용.
+Run: `aws iam get-role --role-name oneulsogae-github-deploy-role --query "Role.Arn" --output text`
+Expected: `arn:aws:iam::<ACCOUNT_ID>:role/oneulsogae-github-deploy-role` 출력. 이 ARN을 Task 3에서 사용.
 
 ---
 
@@ -184,7 +184,7 @@ GitHub → 리포 `devforlove/meeple-backend` → Settings → Secrets and varia
 
 | Name | Value |
 |---|---|
-| `AWS_ROLE_ARN` | `arn:aws:iam::<ACCOUNT_ID>:role/meeple-github-deploy-role` |
+| `AWS_ROLE_ARN` | `arn:aws:iam::<ACCOUNT_ID>:role/oneulsogae-github-deploy-role` |
 | `AWS_REGION` | `ap-northeast-2` |
 | `EC2_INSTANCE_ID` | `<EC2_INSTANCE_ID>` |
 
@@ -342,7 +342,7 @@ Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>"
 
 ```markdown
 > **런타임 전용 Dockerfile**: 이미지 안에서 gradle을 돌리지 않고 미리 만든 부트 jar을 COPY한다.
-> 로컬에서 수동 빌드할 때는 먼저 `./gradlew :meeple-api:bootJar`로 jar을 만든 뒤 `docker build`(또는 `docker buildx build --platform linux/arm64 ... --push .`)를 실행한다.
+> 로컬에서 수동 빌드할 때는 먼저 `./gradlew :oneulsogae-api:bootJar`로 jar을 만든 뒤 `docker build`(또는 `docker buildx build --platform linux/arm64 ... --push .`)를 실행한다.
 > 자동 배포는 `.github/workflows/deploy.yml`(수동 트리거)이 담당한다 — 자세한 내용은 10단계 참고.
 ```
 
@@ -402,7 +402,7 @@ Expected: 502가 아닌 정상 응답.
 
 EC2에서 새 이미지가 도는지(선택, SSM 세션):
 ```bash
-docker inspect --format '{{.Config.Image}}' meeple-api-1
+docker inspect --format '{{.Config.Image}}' oneulsogae-api-1
 docker compose -f /opt/meeple/docker-compose.prod.yml ps
 ```
 Expected: api 컨테이너 `Up`, `ghcr.io/devforlove/meeple-backend:latest` 사용.
@@ -434,4 +434,4 @@ git push origin main
 
 **Placeholder scan:** `<ACCOUNT_ID>`/`<EC2_INSTANCE_ID>`는 사용자가 자신의 값으로 치환하는 의도된 변수(수동 인프라 태스크). 코드/설정 태스크(1,4,5)에는 미완성 표현 없음.
 
-**Type consistency:** 이미지 이름 `ghcr.io/devforlove/meeple-backend`, 역할명 `meeple-github-deploy-role`, 변수명 `AWS_ROLE_ARN`/`AWS_REGION`/`EC2_INSTANCE_ID`, compose 경로 `/opt/meeple/docker-compose.prod.yml`가 전 태스크에서 일관됨. ✓
+**Type consistency:** 이미지 이름 `ghcr.io/devforlove/meeple-backend`, 역할명 `oneulsogae-github-deploy-role`, 변수명 `AWS_ROLE_ARN`/`AWS_REGION`/`EC2_INSTANCE_ID`, compose 경로 `/opt/meeple/docker-compose.prod.yml`가 전 태스크에서 일관됨. ✓

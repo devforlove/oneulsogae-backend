@@ -142,7 +142,7 @@ FORMED ──(구성원 해체·떠나기)──> DEACTIVATED + soft delete
   - `acceptInvitation`: 정상(→FORMED), 비INVITED 멤버 수락 실패, 비구성원 실패, 잘못된 상태 실패.
   - `withdrawInvitation`/`disband`: 정상 비활성화, 상태/구성원 검증 실패.
   - `TeamMembers`: `accept`/`allActive`/`deactivateAll`/`find`.
-- **E2E(`meeple-api`, `AbstractIntegrationSupport` + `TeamFixture`)**:
+- **E2E(`oneulsogae-api`, `AbstractIntegrationSupport` + `TeamFixture`)**:
   - 초대 수락 → 팀 FORMED.
   - 거절 → DEACTIVATED. owner 초대취소 → DEACTIVATED.
   - FORMED 팀 해체 → DEACTIVATED.

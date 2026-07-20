@@ -21,33 +21,33 @@
 
 ## File Structure
 
-**쓰기 경로 (Task 1, meeple-core):**
-- `meeple-core/.../chat/command/domain/ChatRoomMember.kt` — `teamId` 필드 + `join` 시그니처
-- `meeple-core/.../chat/command/application/port/in/command/SaveChatRoomCommand.kt` — `SaveChatRoomParticipant` 추가 + `participants`로 교체
-- `meeple-core/.../chat/command/application/SaveChatRoomService.kt` — participants → join(teamId)
-- `meeple-core/.../match/command/application/SendInterestService.kt` — SOLO participants(teamId=null)
-- `meeple-core/.../match/command/application/SendTeamInterestService.kt` — TEAM participants(teamId=team.id)
-- `meeple-api/src/test/.../domain/chat/ChatRoomMemberTest.kt` — join 유닛 테스트 갱신
+**쓰기 경로 (Task 1, oneulsogae-core):**
+- `oneulsogae-core/.../chat/command/domain/ChatRoomMember.kt` — `teamId` 필드 + `join` 시그니처
+- `oneulsogae-core/.../chat/command/application/port/in/command/SaveChatRoomCommand.kt` — `SaveChatRoomParticipant` 추가 + `participants`로 교체
+- `oneulsogae-core/.../chat/command/application/SaveChatRoomService.kt` — participants → join(teamId)
+- `oneulsogae-core/.../match/command/application/SendInterestService.kt` — SOLO participants(teamId=null)
+- `oneulsogae-core/.../match/command/application/SendTeamInterestService.kt` — TEAM participants(teamId=team.id)
+- `oneulsogae-api/src/test/.../domain/chat/ChatRoomMemberTest.kt` — join 유닛 테스트 갱신
 
-**읽기/영속 경로 (Task 2, meeple-infra + E2E):**
-- `meeple-infra/.../chat/command/entity/ChatRoomMemberEntity.kt` — `team_id` 컬럼
-- `meeple-infra/.../chat/command/mapper/ChatRoomMemberMapper.kt` — teamId 왕복
-- `meeple-infra/src/testFixtures/.../fixture/ChatRoomMemberEntityFixture.kt` — teamId 파라미터
-- `meeple-infra/.../chat/query/GetChatRoomDaoImpl.kt` — self-join 필터
+**읽기/영속 경로 (Task 2, oneulsogae-infra + E2E):**
+- `oneulsogae-infra/.../chat/command/entity/ChatRoomMemberEntity.kt` — `team_id` 컬럼
+- `oneulsogae-infra/.../chat/command/mapper/ChatRoomMemberMapper.kt` — teamId 왕복
+- `oneulsogae-infra/src/testFixtures/.../fixture/ChatRoomMemberEntityFixture.kt` — teamId 파라미터
+- `oneulsogae-infra/.../chat/query/GetChatRoomDaoImpl.kt` — self-join 필터
 - `docs/migration/chat_room_members_team_id.sql` — ALTER TABLE (신규)
-- `meeple-api/src/test/.../api/chat/MyChatRoomsE2ETest.kt` — TEAM 케이스 추가
+- `oneulsogae-api/src/test/.../api/chat/MyChatRoomsE2ETest.kt` — TEAM 케이스 추가
 
 ---
 
 ## Task 1: 채팅방 생성 시 참가자 team_id 전달 (쓰기 경로)
 
 **Files:**
-- Modify: `meeple-core/src/main/kotlin/com/org/meeple/core/chat/command/domain/ChatRoomMember.kt`
-- Modify: `meeple-core/src/main/kotlin/com/org/meeple/core/chat/command/application/port/in/command/SaveChatRoomCommand.kt`
-- Modify: `meeple-core/src/main/kotlin/com/org/meeple/core/chat/command/application/SaveChatRoomService.kt`
-- Modify: `meeple-core/src/main/kotlin/com/org/meeple/core/match/command/application/SendInterestService.kt`
-- Modify: `meeple-core/src/main/kotlin/com/org/meeple/core/match/command/application/SendTeamInterestService.kt`
-- Test: `meeple-api/src/test/kotlin/com/org/meeple/domain/chat/ChatRoomMemberTest.kt`
+- Modify: `oneulsogae-core/src/main/kotlin/com/org/oneulsogae/core/chat/command/domain/ChatRoomMember.kt`
+- Modify: `oneulsogae-core/src/main/kotlin/com/org/oneulsogae/core/chat/command/application/port/in/command/SaveChatRoomCommand.kt`
+- Modify: `oneulsogae-core/src/main/kotlin/com/org/oneulsogae/core/chat/command/application/SaveChatRoomService.kt`
+- Modify: `oneulsogae-core/src/main/kotlin/com/org/oneulsogae/core/match/command/application/SendInterestService.kt`
+- Modify: `oneulsogae-core/src/main/kotlin/com/org/oneulsogae/core/match/command/application/SendTeamInterestService.kt`
+- Test: `oneulsogae-api/src/test/kotlin/com/org/oneulsogae/domain/chat/ChatRoomMemberTest.kt`
 
 **Interfaces:**
 - Produces:
@@ -59,7 +59,7 @@
 
 - [ ] **Step 1: 도메인 유닛 테스트를 먼저 수정(실패 유도)**
 
-`meeple-api/src/test/kotlin/com/org/meeple/domain/chat/ChatRoomMemberTest.kt`의 `describe("join")` 블록을 아래로 교체한다. (상단 `val` 영역에 `val teamId: Long = 20L` 추가)
+`oneulsogae-api/src/test/kotlin/com/org/oneulsogae/domain/chat/ChatRoomMemberTest.kt`의 `describe("join")` 블록을 아래로 교체한다. (상단 `val` 영역에 `val teamId: Long = 20L` 추가)
 
 ```kotlin
 	val now: LocalDateTime = LocalDateTime.of(2026, 6, 11, 12, 0)
@@ -90,7 +90,7 @@
 
 - [ ] **Step 2: 테스트 컴파일 실패 확인**
 
-Run: `./gradlew :meeple-api:compileTestKotlin`
+Run: `./gradlew :oneulsogae-api:compileTestKotlin`
 Expected: FAIL — `join`에 `teamId` 파라미터가 없어 컴파일 에러(`no value passed for parameter` 또는 `too many arguments`).
 
 - [ ] **Step 3: 도메인 모델 수정**
@@ -124,16 +124,16 @@ Expected: FAIL — `join`에 `teamId` 파라미터가 없어 컴파일 에러(`n
 `SaveChatRoomCommand.kt` 전체를 교체한다.
 
 ```kotlin
-package com.org.meeple.core.chat.command.application.port.`in`.command
+package com.org.oneulsogae.core.chat.command.application.port.`in`.command
 
-import com.org.meeple.common.chat.ChatRoomMatchType
+import com.org.oneulsogae.common.chat.ChatRoomMatchType
 
 /**
  * 채팅방 생성 입력. 어느 매칭에서 생성됐는지([matchType]+[matchId])와 참가자 목록([participants])을 받는다.
  * [matchType]은 solo/team 매칭을 구분하는 판별값이다. (match_id가 두 매칭의 id를 함께 가리키므로 타입으로 구분)
  * 참가자는 방이 아니라 참가자(ChatRoomMember) 단위로 보관되므로 목록으로 받는다. (1:1이면 두 명, 그룹챗이면 여러 명)
  * 각 참가자는 TEAM 방에서 소속 팀([SaveChatRoomParticipant.teamId])을 함께 싣는다. (SOLO는 null) 목록 조회의 상대 팀 판별에 쓰인다.
- * 만료 시각/초기 상태는 도메인([com.org.meeple.core.chat.command.domain.ChatRoom.open])이 정하므로 받지 않는다.
+ * 만료 시각/초기 상태는 도메인([com.org.oneulsogae.core.chat.command.domain.ChatRoom.open])이 정하므로 받지 않는다.
  */
 data class SaveChatRoomCommand(
 	val matchType: ChatRoomMatchType,
@@ -165,7 +165,7 @@ data class SaveChatRoomParticipant(
 같은 파일 import에 추가한다.
 
 ```kotlin
-import com.org.meeple.core.chat.command.application.port.`in`.command.SaveChatRoomParticipant
+import com.org.oneulsogae.core.chat.command.application.port.`in`.command.SaveChatRoomParticipant
 ```
 
 - [ ] **Step 6: SendInterestService(SOLO)가 teamId=null로 participants 구성**
@@ -185,7 +185,7 @@ import com.org.meeple.core.chat.command.application.port.`in`.command.SaveChatRo
 import에 추가한다.
 
 ```kotlin
-import com.org.meeple.core.chat.command.application.port.`in`.command.SaveChatRoomParticipant
+import com.org.oneulsogae.core.chat.command.application.port.`in`.command.SaveChatRoomParticipant
 ```
 
 - [ ] **Step 7: SendTeamInterestService(TEAM)가 team.id로 participants 구성**
@@ -212,18 +212,18 @@ import com.org.meeple.core.chat.command.application.port.`in`.command.SaveChatRo
 import에 추가한다.
 
 ```kotlin
-import com.org.meeple.core.chat.command.application.port.`in`.command.SaveChatRoomParticipant
+import com.org.oneulsogae.core.chat.command.application.port.`in`.command.SaveChatRoomParticipant
 ```
 
 - [ ] **Step 8: 도메인 유닛 테스트 통과 확인 + core 빌드**
 
-Run: `./gradlew :meeple-core:compileKotlin :meeple-api:test --tests "com.org.meeple.domain.chat.ChatRoomMemberTest"`
-Expected: BUILD SUCCESSFUL — join 테스트 2건 통과, meeple-core 컴파일 성공.
+Run: `./gradlew :oneulsogae-core:compileKotlin :oneulsogae-api:test --tests "com.org.oneulsogae.domain.chat.ChatRoomMemberTest"`
+Expected: BUILD SUCCESSFUL — join 테스트 2건 통과, oneulsogae-core 컴파일 성공.
 
 - [ ] **Step 9: 커밋**
 
 ```bash
-git add meeple-core meeple-api/src/test/kotlin/com/org/meeple/domain/chat/ChatRoomMemberTest.kt
+git add oneulsogae-core oneulsogae-api/src/test/kotlin/com/org/oneulsogae/domain/chat/ChatRoomMemberTest.kt
 git commit -m "feat(chat): 채팅방 생성 시 참가자 team_id 전달
 
 Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>"
@@ -234,12 +234,12 @@ Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>"
 ## Task 2: TEAM 채팅방 목록에서 상대 팀만 participants로 노출 (영속 + 읽기 경로)
 
 **Files:**
-- Modify: `meeple-infra/src/main/kotlin/com/org/meeple/infra/chat/command/entity/ChatRoomMemberEntity.kt`
-- Modify: `meeple-infra/src/main/kotlin/com/org/meeple/infra/chat/command/mapper/ChatRoomMemberMapper.kt`
-- Modify: `meeple-infra/src/testFixtures/kotlin/com/org/meeple/infra/fixture/ChatRoomMemberEntityFixture.kt`
-- Modify: `meeple-infra/src/main/kotlin/com/org/meeple/infra/chat/query/GetChatRoomDaoImpl.kt`
+- Modify: `oneulsogae-infra/src/main/kotlin/com/org/oneulsogae/infra/chat/command/entity/ChatRoomMemberEntity.kt`
+- Modify: `oneulsogae-infra/src/main/kotlin/com/org/oneulsogae/infra/chat/command/mapper/ChatRoomMemberMapper.kt`
+- Modify: `oneulsogae-infra/src/testFixtures/kotlin/com/org/oneulsogae/infra/fixture/ChatRoomMemberEntityFixture.kt`
+- Modify: `oneulsogae-infra/src/main/kotlin/com/org/oneulsogae/infra/chat/query/GetChatRoomDaoImpl.kt`
 - Create: `docs/migration/chat_room_members_team_id.sql`
-- Test: `meeple-api/src/test/kotlin/com/org/meeple/api/chat/MyChatRoomsE2ETest.kt`
+- Test: `oneulsogae-api/src/test/kotlin/com/org/oneulsogae/api/chat/MyChatRoomsE2ETest.kt`
 
 **Interfaces:**
 - Consumes (Task 1): `ChatRoomMember.teamId: Long?`
@@ -345,7 +345,7 @@ ALTER TABLE chat_room_members
 
 - [ ] **Step 5: 영속 계층 컴파일 확인**
 
-Run: `./gradlew :meeple-infra:compileKotlin :meeple-infra:compileTestFixturesKotlin`
+Run: `./gradlew :oneulsogae-infra:compileKotlin :oneulsogae-infra:compileTestFixturesKotlin`
 Expected: BUILD SUCCESSFUL — 엔티티/매퍼/픽스처 컴파일 성공(`QChatRoomMemberEntity.teamId` 생성).
 
 - [ ] **Step 6: 실패하는 E2E 테스트 작성**
@@ -355,7 +355,7 @@ Expected: BUILD SUCCESSFUL — 엔티티/매퍼/픽스처 컴파일 성공(`QCha
 (a) import 추가:
 
 ```kotlin
-import com.org.meeple.common.chat.ChatRoomMatchType
+import com.org.oneulsogae.common.chat.ChatRoomMatchType
 ```
 
 (b) 기존 `openRoomWithMembers` 헬퍼 바로 아래에 TEAM 방 헬퍼를 추가한다.
@@ -423,7 +423,7 @@ import com.org.meeple.common.chat.ChatRoomMatchType
 
 - [ ] **Step 7: E2E 실패 확인(버그 재현)**
 
-Run: `./gradlew :meeple-api:test --tests "com.org.meeple.api.chat.MyChatRoomsE2ETest"`
+Run: `./gradlew :oneulsogae-api:test --tests "com.org.oneulsogae.api.chat.MyChatRoomsE2ETest"`
 Expected: FAIL — `data[0].participants.size()`가 2가 아니라 **3**(내 팀원 `teammate`까지 포함). 조회가 아직 팀 필터를 하지 않기 때문.
 
 - [ ] **Step 8: 조회에 self-join 팀 필터 추가**
@@ -468,13 +468,13 @@ Expected: FAIL — `data[0].participants.size()`가 2가 아니라 **3**(내 팀
 
 - [ ] **Step 9: E2E 전체 통과 확인(TEAM 신규 + SOLO 회귀)**
 
-Run: `./gradlew :meeple-api:test --tests "com.org.meeple.api.chat.MyChatRoomsE2ETest"`
+Run: `./gradlew :oneulsogae-api:test --tests "com.org.oneulsogae.api.chat.MyChatRoomsE2ETest"`
 Expected: PASS — 신규 TEAM 케이스(상대 2명만) 통과 + 기존 SOLO/그룹 케이스 전부 통과(team_id null이라 나만 제외 동작 유지).
 
 - [ ] **Step 10: 커밋**
 
 ```bash
-git add meeple-infra docs/migration/chat_room_members_team_id.sql meeple-api/src/test/kotlin/com/org/meeple/api/chat/MyChatRoomsE2ETest.kt
+git add oneulsogae-infra docs/migration/chat_room_members_team_id.sql oneulsogae-api/src/test/kotlin/com/org/oneulsogae/api/chat/MyChatRoomsE2ETest.kt
 git commit -m "feat(chat): TEAM 채팅방 목록에서 상대 팀만 participants로 노출
 
 chat_room_members.team_id 비정규화 + 내 행 self-join으로 상대 팀만 필터.

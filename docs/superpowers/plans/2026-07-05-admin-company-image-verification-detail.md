@@ -10,7 +10,7 @@
 
 ## Global Constraints
 
-- **`meeple-admin`은 `meeple-core`를 의존하지 않는다.** admin 소스에 `com.org.meeple.core.*` import 0건.
+- **`oneulsogae-admin`은 `oneulsogae-core`를 의존하지 않는다.** admin 소스에 `com.org.oneulsogae.core.*` import 0건.
 - **타입 명시**: 변수·반환 타입·람다 파라미터 타입 생략 금지.
 - **CQRS**: 조회 전용. 기존 서비스는 `@Transactional(readOnly = true)`.
 - **에러코드**: `COMPANY_IMAGE_VERIFICATION_NOT_FOUND("COMPANY-IMAGE-001", "직장 인증을 찾을 수 없습니다.", HttpStatus.NOT_FOUND)`.
@@ -30,14 +30,14 @@
 
 ---
 
-## Task 1: meeple-admin — 상세 read model·에러코드·dao/UseCase/Service 메서드
+## Task 1: oneulsogae-admin — 상세 read model·에러코드·dao/UseCase/Service 메서드
 
 **Files:**
-- Create: `meeple-admin/src/main/kotlin/com/org/meeple/admin/companyverification/query/dto/AdminCompanyVerificationDetailView.kt`
-- Modify: `meeple-admin/src/main/kotlin/com/org/meeple/admin/common/error/AdminErrorCode.kt`
-- Modify: `meeple-admin/src/main/kotlin/com/org/meeple/admin/companyverification/query/dao/GetAdminCompanyVerificationDao.kt`
-- Modify: `meeple-admin/src/main/kotlin/com/org/meeple/admin/companyverification/query/service/port/in/GetAdminCompanyVerificationsUseCase.kt`
-- Modify: `meeple-admin/src/main/kotlin/com/org/meeple/admin/companyverification/query/service/GetAdminCompanyVerificationsService.kt`
+- Create: `oneulsogae-admin/src/main/kotlin/com/org/oneulsogae/admin/companyverification/query/dto/AdminCompanyVerificationDetailView.kt`
+- Modify: `oneulsogae-admin/src/main/kotlin/com/org/oneulsogae/admin/common/error/AdminErrorCode.kt`
+- Modify: `oneulsogae-admin/src/main/kotlin/com/org/oneulsogae/admin/companyverification/query/dao/GetAdminCompanyVerificationDao.kt`
+- Modify: `oneulsogae-admin/src/main/kotlin/com/org/oneulsogae/admin/companyverification/query/service/port/in/GetAdminCompanyVerificationsUseCase.kt`
+- Modify: `oneulsogae-admin/src/main/kotlin/com/org/oneulsogae/admin/companyverification/query/service/GetAdminCompanyVerificationsService.kt`
 
 **Interfaces:**
 - Produces:
@@ -51,9 +51,9 @@
 `AdminCompanyVerificationDetailView.kt`:
 
 ```kotlin
-package com.org.meeple.admin.companyverification.query.dto
+package com.org.oneulsogae.admin.companyverification.query.dto
 
-import com.org.meeple.common.user.CompanyImageVerificationStatus
+import com.org.oneulsogae.common.user.CompanyImageVerificationStatus
 import java.time.LocalDateTime
 
 /**
@@ -107,11 +107,11 @@ data class AdminCompanyVerificationDetailView(
 `GetAdminCompanyVerificationDao.kt`를 아래로 만든다(기존 메서드 유지 + 상세 메서드·import 추가):
 
 ```kotlin
-package com.org.meeple.admin.companyverification.query.dao
+package com.org.oneulsogae.admin.companyverification.query.dao
 
-import com.org.meeple.admin.companyverification.query.dto.AdminCompanyVerificationDetailView
-import com.org.meeple.admin.companyverification.query.dto.AdminCompanyVerificationViews
-import com.org.meeple.common.user.CompanyImageVerificationStatus
+import com.org.oneulsogae.admin.companyverification.query.dto.AdminCompanyVerificationDetailView
+import com.org.oneulsogae.admin.companyverification.query.dto.AdminCompanyVerificationViews
+import com.org.oneulsogae.common.user.CompanyImageVerificationStatus
 
 /** 어드민 회사 이미지 인증 조회 dao(query out-port). */
 interface GetAdminCompanyVerificationDao {
@@ -132,11 +132,11 @@ interface GetAdminCompanyVerificationDao {
 `GetAdminCompanyVerificationsUseCase.kt`를 아래로 만든다:
 
 ```kotlin
-package com.org.meeple.admin.companyverification.query.service.port.`in`
+package com.org.oneulsogae.admin.companyverification.query.service.port.`in`
 
-import com.org.meeple.admin.companyverification.query.dto.AdminCompanyVerificationDetailView
-import com.org.meeple.admin.companyverification.query.dto.AdminCompanyVerificationPage
-import com.org.meeple.common.user.CompanyImageVerificationStatus
+import com.org.oneulsogae.admin.companyverification.query.dto.AdminCompanyVerificationDetailView
+import com.org.oneulsogae.admin.companyverification.query.dto.AdminCompanyVerificationPage
+import com.org.oneulsogae.common.user.CompanyImageVerificationStatus
 
 /** 어드민 회사 이미지 인증 조회 유스케이스. */
 interface GetAdminCompanyVerificationsUseCase {
@@ -154,9 +154,9 @@ interface GetAdminCompanyVerificationsUseCase {
 `GetAdminCompanyVerificationsService.kt`의 import 블록에 추가:
 
 ```kotlin
-import com.org.meeple.admin.common.error.AdminErrorCode
-import com.org.meeple.admin.common.error.AdminException
-import com.org.meeple.admin.companyverification.query.dto.AdminCompanyVerificationDetailView
+import com.org.oneulsogae.admin.common.error.AdminErrorCode
+import com.org.oneulsogae.admin.common.error.AdminException
+import com.org.oneulsogae.admin.companyverification.query.dto.AdminCompanyVerificationDetailView
 ```
 
 `getVerifications(...)` 함수 닫는 중괄호 뒤, `companion object` 앞에 메서드 추가:
@@ -174,20 +174,20 @@ import com.org.meeple.admin.companyverification.query.dto.AdminCompanyVerificati
 
 - [ ] **Step 6: 컴파일 확인 + core 비의존 확인**
 
-Run: `./gradlew :meeple-admin:compileKotlin -q`
+Run: `./gradlew :oneulsogae-admin:compileKotlin -q`
 Expected: 성공(exit 0). (infra/api는 아직 findDetailById 미구현이라 전체 빌드는 Task 3 후 성공)
 
-Run: `grep -rn "com.org.meeple.core" meeple-admin/src --include="*.kt" | wc -l | tr -d ' '`
+Run: `grep -rn "com.org.oneulsogae.core" oneulsogae-admin/src --include="*.kt" | wc -l | tr -d ' '`
 Expected: `0`
 
 - [ ] **Step 7: 커밋**
 
 ```bash
-git add meeple-admin/src/main/kotlin/com/org/meeple/admin/companyverification/query/dto/AdminCompanyVerificationDetailView.kt \
-        meeple-admin/src/main/kotlin/com/org/meeple/admin/common/error/AdminErrorCode.kt \
-        meeple-admin/src/main/kotlin/com/org/meeple/admin/companyverification/query/dao/GetAdminCompanyVerificationDao.kt \
-        "meeple-admin/src/main/kotlin/com/org/meeple/admin/companyverification/query/service/port/in/GetAdminCompanyVerificationsUseCase.kt" \
-        meeple-admin/src/main/kotlin/com/org/meeple/admin/companyverification/query/service/GetAdminCompanyVerificationsService.kt
+git add oneulsogae-admin/src/main/kotlin/com/org/oneulsogae/admin/companyverification/query/dto/AdminCompanyVerificationDetailView.kt \
+        oneulsogae-admin/src/main/kotlin/com/org/oneulsogae/admin/common/error/AdminErrorCode.kt \
+        oneulsogae-admin/src/main/kotlin/com/org/oneulsogae/admin/companyverification/query/dao/GetAdminCompanyVerificationDao.kt \
+        "oneulsogae-admin/src/main/kotlin/com/org/oneulsogae/admin/companyverification/query/service/port/in/GetAdminCompanyVerificationsUseCase.kt" \
+        oneulsogae-admin/src/main/kotlin/com/org/oneulsogae/admin/companyverification/query/service/GetAdminCompanyVerificationsService.kt
 git commit -m "feat(admin): 회사 이미지 인증 상세 조회 read model·포트·서비스 추가
 
 상세 read model(목록 필드 + 주장 직장정보)·dao findDetailById·UseCase getVerification·
@@ -198,10 +198,10 @@ Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>"
 
 ---
 
-## Task 2: meeple-infra — findDetailById QueryDSL 구현
+## Task 2: oneulsogae-infra — findDetailById QueryDSL 구현
 
 **Files:**
-- Modify: `meeple-infra/src/main/kotlin/com/org/meeple/infra/user/query/GetAdminCompanyVerificationDaoImpl.kt`
+- Modify: `oneulsogae-infra/src/main/kotlin/com/org/oneulsogae/infra/user/query/GetAdminCompanyVerificationDaoImpl.kt`
 
 **Interfaces:**
 - Consumes (Task 1): `GetAdminCompanyVerificationDao.findDetailById`, `AdminCompanyVerificationDetailView`(10-arg 보조 생성자).
@@ -211,7 +211,7 @@ Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>"
 `GetAdminCompanyVerificationDaoImpl.kt`의 import 블록에 추가:
 
 ```kotlin
-import com.org.meeple.admin.companyverification.query.dto.AdminCompanyVerificationDetailView
+import com.org.oneulsogae.admin.companyverification.query.dto.AdminCompanyVerificationDetailView
 ```
 
 - [ ] **Step 2: findDetailById 메서드 구현**
@@ -250,13 +250,13 @@ import com.org.meeple.admin.companyverification.query.dto.AdminCompanyVerificati
 
 - [ ] **Step 3: 컴파일 확인**
 
-Run: `./gradlew :meeple-infra:compileKotlin -q`
+Run: `./gradlew :oneulsogae-infra:compileKotlin -q`
 Expected: 성공(exit 0).
 
 - [ ] **Step 4: 커밋**
 
 ```bash
-git add meeple-infra/src/main/kotlin/com/org/meeple/infra/user/query/GetAdminCompanyVerificationDaoImpl.kt
+git add oneulsogae-infra/src/main/kotlin/com/org/oneulsogae/infra/user/query/GetAdminCompanyVerificationDaoImpl.kt
 git commit -m "feat(admin): 회사 이미지 인증 상세 findDetailById QueryDSL 구현
 
 user_details(nickname·companyName·companyEmail·job)·users(email)를 조인해 id로 단건 조회한다.
@@ -266,11 +266,11 @@ Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>"
 
 ---
 
-## Task 3: meeple-api — 상세 응답 DTO + 컨트롤러 엔드포인트
+## Task 3: oneulsogae-api — 상세 응답 DTO + 컨트롤러 엔드포인트
 
 **Files:**
-- Create: `meeple-api/src/main/kotlin/com/org/meeple/api/admin/response/AdminCompanyVerificationDetailResponse.kt`
-- Modify: `meeple-api/src/main/kotlin/com/org/meeple/api/admin/AdminCompanyVerificationController.kt`
+- Create: `oneulsogae-api/src/main/kotlin/com/org/oneulsogae/api/admin/response/AdminCompanyVerificationDetailResponse.kt`
+- Modify: `oneulsogae-api/src/main/kotlin/com/org/oneulsogae/api/admin/AdminCompanyVerificationController.kt`
 
 **Interfaces:**
 - Consumes (Task 1): `GetAdminCompanyVerificationsUseCase.getVerification(id)`, `AdminCompanyVerificationDetailView`.
@@ -281,9 +281,9 @@ Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>"
 `response/AdminCompanyVerificationDetailResponse.kt`:
 
 ```kotlin
-package com.org.meeple.api.admin.response
+package com.org.oneulsogae.api.admin.response
 
-import com.org.meeple.admin.companyverification.query.dto.AdminCompanyVerificationDetailView
+import com.org.oneulsogae.admin.companyverification.query.dto.AdminCompanyVerificationDetailView
 import java.time.LocalDateTime
 
 /**
@@ -327,7 +327,7 @@ data class AdminCompanyVerificationDetailResponse(
 `AdminCompanyVerificationController.kt`의 import 블록에 추가:
 
 ```kotlin
-import com.org.meeple.api.admin.response.AdminCompanyVerificationDetailResponse
+import com.org.oneulsogae.api.admin.response.AdminCompanyVerificationDetailResponse
 import org.springframework.web.bind.annotation.PathVariable
 ```
 
@@ -351,14 +351,14 @@ import org.springframework.web.bind.annotation.PathVariable
 
 - [ ] **Step 3: 전체 컴파일 확인**
 
-Run: `./gradlew :meeple-api:compileKotlin -q`
+Run: `./gradlew :oneulsogae-api:compileKotlin -q`
 Expected: 성공(exit 0).
 
 - [ ] **Step 4: 커밋**
 
 ```bash
-git add meeple-api/src/main/kotlin/com/org/meeple/api/admin/response/AdminCompanyVerificationDetailResponse.kt \
-        meeple-api/src/main/kotlin/com/org/meeple/api/admin/AdminCompanyVerificationController.kt
+git add oneulsogae-api/src/main/kotlin/com/org/oneulsogae/api/admin/response/AdminCompanyVerificationDetailResponse.kt \
+        oneulsogae-api/src/main/kotlin/com/org/oneulsogae/api/admin/AdminCompanyVerificationController.kt
 git commit -m "feat(admin): 회사 이미지 인증 상세 조회 컨트롤러·응답 DTO 추가
 
 GET /admin/v1/company-image-verifications/{id}. 응답은 목록 필드 + 주장 직장정보(companyName·companyEmail·job)·imageUrl.
@@ -371,7 +371,7 @@ Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>"
 ## Task 4: E2E 테스트
 
 **Files:**
-- Test: `meeple-api/src/test/kotlin/com/org/meeple/api/admin/AdminCompanyVerificationDetailE2ETest.kt`
+- Test: `oneulsogae-api/src/test/kotlin/com/org/oneulsogae/api/admin/AdminCompanyVerificationDetailE2ETest.kt`
 
 **Interfaces:**
 - Consumes: `GET /admin/v1/company-image-verifications/{id}`, 픽스처(`UserEntityFixture`, `UserDetailEntityFixture`, `CompanyImageVerificationEntityFixture`), `IntegrationUtil`, `adminAccessTokenFor(id)`, presign 페이크(`TestFileStorageConfig`, 기존).
@@ -381,19 +381,19 @@ Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>"
 `AdminCompanyVerificationDetailE2ETest.kt`:
 
 ```kotlin
-package com.org.meeple.api.admin
+package com.org.oneulsogae.api.admin
 
-import com.org.meeple.common.integration.AbstractIntegrationSupport
-import com.org.meeple.common.integration.expect
-import com.org.meeple.common.integration.get
-import com.org.meeple.common.user.CompanyImageVerificationStatus
-import com.org.meeple.infra.fixture.CompanyImageVerificationEntityFixture
-import com.org.meeple.infra.fixture.IntegrationUtil
-import com.org.meeple.infra.fixture.UserDetailEntityFixture
-import com.org.meeple.infra.fixture.UserEntityFixture
-import com.org.meeple.infra.user.command.entity.QCompanyImageVerificationEntity
-import com.org.meeple.infra.user.command.entity.QUserDetailEntity
-import com.org.meeple.infra.user.command.entity.QUserEntity
+import com.org.oneulsogae.common.integration.AbstractIntegrationSupport
+import com.org.oneulsogae.common.integration.expect
+import com.org.oneulsogae.common.integration.get
+import com.org.oneulsogae.common.user.CompanyImageVerificationStatus
+import com.org.oneulsogae.infra.fixture.CompanyImageVerificationEntityFixture
+import com.org.oneulsogae.infra.fixture.IntegrationUtil
+import com.org.oneulsogae.infra.fixture.UserDetailEntityFixture
+import com.org.oneulsogae.infra.fixture.UserEntityFixture
+import com.org.oneulsogae.infra.user.command.entity.QCompanyImageVerificationEntity
+import com.org.oneulsogae.infra.user.command.entity.QUserDetailEntity
+import com.org.oneulsogae.infra.user.command.entity.QUserEntity
 
 /**
  * `GET /admin/v1/company-image-verifications/{id}` E2E 테스트.
@@ -414,8 +414,8 @@ class AdminCompanyVerificationDetailE2ETest : AbstractIntegrationSupport({
 					userId = userId,
 					nickname = "인증유저",
 					job = "백엔드 개발자",
-					companyEmail = "hr@meeple.com",
-					companyName = "미플",
+					companyEmail = "hr@oneulsogae.com",
+					companyName = "오늘의 소개",
 				),
 			)
 			val id: Long = IntegrationUtil.persist(
@@ -437,8 +437,8 @@ class AdminCompanyVerificationDetailE2ETest : AbstractIntegrationSupport({
 				body("data.statusLabel", "승인")
 				body("data.nickname", "인증유저")
 				body("data.email", "civd@test.com")
-				body("data.companyName", "미플")
-				body("data.companyEmail", "hr@meeple.com")
+				body("data.companyName", "오늘의 소개")
+				body("data.companyEmail", "hr@oneulsogae.com")
 				body("data.job", "백엔드 개발자")
 				body("data.imageUrl", "https://presigned.test/detail-key")
 			}
@@ -465,7 +465,7 @@ class AdminCompanyVerificationDetailE2ETest : AbstractIntegrationSupport({
 
 - [ ] **Step 2: E2E 실행**
 
-Run: `./gradlew :meeple-api:test --tests "com.org.meeple.api.admin.AdminCompanyVerificationDetailE2ETest" -q`
+Run: `./gradlew :oneulsogae-api:test --tests "com.org.oneulsogae.api.admin.AdminCompanyVerificationDetailE2ETest" -q`
 Expected: PASS (2개 케이스 모두 통과). Task 1~3 구현이 완료됐으므로 통과해야 한다. 실패 시:
 - 원인이 **테스트 코드**(픽스처 시그니처·단언값·정리 누락)이면 테스트를 고친다.
 - 원인이 **프로덕션 코드**(Task 1~3 버그)이면 최소 수정하되 보고서에 무엇을 왜 바꿨는지 명시한다. 특히 **404가 500으로 나오면** `AdminException`이 잡히는지(핸들러 우선순위)와 에러코드 매핑을 점검한다. 확신이 안 서면 BLOCKED.
@@ -478,7 +478,7 @@ Expected: 성공(exit 0). (목록 E2E·report E2E 포함 기존 테스트 회귀
 - [ ] **Step 4: 커밋**
 
 ```bash
-git add meeple-api/src/test/kotlin/com/org/meeple/api/admin/AdminCompanyVerificationDetailE2ETest.kt
+git add oneulsogae-api/src/test/kotlin/com/org/oneulsogae/api/admin/AdminCompanyVerificationDetailE2ETest.kt
 git commit -m "test(admin): 회사 이미지 인증 상세 조회 E2E 추가
 
 200 상세 필드(주장 직장정보·imageUrl)·404(COMPANY-IMAGE-001)를 검증한다.

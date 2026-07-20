@@ -31,14 +31,14 @@
 
 ## 변경 범위 (레이어별)
 
-### 1. 입력 (meeple-api)
+### 1. 입력 (oneulsogae-api)
 - `UpdateUserDetailRequest`: `age: Int?` → `birthday: LocalDate?` (`@field:NotNull`,
   메시지 "생년월일은 필수입니다."). 기존 `@Min(19)/@Max(100)`(나이 범위) 검증은 제거하고
   도메인 검증으로 이전.
 - `toCommand()`: `age` → `birthday` 매핑.
 - `UpdateUserDetailCommand`: `age: Int` → `birthday: LocalDate`.
 
-### 2. 도메인 (meeple-core)
+### 2. 도메인 (oneulsogae-core)
 - `UserDetail`: `age: Int?` → `birthday: LocalDate?`.
   - `initProfile(...)`: age 파라미터 → birthday.
   - `validateBirthday(birthday, today)`로 만 19~100세 검증 캡슐화(`if…throw` 나열 금지).
@@ -52,7 +52,7 @@
 - `UserErrorCode`: 나이 검증용 에러코드를 birthday 의미로 추가/교체(예: `BIRTHDAY_REQUIRED`,
   `INVALID_BIRTHDAY_AGE_RANGE`). 기존 age 관련 코드가 있으면 정리.
 
-### 3. 저장 (meeple-infra)
+### 3. 저장 (oneulsogae-infra)
 - `UserDetailEntity`: `@Column(name="age") age: Int?` → `@Column(name="birthday") birthday: LocalDate?`.
 - `MatchUserEntity`: `@Column(name="age", nullable=false) age: Int` →
   `@Column(name="birthday", nullable=false) birthday: LocalDate`.
@@ -69,7 +69,7 @@ DAO(QueryDSL projection) 컬럼 스왑(`match_user.age`/`user_details.age` → `
   `GetMatchWithPartnerDaoImpl`, `GetUserDetailDaoImpl`, `GetUserWithDetailDaoImpl`.
 - `GetMatchBatchTargetDaoImpl`: age projection 제거.
 
-### 5. 출력 (meeple-api) — 응답 JSON은 `age: Int` 불변
+### 5. 출력 (oneulsogae-api) — 응답 JSON은 `age: Int` 불변
 각 응답 팩토리가 읽기모델/도메인의 `birthday` + 주입된 `now`(TimeGenerator)로 `age`를 파생:
 - `UserProfileResponse`(자기 프로필; query `UserDetailView`·command `UserDetail` 양 경로),
   `InvitableUserResponse`, `MatchResponse.PartnerResponse`, `ReceivedInvitationResponse.Inviter`,

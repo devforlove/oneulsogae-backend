@@ -4,17 +4,17 @@
 
 **Goal:** NHN KCP 본인확인 API를 user 도메인 command side에 연동해, 온보딩 첫 관문에서 실명/휴대폰 실인증 + 성인 인증 + CI/DI 중복가입 차단을 수행한다.
 
-**Architecture:** 헥사고날. 도메인(`IdentityVerification`)·유스케이스(`Register`/`Confirm`)·포트(KCP register/query/crypto + 영속성)를 `meeple-core`에 두고, `meeple-infra`가 HTTP 어댑터(RestClient)·영속성 어댑터·암호화 stub을 구현한다. `meeple-api`에 컨트롤러를 둔다. KCP 암호화(`encrypJson`/`decryptJson`)는 `KcpCertCryptoPort`로 격리해 지금은 passthrough stub, 공식 JAR 확보 시 구현체만 교체한다.
+**Architecture:** 헥사고날. 도메인(`IdentityVerification`)·유스케이스(`Register`/`Confirm`)·포트(KCP register/query/crypto + 영속성)를 `oneulsogae-core`에 두고, `oneulsogae-infra`가 HTTP 어댑터(RestClient)·영속성 어댑터·암호화 stub을 구현한다. `oneulsogae-api`에 컨트롤러를 둔다. KCP 암호화(`encrypJson`/`decryptJson`)는 `KcpCertCryptoPort`로 격리해 지금은 passthrough stub, 공식 JAR 확보 시 구현체만 교체한다.
 
 **Tech Stack:** Kotlin 2.2.21, Spring Boot 4.0.6, Spring Data JPA, Spring `RestClient`, JDK `javax.crypto`(AES-GCM), Kotest(도메인 유닛), Testcontainers + RestAssured(E2E).
 
 ## Global Constraints
 
 - 응답/네이밍/커밋 등 규칙은 `CLAUDE.md`를 따른다. 응답은 한국어. `meeple-backend`만 수정하고 프론트는 안내만 한다.
-- **패키지 루트**: `com.org.meeple`. in-port 패키지는 백틱 `` `in` `` 사용.
-- **시각**: `LocalDateTime.now()` 직접 호출 금지. `com.org.meeple.core.common.time.TimeGenerator` 주입, 도메인엔 `now`/`today` 파라미터로 전달.
+- **패키지 루트**: `com.org.oneulsogae`. in-port 패키지는 백틱 `` `in` `` 사용.
+- **시각**: `LocalDateTime.now()` 직접 호출 금지. `com.org.oneulsogae.core.common.time.TimeGenerator` 주입, 도메인엔 `now`/`today` 파라미터로 전달.
 - **타입 명시**: 변수·반환·람다 파라미터 타입 생략 금지.
-- **엔티티**: `com.org.meeple.infra.common.BaseEntity` 상속(`id: Long?`, `created_at`/`updated_at`/`deleted_at` 제공), `@SQLRestriction("deleted_at is null")`.
+- **엔티티**: `com.org.oneulsogae.infra.common.BaseEntity` 상속(`id: Long?`, `created_at`/`updated_at`/`deleted_at` 제공), `@SQLRestriction("deleted_at is null")`.
 - **에러**: `UserErrorCode`(enum, `ErrorCode` 구현) + `BusinessException(errorCode[, message])`. 신규 코드는 `USER-024`부터.
 - **CI/DI 노출 금지**: 응답 DTO·로그에 CI/DI 포함 금지. DI는 평문 저장(중복조회), CI는 앱단 AES-GCM 암호화 저장.
 - **CQRS**: 본인확인은 command side. 조회 read model 불필요(확정 응답만 반환).
@@ -27,22 +27,22 @@
 가입 초기 상태를 `IDENTITY_VERIFICATION_PENDING`로 바꾸고, 본인확인 통과 시 `ONBOARDING`으로 전이한다.
 
 **Files:**
-- Modify: `meeple-common/src/main/kotlin/com/org/meeple/common/user/UserStatus.kt`
-- Modify: `meeple-core/src/main/kotlin/com/org/meeple/core/user/command/domain/User.kt`
-- Modify(test): `meeple-api/src/test/kotlin/com/org/meeple/api/auth/OAuthLoginIntegrationTest.kt:48`
-- Modify(test): `meeple-api/src/test/kotlin/com/org/meeple/api/user/PurgeWithdrawnUserE2ETest.kt:66`
-- Test: `meeple-api/src/test/kotlin/com/org/meeple/domain/user/UserIdentityVerificationTest.kt` (create)
+- Modify: `oneulsogae-common/src/main/kotlin/com/org/oneulsogae/common/user/UserStatus.kt`
+- Modify: `oneulsogae-core/src/main/kotlin/com/org/oneulsogae/core/user/command/domain/User.kt`
+- Modify(test): `oneulsogae-api/src/test/kotlin/com/org/oneulsogae/api/auth/OAuthLoginIntegrationTest.kt:48`
+- Modify(test): `oneulsogae-api/src/test/kotlin/com/org/oneulsogae/api/user/PurgeWithdrawnUserE2ETest.kt:66`
+- Test: `oneulsogae-api/src/test/kotlin/com/org/oneulsogae/domain/user/UserIdentityVerificationTest.kt` (create)
 
 **Interfaces:**
 - Produces: `UserStatus.IDENTITY_VERIFICATION_PENDING`; `User.create(...)`가 이 상태로 생성; `User.passIdentityVerification(): User`(→ ONBOARDING).
 
-- [ ] **Step 1: 실패 테스트 작성** — `meeple-api/src/test/kotlin/com/org/meeple/domain/user/UserIdentityVerificationTest.kt`
+- [ ] **Step 1: 실패 테스트 작성** — `oneulsogae-api/src/test/kotlin/com/org/oneulsogae/domain/user/UserIdentityVerificationTest.kt`
 
 ```kotlin
-package com.org.meeple.domain.user
+package com.org.oneulsogae.domain.user
 
-import com.org.meeple.common.user.UserStatus
-import com.org.meeple.core.user.command.domain.User
+import com.org.oneulsogae.common.user.UserStatus
+import com.org.oneulsogae.core.user.command.domain.User
 import io.kotest.core.spec.style.DescribeSpec
 import io.kotest.matchers.shouldBe
 
@@ -66,7 +66,7 @@ class UserIdentityVerificationTest : DescribeSpec({
 
 - [ ] **Step 2: 테스트 실패 확인**
 
-Run: `./gradlew :meeple-api:test --tests "com.org.meeple.domain.user.UserIdentityVerificationTest"`
+Run: `./gradlew :oneulsogae-api:test --tests "com.org.oneulsogae.domain.user.UserIdentityVerificationTest"`
 Expected: FAIL — `IDENTITY_VERIFICATION_PENDING` / `passIdentityVerification` 미정의로 컴파일 실패.
 
 - [ ] **Step 3: UserStatus에 상태 추가** — `UserStatus.kt`의 `ONBOARDING` 위에 추가
@@ -108,7 +108,7 @@ data class의 기본값 `status: UserStatus = UserStatus.ONBOARDING`은 건드�
 
 - [ ] **Step 5: 테스트 통과 확인**
 
-Run: `./gradlew :meeple-api:test --tests "com.org.meeple.domain.user.UserIdentityVerificationTest"`
+Run: `./gradlew :oneulsogae-api:test --tests "com.org.oneulsogae.domain.user.UserIdentityVerificationTest"`
 Expected: PASS
 
 - [ ] **Step 6: 기존 상태 단언 갱신**
@@ -118,14 +118,14 @@ Expected: PASS
 
 - [ ] **Step 7: 회귀 확인 + 커밋**
 
-Run: `./gradlew :meeple-api:test --tests "com.org.meeple.api.auth.OAuthLoginIntegrationTest" --tests "com.org.meeple.api.user.PurgeWithdrawnUserE2ETest"`
+Run: `./gradlew :oneulsogae-api:test --tests "com.org.oneulsogae.api.auth.OAuthLoginIntegrationTest" --tests "com.org.oneulsogae.api.user.PurgeWithdrawnUserE2ETest"`
 Expected: PASS
 
 ```bash
-git add meeple-common meeple-core/src/main/kotlin/com/org/meeple/core/user/command/domain/User.kt \
-  meeple-api/src/test/kotlin/com/org/meeple/domain/user/UserIdentityVerificationTest.kt \
-  meeple-api/src/test/kotlin/com/org/meeple/api/auth/OAuthLoginIntegrationTest.kt \
-  meeple-api/src/test/kotlin/com/org/meeple/api/user/PurgeWithdrawnUserE2ETest.kt
+git add oneulsogae-common oneulsogae-core/src/main/kotlin/com/org/oneulsogae/core/user/command/domain/User.kt \
+  oneulsogae-api/src/test/kotlin/com/org/oneulsogae/domain/user/UserIdentityVerificationTest.kt \
+  oneulsogae-api/src/test/kotlin/com/org/oneulsogae/api/auth/OAuthLoginIntegrationTest.kt \
+  oneulsogae-api/src/test/kotlin/com/org/oneulsogae/api/user/PurgeWithdrawnUserE2ETest.kt
 git commit -m "feat(user): 본인확인 대기 상태(IDENTITY_VERIFICATION_PENDING)와 통과 전이 추가"
 ```
 
@@ -136,14 +136,14 @@ git commit -m "feat(user): 본인확인 대기 상태(IDENTITY_VERIFICATION_PEND
 본인확인 애그리거트와 복호화 결과 값 객체, 성인/위변조 검증을 도메인에 캡슐화한다.
 
 **Files:**
-- Modify: `meeple-core/src/main/kotlin/com/org/meeple/core/user/UserErrorCode.kt`
-- Create: `meeple-core/src/main/kotlin/com/org/meeple/core/user/command/domain/IdentityVerificationStatus.kt`
-- Create: `meeple-core/src/main/kotlin/com/org/meeple/core/user/command/domain/CertifiedIdentity.kt`
-- Create: `meeple-core/src/main/kotlin/com/org/meeple/core/user/command/domain/IdentityVerification.kt`
-- Test: `meeple-api/src/test/kotlin/com/org/meeple/domain/user/IdentityVerificationTest.kt` (create)
+- Modify: `oneulsogae-core/src/main/kotlin/com/org/oneulsogae/core/user/UserErrorCode.kt`
+- Create: `oneulsogae-core/src/main/kotlin/com/org/oneulsogae/core/user/command/domain/IdentityVerificationStatus.kt`
+- Create: `oneulsogae-core/src/main/kotlin/com/org/oneulsogae/core/user/command/domain/CertifiedIdentity.kt`
+- Create: `oneulsogae-core/src/main/kotlin/com/org/oneulsogae/core/user/command/domain/IdentityVerification.kt`
+- Test: `oneulsogae-api/src/test/kotlin/com/org/oneulsogae/domain/user/IdentityVerificationTest.kt` (create)
 
 **Interfaces:**
-- Consumes: `UserErrorCode`(Task 1과 무관), `com.org.meeple.common.user.Gender`.
+- Consumes: `UserErrorCode`(Task 1과 무관), `com.org.oneulsogae.common.user.Gender`.
 - Produces:
   - `IdentityVerificationStatus { REQUESTED, VERIFIED, FAILED }`
   - `CertifiedIdentity(realName, birthday: LocalDate, gender: Gender, phoneNumber, ci, di, foreigner: Boolean, telecom)` with `age(today): Int`, `isAdult(today): Boolean`
@@ -163,17 +163,17 @@ git commit -m "feat(user): 본인확인 대기 상태(IDENTITY_VERIFICATION_PEND
 	IDENTITY_ALREADY_REGISTERED("USER-030", "이미 본인확인으로 가입된 사용자입니다.", HttpStatus.CONFLICT),
 ```
 
-- [ ] **Step 2: 실패 테스트 작성** — `meeple-api/src/test/kotlin/com/org/meeple/domain/user/IdentityVerificationTest.kt`
+- [ ] **Step 2: 실패 테스트 작성** — `oneulsogae-api/src/test/kotlin/com/org/oneulsogae/domain/user/IdentityVerificationTest.kt`
 
 ```kotlin
-package com.org.meeple.domain.user
+package com.org.oneulsogae.domain.user
 
-import com.org.meeple.common.user.Gender
-import com.org.meeple.core.common.error.BusinessException
-import com.org.meeple.core.user.UserErrorCode
-import com.org.meeple.core.user.command.domain.CertifiedIdentity
-import com.org.meeple.core.user.command.domain.IdentityVerification
-import com.org.meeple.core.user.command.domain.IdentityVerificationStatus
+import com.org.oneulsogae.common.user.Gender
+import com.org.oneulsogae.core.common.error.BusinessException
+import com.org.oneulsogae.core.user.UserErrorCode
+import com.org.oneulsogae.core.user.command.domain.CertifiedIdentity
+import com.org.oneulsogae.core.user.command.domain.IdentityVerification
+import com.org.oneulsogae.core.user.command.domain.IdentityVerificationStatus
 import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.core.spec.style.DescribeSpec
 import io.kotest.matchers.shouldBe
@@ -246,13 +246,13 @@ class IdentityVerificationTest : DescribeSpec({
 
 - [ ] **Step 3: 테스트 실패 확인**
 
-Run: `./gradlew :meeple-api:test --tests "com.org.meeple.domain.user.IdentityVerificationTest"`
+Run: `./gradlew :oneulsogae-api:test --tests "com.org.oneulsogae.domain.user.IdentityVerificationTest"`
 Expected: FAIL — 도메인 클래스 미정의로 컴파일 실패.
 
 - [ ] **Step 4: IdentityVerificationStatus 작성**
 
 ```kotlin
-package com.org.meeple.core.user.command.domain
+package com.org.oneulsogae.core.user.command.domain
 
 /** 본인확인 거래 상태. */
 enum class IdentityVerificationStatus {
@@ -270,9 +270,9 @@ enum class IdentityVerificationStatus {
 - [ ] **Step 5: CertifiedIdentity 작성**
 
 ```kotlin
-package com.org.meeple.core.user.command.domain
+package com.org.oneulsogae.core.user.command.domain
 
-import com.org.meeple.common.user.Gender
+import com.org.oneulsogae.common.user.Gender
 import java.time.LocalDate
 import java.time.Period
 
@@ -303,17 +303,17 @@ data class CertifiedIdentity(
 - [ ] **Step 6: IdentityVerification 작성**
 
 ```kotlin
-package com.org.meeple.core.user.command.domain
+package com.org.oneulsogae.core.user.command.domain
 
-import com.org.meeple.common.user.Gender
-import com.org.meeple.core.common.error.BusinessException
-import com.org.meeple.core.user.UserErrorCode
+import com.org.oneulsogae.common.user.Gender
+import com.org.oneulsogae.core.common.error.BusinessException
+import com.org.oneulsogae.core.user.UserErrorCode
 import java.time.LocalDate
 import java.time.LocalDateTime
 
 /**
  * 본인확인(KCP) 애그리거트. 거래등록 시 REQUESTED로 생성되고, 결과 확정 시 VERIFIED로 전이하며 검증값을 담는다.
- * 영속성은 [com.org.meeple.infra.user.command.entity.IdentityVerificationEntity]가 담당한다.
+ * 영속성은 [com.org.oneulsogae.infra.user.command.entity.IdentityVerificationEntity]가 담당한다.
  */
 data class IdentityVerification(
 	val id: Long = 0,
@@ -377,15 +377,15 @@ data class IdentityVerification(
 
 - [ ] **Step 7: 테스트 통과 확인 + 커밋**
 
-Run: `./gradlew :meeple-api:test --tests "com.org.meeple.domain.user.IdentityVerificationTest"`
+Run: `./gradlew :oneulsogae-api:test --tests "com.org.oneulsogae.domain.user.IdentityVerificationTest"`
 Expected: PASS
 
 ```bash
-git add meeple-core/src/main/kotlin/com/org/meeple/core/user/UserErrorCode.kt \
-  meeple-core/src/main/kotlin/com/org/meeple/core/user/command/domain/IdentityVerificationStatus.kt \
-  meeple-core/src/main/kotlin/com/org/meeple/core/user/command/domain/CertifiedIdentity.kt \
-  meeple-core/src/main/kotlin/com/org/meeple/core/user/command/domain/IdentityVerification.kt \
-  meeple-api/src/test/kotlin/com/org/meeple/domain/user/IdentityVerificationTest.kt
+git add oneulsogae-core/src/main/kotlin/com/org/oneulsogae/core/user/UserErrorCode.kt \
+  oneulsogae-core/src/main/kotlin/com/org/oneulsogae/core/user/command/domain/IdentityVerificationStatus.kt \
+  oneulsogae-core/src/main/kotlin/com/org/oneulsogae/core/user/command/domain/CertifiedIdentity.kt \
+  oneulsogae-core/src/main/kotlin/com/org/oneulsogae/core/user/command/domain/IdentityVerification.kt \
+  oneulsogae-api/src/test/kotlin/com/org/oneulsogae/domain/user/IdentityVerificationTest.kt
 git commit -m "feat(user): 본인확인 도메인 모델·검증값 객체·에러코드 추가"
 ```
 
@@ -404,7 +404,7 @@ core의 in-port/out-port와 command/result 타입을 정의한다(인터페이�
 - in: `.../port/in/command/ConfirmIdentityVerificationCommand.kt`
 - in: `.../port/in/result/RegisterIdentityVerificationResult.kt`, `ConfirmIdentityVerificationResult.kt`
 
-(경로 접두: `meeple-core/src/main/kotlin/com/org/meeple/core/user/command/application`)
+(경로 접두: `oneulsogae-core/src/main/kotlin/com/org/oneulsogae/core/user/command/application`)
 
 **Interfaces:**
 - Consumes: `IdentityVerification`, `CertifiedIdentity`(Task 2).
@@ -414,7 +414,7 @@ core의 in-port/out-port와 command/result 타입을 정의한다(인터페이�
 
 `port/out/CertRegisterCommand.kt`:
 ```kotlin
-package com.org.meeple.core.user.command.application.port.out
+package com.org.oneulsogae.core.user.command.application.port.out
 
 /** KCP 거래등록 입력. Ret_URL·site_cd 등 KCP 고정 파라미터는 어댑터가 설정에서 채운다. */
 data class CertRegisterCommand(
@@ -423,7 +423,7 @@ data class CertRegisterCommand(
 ```
 `port/out/CertRegisterResult.kt`:
 ```kotlin
-package com.org.meeple.core.user.command.application.port.out
+package com.org.oneulsogae.core.user.command.application.port.out
 
 /** KCP 거래등록 결과. 프론트가 인증창 호출에 사용한다. */
 data class CertRegisterResult(
@@ -433,7 +433,7 @@ data class CertRegisterResult(
 ```
 `port/out/KcpCertRegisterPort.kt`:
 ```kotlin
-package com.org.meeple.core.user.command.application.port.out
+package com.org.oneulsogae.core.user.command.application.port.out
 
 /** KCP 본인확인 거래등록 아웃포트. (testcert/cert.kcp.co.kr/api/reg/certDataReg.do) */
 fun interface KcpCertRegisterPort {
@@ -445,9 +445,9 @@ fun interface KcpCertRegisterPort {
 
 `port/out/KcpCertQueryPort.kt`:
 ```kotlin
-package com.org.meeple.core.user.command.application.port.out
+package com.org.oneulsogae.core.user.command.application.port.out
 
-import com.org.meeple.core.user.command.domain.CertifiedIdentity
+import com.org.oneulsogae.core.user.command.domain.CertifiedIdentity
 
 /**
  * KCP 본인확인 결과조회 아웃포트. 결과조회(getCertData.do) + 복호화 + KCP 필드 매핑까지 어댑터가 수행해
@@ -462,7 +462,7 @@ fun interface KcpCertQueryPort {
 
 `port/out/KcpCertCryptoPort.kt`:
 ```kotlin
-package com.org.meeple.core.user.command.application.port.out
+package com.org.oneulsogae.core.user.command.application.port.out
 
 /**
  * KCP 암호화 아웃포트. 거래등록 enc_data 생성(encrypJson)과 결과 복호화(decryptJson)를 격리한다.
@@ -479,9 +479,9 @@ interface KcpCertCryptoPort {
 
 `port/out/SaveIdentityVerificationPort.kt`:
 ```kotlin
-package com.org.meeple.core.user.command.application.port.out
+package com.org.oneulsogae.core.user.command.application.port.out
 
-import com.org.meeple.core.user.command.domain.IdentityVerification
+import com.org.oneulsogae.core.user.command.domain.IdentityVerification
 
 interface SaveIdentityVerificationPort {
 	fun save(verification: IdentityVerification): IdentityVerification
@@ -489,9 +489,9 @@ interface SaveIdentityVerificationPort {
 ```
 `port/out/GetIdentityVerificationPort.kt`:
 ```kotlin
-package com.org.meeple.core.user.command.application.port.out
+package com.org.oneulsogae.core.user.command.application.port.out
 
-import com.org.meeple.core.user.command.domain.IdentityVerification
+import com.org.oneulsogae.core.user.command.domain.IdentityVerification
 
 interface GetIdentityVerificationPort {
 	fun findLatestByUserId(userId: Long): IdentityVerification?
@@ -499,7 +499,7 @@ interface GetIdentityVerificationPort {
 ```
 `port/out/ExistsIdentityByDiPort.kt`:
 ```kotlin
-package com.org.meeple.core.user.command.application.port.out
+package com.org.oneulsogae.core.user.command.application.port.out
 
 /** 중복가입 차단: 다른 사용자가 이미 같은 DI로 본인확인(VERIFIED)했는지. */
 interface ExistsIdentityByDiPort {
@@ -511,7 +511,7 @@ interface ExistsIdentityByDiPort {
 
 `port/in/command/ConfirmIdentityVerificationCommand.kt`:
 ```kotlin
-package com.org.meeple.core.user.command.application.port.`in`.command
+package com.org.oneulsogae.core.user.command.application.port.`in`.command
 
 data class ConfirmIdentityVerificationCommand(
 	val regCertKey: String,
@@ -520,7 +520,7 @@ data class ConfirmIdentityVerificationCommand(
 ```
 `port/in/result/RegisterIdentityVerificationResult.kt`:
 ```kotlin
-package com.org.meeple.core.user.command.application.port.`in`.result
+package com.org.oneulsogae.core.user.command.application.port.`in`.result
 
 data class RegisterIdentityVerificationResult(
 	val callUrl: String,
@@ -530,7 +530,7 @@ data class RegisterIdentityVerificationResult(
 ```
 `port/in/result/ConfirmIdentityVerificationResult.kt`:
 ```kotlin
-package com.org.meeple.core.user.command.application.port.`in`.result
+package com.org.oneulsogae.core.user.command.application.port.`in`.result
 
 /** CI/DI 등 민감정보는 절대 포함하지 않는다. */
 data class ConfirmIdentityVerificationResult(
@@ -543,9 +543,9 @@ data class ConfirmIdentityVerificationResult(
 
 `port/in/RegisterIdentityVerificationUseCase.kt`:
 ```kotlin
-package com.org.meeple.core.user.command.application.port.`in`
+package com.org.oneulsogae.core.user.command.application.port.`in`
 
-import com.org.meeple.core.user.command.application.port.`in`.result.RegisterIdentityVerificationResult
+import com.org.oneulsogae.core.user.command.application.port.`in`.result.RegisterIdentityVerificationResult
 
 interface RegisterIdentityVerificationUseCase {
 	fun register(userId: Long): RegisterIdentityVerificationResult
@@ -553,10 +553,10 @@ interface RegisterIdentityVerificationUseCase {
 ```
 `port/in/ConfirmIdentityVerificationUseCase.kt`:
 ```kotlin
-package com.org.meeple.core.user.command.application.port.`in`
+package com.org.oneulsogae.core.user.command.application.port.`in`
 
-import com.org.meeple.core.user.command.application.port.`in`.command.ConfirmIdentityVerificationCommand
-import com.org.meeple.core.user.command.application.port.`in`.result.ConfirmIdentityVerificationResult
+import com.org.oneulsogae.core.user.command.application.port.`in`.command.ConfirmIdentityVerificationCommand
+import com.org.oneulsogae.core.user.command.application.port.`in`.result.ConfirmIdentityVerificationResult
 
 interface ConfirmIdentityVerificationUseCase {
 	fun confirm(userId: Long, command: ConfirmIdentityVerificationCommand): ConfirmIdentityVerificationResult
@@ -565,11 +565,11 @@ interface ConfirmIdentityVerificationUseCase {
 
 - [ ] **Step 7: 컴파일 확인 + 커밋**
 
-Run: `./gradlew :meeple-core:compileKotlin`
+Run: `./gradlew :oneulsogae-core:compileKotlin`
 Expected: BUILD SUCCESSFUL
 
 ```bash
-git add meeple-core/src/main/kotlin/com/org/meeple/core/user/command/application/port
+git add oneulsogae-core/src/main/kotlin/com/org/oneulsogae/core/user/command/application/port
 git commit -m "feat(user): 본인확인 유스케이스·포트·command/result 정의"
 ```
 
@@ -580,7 +580,7 @@ git commit -m "feat(user): 본인확인 유스케이스·포트·command/result 
 거래등록을 호출하고 REQUESTED 본인확인을 저장한 뒤 프론트용 결과를 반환한다.
 
 **Files:**
-- Create: `meeple-core/.../command/application/RegisterIdentityVerificationService.kt`
+- Create: `oneulsogae-core/.../command/application/RegisterIdentityVerificationService.kt`
 
 **Interfaces:**
 - Consumes: `KcpCertRegisterPort`, `SaveIdentityVerificationPort`(Task 3), `IdentityVerification`(Task 2).
@@ -589,15 +589,15 @@ git commit -m "feat(user): 본인확인 유스케이스·포트·command/result 
 - [ ] **Step 1: 서비스 작성**
 
 ```kotlin
-package com.org.meeple.core.user.command.application
+package com.org.oneulsogae.core.user.command.application
 
-import com.org.meeple.core.user.command.application.port.`in`.RegisterIdentityVerificationUseCase
-import com.org.meeple.core.user.command.application.port.`in`.result.RegisterIdentityVerificationResult
-import com.org.meeple.core.user.command.application.port.out.CertRegisterCommand
-import com.org.meeple.core.user.command.application.port.out.CertRegisterResult
-import com.org.meeple.core.user.command.application.port.out.KcpCertRegisterPort
-import com.org.meeple.core.user.command.application.port.out.SaveIdentityVerificationPort
-import com.org.meeple.core.user.command.domain.IdentityVerification
+import com.org.oneulsogae.core.user.command.application.port.`in`.RegisterIdentityVerificationUseCase
+import com.org.oneulsogae.core.user.command.application.port.`in`.result.RegisterIdentityVerificationResult
+import com.org.oneulsogae.core.user.command.application.port.out.CertRegisterCommand
+import com.org.oneulsogae.core.user.command.application.port.out.CertRegisterResult
+import com.org.oneulsogae.core.user.command.application.port.out.KcpCertRegisterPort
+import com.org.oneulsogae.core.user.command.application.port.out.SaveIdentityVerificationPort
+import com.org.oneulsogae.core.user.command.domain.IdentityVerification
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import java.util.UUID
@@ -632,11 +632,11 @@ class RegisterIdentityVerificationService(
 
 - [ ] **Step 2: 컴파일 확인 + 커밋**
 
-Run: `./gradlew :meeple-core:compileKotlin`
+Run: `./gradlew :oneulsogae-core:compileKotlin`
 Expected: BUILD SUCCESSFUL
 
 ```bash
-git add meeple-core/src/main/kotlin/com/org/meeple/core/user/command/application/RegisterIdentityVerificationService.kt
+git add oneulsogae-core/src/main/kotlin/com/org/oneulsogae/core/user/command/application/RegisterIdentityVerificationService.kt
 git commit -m "feat(user): 본인확인 거래등록 서비스 추가"
 ```
 
@@ -647,7 +647,7 @@ git commit -m "feat(user): 본인확인 거래등록 서비스 추가"
 결과조회→검증값 확정→중복 차단→저장→프로필 반영→상태 전이.
 
 **Files:**
-- Create: `meeple-core/.../command/application/ConfirmIdentityVerificationService.kt`
+- Create: `oneulsogae-core/.../command/application/ConfirmIdentityVerificationService.kt`
 
 **Interfaces:**
 - Consumes: `GetIdentityVerificationPort`, `KcpCertQueryPort`, `ExistsIdentityByDiPort`, `SaveIdentityVerificationPort`(Task 3); `GetUserPort`, `SaveUserPort`, `GetUserDetailPort`, `SaveUserDetailPort`(기존); `TimeGenerator`(기존); `User.passIdentityVerification`(Task 1); `UserDetail.create`(기존).
@@ -656,27 +656,27 @@ git commit -m "feat(user): 본인확인 거래등록 서비스 추가"
 - [ ] **Step 1: 서비스 작성**
 
 ```kotlin
-package com.org.meeple.core.user.command.application
+package com.org.oneulsogae.core.user.command.application
 
-import com.org.meeple.common.user.UserStatus
-import com.org.meeple.core.common.error.BusinessException
-import com.org.meeple.core.common.time.TimeGenerator
-import com.org.meeple.core.user.UserErrorCode
-import com.org.meeple.core.user.command.application.port.`in`.ConfirmIdentityVerificationUseCase
-import com.org.meeple.core.user.command.application.port.`in`.command.ConfirmIdentityVerificationCommand
-import com.org.meeple.core.user.command.application.port.`in`.result.ConfirmIdentityVerificationResult
-import com.org.meeple.core.user.command.application.port.out.ExistsIdentityByDiPort
-import com.org.meeple.core.user.command.application.port.out.GetIdentityVerificationPort
-import com.org.meeple.core.user.command.application.port.out.GetUserDetailPort
-import com.org.meeple.core.user.command.application.port.out.GetUserPort
-import com.org.meeple.core.user.command.application.port.out.KcpCertQueryPort
-import com.org.meeple.core.user.command.application.port.out.SaveIdentityVerificationPort
-import com.org.meeple.core.user.command.application.port.out.SaveUserDetailPort
-import com.org.meeple.core.user.command.application.port.out.SaveUserPort
-import com.org.meeple.core.user.command.domain.CertifiedIdentity
-import com.org.meeple.core.user.command.domain.IdentityVerification
-import com.org.meeple.core.user.command.domain.User
-import com.org.meeple.core.user.command.domain.UserDetail
+import com.org.oneulsogae.common.user.UserStatus
+import com.org.oneulsogae.core.common.error.BusinessException
+import com.org.oneulsogae.core.common.time.TimeGenerator
+import com.org.oneulsogae.core.user.UserErrorCode
+import com.org.oneulsogae.core.user.command.application.port.`in`.ConfirmIdentityVerificationUseCase
+import com.org.oneulsogae.core.user.command.application.port.`in`.command.ConfirmIdentityVerificationCommand
+import com.org.oneulsogae.core.user.command.application.port.`in`.result.ConfirmIdentityVerificationResult
+import com.org.oneulsogae.core.user.command.application.port.out.ExistsIdentityByDiPort
+import com.org.oneulsogae.core.user.command.application.port.out.GetIdentityVerificationPort
+import com.org.oneulsogae.core.user.command.application.port.out.GetUserDetailPort
+import com.org.oneulsogae.core.user.command.application.port.out.GetUserPort
+import com.org.oneulsogae.core.user.command.application.port.out.KcpCertQueryPort
+import com.org.oneulsogae.core.user.command.application.port.out.SaveIdentityVerificationPort
+import com.org.oneulsogae.core.user.command.application.port.out.SaveUserDetailPort
+import com.org.oneulsogae.core.user.command.application.port.out.SaveUserPort
+import com.org.oneulsogae.core.user.command.domain.CertifiedIdentity
+import com.org.oneulsogae.core.user.command.domain.IdentityVerification
+import com.org.oneulsogae.core.user.command.domain.User
+import com.org.oneulsogae.core.user.command.domain.UserDetail
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import java.time.LocalDateTime
@@ -744,11 +744,11 @@ class ConfirmIdentityVerificationService(
 
 - [ ] **Step 2: 컴파일 확인 + 커밋**
 
-Run: `./gradlew :meeple-core:compileKotlin`
+Run: `./gradlew :oneulsogae-core:compileKotlin`
 Expected: BUILD SUCCESSFUL
 
 ```bash
-git add meeple-core/src/main/kotlin/com/org/meeple/core/user/command/application/ConfirmIdentityVerificationService.kt
+git add oneulsogae-core/src/main/kotlin/com/org/oneulsogae/core/user/command/application/ConfirmIdentityVerificationService.kt
 git commit -m "feat(user): 본인확인 결과확정 서비스(중복차단·프로필반영·상태전이) 추가"
 ```
 
@@ -758,7 +758,7 @@ git commit -m "feat(user): 본인확인 결과확정 서비스(중복차단·프
 
 DB 저장/조회/중복검사 out-port를 구현하고, CI를 앱단 AES-GCM으로 암호화 저장한다.
 
-**Files:** (경로 접두 `meeple-infra/src/main/kotlin/com/org/meeple/infra`)
+**Files:** (경로 접두 `oneulsogae-infra/src/main/kotlin/com/org/oneulsogae/infra`)
 - Create: `.../user/command/entity/IdentityVerificationEntity.kt`
 - Create: `.../user/command/mapper/IdentityVerificationMapper.kt`
 - Create: `.../user/command/repository/IdentityVerificationJpaRepository.kt`
@@ -773,7 +773,7 @@ DB 저장/조회/중복검사 out-port를 구현하고, CI를 앱단 AES-GCM으�
 - [ ] **Step 1: IdentityCryptoProperties**
 
 ```kotlin
-package com.org.meeple.infra.config
+package com.org.oneulsogae.infra.config
 
 import org.springframework.boot.context.properties.ConfigurationProperties
 
@@ -787,9 +787,9 @@ data class IdentityCryptoProperties(
 - [ ] **Step 2: CiCipher (AES-GCM, encrypt-only)**
 
 ```kotlin
-package com.org.meeple.infra.user.command.crypto
+package com.org.oneulsogae.infra.user.command.crypto
 
-import com.org.meeple.infra.config.IdentityCryptoProperties
+import com.org.oneulsogae.infra.config.IdentityCryptoProperties
 import org.springframework.stereotype.Component
 import java.security.MessageDigest
 import java.security.SecureRandom
@@ -829,11 +829,11 @@ class CiCipher(properties: IdentityCryptoProperties) {
 - [ ] **Step 3: 엔티티**
 
 ```kotlin
-package com.org.meeple.infra.user.command.entity
+package com.org.oneulsogae.infra.user.command.entity
 
-import com.org.meeple.common.user.Gender
-import com.org.meeple.core.user.command.domain.IdentityVerificationStatus
-import com.org.meeple.infra.common.BaseEntity
+import com.org.oneulsogae.common.user.Gender
+import com.org.oneulsogae.core.user.command.domain.IdentityVerificationStatus
+import com.org.oneulsogae.infra.common.BaseEntity
 import jakarta.persistence.Column
 import jakarta.persistence.Entity
 import jakarta.persistence.EnumType
@@ -900,11 +900,11 @@ class IdentityVerificationEntity(
 - [ ] **Step 4: 매퍼** (CI 암호화는 어댑터가 넘긴 `CiCipher`로 수행. 복호화 안 하므로 `toDomain`의 `ci`는 null)
 
 ```kotlin
-package com.org.meeple.infra.user.command.mapper
+package com.org.oneulsogae.infra.user.command.mapper
 
-import com.org.meeple.core.user.command.domain.IdentityVerification
-import com.org.meeple.infra.user.command.crypto.CiCipher
-import com.org.meeple.infra.user.command.entity.IdentityVerificationEntity
+import com.org.oneulsogae.core.user.command.domain.IdentityVerification
+import com.org.oneulsogae.infra.user.command.crypto.CiCipher
+import com.org.oneulsogae.infra.user.command.entity.IdentityVerificationEntity
 
 fun IdentityVerificationEntity.toDomain(): IdentityVerification =
 	IdentityVerification(
@@ -945,10 +945,10 @@ fun IdentityVerification.toEntity(ciCipher: CiCipher): IdentityVerificationEntit
 - [ ] **Step 5: 리포지토리**
 
 ```kotlin
-package com.org.meeple.infra.user.command.repository
+package com.org.oneulsogae.infra.user.command.repository
 
-import com.org.meeple.core.user.command.domain.IdentityVerificationStatus
-import com.org.meeple.infra.user.command.entity.IdentityVerificationEntity
+import com.org.oneulsogae.core.user.command.domain.IdentityVerificationStatus
+import com.org.oneulsogae.infra.user.command.entity.IdentityVerificationEntity
 import org.springframework.data.jpa.repository.JpaRepository
 
 interface IdentityVerificationJpaRepository : JpaRepository<IdentityVerificationEntity, Long> {
@@ -966,17 +966,17 @@ interface IdentityVerificationJpaRepository : JpaRepository<IdentityVerification
 - [ ] **Step 6: 어댑터**
 
 ```kotlin
-package com.org.meeple.infra.user.command.adapter
+package com.org.oneulsogae.infra.user.command.adapter
 
-import com.org.meeple.core.user.command.application.port.out.ExistsIdentityByDiPort
-import com.org.meeple.core.user.command.application.port.out.GetIdentityVerificationPort
-import com.org.meeple.core.user.command.application.port.out.SaveIdentityVerificationPort
-import com.org.meeple.core.user.command.domain.IdentityVerification
-import com.org.meeple.core.user.command.domain.IdentityVerificationStatus
-import com.org.meeple.infra.user.command.crypto.CiCipher
-import com.org.meeple.infra.user.command.mapper.toDomain
-import com.org.meeple.infra.user.command.mapper.toEntity
-import com.org.meeple.infra.user.command.repository.IdentityVerificationJpaRepository
+import com.org.oneulsogae.core.user.command.application.port.out.ExistsIdentityByDiPort
+import com.org.oneulsogae.core.user.command.application.port.out.GetIdentityVerificationPort
+import com.org.oneulsogae.core.user.command.application.port.out.SaveIdentityVerificationPort
+import com.org.oneulsogae.core.user.command.domain.IdentityVerification
+import com.org.oneulsogae.core.user.command.domain.IdentityVerificationStatus
+import com.org.oneulsogae.infra.user.command.crypto.CiCipher
+import com.org.oneulsogae.infra.user.command.mapper.toDomain
+import com.org.oneulsogae.infra.user.command.mapper.toEntity
+import com.org.oneulsogae.infra.user.command.repository.IdentityVerificationJpaRepository
 import org.springframework.stereotype.Component
 
 @Component
@@ -1000,16 +1000,16 @@ class IdentityVerificationRepositoryAdapter(
 
 - [ ] **Step 7: 컴파일 확인 + 커밋**
 
-Run: `./gradlew :meeple-infra:compileKotlin`
+Run: `./gradlew :oneulsogae-infra:compileKotlin`
 Expected: BUILD SUCCESSFUL
 
 ```bash
-git add meeple-infra/src/main/kotlin/com/org/meeple/infra/user/command/entity/IdentityVerificationEntity.kt \
-  meeple-infra/src/main/kotlin/com/org/meeple/infra/user/command/mapper/IdentityVerificationMapper.kt \
-  meeple-infra/src/main/kotlin/com/org/meeple/infra/user/command/repository/IdentityVerificationJpaRepository.kt \
-  meeple-infra/src/main/kotlin/com/org/meeple/infra/user/command/adapter/IdentityVerificationRepositoryAdapter.kt \
-  meeple-infra/src/main/kotlin/com/org/meeple/infra/config/IdentityCryptoProperties.kt \
-  meeple-infra/src/main/kotlin/com/org/meeple/infra/user/command/crypto/CiCipher.kt
+git add oneulsogae-infra/src/main/kotlin/com/org/oneulsogae/infra/user/command/entity/IdentityVerificationEntity.kt \
+  oneulsogae-infra/src/main/kotlin/com/org/oneulsogae/infra/user/command/mapper/IdentityVerificationMapper.kt \
+  oneulsogae-infra/src/main/kotlin/com/org/oneulsogae/infra/user/command/repository/IdentityVerificationJpaRepository.kt \
+  oneulsogae-infra/src/main/kotlin/com/org/oneulsogae/infra/user/command/adapter/IdentityVerificationRepositoryAdapter.kt \
+  oneulsogae-infra/src/main/kotlin/com/org/oneulsogae/infra/config/IdentityCryptoProperties.kt \
+  oneulsogae-infra/src/main/kotlin/com/org/oneulsogae/infra/user/command/crypto/CiCipher.kt
 git commit -m "feat(user): 본인확인 영속성 어댑터·CI 암호화 저장 추가"
 ```
 
@@ -1019,13 +1019,13 @@ git commit -m "feat(user): 본인확인 영속성 어댑터·CI 암호화 저장
 
 RestClient로 KCP 거래등록/결과조회를 호출하고, 암호화는 passthrough stub으로 격리한다.
 
-**Files:** (경로 접두 `meeple-infra/src/main/kotlin/com/org/meeple/infra`)
+**Files:** (경로 접두 `oneulsogae-infra/src/main/kotlin/com/org/oneulsogae/infra`)
 - Create: `.../config/KcpProperties.kt`
 - Create: `.../config/KcpConfig.kt`
 - Create: `.../user/command/adapter/KcpCertCryptoStubAdapter.kt`
 - Create: `.../user/command/adapter/KcpCertRegisterAdapter.kt`
 - Create: `.../user/command/adapter/KcpCertQueryAdapter.kt`
-- Modify: `meeple-api/src/main/resources/application.yml`
+- Modify: `oneulsogae-api/src/main/resources/application.yml`
 
 **Interfaces:**
 - Consumes: `KcpCertRegisterPort`, `KcpCertQueryPort`, `KcpCertCryptoPort`(Task 3); `CertifiedIdentity`(Task 2); `Gender`(common).
@@ -1034,7 +1034,7 @@ RestClient로 KCP 거래등록/결과조회를 호출하고, 암호화는 passth
 - [ ] **Step 1: KcpProperties**
 
 ```kotlin
-package com.org.meeple.infra.config
+package com.org.oneulsogae.infra.config
 
 import org.springframework.boot.context.properties.ConfigurationProperties
 
@@ -1051,7 +1051,7 @@ data class KcpProperties(
 - [ ] **Step 2: RestClient 빈**
 
 ```kotlin
-package com.org.meeple.infra.config
+package com.org.oneulsogae.infra.config
 
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
@@ -1071,9 +1071,9 @@ class KcpConfig {
 - [ ] **Step 3: 암호화 stub 어댑터**
 
 ```kotlin
-package com.org.meeple.infra.user.command.adapter
+package com.org.oneulsogae.infra.user.command.adapter
 
-import com.org.meeple.core.user.command.application.port.out.KcpCertCryptoPort
+import com.org.oneulsogae.core.user.command.application.port.out.KcpCertCryptoPort
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Component
 
@@ -1102,16 +1102,16 @@ class KcpCertCryptoStubAdapter : KcpCertCryptoPort {
 - [ ] **Step 4: 거래등록 어댑터**
 
 ```kotlin
-package com.org.meeple.infra.user.command.adapter
+package com.org.oneulsogae.infra.user.command.adapter
 
 import com.fasterxml.jackson.annotation.JsonProperty
-import com.org.meeple.core.common.error.BusinessException
-import com.org.meeple.core.user.UserErrorCode
-import com.org.meeple.core.user.command.application.port.out.CertRegisterCommand
-import com.org.meeple.core.user.command.application.port.out.CertRegisterResult
-import com.org.meeple.core.user.command.application.port.out.KcpCertCryptoPort
-import com.org.meeple.core.user.command.application.port.out.KcpCertRegisterPort
-import com.org.meeple.infra.config.KcpProperties
+import com.org.oneulsogae.core.common.error.BusinessException
+import com.org.oneulsogae.core.user.UserErrorCode
+import com.org.oneulsogae.core.user.command.application.port.out.CertRegisterCommand
+import com.org.oneulsogae.core.user.command.application.port.out.CertRegisterResult
+import com.org.oneulsogae.core.user.command.application.port.out.KcpCertCryptoPort
+import com.org.oneulsogae.core.user.command.application.port.out.KcpCertRegisterPort
+import com.org.oneulsogae.infra.config.KcpProperties
 import org.springframework.stereotype.Component
 import org.springframework.web.client.RestClient
 import org.springframework.web.client.body
@@ -1168,17 +1168,17 @@ data class KcpRegisterResponse(
 - [ ] **Step 5: 결과조회 어댑터** (복호화 + KCP 필드 매핑 → CertifiedIdentity)
 
 ```kotlin
-package com.org.meeple.infra.user.command.adapter
+package com.org.oneulsogae.infra.user.command.adapter
 
 import com.fasterxml.jackson.annotation.JsonProperty
 import com.fasterxml.jackson.databind.ObjectMapper
-import com.org.meeple.common.user.Gender
-import com.org.meeple.core.common.error.BusinessException
-import com.org.meeple.core.user.UserErrorCode
-import com.org.meeple.core.user.command.application.port.out.KcpCertCryptoPort
-import com.org.meeple.core.user.command.application.port.out.KcpCertQueryPort
-import com.org.meeple.core.user.command.domain.CertifiedIdentity
-import com.org.meeple.infra.config.KcpProperties
+import com.org.oneulsogae.common.user.Gender
+import com.org.oneulsogae.core.common.error.BusinessException
+import com.org.oneulsogae.core.user.UserErrorCode
+import com.org.oneulsogae.core.user.command.application.port.out.KcpCertCryptoPort
+import com.org.oneulsogae.core.user.command.application.port.out.KcpCertQueryPort
+import com.org.oneulsogae.core.user.command.domain.CertifiedIdentity
+import com.org.oneulsogae.infra.config.KcpProperties
 import org.springframework.http.MediaType
 import org.springframework.stereotype.Component
 import org.springframework.web.client.RestClient
@@ -1259,7 +1259,7 @@ data class KcpCertData(
 
 - [ ] **Step 6: application.yml — app.kcp / app.identity 추가**
 
-`meeple-api/src/main/resources/application.yml`의 `app:` 블록(`s3:` 아래)에 추가:
+`oneulsogae-api/src/main/resources/application.yml`의 `app:` 블록(`s3:` 아래)에 추가:
 
 ```yaml
   kcp:
@@ -1274,16 +1274,16 @@ data class KcpCertData(
 
 - [ ] **Step 7: 컴파일 확인 + 커밋**
 
-Run: `./gradlew :meeple-infra:compileKotlin`
+Run: `./gradlew :oneulsogae-infra:compileKotlin`
 Expected: BUILD SUCCESSFUL
 
 ```bash
-git add meeple-infra/src/main/kotlin/com/org/meeple/infra/config/KcpProperties.kt \
-  meeple-infra/src/main/kotlin/com/org/meeple/infra/config/KcpConfig.kt \
-  meeple-infra/src/main/kotlin/com/org/meeple/infra/user/command/adapter/KcpCertCryptoStubAdapter.kt \
-  meeple-infra/src/main/kotlin/com/org/meeple/infra/user/command/adapter/KcpCertRegisterAdapter.kt \
-  meeple-infra/src/main/kotlin/com/org/meeple/infra/user/command/adapter/KcpCertQueryAdapter.kt \
-  meeple-api/src/main/resources/application.yml
+git add oneulsogae-infra/src/main/kotlin/com/org/oneulsogae/infra/config/KcpProperties.kt \
+  oneulsogae-infra/src/main/kotlin/com/org/oneulsogae/infra/config/KcpConfig.kt \
+  oneulsogae-infra/src/main/kotlin/com/org/oneulsogae/infra/user/command/adapter/KcpCertCryptoStubAdapter.kt \
+  oneulsogae-infra/src/main/kotlin/com/org/oneulsogae/infra/user/command/adapter/KcpCertRegisterAdapter.kt \
+  oneulsogae-infra/src/main/kotlin/com/org/oneulsogae/infra/user/command/adapter/KcpCertQueryAdapter.kt \
+  oneulsogae-api/src/main/resources/application.yml
 git commit -m "feat(user): KCP 거래등록·결과조회 HTTP 어댑터와 암호화 stub·설정 추가"
 ```
 
@@ -1293,7 +1293,7 @@ git commit -m "feat(user): KCP 거래등록·결과조회 HTTP 어댑터와 암�
 
 `/users/v1/identity-verification`의 register/confirm 엔드포인트를 추가한다.
 
-**Files:** (경로 접두 `meeple-api/src/main/kotlin/com/org/meeple/api/user`)
+**Files:** (경로 접두 `oneulsogae-api/src/main/kotlin/com/org/oneulsogae/api/user`)
 - Create: `IdentityVerificationController.kt`
 - Create: `request/ConfirmIdentityVerificationRequest.kt`
 - Create: `response/RegisterIdentityVerificationResponse.kt`
@@ -1306,9 +1306,9 @@ git commit -m "feat(user): KCP 거래등록·결과조회 HTTP 어댑터와 암�
 - [ ] **Step 1: request DTO**
 
 ```kotlin
-package com.org.meeple.api.user.request
+package com.org.oneulsogae.api.user.request
 
-import com.org.meeple.core.user.command.application.port.`in`.command.ConfirmIdentityVerificationCommand
+import com.org.oneulsogae.core.user.command.application.port.`in`.command.ConfirmIdentityVerificationCommand
 import jakarta.validation.constraints.NotBlank
 
 data class ConfirmIdentityVerificationRequest(
@@ -1326,9 +1326,9 @@ data class ConfirmIdentityVerificationRequest(
 - [ ] **Step 2: response DTO**
 
 ```kotlin
-package com.org.meeple.api.user.response
+package com.org.oneulsogae.api.user.response
 
-import com.org.meeple.core.user.command.application.port.`in`.result.RegisterIdentityVerificationResult
+import com.org.oneulsogae.core.user.command.application.port.`in`.result.RegisterIdentityVerificationResult
 
 data class RegisterIdentityVerificationResponse(
 	val callUrl: String,
@@ -1347,9 +1347,9 @@ data class RegisterIdentityVerificationResponse(
 ```
 
 ```kotlin
-package com.org.meeple.api.user.response
+package com.org.oneulsogae.api.user.response
 
-import com.org.meeple.core.user.command.application.port.`in`.result.ConfirmIdentityVerificationResult
+import com.org.oneulsogae.core.user.command.application.port.`in`.result.ConfirmIdentityVerificationResult
 
 data class ConfirmIdentityVerificationResponse(
 	val name: String,
@@ -1365,16 +1365,16 @@ data class ConfirmIdentityVerificationResponse(
 - [ ] **Step 3: 컨트롤러**
 
 ```kotlin
-package com.org.meeple.api.user
+package com.org.oneulsogae.api.user
 
-import com.org.meeple.api.user.request.ConfirmIdentityVerificationRequest
-import com.org.meeple.api.user.response.ConfirmIdentityVerificationResponse
-import com.org.meeple.api.user.response.RegisterIdentityVerificationResponse
-import com.org.meeple.auth.AuthUser
-import com.org.meeple.auth.LoginUser
-import com.org.meeple.core.common.response.ApiResponse
-import com.org.meeple.core.user.command.application.port.`in`.ConfirmIdentityVerificationUseCase
-import com.org.meeple.core.user.command.application.port.`in`.RegisterIdentityVerificationUseCase
+import com.org.oneulsogae.api.user.request.ConfirmIdentityVerificationRequest
+import com.org.oneulsogae.api.user.response.ConfirmIdentityVerificationResponse
+import com.org.oneulsogae.api.user.response.RegisterIdentityVerificationResponse
+import com.org.oneulsogae.auth.AuthUser
+import com.org.oneulsogae.auth.LoginUser
+import com.org.oneulsogae.core.common.response.ApiResponse
+import com.org.oneulsogae.core.user.command.application.port.`in`.ConfirmIdentityVerificationUseCase
+import com.org.oneulsogae.core.user.command.application.port.`in`.RegisterIdentityVerificationUseCase
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.tags.Tag
 import jakarta.validation.Valid
@@ -1416,14 +1416,14 @@ class IdentityVerificationController(
 
 - [ ] **Step 4: 전체 컴파일 확인 + 커밋**
 
-Run: `./gradlew :meeple-api:compileKotlin`
+Run: `./gradlew :oneulsogae-api:compileKotlin`
 Expected: BUILD SUCCESSFUL
 
 ```bash
-git add meeple-api/src/main/kotlin/com/org/meeple/api/user/IdentityVerificationController.kt \
-  meeple-api/src/main/kotlin/com/org/meeple/api/user/request/ConfirmIdentityVerificationRequest.kt \
-  meeple-api/src/main/kotlin/com/org/meeple/api/user/response/RegisterIdentityVerificationResponse.kt \
-  meeple-api/src/main/kotlin/com/org/meeple/api/user/response/ConfirmIdentityVerificationResponse.kt
+git add oneulsogae-api/src/main/kotlin/com/org/oneulsogae/api/user/IdentityVerificationController.kt \
+  oneulsogae-api/src/main/kotlin/com/org/oneulsogae/api/user/request/ConfirmIdentityVerificationRequest.kt \
+  oneulsogae-api/src/main/kotlin/com/org/oneulsogae/api/user/response/RegisterIdentityVerificationResponse.kt \
+  oneulsogae-api/src/main/kotlin/com/org/oneulsogae/api/user/response/ConfirmIdentityVerificationResponse.kt
 git commit -m "feat(user): 본인확인 register/confirm 컨트롤러·DTO 추가"
 ```
 
@@ -1434,11 +1434,11 @@ git commit -m "feat(user): 본인확인 register/confirm 컨트롤러·DTO 추�
 KCP 아웃포트를 페이크로 대체(`TestFileStorageConfig` 패턴)하고, register→confirm 플로우와 성인/중복/위변조 케이스를 검증한다.
 
 **Files:**
-- Create: `meeple-infra/src/testFixtures/kotlin/com/org/meeple/infra/fixture/IdentityVerificationEntityFixture.kt`
-- Create: `meeple-api/src/test/kotlin/com/org/meeple/common/config/TestKcpConfig.kt`
-- Modify: `meeple-api/src/test/kotlin/com/org/meeple/common/integration/AbstractIntegrationSupport.kt` (@Import에 `TestKcpConfig` 추가)
-- Create: `meeple-api/src/test/kotlin/com/org/meeple/api/user/IdentityVerificationE2ESupport.kt`
-- Create: `meeple-api/src/test/kotlin/com/org/meeple/api/user/IdentityVerificationE2ETest.kt`
+- Create: `oneulsogae-infra/src/testFixtures/kotlin/com/org/oneulsogae/infra/fixture/IdentityVerificationEntityFixture.kt`
+- Create: `oneulsogae-api/src/test/kotlin/com/org/oneulsogae/common/config/TestKcpConfig.kt`
+- Modify: `oneulsogae-api/src/test/kotlin/com/org/oneulsogae/common/integration/AbstractIntegrationSupport.kt` (@Import에 `TestKcpConfig` 추가)
+- Create: `oneulsogae-api/src/test/kotlin/com/org/oneulsogae/api/user/IdentityVerificationE2ESupport.kt`
+- Create: `oneulsogae-api/src/test/kotlin/com/org/oneulsogae/api/user/IdentityVerificationE2ETest.kt`
 
 **Interfaces:**
 - Consumes: 전 Task 산출물; `IntegrationUtil.persist/getQuery`; `UserEntityFixture`; `RestAssuredDsl`.
@@ -1447,11 +1447,11 @@ KCP 아웃포트를 페이크로 대체(`TestFileStorageConfig` 패턴)하고, r
 - [ ] **Step 1: 엔티티 픽스처** — `IdentityVerificationEntityFixture.kt`
 
 ```kotlin
-package com.org.meeple.infra.fixture
+package com.org.oneulsogae.infra.fixture
 
-import com.org.meeple.common.user.Gender
-import com.org.meeple.core.user.command.domain.IdentityVerificationStatus
-import com.org.meeple.infra.user.command.entity.IdentityVerificationEntity
+import com.org.oneulsogae.common.user.Gender
+import com.org.oneulsogae.core.user.command.domain.IdentityVerificationStatus
+import com.org.oneulsogae.infra.user.command.entity.IdentityVerificationEntity
 import java.time.LocalDate
 import java.time.LocalDateTime
 
@@ -1488,12 +1488,12 @@ object IdentityVerificationEntityFixture {
 - [ ] **Step 2: 테스트 더블 설정** — `TestKcpConfig.kt`
 
 ```kotlin
-package com.org.meeple.common.config
+package com.org.oneulsogae.common.config
 
-import com.org.meeple.core.user.command.application.port.out.CertRegisterResult
-import com.org.meeple.core.user.command.application.port.out.KcpCertQueryPort
-import com.org.meeple.core.user.command.application.port.out.KcpCertRegisterPort
-import com.org.meeple.core.user.command.domain.CertifiedIdentity
+import com.org.oneulsogae.core.user.command.application.port.out.CertRegisterResult
+import com.org.oneulsogae.core.user.command.application.port.out.KcpCertQueryPort
+import com.org.oneulsogae.core.user.command.application.port.out.KcpCertRegisterPort
+import com.org.oneulsogae.core.user.command.domain.CertifiedIdentity
 import org.springframework.boot.test.context.TestConfiguration
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Primary
@@ -1544,19 +1544,19 @@ object FakeKcpCertData {
 	IntegrationUtil::class,
 )
 ```
-(기존 목록 그대로 두고 `TestKcpConfig::class` 한 줄만 추가. import 문 `com.org.meeple.common.config.TestKcpConfig`도 추가.)
+(기존 목록 그대로 두고 `TestKcpConfig::class` 한 줄만 추가. import 문 `com.org.oneulsogae.common.config.TestKcpConfig`도 추가.)
 
 - [ ] **Step 4: E2E 헬퍼** — `IdentityVerificationE2ESupport.kt`
 
 ```kotlin
-package com.org.meeple.api.user
+package com.org.oneulsogae.api.user
 
-import com.org.meeple.common.user.UserStatus
-import com.org.meeple.core.user.command.domain.IdentityVerificationStatus
-import com.org.meeple.infra.fixture.IntegrationUtil
-import com.org.meeple.infra.user.command.entity.QIdentityVerificationEntity
-import com.org.meeple.infra.user.command.entity.QUserDetailEntity
-import com.org.meeple.infra.user.command.entity.QUserEntity
+import com.org.oneulsogae.common.user.UserStatus
+import com.org.oneulsogae.core.user.command.domain.IdentityVerificationStatus
+import com.org.oneulsogae.infra.fixture.IntegrationUtil
+import com.org.oneulsogae.infra.user.command.entity.QIdentityVerificationEntity
+import com.org.oneulsogae.infra.user.command.entity.QUserDetailEntity
+import com.org.oneulsogae.infra.user.command.entity.QUserEntity
 
 private val user: QUserEntity = QUserEntity.userEntity
 private val detail: QUserDetailEntity = QUserDetailEntity.userDetailEntity
@@ -1583,19 +1583,19 @@ internal fun latestIdentityStatusOf(userId: Long): IdentityVerificationStatus =
 - [ ] **Step 5: E2E 테스트 작성** — `IdentityVerificationE2ETest.kt`
 
 ```kotlin
-package com.org.meeple.api.user
+package com.org.oneulsogae.api.user
 
-import com.org.meeple.common.config.FakeKcpCertData
-import com.org.meeple.common.integration.AbstractIntegrationSupport
-import com.org.meeple.common.integration.expect
-import com.org.meeple.common.integration.post
-import com.org.meeple.common.user.Gender
-import com.org.meeple.common.user.UserStatus
-import com.org.meeple.core.user.command.domain.CertifiedIdentity
-import com.org.meeple.core.user.command.domain.IdentityVerificationStatus
-import com.org.meeple.infra.fixture.IdentityVerificationEntityFixture
-import com.org.meeple.infra.fixture.IntegrationUtil
-import com.org.meeple.infra.fixture.UserEntityFixture
+import com.org.oneulsogae.common.config.FakeKcpCertData
+import com.org.oneulsogae.common.integration.AbstractIntegrationSupport
+import com.org.oneulsogae.common.integration.expect
+import com.org.oneulsogae.common.integration.post
+import com.org.oneulsogae.common.user.Gender
+import com.org.oneulsogae.common.user.UserStatus
+import com.org.oneulsogae.core.user.command.domain.CertifiedIdentity
+import com.org.oneulsogae.core.user.command.domain.IdentityVerificationStatus
+import com.org.oneulsogae.infra.fixture.IdentityVerificationEntityFixture
+import com.org.oneulsogae.infra.fixture.IntegrationUtil
+import com.org.oneulsogae.infra.fixture.UserEntityFixture
 import io.kotest.matchers.shouldBe
 import io.restassured.response.ValidatableResponse
 import org.hamcrest.Matchers.notNullValue
@@ -1721,7 +1721,7 @@ class IdentityVerificationE2ETest : AbstractIntegrationSupport({
 
 - [ ] **Step 6: 전체 테스트 실행**
 
-Run: `./gradlew :meeple-api:test --tests "com.org.meeple.api.user.IdentityVerificationE2ETest"`
+Run: `./gradlew :oneulsogae-api:test --tests "com.org.oneulsogae.api.user.IdentityVerificationE2ETest"`
 Expected: PASS (4개 컨텍스트 모두)
 
 - [ ] **Step 7: 전체 회귀 + 커밋**
@@ -1730,11 +1730,11 @@ Run: `./gradlew build`
 Expected: BUILD SUCCESSFUL
 
 ```bash
-git add meeple-infra/src/testFixtures/kotlin/com/org/meeple/infra/fixture/IdentityVerificationEntityFixture.kt \
-  meeple-api/src/test/kotlin/com/org/meeple/common/config/TestKcpConfig.kt \
-  meeple-api/src/test/kotlin/com/org/meeple/common/integration/AbstractIntegrationSupport.kt \
-  meeple-api/src/test/kotlin/com/org/meeple/api/user/IdentityVerificationE2ESupport.kt \
-  meeple-api/src/test/kotlin/com/org/meeple/api/user/IdentityVerificationE2ETest.kt
+git add oneulsogae-infra/src/testFixtures/kotlin/com/org/oneulsogae/infra/fixture/IdentityVerificationEntityFixture.kt \
+  oneulsogae-api/src/test/kotlin/com/org/oneulsogae/common/config/TestKcpConfig.kt \
+  oneulsogae-api/src/test/kotlin/com/org/oneulsogae/common/integration/AbstractIntegrationSupport.kt \
+  oneulsogae-api/src/test/kotlin/com/org/oneulsogae/api/user/IdentityVerificationE2ESupport.kt \
+  oneulsogae-api/src/test/kotlin/com/org/oneulsogae/api/user/IdentityVerificationE2ETest.kt
 git commit -m "test(user): 본인확인 register/confirm E2E와 KCP 테스트 더블 추가"
 ```
 

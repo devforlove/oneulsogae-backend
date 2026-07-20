@@ -28,13 +28,13 @@
 
 ## 구성 요소 (CQRS query 패키지)
 
-- **meeple-core `lounge/query`**
+- **oneulsogae-core `lounge/query`**
   - `dto/SelfIntroPostView`(read model), `dto/SelfIntroPostPage`(커서 페이지 일급 컬렉션 — `of`·`nextCursor`·`withImageUrls`)
   - `dao/GetSelfIntroPostDao`
   - `service/GetSelfIntroPostsService`(`@Transactional(readOnly = true)`, `PAGE_SIZE = 24`) + `service/port/in/GetSelfIntroPostsUseCase`
   - `service/port/out/LoungeImageUrlPort`(presign)
-- **meeple-infra `lounge/query`**: `GetSelfIntroPostDaoImpl`(QueryDSL), `S3LoungeImageUrlAdapter`
-- **meeple-api**: `SelfIntroPostController`에 GET 추가, `SelfIntroPostPageResponse`·`SelfIntroPostItemResponse`
+- **oneulsogae-infra `lounge/query`**: `GetSelfIntroPostDaoImpl`(QueryDSL), `S3LoungeImageUrlAdapter`
+- **oneulsogae-api**: `SelfIntroPostController`에 GET 추가, `SelfIntroPostPageResponse`·`SelfIntroPostItemResponse`
 
 query는 자기 dao에만 의존하며 command 도메인·포트를 참조하지 않는다.
 

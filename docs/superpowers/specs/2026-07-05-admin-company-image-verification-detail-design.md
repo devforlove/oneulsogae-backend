@@ -1,7 +1,7 @@
 # 어드민 회사 이미지 인증 상세조회 API 설계
 
 **작성일:** 2026-07-05
-**대상 브랜치:** feat/meeple-admin-module
+**대상 브랜치:** feat/oneulsogae-admin-module
 
 ## 목표
 
@@ -20,9 +20,9 @@ GET /admin/v1/company-image-verifications/{id}
 
 ## 아키텍처 (기존 슬라이스 확장)
 
-`meeple-admin`은 core 비의존 유지. presign은 기존 `CompanyVerificationImageUrlPort`(admin out-port, infra가 S3Presigner로 구현)를 재사용한다.
+`oneulsogae-admin`은 core 비의존 유지. presign은 기존 `CompanyVerificationImageUrlPort`(admin out-port, infra가 S3Presigner로 구현)를 재사용한다.
 
-### meeple-admin — `admin/companyverification/query/`
+### oneulsogae-admin — `admin/companyverification/query/`
 
 - `dto/AdminCompanyVerificationDetailView` (신규)
   - 목록 필드: `id: Long, userId: Long, nickname: String?, email: String?, status: CompanyImageVerificationStatus, createdAt: LocalDateTime?, imageKey: String, imageUrl: String? = null`
@@ -38,13 +38,13 @@ GET /admin/v1/company-image-verifications/{id}
 - `common/error/AdminErrorCode`에 상수 추가
   - `COMPANY_IMAGE_VERIFICATION_NOT_FOUND("COMPANY-IMAGE-001", "직장 인증을 찾을 수 없습니다.", HttpStatus.NOT_FOUND)`
 
-### meeple-infra — `infra/user/query/`
+### oneulsogae-infra — `infra/user/query/`
 
 - `GetAdminCompanyVerificationDaoImpl`에 `findDetailById` 구현
   - `company_image_verifications`(`v`) ⨝ `user_details`(`nickname`·`companyName`·`companyEmail`·`job`, leftJoin on `userId`) ⨝ `users`(`email`, leftJoin on `id`).
   - `where v.id = id`. `Projections.constructor`로 상세 보조 생성자에 투영. `fetchOne()`.
 
-### meeple-api — `api/admin/`
+### oneulsogae-api — `api/admin/`
 
 - `response/AdminCompanyVerificationDetailResponse` (신규)
   - `id, userId, status(name), statusLabel(description), createdAt, nickname, email, companyName, companyEmail, job, imageUrl`. **`imageKey` 미노출**.

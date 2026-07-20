@@ -10,13 +10,13 @@
 
 ## Global Constraints
 
-- 멀티모듈 의존 방향: `common`(enum) → `core`(도메인/유스케이스/out-port) → `infra`(엔티티/어댑터/리포지토리/매퍼). 도메인 모델은 `meeple-core`, 엔티티/어댑터는 `meeple-infra`, enum은 `meeple-common`.
+- 멀티모듈 의존 방향: `common`(enum) → `core`(도메인/유스케이스/out-port) → `infra`(엔티티/어댑터/리포지토리/매퍼). 도메인 모델은 `oneulsogae-core`, 엔티티/어댑터는 `oneulsogae-infra`, enum은 `oneulsogae-common`.
 - CQS: 본 작업은 명령 경로. `GetRecommendedTeamPort`는 명령 트랜잭션 내 보조 단건 조회(잠금·상태변경 없음)로 `command/.../port/out`에 둔다.
 - 엔티티당 어댑터 하나: `recommended_teams`는 기존 `RecommendedTeamAdapter` 한 곳에서 scheduler의 `SaveRecommendedTeamPort` + core의 `GetRecommendedTeamPort`를 함께 구현한다.
 - 현재 시각은 `LocalDateTime.now()` 직접 호출 금지 — `TimeGenerator.now()`로 얻어 도메인엔 `now` 파라미터로 주입.
 - 일급 컬렉션: 참가 팀 목록은 `MatchedTeams`로 래핑.
 - 타입 명시: 변수·반환·람다 파라미터 타입을 생략하지 않는다.
-- 도메인 유닛 테스트는 `meeple-api/src/test/.../domain/match/` 패키지에 둔다(meeple-core엔 test source set 없음). E2E는 `meeple-api/src/test/.../api/match/`.
+- 도메인 유닛 테스트는 `oneulsogae-api/src/test/.../domain/match/` 패키지에 둔다(oneulsogae-core엔 test source set 없음). E2E는 `oneulsogae-api/src/test/.../api/match/`.
 - TeamMatch 필드 확정값: `status=PROPOSED`, 두 팀 `accepted=null`, `matchType=RECOMMENDED`(신규), `dateInitAmount=MEETING_INIT(40)`, `dateAcceptAmount=MEETING_ACCEPT(40)`, `expiresAt=now+Duration.ofDays(1)`, `memberKey=정렬된 teamId join("-")`.
 
 ---
@@ -24,11 +24,11 @@
 ### Task 1: TeamMatch 도메인 모델 + RECOMMENDED 타입
 
 **Files:**
-- Modify: `meeple-common/src/main/kotlin/com/org/meeple/common/match/TeamMatchType.kt`
-- Create: `meeple-core/src/main/kotlin/com/org/meeple/core/match/command/domain/MatchedTeam.kt`
-- Create: `meeple-core/src/main/kotlin/com/org/meeple/core/match/command/domain/MatchedTeams.kt`
-- Create: `meeple-core/src/main/kotlin/com/org/meeple/core/match/command/domain/TeamMatch.kt`
-- Test: `meeple-api/src/test/kotlin/com/org/meeple/domain/match/TeamMatchTest.kt`
+- Modify: `oneulsogae-common/src/main/kotlin/com/org/oneulsogae/common/match/TeamMatchType.kt`
+- Create: `oneulsogae-core/src/main/kotlin/com/org/oneulsogae/core/match/command/domain/MatchedTeam.kt`
+- Create: `oneulsogae-core/src/main/kotlin/com/org/oneulsogae/core/match/command/domain/MatchedTeams.kt`
+- Create: `oneulsogae-core/src/main/kotlin/com/org/oneulsogae/core/match/command/domain/TeamMatch.kt`
+- Test: `oneulsogae-api/src/test/kotlin/com/org/oneulsogae/domain/match/TeamMatchTest.kt`
 
 **Interfaces:**
 - Consumes: `CoinUsageType.MEETING_INIT.coinAmount`(40), `CoinUsageType.MEETING_ACCEPT.coinAmount`(40), `MatchStatus.PROPOSED`, `TeamMatchType`.
@@ -41,10 +41,10 @@
 
 - [ ] **Step 1: `TeamMatchType`에 RECOMMENDED 값 추가**
 
-`meeple-common/src/main/kotlin/com/org/meeple/common/match/TeamMatchType.kt`의 `REQUIRED` 항목 뒤에 추가:
+`oneulsogae-common/src/main/kotlin/com/org/oneulsogae/common/match/TeamMatchType.kt`의 `REQUIRED` 항목 뒤에 추가:
 
 ```kotlin
-package com.org.meeple.common.match
+package com.org.oneulsogae.common.match
 
 /** 2:2(팀) 매칭이 생성된 경로(유형). (온보딩 자동 소개는 1:1만 있으므로 팀 유형엔 없다) */
 enum class TeamMatchType(val description: String) {
@@ -62,10 +62,10 @@ enum class TeamMatchType(val description: String) {
 
 - [ ] **Step 2: `MatchedTeam` 도메인 모델 작성**
 
-Create `meeple-core/src/main/kotlin/com/org/meeple/core/match/command/domain/MatchedTeam.kt`:
+Create `oneulsogae-core/src/main/kotlin/com/org/oneulsogae/core/match/command/domain/MatchedTeam.kt`:
 
 ```kotlin
-package com.org.meeple.core.match.command.domain
+package com.org.oneulsogae.core.match.command.domain
 
 import java.time.LocalDateTime
 
@@ -84,10 +84,10 @@ data class MatchedTeam(
 
 - [ ] **Step 3: `MatchedTeams` 일급 컬렉션 작성**
 
-Create `meeple-core/src/main/kotlin/com/org/meeple/core/match/command/domain/MatchedTeams.kt`:
+Create `oneulsogae-core/src/main/kotlin/com/org/oneulsogae/core/match/command/domain/MatchedTeams.kt`:
 
 ```kotlin
-package com.org.meeple.core.match.command.domain
+package com.org.oneulsogae.core.match.command.domain
 
 /**
  * 한 팀 매칭([TeamMatch])에 참가한 팀([MatchedTeam]) 목록의 일급 컬렉션.
@@ -122,14 +122,14 @@ data class MatchedTeams(
 
 - [ ] **Step 4: `TeamMatch` 도메인 모델 작성**
 
-Create `meeple-core/src/main/kotlin/com/org/meeple/core/match/command/domain/TeamMatch.kt`:
+Create `oneulsogae-core/src/main/kotlin/com/org/oneulsogae/core/match/command/domain/TeamMatch.kt`:
 
 ```kotlin
-package com.org.meeple.core.match.command.domain
+package com.org.oneulsogae.core.match.command.domain
 
-import com.org.meeple.common.coin.CoinUsageType
-import com.org.meeple.common.match.MatchStatus
-import com.org.meeple.common.match.TeamMatchType
+import com.org.oneulsogae.common.coin.CoinUsageType
+import com.org.oneulsogae.common.match.MatchStatus
+import com.org.oneulsogae.common.match.TeamMatchType
 import java.time.Duration
 import java.time.LocalDate
 import java.time.LocalDateTime
@@ -178,14 +178,14 @@ data class TeamMatch(
 
 - [ ] **Step 5: 실패하는 단위 테스트 작성**
 
-Create `meeple-api/src/test/kotlin/com/org/meeple/domain/match/TeamMatchTest.kt`:
+Create `oneulsogae-api/src/test/kotlin/com/org/oneulsogae/domain/match/TeamMatchTest.kt`:
 
 ```kotlin
-package com.org.meeple.domain.match
+package com.org.oneulsogae.domain.match
 
-import com.org.meeple.common.match.MatchStatus
-import com.org.meeple.common.match.TeamMatchType
-import com.org.meeple.core.match.command.domain.TeamMatch
+import com.org.oneulsogae.common.match.MatchStatus
+import com.org.oneulsogae.common.match.TeamMatchType
+import com.org.oneulsogae.core.match.command.domain.TeamMatch
 import io.kotest.core.spec.style.DescribeSpec
 import io.kotest.matchers.shouldBe
 import java.time.LocalDateTime
@@ -233,24 +233,24 @@ class TeamMatchTest : DescribeSpec({
 
 - [ ] **Step 6: 테스트 실패 확인**
 
-Run: `./gradlew :meeple-api:test --tests "com.org.meeple.domain.match.TeamMatchTest"`
+Run: `./gradlew :oneulsogae-api:test --tests "com.org.oneulsogae.domain.match.TeamMatchTest"`
 Expected: 컴파일 통과 후 (Step 2~4 구현이 이미 있으므로) PASS. 만약 Step 2~4를 건너뛰고 테스트만 먼저 작성했다면 컴파일 에러("Unresolved reference: TeamMatch")로 FAIL.
 
 > 참고: 이 프로젝트는 도메인 구현과 테스트를 같은 작업에서 함께 만든다. TDD 순서를 엄격히 보려면 Step 5를 Step 2 앞으로 옮겨 컴파일 실패를 먼저 확인한 뒤 구현해도 된다.
 
 - [ ] **Step 7: 테스트 통과 확인**
 
-Run: `./gradlew :meeple-api:test --tests "com.org.meeple.domain.match.TeamMatchTest"`
+Run: `./gradlew :oneulsogae-api:test --tests "com.org.oneulsogae.domain.match.TeamMatchTest"`
 Expected: PASS (2 tests)
 
 - [ ] **Step 8: 커밋**
 
 ```bash
-git add meeple-common/src/main/kotlin/com/org/meeple/common/match/TeamMatchType.kt \
-        meeple-core/src/main/kotlin/com/org/meeple/core/match/command/domain/MatchedTeam.kt \
-        meeple-core/src/main/kotlin/com/org/meeple/core/match/command/domain/MatchedTeams.kt \
-        meeple-core/src/main/kotlin/com/org/meeple/core/match/command/domain/TeamMatch.kt \
-        meeple-api/src/test/kotlin/com/org/meeple/domain/match/TeamMatchTest.kt
+git add oneulsogae-common/src/main/kotlin/com/org/oneulsogae/common/match/TeamMatchType.kt \
+        oneulsogae-core/src/main/kotlin/com/org/oneulsogae/core/match/command/domain/MatchedTeam.kt \
+        oneulsogae-core/src/main/kotlin/com/org/oneulsogae/core/match/command/domain/MatchedTeams.kt \
+        oneulsogae-core/src/main/kotlin/com/org/oneulsogae/core/match/command/domain/TeamMatch.kt \
+        oneulsogae-api/src/test/kotlin/com/org/oneulsogae/domain/match/TeamMatchTest.kt
 git commit -m "feat(match): TeamMatch 도메인 모델과 RECOMMENDED 매칭 타입 추가
 
 Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>"
@@ -261,14 +261,14 @@ Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>"
 ### Task 2: out-port + infra 영속성 (TeamMatch 저장 / 추천 팀 조회)
 
 **Files:**
-- Create: `meeple-core/src/main/kotlin/com/org/meeple/core/match/command/application/port/out/GetRecommendedTeamPort.kt`
-- Create: `meeple-core/src/main/kotlin/com/org/meeple/core/match/command/application/port/out/SaveTeamMatchPort.kt`
-- Create: `meeple-infra/src/main/kotlin/com/org/meeple/infra/match/command/repository/TeamMatchJpaRepository.kt`
-- Create: `meeple-infra/src/main/kotlin/com/org/meeple/infra/match/command/repository/MatchedTeamJpaRepository.kt`
-- Create: `meeple-infra/src/main/kotlin/com/org/meeple/infra/match/command/mapper/TeamMatchMapper.kt`
-- Create: `meeple-infra/src/main/kotlin/com/org/meeple/infra/match/command/mapper/MatchedTeamMapper.kt`
-- Create: `meeple-infra/src/main/kotlin/com/org/meeple/infra/match/command/adapter/TeamMatchAdapter.kt`
-- Modify: `meeple-infra/src/main/kotlin/com/org/meeple/infra/match/command/adapter/RecommendedTeamAdapter.kt`
+- Create: `oneulsogae-core/src/main/kotlin/com/org/oneulsogae/core/match/command/application/port/out/GetRecommendedTeamPort.kt`
+- Create: `oneulsogae-core/src/main/kotlin/com/org/oneulsogae/core/match/command/application/port/out/SaveTeamMatchPort.kt`
+- Create: `oneulsogae-infra/src/main/kotlin/com/org/oneulsogae/infra/match/command/repository/TeamMatchJpaRepository.kt`
+- Create: `oneulsogae-infra/src/main/kotlin/com/org/oneulsogae/infra/match/command/repository/MatchedTeamJpaRepository.kt`
+- Create: `oneulsogae-infra/src/main/kotlin/com/org/oneulsogae/infra/match/command/mapper/TeamMatchMapper.kt`
+- Create: `oneulsogae-infra/src/main/kotlin/com/org/oneulsogae/infra/match/command/mapper/MatchedTeamMapper.kt`
+- Create: `oneulsogae-infra/src/main/kotlin/com/org/oneulsogae/infra/match/command/adapter/TeamMatchAdapter.kt`
+- Modify: `oneulsogae-infra/src/main/kotlin/com/org/oneulsogae/infra/match/command/adapter/RecommendedTeamAdapter.kt`
 
 **Interfaces:**
 - Consumes (from Task 1): `TeamMatch`, `MatchedTeams`, `MatchedTeam`, `TeamMatch.memberKey()`. 기존 엔티티 `TeamMatchEntity(memberKey, introducedDate, expiresAt, status, matchType, dateInitAmount, dateAcceptAmount)`, `MatchedTeamEntity(teamMatchId, teamId, accepted)`, `BaseEntity.id: Long?`, `BaseEntity.softDelete(at)`, `RecommendedTeamJpaRepository.findByUserId(userId): RecommendedTeamEntity?`.
@@ -280,10 +280,10 @@ Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>"
 
 - [ ] **Step 1: `GetRecommendedTeamPort` 작성**
 
-Create `meeple-core/src/main/kotlin/com/org/meeple/core/match/command/application/port/out/GetRecommendedTeamPort.kt`:
+Create `oneulsogae-core/src/main/kotlin/com/org/oneulsogae/core/match/command/application/port/out/GetRecommendedTeamPort.kt`:
 
 ```kotlin
-package com.org.meeple.core.match.command.application.port.out
+package com.org.oneulsogae.core.match.command.application.port.out
 
 /**
  * 추천 팀(recommended_teams) 단건 조회 포트. (명령 트랜잭션 내 보조 조회 — 잠금/상태변경 없음)
@@ -298,12 +298,12 @@ interface GetRecommendedTeamPort {
 
 - [ ] **Step 2: `SaveTeamMatchPort` 작성**
 
-Create `meeple-core/src/main/kotlin/com/org/meeple/core/match/command/application/port/out/SaveTeamMatchPort.kt`:
+Create `oneulsogae-core/src/main/kotlin/com/org/oneulsogae/core/match/command/application/port/out/SaveTeamMatchPort.kt`:
 
 ```kotlin
-package com.org.meeple.core.match.command.application.port.out
+package com.org.oneulsogae.core.match.command.application.port.out
 
-import com.org.meeple.core.match.command.domain.TeamMatch
+import com.org.oneulsogae.core.match.command.domain.TeamMatch
 
 /** 팀 매칭 애그리거트(헤더 + 참가 팀) 저장 포트. */
 interface SaveTeamMatchPort {
@@ -314,46 +314,46 @@ interface SaveTeamMatchPort {
 
 - [ ] **Step 3: 리포지토리 2개 작성**
 
-Create `meeple-infra/src/main/kotlin/com/org/meeple/infra/match/command/repository/TeamMatchJpaRepository.kt`:
+Create `oneulsogae-infra/src/main/kotlin/com/org/oneulsogae/infra/match/command/repository/TeamMatchJpaRepository.kt`:
 
 ```kotlin
-package com.org.meeple.infra.match.command.repository
+package com.org.oneulsogae.infra.match.command.repository
 
-import com.org.meeple.infra.match.command.entity.TeamMatchEntity
+import com.org.oneulsogae.infra.match.command.entity.TeamMatchEntity
 import org.springframework.data.jpa.repository.JpaRepository
 
 /**
  * 팀 매칭 헤더(team_matches) 리포지토리.
- * [com.org.meeple.infra.match.command.adapter.TeamMatchAdapter]가 헤더 저장에 사용한다.
+ * [com.org.oneulsogae.infra.match.command.adapter.TeamMatchAdapter]가 헤더 저장에 사용한다.
  */
 interface TeamMatchJpaRepository : JpaRepository<TeamMatchEntity, Long>
 ```
 
-Create `meeple-infra/src/main/kotlin/com/org/meeple/infra/match/command/repository/MatchedTeamJpaRepository.kt`:
+Create `oneulsogae-infra/src/main/kotlin/com/org/oneulsogae/infra/match/command/repository/MatchedTeamJpaRepository.kt`:
 
 ```kotlin
-package com.org.meeple.infra.match.command.repository
+package com.org.oneulsogae.infra.match.command.repository
 
-import com.org.meeple.infra.match.command.entity.MatchedTeamEntity
+import com.org.oneulsogae.infra.match.command.entity.MatchedTeamEntity
 import org.springframework.data.jpa.repository.JpaRepository
 
 /**
  * 팀 매칭 참가 팀(matched_teams) 리포지토리.
- * [com.org.meeple.infra.match.command.adapter.TeamMatchAdapter]가 참가 팀 행 저장에 사용한다.
+ * [com.org.oneulsogae.infra.match.command.adapter.TeamMatchAdapter]가 참가 팀 행 저장에 사용한다.
  */
 interface MatchedTeamJpaRepository : JpaRepository<MatchedTeamEntity, Long>
 ```
 
 - [ ] **Step 4: 매퍼 2개 작성**
 
-Create `meeple-infra/src/main/kotlin/com/org/meeple/infra/match/command/mapper/TeamMatchMapper.kt`:
+Create `oneulsogae-infra/src/main/kotlin/com/org/oneulsogae/infra/match/command/mapper/TeamMatchMapper.kt`:
 
 ```kotlin
-package com.org.meeple.infra.match.command.mapper
+package com.org.oneulsogae.infra.match.command.mapper
 
-import com.org.meeple.core.match.command.domain.MatchedTeams
-import com.org.meeple.core.match.command.domain.TeamMatch
-import com.org.meeple.infra.match.command.entity.TeamMatchEntity
+import com.org.oneulsogae.core.match.command.domain.MatchedTeams
+import com.org.oneulsogae.core.match.command.domain.TeamMatch
+import com.org.oneulsogae.infra.match.command.entity.TeamMatchEntity
 import java.time.LocalDateTime
 
 /** 영속성 엔티티 -> 도메인 모델. 참가 팀([MatchedTeams])은 어댑터가 조회해 함께 넘긴다. */
@@ -390,13 +390,13 @@ fun TeamMatch.toEntity(): TeamMatchEntity =
 	}
 ```
 
-Create `meeple-infra/src/main/kotlin/com/org/meeple/infra/match/command/mapper/MatchedTeamMapper.kt`:
+Create `oneulsogae-infra/src/main/kotlin/com/org/oneulsogae/infra/match/command/mapper/MatchedTeamMapper.kt`:
 
 ```kotlin
-package com.org.meeple.infra.match.command.mapper
+package com.org.oneulsogae.infra.match.command.mapper
 
-import com.org.meeple.core.match.command.domain.MatchedTeam
-import com.org.meeple.infra.match.command.entity.MatchedTeamEntity
+import com.org.oneulsogae.core.match.command.domain.MatchedTeam
+import com.org.oneulsogae.infra.match.command.entity.MatchedTeamEntity
 import java.time.LocalDateTime
 
 /** 영속성 엔티티 -> 도메인 모델. */
@@ -427,19 +427,19 @@ fun MatchedTeam.toEntity(): MatchedTeamEntity =
 
 - [ ] **Step 5: `TeamMatchAdapter` 작성**
 
-Create `meeple-infra/src/main/kotlin/com/org/meeple/infra/match/command/adapter/TeamMatchAdapter.kt`:
+Create `oneulsogae-infra/src/main/kotlin/com/org/oneulsogae/infra/match/command/adapter/TeamMatchAdapter.kt`:
 
 ```kotlin
-package com.org.meeple.infra.match.command.adapter
+package com.org.oneulsogae.infra.match.command.adapter
 
-import com.org.meeple.core.match.command.application.port.out.SaveTeamMatchPort
-import com.org.meeple.core.match.command.domain.MatchedTeams
-import com.org.meeple.core.match.command.domain.TeamMatch
-import com.org.meeple.infra.match.command.entity.TeamMatchEntity
-import com.org.meeple.infra.match.command.mapper.toDomain
-import com.org.meeple.infra.match.command.mapper.toEntity
-import com.org.meeple.infra.match.command.repository.MatchedTeamJpaRepository
-import com.org.meeple.infra.match.command.repository.TeamMatchJpaRepository
+import com.org.oneulsogae.core.match.command.application.port.out.SaveTeamMatchPort
+import com.org.oneulsogae.core.match.command.domain.MatchedTeams
+import com.org.oneulsogae.core.match.command.domain.TeamMatch
+import com.org.oneulsogae.infra.match.command.entity.TeamMatchEntity
+import com.org.oneulsogae.infra.match.command.mapper.toDomain
+import com.org.oneulsogae.infra.match.command.mapper.toEntity
+import com.org.oneulsogae.infra.match.command.repository.MatchedTeamJpaRepository
+import com.org.oneulsogae.infra.match.command.repository.TeamMatchJpaRepository
 import org.springframework.stereotype.Component
 
 /**
@@ -468,15 +468,15 @@ class TeamMatchAdapter(
 
 - [ ] **Step 6: `RecommendedTeamAdapter`에 `GetRecommendedTeamPort` 구현 추가**
 
-Modify `meeple-infra/src/main/kotlin/com/org/meeple/infra/match/command/adapter/RecommendedTeamAdapter.kt`. import 추가, 구현 인터페이스 추가, 메서드 추가. 전체 파일:
+Modify `oneulsogae-infra/src/main/kotlin/com/org/oneulsogae/infra/match/command/adapter/RecommendedTeamAdapter.kt`. import 추가, 구현 인터페이스 추가, 메서드 추가. 전체 파일:
 
 ```kotlin
-package com.org.meeple.infra.match.command.adapter
+package com.org.oneulsogae.infra.match.command.adapter
 
-import com.org.meeple.core.match.command.application.port.out.GetRecommendedTeamPort
-import com.org.meeple.infra.match.command.entity.RecommendedTeamEntity
-import com.org.meeple.infra.match.command.repository.RecommendedTeamJpaRepository
-import com.org.meeple.scheduler.match.command.application.port.out.SaveRecommendedTeamPort
+import com.org.oneulsogae.core.match.command.application.port.out.GetRecommendedTeamPort
+import com.org.oneulsogae.infra.match.command.entity.RecommendedTeamEntity
+import com.org.oneulsogae.infra.match.command.repository.RecommendedTeamJpaRepository
+import com.org.oneulsogae.scheduler.match.command.application.port.out.SaveRecommendedTeamPort
 import org.springframework.stereotype.Component
 import java.time.LocalDate
 
@@ -507,20 +507,20 @@ class RecommendedTeamAdapter(
 
 - [ ] **Step 7: 컴파일 확인**
 
-Run: `./gradlew :meeple-infra:compileKotlin`
+Run: `./gradlew :oneulsogae-infra:compileKotlin`
 Expected: BUILD SUCCESSFUL (core·infra 컴파일 통과)
 
 - [ ] **Step 8: 커밋**
 
 ```bash
-git add meeple-core/src/main/kotlin/com/org/meeple/core/match/command/application/port/out/GetRecommendedTeamPort.kt \
-        meeple-core/src/main/kotlin/com/org/meeple/core/match/command/application/port/out/SaveTeamMatchPort.kt \
-        meeple-infra/src/main/kotlin/com/org/meeple/infra/match/command/repository/TeamMatchJpaRepository.kt \
-        meeple-infra/src/main/kotlin/com/org/meeple/infra/match/command/repository/MatchedTeamJpaRepository.kt \
-        meeple-infra/src/main/kotlin/com/org/meeple/infra/match/command/mapper/TeamMatchMapper.kt \
-        meeple-infra/src/main/kotlin/com/org/meeple/infra/match/command/mapper/MatchedTeamMapper.kt \
-        meeple-infra/src/main/kotlin/com/org/meeple/infra/match/command/adapter/TeamMatchAdapter.kt \
-        meeple-infra/src/main/kotlin/com/org/meeple/infra/match/command/adapter/RecommendedTeamAdapter.kt
+git add oneulsogae-core/src/main/kotlin/com/org/oneulsogae/core/match/command/application/port/out/GetRecommendedTeamPort.kt \
+        oneulsogae-core/src/main/kotlin/com/org/oneulsogae/core/match/command/application/port/out/SaveTeamMatchPort.kt \
+        oneulsogae-infra/src/main/kotlin/com/org/oneulsogae/infra/match/command/repository/TeamMatchJpaRepository.kt \
+        oneulsogae-infra/src/main/kotlin/com/org/oneulsogae/infra/match/command/repository/MatchedTeamJpaRepository.kt \
+        oneulsogae-infra/src/main/kotlin/com/org/oneulsogae/infra/match/command/mapper/TeamMatchMapper.kt \
+        oneulsogae-infra/src/main/kotlin/com/org/oneulsogae/infra/match/command/mapper/MatchedTeamMapper.kt \
+        oneulsogae-infra/src/main/kotlin/com/org/oneulsogae/infra/match/command/adapter/TeamMatchAdapter.kt \
+        oneulsogae-infra/src/main/kotlin/com/org/oneulsogae/infra/match/command/adapter/RecommendedTeamAdapter.kt
 git commit -m "feat(match): TeamMatch 저장·추천 팀 조회 out-port와 영속성 어댑터 추가
 
 Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>"
@@ -531,8 +531,8 @@ Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>"
 ### Task 3: accept() 승격 로직 + E2E 검증
 
 **Files:**
-- Modify: `meeple-core/src/main/kotlin/com/org/meeple/core/match/command/application/AcceptTeamInvitationService.kt`
-- Test: `meeple-api/src/test/kotlin/com/org/meeple/api/match/TeamMatchPromotionOnAcceptE2ETest.kt`
+- Modify: `oneulsogae-core/src/main/kotlin/com/org/oneulsogae/core/match/command/application/AcceptTeamInvitationService.kt`
+- Test: `oneulsogae-api/src/test/kotlin/com/org/oneulsogae/api/match/TeamMatchPromotionOnAcceptE2ETest.kt`
 
 **Interfaces:**
 - Consumes (from Task 1·2): `TeamMatch.propose(...)`, `TeamMatchType.RECOMMENDED`, `GetRecommendedTeamPort.findRecommendedTeamId(userId)`, `SaveTeamMatchPort.save(teamMatch)`, 기존 `GetTeamPort.findById`, `Team`, `TeamMember`, `TeamMemberStatus.ACTIVE`, `TeamStatus.ACTIVE`.
@@ -540,16 +540,16 @@ Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>"
 
 - [ ] **Step 1: 서비스에 승격 로직 추가**
 
-Modify `meeple-core/src/main/kotlin/com/org/meeple/core/match/command/application/AcceptTeamInvitationService.kt`. import 블록에 다음을 추가:
+Modify `oneulsogae-core/src/main/kotlin/com/org/oneulsogae/core/match/command/application/AcceptTeamInvitationService.kt`. import 블록에 다음을 추가:
 
 ```kotlin
-import com.org.meeple.common.match.TeamMatchType
-import com.org.meeple.common.match.TeamMemberStatus
-import com.org.meeple.common.match.TeamStatus
-import com.org.meeple.core.match.command.application.port.out.GetRecommendedTeamPort
-import com.org.meeple.core.match.command.application.port.out.SaveTeamMatchPort
-import com.org.meeple.core.match.command.domain.TeamMatch
-import com.org.meeple.core.match.command.domain.TeamMember
+import com.org.oneulsogae.common.match.TeamMatchType
+import com.org.oneulsogae.common.match.TeamMemberStatus
+import com.org.oneulsogae.common.match.TeamStatus
+import com.org.oneulsogae.core.match.command.application.port.out.GetRecommendedTeamPort
+import com.org.oneulsogae.core.match.command.application.port.out.SaveTeamMatchPort
+import com.org.oneulsogae.core.match.command.domain.TeamMatch
+import com.org.oneulsogae.core.match.command.domain.TeamMember
 ```
 
 생성자에 포트 2개 주입 (timeGenerator·domainEventPublisher 앞에 추가):
@@ -618,31 +618,31 @@ class AcceptTeamInvitationService(
 
 - [ ] **Step 2: 실패하는 E2E 테스트 작성**
 
-Create `meeple-api/src/test/kotlin/com/org/meeple/api/match/TeamMatchPromotionOnAcceptE2ETest.kt`:
+Create `oneulsogae-api/src/test/kotlin/com/org/oneulsogae/api/match/TeamMatchPromotionOnAcceptE2ETest.kt`:
 
 ```kotlin
-package com.org.meeple.api.match
+package com.org.oneulsogae.api.match
 
-import com.org.meeple.common.integration.AbstractIntegrationSupport
-import com.org.meeple.common.integration.expect
-import com.org.meeple.common.integration.post
-import com.org.meeple.common.match.MatchStatus
-import com.org.meeple.common.match.TeamMatchType
-import com.org.meeple.common.match.TeamStatus
-import com.org.meeple.common.user.Gender
-import com.org.meeple.infra.alarm.command.entity.QAlarmEntity
-import com.org.meeple.infra.fixture.IntegrationUtil
-import com.org.meeple.infra.fixture.MatchUserEntityFixture
-import com.org.meeple.infra.fixture.RecommendedTeamEntityFixture
-import com.org.meeple.infra.match.command.entity.MatchedTeamEntity
-import com.org.meeple.infra.match.command.entity.QMatchUserEntity
-import com.org.meeple.infra.match.command.entity.QMatchedTeamEntity
-import com.org.meeple.infra.match.command.entity.QRecommendedTeamEntity
-import com.org.meeple.infra.match.command.entity.QTeamEntity
-import com.org.meeple.infra.match.command.entity.QTeamMatchEntity
-import com.org.meeple.infra.match.command.entity.QTeamMemberEntity
-import com.org.meeple.infra.match.command.entity.TeamEntity
-import com.org.meeple.infra.match.command.entity.TeamMatchEntity
+import com.org.oneulsogae.common.integration.AbstractIntegrationSupport
+import com.org.oneulsogae.common.integration.expect
+import com.org.oneulsogae.common.integration.post
+import com.org.oneulsogae.common.match.MatchStatus
+import com.org.oneulsogae.common.match.TeamMatchType
+import com.org.oneulsogae.common.match.TeamStatus
+import com.org.oneulsogae.common.user.Gender
+import com.org.oneulsogae.infra.alarm.command.entity.QAlarmEntity
+import com.org.oneulsogae.infra.fixture.IntegrationUtil
+import com.org.oneulsogae.infra.fixture.MatchUserEntityFixture
+import com.org.oneulsogae.infra.fixture.RecommendedTeamEntityFixture
+import com.org.oneulsogae.infra.match.command.entity.MatchedTeamEntity
+import com.org.oneulsogae.infra.match.command.entity.QMatchUserEntity
+import com.org.oneulsogae.infra.match.command.entity.QMatchedTeamEntity
+import com.org.oneulsogae.infra.match.command.entity.QRecommendedTeamEntity
+import com.org.oneulsogae.infra.match.command.entity.QTeamEntity
+import com.org.oneulsogae.infra.match.command.entity.QTeamMatchEntity
+import com.org.oneulsogae.infra.match.command.entity.QTeamMemberEntity
+import com.org.oneulsogae.infra.match.command.entity.TeamEntity
+import com.org.oneulsogae.infra.match.command.entity.TeamMatchEntity
 import io.kotest.matchers.shouldBe
 
 /**
@@ -791,21 +791,21 @@ private fun matchedTeamsOf(teamMatchId: Long): List<MatchedTeamEntity> {
 
 - [ ] **Step 3: 테스트 실패 확인 (서비스 미수정 시) / 통과 확인 (수정 후)**
 
-Run: `./gradlew :meeple-api:test --tests "com.org.meeple.api.match.TeamMatchPromotionOnAcceptE2ETest"`
+Run: `./gradlew :oneulsogae-api:test --tests "com.org.oneulsogae.api.match.TeamMatchPromotionOnAcceptE2ETest"`
 Expected: Step 1 수정이 적용된 상태면 PASS (4 tests). 만약 Step 1을 건너뛰면 `team_matches`가 비어 `size shouldBe 2`에서 FAIL.
 
 - [ ] **Step 4: 전체 match E2E 회귀 확인**
 
 기존 수락/초대 흐름이 깨지지 않았는지 확인:
 
-Run: `./gradlew :meeple-api:test --tests "com.org.meeple.api.match.AcceptTeamInvitationE2ETest" --tests "com.org.meeple.api.match.InviteTeamE2ETest" --tests "com.org.meeple.api.match.TeamMatchPromotionOnAcceptE2ETest"`
+Run: `./gradlew :oneulsogae-api:test --tests "com.org.oneulsogae.api.match.AcceptTeamInvitationE2ETest" --tests "com.org.oneulsogae.api.match.InviteTeamE2ETest" --tests "com.org.oneulsogae.api.match.TeamMatchPromotionOnAcceptE2ETest"`
 Expected: 모두 PASS
 
 - [ ] **Step 5: 커밋**
 
 ```bash
-git add meeple-core/src/main/kotlin/com/org/meeple/core/match/command/application/AcceptTeamInvitationService.kt \
-        meeple-api/src/test/kotlin/com/org/meeple/api/match/TeamMatchPromotionOnAcceptE2ETest.kt
+git add oneulsogae-core/src/main/kotlin/com/org/oneulsogae/core/match/command/application/AcceptTeamInvitationService.kt \
+        oneulsogae-api/src/test/kotlin/com/org/oneulsogae/api/match/TeamMatchPromotionOnAcceptE2ETest.kt
 git commit -m "feat(match): 팀 결성 시 구성원 추천 팀을 TeamMatch로 승격
 
 Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>"

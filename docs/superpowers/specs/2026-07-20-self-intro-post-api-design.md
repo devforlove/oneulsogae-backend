@@ -28,13 +28,13 @@
 
 ## 구성 요소
 
-- **meeple-core `lounge`**
+- **oneulsogae-core `lounge`**
   - `LoungeErrorCode` — LOUNGE-001~007
   - `command/domain`: `LoungePost`(공통 골격), `SelfIntroPost`(본문 + 검증 규칙 전부), `LoungePostImages`(사진 일급 컬렉션, 순서 부여)
   - in-port `RegisterSelfIntroPostUseCase` + `RegisterSelfIntroPostCommand`(웹 타입 없는 `FilePart`) + `RegisterSelfIntroPostResult`
   - out-port `SaveLoungePostPort` · `CountRecentSelfIntroPostPort` · `SaveSelfIntroPostPort` · `SaveLoungePostImagePort` · `FileStoragePort`(lounge 전용)
-- **meeple-infra `lounge/command`**: 엔티티당 어댑터 1개(`LoungePostAdapter`가 저장 + 카운트), 리포지토리·매퍼 각 3개, `S3LoungeImageStorageAdapter`
-- **meeple-api**: `SelfIntroPostController`, `SelfIntroPostResponse`
+- **oneulsogae-infra `lounge/command`**: 엔티티당 어댑터 1개(`LoungePostAdapter`가 저장 + 카운트), 리포지토리·매퍼 각 3개, `S3LoungeImageStorageAdapter`
+- **oneulsogae-api**: `SelfIntroPostController`, `SelfIntroPostResponse`
 
 ## 에러 코드
 

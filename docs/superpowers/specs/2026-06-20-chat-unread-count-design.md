@@ -1,7 +1,7 @@
 # 채팅 말풍선별 "안 읽은 사람 수" (카톡식) 설계
 
 - 작성일: 2026-06-20
-- 대상 모듈: `meeple-chatting`, `meeple-infra`, `meeple-core`, `meeple-api`
+- 대상 모듈: `oneulsogae-chatting`, `oneulsogae-infra`, `oneulsogae-core`, `oneulsogae-api`
 
 ## 목표
 
@@ -69,7 +69,7 @@ last_read_message_id BIGINT NULL  -- 이 참가자가 마지막으로 읽은 메
 
 ## 아키텍처 매핑 (헥사고날 + 모듈 경계)
 
-### `meeple-chatting` (실시간 읽음 = command, 발송 경로와 대칭)
+### `oneulsogae-chatting` (실시간 읽음 = command, 발송 경로와 대칭)
 
 - in-port `MarkMessagesAsReadUseCase` + 구현 `MarkMessagesAsReadService` (`@Service @Transactional`)
 - out-port `AdvanceReadPointerPort` — forward-only 포인터 전진 + 뱃지 리셋, 영향 행 수 반환
@@ -80,7 +80,7 @@ last_read_message_id BIGINT NULL  -- 이 참가자가 마지막으로 읽은 메
   (기존 `updateLastMessageIfActive` 조건부 UPDATE 패턴과 동일한 스타일)
 - 신규 요청 DTO `ChatReadReportRequest { lastReadMessageId }`, 응답 DTO `MessageReadDto { chatRoomId, readerId, lastReadMessageId }`
 
-### `meeple-infra` `ChatRoomMemberAdapter` (같은 엔티티 → 한 어댑터에서 함께 구현)
+### `oneulsogae-infra` `ChatRoomMemberAdapter` (같은 엔티티 → 한 어댑터에서 함께 구현)
 
 - `AdvanceReadPointerPort` 구현 = `@Modifying` 조건부 벌크 UPDATE (반환: 영향 행 수)
 
@@ -99,12 +99,12 @@ last_read_message_id BIGINT NULL  -- 이 참가자가 마지막으로 읽은 메
 - `GetChatParticipantDaoImpl` 프로젝션에 `member.lastReadMessageId`, status(active 판정) 추가
 - `ChatRoomMemberEntity`에 `last_read_message_id` 컬럼 매핑 추가
 
-### `meeple-core` (query 노출)
+### `oneulsogae-core` (query 노출)
 
 - `ChatParticipant` read model에 `lastReadMessageId: Long?`, `active: Boolean` 추가
 - REST `MarkChatRoomAsReadService`(뱃지 리셋)는 변경하지 않는다. 권위 있는 포인터/실시간 전파는 STOMP 읽음 경로가 담당.
 
-### `meeple-api`
+### `oneulsogae-api`
 
 - `ChatParticipantResponse`에 `lastReadMessageId`, `active` 추가
 
@@ -118,7 +118,7 @@ last_read_message_id BIGINT NULL  -- 이 참가자가 마지막으로 읽은 메
 
 ## 테스트 전략 (CLAUDE.md)
 
-- **E2E (meeple-api, AbstractIntegrationSupport + Testcontainers)**:
+- **E2E (oneulsogae-api, AbstractIntegrationSupport + Testcontainers)**:
   - 메시지 발송 → STOMP 읽음 프레임 전송 → `/topic/{roomId}`로 읽음 이벤트 수신 확인
   - `GET /rooms/{id}` 상세에서 참가자별 `lastReadMessageId`/`active` 노출 확인
   - forward-only(역행 무시), 비참가자 읽음 보고 거부 케이스

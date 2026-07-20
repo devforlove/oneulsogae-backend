@@ -1,0 +1,13 @@
+package com.org.oneulsogae.scheduler.teammatch.command.domain
+
+/** 팀 추천 배치 실행 요약. */
+data class RecommendedTeamBatchResult(
+	/** 순회한 대상(팀 미소속 솔로 유저) 수. */
+	val targets: Int,
+	/** 추천을 적재한 수. */
+	val recommended: Int,
+	/** 후보 팀이 없어 건너뛴 수. */
+	val skipped: Int,
+	/** 예기치 못한 오류로 실패한 수. */
+	val failed: Int,
+)

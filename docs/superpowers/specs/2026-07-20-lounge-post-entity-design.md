@@ -5,13 +5,13 @@
 
 ## 범위
 
-- 포함: `meeple-common` 포스트 타입 enum, `meeple-infra`의 엔티티 4개, 배포 전 DDL.
+- 포함: `oneulsogae-common` 포스트 타입 enum, `oneulsogae-infra`의 엔티티 4개, 배포 전 DDL.
 - 제외: 도메인 모델·포트·서비스·Repository·Adapter·API·E2E. 댓글·신고·조회수.
   (실제 작성/조회 유스케이스가 확정될 때 별도 세션에서 추가한다)
 
 ## 데이터 모델
 
-### `LoungePostType` (meeple-common `common/lounge`)
+### `LoungePostType` (oneulsogae-common `common/lounge`)
 
 `SELF_INTRO`("셀프 소개팅") 하나로 시작. 라운지에 다른 글 타입이 생기면 여기에 추가한다.
 

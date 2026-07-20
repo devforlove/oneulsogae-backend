@@ -23,7 +23,7 @@
 - 거절(decline) 상태는 만들지 않는다. 현재 `respond()`는 수락만 하고 무응답은 만료되므로 `WAITING`이 무응답을 커버한다.
 - 팀(2:2) 매칭은 범위 밖.
 
-## 2. enum: `MatchMemberStatus` (meeple-common)
+## 2. enum: `MatchMemberStatus` (oneulsogae-common)
 
 ```kotlin
 enum class MatchMemberStatus(val description: String) {

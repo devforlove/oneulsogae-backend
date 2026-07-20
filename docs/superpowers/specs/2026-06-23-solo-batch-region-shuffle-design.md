@@ -29,7 +29,7 @@
 
 이 프로젝트는 비결정성을 out-port로 주입한다(`TimeGenerator` 선례, 모듈별 자체 보유). 셔플도 동일하게 격리한다.
 
-- **out-port** `com.org.meeple.scheduler.match.command.application.port.out.RegionShuffler`
+- **out-port** `com.org.oneulsogae.scheduler.match.command.application.port.out.RegionShuffler`
   ```kotlin
   interface RegionShuffler {
       /** 가까운 순 regionId 목록에서 앞 K개만 무작위로 섞은 새 목록을 반환한다. (K번째 이후는 순서 유지) */
@@ -62,7 +62,7 @@
 
 ## 5. 영향 파일
 
-- 신규: `meeple-scheduler/.../port/out/RegionShuffler.kt`, `meeple-scheduler/.../<adapter|application>/RandomRegionShuffler.kt`(SystemBatchTimeGenerator와 같은 패키지 관례), 유닛 테스트 `RandomRegionShufflerTest`.
+- 신규: `oneulsogae-scheduler/.../port/out/RegionShuffler.kt`, `oneulsogae-scheduler/.../<adapter|application>/RandomRegionShuffler.kt`(SystemBatchTimeGenerator와 같은 패키지 관례), 유닛 테스트 `RandomRegionShufflerTest`.
 - 수정: `SoloMatchBatchService`(생성자 주입 + `findNearestFreshPartner` 한 줄), `RunSoloMatchBatchIntegrationTest`(항등 셔플러 빈 + 기존 단언 유지), 필요 시 테스트 설정.
 - `// TODO 개선` 주석 제거(이 작업이 그 TODO의 해소).
 

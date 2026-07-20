@@ -26,7 +26,7 @@
 참가자 상태에 `WAITING`, `APPLY`를 추가한다. (additive — 단독 컴파일)
 
 **Files:**
-- Modify: `meeple-common/src/main/kotlin/com/org/meeple/common/match/MatchMemberStatus.kt`
+- Modify: `oneulsogae-common/src/main/kotlin/com/org/oneulsogae/common/match/MatchMemberStatus.kt`
 
 **Interfaces:**
 - Produces: `MatchMemberStatus.{WAITING, APPLY, ACTIVE, DEACTIVE}`
@@ -34,7 +34,7 @@
 - [ ] **Step 1: enum 교체**
 
 ```kotlin
-package com.org.meeple.common.match
+package com.org.oneulsogae.common.match
 
 /** 매칭(소개) 참가자의 상태. WAITING(대기) → APPLY(신청) → ACTIVE(성사·활성) / DEACTIVE(채팅 나감). */
 enum class MatchMemberStatus(val description: String) {
@@ -55,13 +55,13 @@ enum class MatchMemberStatus(val description: String) {
 
 - [ ] **Step 2: 컴파일 확인**
 
-Run: `./gradlew :meeple-common:compileKotlin`
+Run: `./gradlew :oneulsogae-common:compileKotlin`
 Expected: BUILD SUCCESSFUL
 
 - [ ] **Step 3: 커밋**
 
 ```bash
-git add meeple-common/src/main/kotlin/com/org/meeple/common/match/MatchMemberStatus.kt
+git add oneulsogae-common/src/main/kotlin/com/org/oneulsogae/common/match/MatchMemberStatus.kt
 git commit -m "feat(match): MatchMemberStatus에 WAITING·APPLY 상태 추가"
 ```
 
@@ -72,10 +72,10 @@ git commit -m "feat(match): MatchMemberStatus에 WAITING·APPLY 상태 추가"
 `accepted`를 제거하고 status 기반으로 도메인을 재작성한다. 한 모듈의 원자적 변경(네 파일이 함께 컴파일).
 
 **Files:**
-- Modify: `meeple-core/src/main/kotlin/com/org/meeple/core/match/command/domain/MatchMember.kt`
-- Modify: `meeple-core/src/main/kotlin/com/org/meeple/core/match/command/domain/MatchMembers.kt`
-- Modify: `meeple-core/src/main/kotlin/com/org/meeple/core/match/command/domain/Match.kt`
-- Modify: `meeple-core/src/testFixtures/kotlin/com/org/meeple/core/fixture/MatchFixture.kt`
+- Modify: `oneulsogae-core/src/main/kotlin/com/org/oneulsogae/core/match/command/domain/MatchMember.kt`
+- Modify: `oneulsogae-core/src/main/kotlin/com/org/oneulsogae/core/match/command/domain/MatchMembers.kt`
+- Modify: `oneulsogae-core/src/main/kotlin/com/org/oneulsogae/core/match/command/domain/Match.kt`
+- Modify: `oneulsogae-core/src/testFixtures/kotlin/com/org/oneulsogae/core/fixture/MatchFixture.kt`
 
 **Interfaces:**
 - Consumes: `MatchMemberStatus.{WAITING, APPLY, ACTIVE, DEACTIVE}` (Task 1).
@@ -84,10 +84,10 @@ git commit -m "feat(match): MatchMemberStatus에 WAITING·APPLY 상태 추가"
 - [ ] **Step 1: `MatchMember` 교체** (accepted 제거, apply/activate/hasApplied, 기본 WAITING)
 
 ```kotlin
-package com.org.meeple.core.match.command.domain
+package com.org.oneulsogae.core.match.command.domain
 
-import com.org.meeple.common.match.MatchMemberStatus
-import com.org.meeple.common.user.Gender
+import com.org.oneulsogae.common.match.MatchMemberStatus
+import com.org.oneulsogae.common.user.Gender
 import java.time.LocalDateTime
 
 /**
@@ -95,7 +95,7 @@ import java.time.LocalDateTime
  * 참가자를 (matchId, userId) 한 쌍의 행으로 정규화해, 1:1뿐 아니라 N:N(2:2·3:3) 미팅으로 확장한다.
  * [status]가 참가자 상태(WAITING→APPLY→ACTIVE/DEACTIVE)를 담는다. 관심 신청 여부는 [hasApplied]로 본다.
  * [deletedAt]이 채워지면 소프트 삭제된(제거된) 참가자다.
- * 영속성은 [com.org.meeple.infra.match.command.entity.SoloMatchMemberEntity]가 담당한다.
+ * 영속성은 [com.org.oneulsogae.infra.match.command.entity.SoloMatchMemberEntity]가 담당한다.
  */
 data class MatchMember(
 	val id: Long = 0,
@@ -211,7 +211,7 @@ data class MatchMember(
 
 - [ ] **Step 4: `MatchFixture.membersOf` 교체** — accepted 파라미터를 status로
 
-`import com.org.meeple.common.match.MatchMemberStatus` 추가, `membersOf`(라인 35~47)를 아래로:
+`import com.org.oneulsogae.common.match.MatchMemberStatus` 추가, `membersOf`(라인 35~47)를 아래로:
 ```kotlin
 	/** 1:1 참가자(남/녀) 묶음. 각자의 상태를 지정할 수 있다. */
 	fun membersOf(
@@ -230,16 +230,16 @@ data class MatchMember(
 
 - [ ] **Step 5: core 컴파일 확인** (main + testFixtures)
 
-Run: `./gradlew :meeple-core:compileKotlin :meeple-core:compileTestFixturesKotlin`
-Expected: BUILD SUCCESSFUL. (meeple-api 테스트는 Task 4까지 깨진 상태 — 여기선 core 컴파일만 본다)
+Run: `./gradlew :oneulsogae-core:compileKotlin :oneulsogae-core:compileTestFixturesKotlin`
+Expected: BUILD SUCCESSFUL. (oneulsogae-api 테스트는 Task 4까지 깨진 상태 — 여기선 core 컴파일만 본다)
 
 - [ ] **Step 6: 커밋**
 
 ```bash
-git add meeple-core/src/main/kotlin/com/org/meeple/core/match/command/domain/MatchMember.kt \
-        meeple-core/src/main/kotlin/com/org/meeple/core/match/command/domain/MatchMembers.kt \
-        meeple-core/src/main/kotlin/com/org/meeple/core/match/command/domain/Match.kt \
-        meeple-core/src/testFixtures/kotlin/com/org/meeple/core/fixture/MatchFixture.kt
+git add oneulsogae-core/src/main/kotlin/com/org/oneulsogae/core/match/command/domain/MatchMember.kt \
+        oneulsogae-core/src/main/kotlin/com/org/oneulsogae/core/match/command/domain/MatchMembers.kt \
+        oneulsogae-core/src/main/kotlin/com/org/oneulsogae/core/match/command/domain/Match.kt \
+        oneulsogae-core/src/testFixtures/kotlin/com/org/oneulsogae/core/fixture/MatchFixture.kt
 git commit -m "refactor(match): MatchMember를 단일 status 모델로 전환(accepted 제거)"
 ```
 
@@ -250,10 +250,10 @@ git commit -m "refactor(match): MatchMember를 단일 status 모델로 전환(ac
 `accepted` 컬럼 제거, 조회 동작 보존, 기본값 WAITING.
 
 **Files:**
-- Modify: `meeple-infra/src/main/kotlin/com/org/meeple/infra/match/command/entity/SoloMatchMemberEntity.kt`
-- Modify: `meeple-infra/src/main/kotlin/com/org/meeple/infra/match/command/mapper/MatchMemberMapper.kt`
-- Modify: `meeple-infra/src/main/kotlin/com/org/meeple/infra/match/query/GetMatchWithPartnerDaoImpl.kt`
-- Modify: `meeple-infra/src/testFixtures/kotlin/com/org/meeple/infra/fixture/SoloMatchMemberEntityFixture.kt`
+- Modify: `oneulsogae-infra/src/main/kotlin/com/org/oneulsogae/infra/match/command/entity/SoloMatchMemberEntity.kt`
+- Modify: `oneulsogae-infra/src/main/kotlin/com/org/oneulsogae/infra/match/command/mapper/MatchMemberMapper.kt`
+- Modify: `oneulsogae-infra/src/main/kotlin/com/org/oneulsogae/infra/match/query/GetMatchWithPartnerDaoImpl.kt`
+- Modify: `oneulsogae-infra/src/testFixtures/kotlin/com/org/oneulsogae/infra/fixture/SoloMatchMemberEntityFixture.kt`
 - Create: `docs/migration/solo_match_members_drop_accepted.sql`
 
 **Interfaces:**
@@ -314,11 +314,11 @@ where 필터(라인 85) `status.eq(ACTIVE)` → `status.ne(DEACTIVE)`:
 - [ ] **Step 4: `SoloMatchMemberEntityFixture` — accepted 제거, status 기본 WAITING**
 
 ```kotlin
-package com.org.meeple.infra.fixture
+package com.org.oneulsogae.infra.fixture
 
-import com.org.meeple.common.match.MatchMemberStatus
-import com.org.meeple.common.user.Gender
-import com.org.meeple.infra.match.command.entity.SoloMatchMemberEntity
+import com.org.oneulsogae.common.match.MatchMemberStatus
+import com.org.oneulsogae.common.user.Gender
+import com.org.oneulsogae.infra.match.command.entity.SoloMatchMemberEntity
 
 /**
  * [SoloMatchMemberEntity] 테스트 픽스처. 합리적 기본값을 주고, 필요한 값만 덮어쓴다.
@@ -352,16 +352,16 @@ ALTER TABLE solo_match_members DROP COLUMN accepted;
 
 - [ ] **Step 6: infra 컴파일 확인** (main + testFixtures)
 
-Run: `./gradlew :meeple-infra:compileKotlin :meeple-infra:compileTestFixturesKotlin`
+Run: `./gradlew :oneulsogae-infra:compileKotlin :oneulsogae-infra:compileTestFixturesKotlin`
 Expected: BUILD SUCCESSFUL
 
 - [ ] **Step 7: 커밋**
 
 ```bash
-git add meeple-infra/src/main/kotlin/com/org/meeple/infra/match/command/entity/SoloMatchMemberEntity.kt \
-        meeple-infra/src/main/kotlin/com/org/meeple/infra/match/command/mapper/MatchMemberMapper.kt \
-        meeple-infra/src/main/kotlin/com/org/meeple/infra/match/query/GetMatchWithPartnerDaoImpl.kt \
-        meeple-infra/src/testFixtures/kotlin/com/org/meeple/infra/fixture/SoloMatchMemberEntityFixture.kt \
+git add oneulsogae-infra/src/main/kotlin/com/org/oneulsogae/infra/match/command/entity/SoloMatchMemberEntity.kt \
+        oneulsogae-infra/src/main/kotlin/com/org/oneulsogae/infra/match/command/mapper/MatchMemberMapper.kt \
+        oneulsogae-infra/src/main/kotlin/com/org/oneulsogae/infra/match/query/GetMatchWithPartnerDaoImpl.kt \
+        oneulsogae-infra/src/testFixtures/kotlin/com/org/oneulsogae/infra/fixture/SoloMatchMemberEntityFixture.kt \
         docs/migration/solo_match_members_drop_accepted.sql
 git commit -m "refactor(match): solo_match_member accepted 제거, 조회 status 기반으로 보존"
 ```
@@ -373,19 +373,19 @@ git commit -m "refactor(match): solo_match_member accepted 제거, 조회 status
 도메인 유닛·E2E를 새 status 모델로 갱신하고, 새 동작(전원 신청 시 ACTIVE 승격, 조회 필터 보존)을 단언한다. 이 태스크 종료 시 **전체 빌드 GREEN**.
 
 **Files:**
-- Modify: `meeple-api/src/test/kotlin/com/org/meeple/domain/match/MatchMembersTest.kt`
-- Modify: `meeple-api/src/test/kotlin/com/org/meeple/domain/match/MatchTest.kt`
-- Modify: `meeple-api/src/test/kotlin/com/org/meeple/api/match/SendInterestE2ETest.kt`
-- Modify: `meeple-api/src/test/kotlin/com/org/meeple/api/match/GetMatchesE2ETest.kt`
-- Modify: `meeple-api/src/test/kotlin/com/org/meeple/api/chat/LeaveChatRoomE2ETest.kt`
-- Modify: `meeple-api/src/test/kotlin/com/org/meeple/api/scheduler/RunSoloMatchBatchIntegrationTest.kt`
+- Modify: `oneulsogae-api/src/test/kotlin/com/org/oneulsogae/domain/match/MatchMembersTest.kt`
+- Modify: `oneulsogae-api/src/test/kotlin/com/org/oneulsogae/domain/match/MatchTest.kt`
+- Modify: `oneulsogae-api/src/test/kotlin/com/org/oneulsogae/api/match/SendInterestE2ETest.kt`
+- Modify: `oneulsogae-api/src/test/kotlin/com/org/oneulsogae/api/match/GetMatchesE2ETest.kt`
+- Modify: `oneulsogae-api/src/test/kotlin/com/org/oneulsogae/api/chat/LeaveChatRoomE2ETest.kt`
+- Modify: `oneulsogae-api/src/test/kotlin/com/org/oneulsogae/api/scheduler/RunSoloMatchBatchIntegrationTest.kt`
 
 **Interfaces:**
 - Consumes: 모든 Task 2·3 산출물.
 
 - [ ] **Step 1: `MatchMembersTest` — apply/신청 집계 + activateAll**
 
-`import com.org.meeple.common.match.MatchMemberStatus` 추가. `describe("accept / 수락 집계")` 블록(라인 31~45)을 아래로 교체:
+`import com.org.oneulsogae.common.match.MatchMemberStatus` 추가. `describe("accept / 수락 집계")` 블록(라인 31~45)을 아래로 교체:
 ```kotlin
 	describe("apply / 신청 집계") {
 		it("한 명만 신청하면 anyApplied=true, allApplied=false") {
@@ -430,7 +430,7 @@ git commit -m "refactor(match): solo_match_member accepted 제거, 조회 status
 
 - [ ] **Step 3: `SendInterestE2ETest` — persistMatch를 status 기반으로**
 
-`import com.org.meeple.common.match.MatchMemberStatus` 추가. `persistMatch` 헬퍼의 파라미터 `maleAccepted: Boolean? = null, femaleAccepted: Boolean? = null`를 `maleStatus: MatchMemberStatus = MatchMemberStatus.WAITING, femaleStatus: MatchMemberStatus = MatchMemberStatus.WAITING`로 바꾸고, 멤버 생성 두 줄(라인 53·56)을:
+`import com.org.oneulsogae.common.match.MatchMemberStatus` 추가. `persistMatch` 헬퍼의 파라미터 `maleAccepted: Boolean? = null, femaleAccepted: Boolean? = null`를 `maleStatus: MatchMemberStatus = MatchMemberStatus.WAITING, femaleStatus: MatchMemberStatus = MatchMemberStatus.WAITING`로 바꾸고, 멤버 생성 두 줄(라인 53·56)을:
 ```kotlin
 		IntegrationUtil.persist(
 			SoloMatchMemberEntityFixture.create(matchId = matchId, userId = maleUserId, gender = Gender.MALE, status = maleStatus),
@@ -452,7 +452,7 @@ git commit -m "refactor(match): solo_match_member accepted 제거, 조회 status
 
 - [ ] **Step 4: `GetMatchesE2ETest` — accepted → status**
 
-`import com.org.meeple.common.match.MatchMemberStatus` 추가. 멤버 생성 두 줄(라인 66·70)을:
+`import com.org.oneulsogae.common.match.MatchMemberStatus` 추가. 멤버 생성 두 줄(라인 66·70)을:
 ```kotlin
 				// 나: 미신청(WAITING) → hasUserInterest=false
 				IntegrationUtil.persist(
@@ -477,7 +477,7 @@ git commit -m "refactor(match): solo_match_member accepted 제거, 조회 status
 
 - [ ] **Step 6: `RunSoloMatchBatchIntegrationTest` — persistMatch 멤버 status를 매치 상태에 맞춤**
 
-`import com.org.meeple.common.match.MatchMemberStatus`가 없으면 추가. `persistMatch` 헬퍼에서 멤버 생성 전에 멤버 status를 산정하고 두 멤버에 적용한다:
+`import com.org.oneulsogae.common.match.MatchMemberStatus`가 없으면 추가. `persistMatch` 헬퍼에서 멤버 생성 전에 멤버 status를 산정하고 두 멤버에 적용한다:
 ```kotlin
 private fun persistMatch(userIdA: Long, userIdB: Long, status: MatchStatus, introducedDate: LocalDate) {
 	val match: SoloMatchEntity = IntegrationUtil.persist(

@@ -41,7 +41,7 @@
   - 매칭 시 나이는 후보 `birthday`로 비교되므로, 후속 매칭 쿼리는 이상형의 `age_min/age_max`를 기준일 기준 생년월일 범위로 변환해
     `candidate.birthday BETWEEN (기준일 - age_max년) AND (기준일 - age_min년)` 형태의 **sargable(birthday 인덱스 seek)** 조건으로 쓴다.
   - 나이는 시점에 따라 변하는 값이므로 저장 시 생년월일로 굳히지 않고 **사용자가 고른 나이(의도)** 그대로 보관한다.
-- **결혼/흡연/음주/종교: 기존 `meeple-common` enum 재사용**(`MaritalStatus`,`SmokingStatus`,`DrinkingStatus`,`Religion`). 후보의 동명 컬럼과 `=`로 바로 비교된다. `null`이면 해당 조건 미적용.
+- **결혼/흡연/음주/종교: 기존 `oneulsogae-common` enum 재사용**(`MaritalStatus`,`SmokingStatus`,`DrinkingStatus`,`Religion`). 후보의 동명 컬럼과 `=`로 바로 비교된다. `null`이면 해당 조건 미적용.
 - **거리: `DistancePreference` enum 저장.** 현재 매칭은 "근접 지역 순서 순회"(geographic proximity, `2026-06-23-distance-based-1on1-matching-design.md`)를 쓴다. 이상형 `distance`는 그 순회 깊이를 제한하는 선호로 매핑된다.
   - `SAME_REGION` → 같은 `regionId`만(근접 순위 0)
   - `ADJACENT_REGION` → 같은 + 인접 지역까지
@@ -52,10 +52,10 @@
 
 ## 4. 데이터 모델
 
-### 4.1 신규 enum (`meeple-common`)
+### 4.1 신규 enum (`oneulsogae-common`)
 
 ```kotlin
-// meeple-common/.../common/user/DistancePreference.kt
+// oneulsogae-common/.../common/user/DistancePreference.kt
 enum class DistancePreference(val description: String) {
     SAME_REGION("같은 지역만"),
     ADJACENT_REGION("인접 지역까지"),
@@ -87,7 +87,7 @@ enum class DistancePreference(val description: String) {
 
 ## 5. 도메인 모델 (`user` command)
 
-`meeple-core/.../user/command/domain/UserIdealType.kt`
+`oneulsogae-core/.../user/command/domain/UserIdealType.kt`
 
 ```kotlin
 data class UserIdealType(
@@ -147,7 +147,7 @@ CQRS 관례상 command의 단건 로드(`GetIdealTypePort`)와 query의 조회 d
 - `infra/user/command/adapter/UserIdealTypeCoreAdapter` — `GetIdealTypePort`,`SaveIdealTypePort` 구현 (upsert 시 기존 엔티티를 로드해 값 갱신 후 save — id/생성시각 보존)
 - `infra/user/query/GetIdealTypeDaoImpl` — Spring Data 파생 쿼리(`findByUserId`)로 충분(조인 없음). `IdealTypeView`로 투영.
 
-### 6.4 API (`meeple-api`)
+### 6.4 API (`oneulsogae-api`)
 - **Controller:** `api/user/IdealTypeController` (`@RequestMapping("/users/v1/ideal-type")`)
   - `GET` — `@LoginUser` → `getIdealTypeUseCase.findByUserId(user.id)` → `IdealTypeResponse.of(view)` 또는 미설정 시 `IdealTypeResponse.empty()`
   - `PUT` — `@Valid @RequestBody SaveIdealTypeRequest` → `saveIdealTypeUseCase.save(user.id, request.toCommand())` → `IdealTypeResponse.of(domain)`
@@ -168,7 +168,7 @@ CQRS 관례상 command의 단건 로드(`GetIdealTypePort`)와 query의 조회 d
   - 정상 생성/교체(전 필드 null 허용).
   - 범위 위반(`ageMin > ageMax`, 한쪽만 존재, 경계 밖) → 예외.
   - `update()`가 id/userId 보존.
-- **E2E(`meeple-api`, `AbstractIntegrationSupport` + 픽스처 + `RestAssuredDsl`):**
+- **E2E(`oneulsogae-api`, `AbstractIntegrationSupport` + 픽스처 + `RestAssuredDsl`):**
   - 미설정 사용자 `GET` → 200, 전 필드 null.
   - `PUT` 후 `GET` 왕복 → 저장값 그대로 반환(enum name·배열 형태 확인).
   - `PUT` 재호출(값 변경) → upsert로 갱신(행 1개 유지).

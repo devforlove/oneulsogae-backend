@@ -47,12 +47,12 @@ CoinCheckoutResponse
 
 ## 영향 범위 (신규/수정)
 
-- `meeple-core`
+- `oneulsogae-core`
   - 신규: `coin/query/service/port/in/GetCoinCheckoutUseCase.kt`, `coin/query/service/GetCoinCheckoutService.kt`, `payments/query/service/port/in/GetPaymentMethodsUseCase.kt`, `payments/query/service/GetPaymentMethodsService.kt`
   - 수정: `coin/query/dao/GetCoinItemDao.kt`(findById 추가), `coin/CoinErrorCode.kt`(COIN-004 추가)
-- `meeple-infra`
+- `oneulsogae-infra`
   - 수정: `coin/query/GetCoinItemDaoImpl.kt`(findById 구현)
-- `meeple-api`
+- `oneulsogae-api`
   - 신규: `coin/response/CoinCheckoutResponse.kt`
   - 수정: `coin/CoinController.kt`(GET /checkout 추가, in-port 2개 주입)
 - 테스트: 신규 E2E `CoinCheckoutE2ETest`

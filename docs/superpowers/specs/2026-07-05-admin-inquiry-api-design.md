@@ -8,7 +8,7 @@
 2. 문의 상세 조회 (`GET /admin/v1/inquiries/{id}`)
 3. 문의 답변 (`POST /admin/v1/inquiries/{id}/answer`)
 
-기존에 유저용 `inquiry` 도메인(`meeple-core` + `/inquiries/v1`)이 **생성(접수)만** 구현돼 있다(로그인·비로그인 모두 접수). 엔티티 `inquiries` 테이블에는 어드민 답변용 `status`(`PENDING`/`ANSWERED`), `answer`, `answered_at` 컬럼이 **이미 선반영**되어 있다.
+기존에 유저용 `inquiry` 도메인(`oneulsogae-core` + `/inquiries/v1`)이 **생성(접수)만** 구현돼 있다(로그인·비로그인 모두 접수). 엔티티 `inquiries` 테이블에는 어드민 답변용 `status`(`PENDING`/`ANSWERED`), `answer`, `answered_at` 컬럼이 **이미 선반영**되어 있다.
 
 ## 결정 사항
 
@@ -23,7 +23,7 @@
 
 ## 아키텍처
 
-`meeple-admin`의 self-contained 헥사고날 패턴을 따른다(조회는 `notice`/`report` query, 답변은 `companyverification` command 미러링). 어드민 모듈은 core에 의존하지 않고, 공용 enum `InquiryCategory`/`InquiryStatus`(`meeple-common`)만 사용한다. 영속성은 `meeple-infra`의 DaoImpl/Adapter가 어드민 out-port를 구현한다.
+`oneulsogae-admin`의 self-contained 헥사고날 패턴을 따른다(조회는 `notice`/`report` query, 답변은 `companyverification` command 미러링). 어드민 모듈은 core에 의존하지 않고, 공용 enum `InquiryCategory`/`InquiryStatus`(`oneulsogae-common`)만 사용한다. 영속성은 `oneulsogae-infra`의 DaoImpl/Adapter가 어드민 out-port를 구현한다.
 
 - 어드민 경로 `/admin/**`는 `SecurityConfig`에서 `hasRole("ADMIN")`로 자동 보호된다. 메서드 레벨 어노테이션 불필요.
 - 컨트롤러는 core의 `ApiResponse`를 반환한다(기존 어드민 컨트롤러 규약과 동일).
@@ -46,7 +46,7 @@
 
 ## 컴포넌트 (파일 구성)
 
-### meeple-admin (`com.org.meeple.admin.inquiry`)
+### oneulsogae-admin (`com.org.oneulsogae.admin.inquiry`)
 
 **Query (조회)**
 - `query/service/port/in/GetAdminInquiriesUseCase.kt`
@@ -78,7 +78,7 @@
 **Common**
 - `common/error/AdminErrorCode.kt`에 `INQUIRY_NOT_FOUND`(404), `INQUIRY_ALREADY_ANSWERED`(409) 추가.
 
-### meeple-infra
+### oneulsogae-infra
 
 - `infra/inquiry/query/GetAdminInquiryDaoImpl.kt` — `@Repository`, `GetAdminInquiryDao` 구현. `JPAQueryFactory` + `QInquiryEntity` 재사용.
   - `findPage`: `Projections.constructor(AdminInquiryView::class.java, id, category, status, email, createdAt)` + status 동적 필터(BooleanBuilder 또는 nullable `where`) + `orderBy(createdAt.desc(), id.desc())` + offset/limit.
@@ -89,9 +89,9 @@
   - `findById`: `InquiryJpaRepository.findById(id)` → `AdminInquiry(id, status)` 변환(없으면 null).
   - `answer`: `findById(id)` 로드 → `entity.answer = answer; entity.answeredAt = answeredAt; entity.status = ANSWERED` → `save`. (companyverification의 load→필드수정→save 패턴과 동일)
 
-> infra는 이미 `meeple-admin`에 의존한다. 별도 의존성 추가 불필요.
+> infra는 이미 `oneulsogae-admin`에 의존한다. 별도 의존성 추가 불필요.
 
-### meeple-api (`com.org.meeple.api.admin`)
+### oneulsogae-api (`com.org.oneulsogae.api.admin`)
 
 - `AdminInquiryController.kt` — `@RestController @RequestMapping("/admin/v1/inquiries")`. `GetAdminInquiriesUseCase`, `AnswerInquiryUseCase` 주입.
   - `GET` 목록(`page`, `size`, `status`), `GET /{id}` 상세, `POST /{id}/answer` 답변.
@@ -126,7 +126,7 @@
 
 ## 테스트
 
-- **E2E** (`meeple-api`, `AbstractIntegrationSupport` 상속): `AdminInquiryE2ETest`
+- **E2E** (`oneulsogae-api`, `AbstractIntegrationSupport` 상속): `AdminInquiryE2ETest`
   - 목록 페이징(정렬·페이지 필드), `status` 필터(PENDING/ANSWERED/미지정), 상세 조회, 답변 성공 후 상세 재조회(status=ANSWERED·answer·answeredAt 확인), 이미 답변된 문의 재답변 409, 존재하지 않는 id 404, 잘못된 답변 입력 400.
   - 픽스처는 infra `testFixtures`의 문의 엔티티 픽스처 사용(없으면 신설 — `InquiryEntityFixture`).
 - **도메인 유닛** (Kotest):

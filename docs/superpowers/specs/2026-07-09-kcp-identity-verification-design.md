@@ -27,7 +27,7 @@
 기존 컨벤션(회사/학교 이메일 인증이 user 도메인 command side에 위치)을 따른다.
 
 ```
-meeple-core (core/user/command)
+oneulsogae-core (core/user/command)
   domain/IdentityVerification.kt
     - 애그리거트: userId, ordrIdxx(주문번호), regCertKey, status, 검증결과(이름/생년월일/성별/전화/CI/DI/통신사/내외국인), verifiedAt
     - 도메인 행위: create(요청생성), validateRegCertKey(위변조검증), validateAdult(now)(만 나이), complete(결과반영)
@@ -45,14 +45,14 @@ meeple-core (core/user/command)
     ExistsIdentityByDiPort - 중복가입 차단 조회
     (기존 재사용) SaveUserDetailPort, GetUserPort/SaveUserPort(상태전이), TimeGenerator
 
-meeple-infra (infra/user/command)
+oneulsogae-infra (infra/user/command)
   entity/IdentityVerificationEntity + repository + mapper + adapter(Save/Get/ExistsByDi 구현)
   adapter/KcpCertClientAdapter   - RestClient로 testcert/cert.kcp.co.kr 호출 (Register·Query 포트 구현)
   adapter/KcpCertCryptoStubAdapter - KcpCertCryptoPort 구현. encrypt/decrypt 자리표시(TODO). JAR 확보 시 이 클래스만 교체
   config/KcpProperties (@ConfigurationProperties "app.kcp.*") + RestClient 빈
   crypto/CiCipher - CI 앱단 AES-GCM 암복호화 유틸(환경변수 키). 어댑터가 저장 전 CI 암호화
 
-meeple-api (api/user)
+oneulsogae-api (api/user)
   IdentityVerificationController  (/user/v1/identity-verification)
     POST /register  → { callUrl, regCertKey, ordrIdxx }
     POST /confirm   → 검증 요약 반환
@@ -147,7 +147,7 @@ meeple-api (api/user)
   - 상태 전이(REQUESTED→VERIFIED/FAILED)
   - `validateRegCertKey` 불일치 예외
   - DI 중복 정책
-- **E2E(meeple-api)**: register→confirm 플로우
+- **E2E(oneulsogae-api)**: register→confirm 플로우
   - KCP out-port(Register/Query/Crypto)는 실호출 불가 → **테스트 컨텍스트에서 페이크 빈으로 대체**(고정 복호화 결과 주입)
   - 케이스: 성공(성인·비중복) / 미성년 / DI 중복 / regCertKey 불일치 / 거래등록 실패
   - `AbstractIntegrationSupport` + `IntegrationUtil`/픽스처 + `RestAssuredDsl`

@@ -1,7 +1,7 @@
 # 어드민 회사 이미지 인증 승인/반려 API 설계
 
 **작성일:** 2026-07-05
-**대상 브랜치:** feat/meeple-admin-module
+**대상 브랜치:** feat/oneulsogae-admin-module
 
 ## 목표
 
@@ -9,7 +9,7 @@
 - **승인**: 어드민이 회사명을 기입하면, 해당 유저의 `user_details.companyName`을 그 값으로 바꾸고 인증 `status`를 `APPROVED`로 만든다.
 - **반려**: 인증 `status`를 `REJECTED`로 만든다.
 
-`meeple-admin`의 **첫 command 슬라이스**다(기존 조회 슬라이스 `companyverification/query`에 이어 `companyverification/command` 추가). admin은 core 비의존이므로 자체 도메인·command out-port를 두고 infra가 구현한다.
+`oneulsogae-admin`의 **첫 command 슬라이스**다(기존 조회 슬라이스 `companyverification/query`에 이어 `companyverification/command` 추가). admin은 core 비의존이므로 자체 도메인·command out-port를 두고 infra가 구현한다.
 
 ### 범위 (최소)
 
@@ -20,7 +20,7 @@
 `/admin/v1/**`는 SecurityConfig의 `hasRole(ADMIN)`으로 이미 보호 → 보안 설정 변경 없음. 기존 `AdminCompanyVerificationController`에 메서드를 추가한다.
 
 - `POST /admin/v1/company-image-verifications/{id}/approve`
-  - body: `{ "companyName": "미플" }` (`@field:NotBlank` — 공백이면 400)
+  - body: `{ "companyName": "오늘의 소개" }` (`@field:NotBlank` — 공백이면 400)
   - 효과: 인증 `status=APPROVED` + 해당 유저 `user_details.companyName = companyName`
   - 응답: `ApiResponse<Unit>` success (빈 본문)
 - `POST /admin/v1/company-image-verifications/{id}/reject`
@@ -30,7 +30,7 @@
 
 ## 아키텍처
 
-### meeple-admin — `companyverification/command/`
+### oneulsogae-admin — `companyverification/command/`
 
 - `domain/AdminCompanyImageVerification`
   - `data class AdminCompanyImageVerification(id: Long, userId: Long, status: CompanyImageVerificationStatus)`
@@ -48,7 +48,7 @@
   - `SaveCompanyImageVerificationPort.save(verification: AdminCompanyImageVerification): AdminCompanyImageVerification` — 상태만 반영(다른 필드 보존)
   - `UpdateUserCompanyNamePort.updateCompanyName(userId: Long, companyName: String)`
 
-### meeple-infra (엔티티당 어댑터 하나 — 기존 어댑터 확장)
+### oneulsogae-infra (엔티티당 어댑터 하나 — 기존 어댑터 확장)
 
 - `CompanyImageVerificationRepositoryAdapter` (기존, core `SaveCompanyImageVerificationPort` 구현 중)
   - admin `GetCompanyImageVerificationPort`·`SaveCompanyImageVerificationPort`를 **추가 구현**. core와 admin의 동명 포트는 **import alias**로 구분한다(예: admin 포트를 `SaveAdminCompanyImageVerificationPort`로 alias).
@@ -58,7 +58,7 @@
   - admin `UpdateUserCompanyNamePort`를 **추가 구현**.
   - `updateCompanyName(userId, companyName)`: `userDetailJpaRepository.findByUserId(userId)`로 로드 → `entity.companyName = companyName` → save. 행이 없으면 데이터 정합성 이상이므로 `IllegalStateException`을 던진다(정상 유저에겐 항상 user_details 행이 있어 실제로는 발생하지 않는다).
 
-### meeple-api
+### oneulsogae-api
 
 - `request/AdminApproveCompanyVerificationRequest(companyName: String)` — `@field:NotBlank`.
 - `AdminCompanyVerificationController`에 메서드 추가
@@ -69,7 +69,7 @@
 ### 테스트
 
 - `AdminCompanyVerificationReviewE2ETest` (`AbstractIntegrationSupport` 상속)
-  - **승인 200**: 유저 + `user_details`(companyName=null 등) + `company_image_verifications`(PENDING) persist → `POST /{id}/approve {"companyName":"미플"}` → 200. DB 재조회로 인증 `status=APPROVED`, `user_details.companyName == "미플"` 검증.
+  - **승인 200**: 유저 + `user_details`(companyName=null 등) + `company_image_verifications`(PENDING) persist → `POST /{id}/approve {"companyName":"오늘의 소개"}` → 200. DB 재조회로 인증 `status=APPROVED`, `user_details.companyName == "오늘의 소개"` 검증.
   - **반려 200**: 인증(PENDING) → `POST /{id}/reject` → 200. DB 재조회로 `status=REJECTED` 검증.
   - **없는 id 404**: `POST /999999/approve {"companyName":"x"}` → 404, `error.code == "COMPANY-IMAGE-001"`.
   - **공백 companyName 400**: `POST /{id}/approve {"companyName":""}` → 400.
@@ -77,7 +77,7 @@
 
 ## 결정 사항 (근거)
 
-- **command를 meeple-admin에 배치**: 조회 슬라이스와 위치 일관. admin은 core 비의존이라 core `CompanyImageVerification` 도메인을 쓸 수 없어 자체 도메인(`AdminCompanyImageVerification`)·command out-port를 두고 infra가 구현한다.
+- **command를 oneulsogae-admin에 배치**: 조회 슬라이스와 위치 일관. admin은 core 비의존이라 core `CompanyImageVerification` 도메인을 쓸 수 없어 자체 도메인(`AdminCompanyImageVerification`)·command out-port를 두고 infra가 구현한다.
 - **상태 가드 없음**: 어드민 오버라이드이므로 현재 상태와 무관하게 approve/reject를 허용한다(PENDING 전제를 강제하지 않는다). 필요해지면 후속에 도메인 가드를 추가한다.
 - **companyEmail 미변경**: 이미지 인증 경로엔 회사 이메일이 없다. companyName만 확정한다.
 - **에러코드 재사용**: 상세조회에서 추가한 `COMPANY-IMAGE-001`을 승인/반려 not-found에도 쓴다.

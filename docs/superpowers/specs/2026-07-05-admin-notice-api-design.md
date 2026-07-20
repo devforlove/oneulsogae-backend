@@ -8,7 +8,7 @@
 2. 공지 상세 조회 (`GET /admin/v1/notices/{id}`)
 3. 공지 추가 (`POST /admin/v1/notices`)
 
-기존에 유저용 `notice` 도메인(`meeple-core` + `/notices/v1`)이 이미 존재하며 **생성 + 목록 페이징 조회**가 구현돼 있다(상세 조회 없음). 엔티티는 `notices` 테이블(`title`, `description`, `created_at`).
+기존에 유저용 `notice` 도메인(`oneulsogae-core` + `/notices/v1`)이 이미 존재하며 **생성 + 목록 페이징 조회**가 구현돼 있다(상세 조회 없음). 엔티티는 `notices` 테이블(`title`, `description`, `created_at`).
 
 ## 결정 사항
 
@@ -21,7 +21,7 @@
 
 ## 아키텍처
 
-`meeple-admin`의 self-contained 헥사고날 패턴을 따른다(기존 `companyverification` 서브도메인을 미러링). 어드민 모듈은 core에 의존하지 않고, 영속성은 `meeple-infra`의 DaoImpl/Adapter가 어드민 out-port를 구현한다.
+`oneulsogae-admin`의 self-contained 헥사고날 패턴을 따른다(기존 `companyverification` 서브도메인을 미러링). 어드민 모듈은 core에 의존하지 않고, 영속성은 `oneulsogae-infra`의 DaoImpl/Adapter가 어드민 out-port를 구현한다.
 
 - 어드민 경로 `/admin/**`는 `SecurityConfig`에서 `hasRole("ADMIN")`로 자동 보호된다. 메서드 레벨 어노테이션 불필요.
 - 컨트롤러는 core의 `ApiResponse`를 반환한다(기존 어드민 컨트롤러 규약과 동일).
@@ -43,7 +43,7 @@
 
 ## 컴포넌트 (파일 구성)
 
-### meeple-admin (`com.org.meeple.admin.notice`)
+### oneulsogae-admin (`com.org.oneulsogae.admin.notice`)
 
 **Query (조회)**
 - `query/service/port/in/GetAdminNoticesUseCase.kt`
@@ -69,7 +69,7 @@
 **Common**
 - `common/error/AdminErrorCode.kt`에 `NOTICE_NOT_FOUND`(404) 추가.
 
-### meeple-infra
+### oneulsogae-infra
 
 - `infra/notice/query/GetAdminNoticeDaoImpl.kt` — `@Repository`, `GetAdminNoticeDao` 구현. `JPAQueryFactory` + `QNoticeEntity` 재사용.
   - `findPage`: `Projections.constructor(AdminNoticeView::class.java, id, title, createdAt)` + `orderBy(createdAt.desc(), id.desc())` + offset/limit.
@@ -77,9 +77,9 @@
   - `findDetailById`: `Projections.constructor(AdminNoticeDetailView::class.java, ...)` `where id.eq(...)` `fetchOne()`.
 - 기존 `infra/notice/command/adapter/NoticeAdapter.kt`가 `SaveAdminNoticePort`도 함께 구현한다(엔티티당 어댑터 하나 규칙). `AdminNotice → NoticeEntity` 변환은 매퍼(`NoticeMapper`에 확장함수 추가 또는 `AdminNoticeMapper` 신설 — 기존 매퍼 스타일 따름).
 
-> infra는 이미 `meeple-admin`에 의존한다(기존 `GetAdminCompanyVerificationDaoImpl`이 어드민 포트를 구현). 별도 의존성 추가 불필요.
+> infra는 이미 `oneulsogae-admin`에 의존한다(기존 `GetAdminCompanyVerificationDaoImpl`이 어드민 포트를 구현). 별도 의존성 추가 불필요.
 
-### meeple-api (`com.org.meeple.api.admin`)
+### oneulsogae-api (`com.org.oneulsogae.api.admin`)
 
 - `AdminNoticeController.kt` — `@RestController @RequestMapping("/admin/v1/notices")`. `GetAdminNoticesUseCase`, `CreateAdminNoticeUseCase` 주입.
   - `GET` 목록, `GET /{id}` 상세, `POST` 추가.
@@ -108,7 +108,7 @@
 
 ## 테스트
 
-- **E2E** (`meeple-api`, `AbstractIntegrationSupport` 상속): `AdminNoticeE2ETest`
+- **E2E** (`oneulsogae-api`, `AbstractIntegrationSupport` 상속): `AdminNoticeE2ETest`
   - 목록 페이징(정렬·페이지 필드), 상세 조회, 추가 후 재조회, 존재하지 않는 id 404, 잘못된 입력 400, 비어드민 접근 차단(권한).
   - 픽스처는 infra `testFixtures`의 기존 `NoticeEntityFixture` 사용.
 - **도메인 유닛** (Kotest): `AdminNoticePage` — 페이징 메타데이터(`totalPages`/`hasNext`) 계산 검증 (기존 `NoticePageTest` 미러).

@@ -24,9 +24,9 @@
 ### Task 1: PaymentMethod 엔티티·픽스처 + E2E 재작성 (RED)
 
 **Files:**
-- Create: `meeple-infra/src/main/kotlin/com/org/meeple/infra/payments/command/entity/PaymentMethodEntity.kt`
-- Create: `meeple-infra/src/testFixtures/kotlin/com/org/meeple/infra/fixture/PaymentMethodEntityFixture.kt`
-- Modify(전체 재작성): `meeple-api/src/test/kotlin/com/org/meeple/api/payments/PaymentsCheckoutE2ETest.kt`
+- Create: `oneulsogae-infra/src/main/kotlin/com/org/oneulsogae/infra/payments/command/entity/PaymentMethodEntity.kt`
+- Create: `oneulsogae-infra/src/testFixtures/kotlin/com/org/oneulsogae/infra/fixture/PaymentMethodEntityFixture.kt`
+- Modify(전체 재작성): `oneulsogae-api/src/test/kotlin/com/org/oneulsogae/api/payments/PaymentsCheckoutE2ETest.kt`
 
 **Interfaces:**
 - Consumes: `BaseEntity`, 기존 픽스처(`GatheringEntityFixture`/`GatheringScheduleEntityFixture`/`UserEntityFixture`/`UserDetailEntityFixture`/`IdentityVerificationEntityFixture`), presigned 페이크(`https://presigned.test/<imageKey>`)
@@ -34,12 +34,12 @@
 
 - [ ] **Step 1: PaymentMethodEntity 작성**
 
-`meeple-infra/src/main/kotlin/com/org/meeple/infra/payments/command/entity/PaymentMethodEntity.kt` 전체 내용:
+`oneulsogae-infra/src/main/kotlin/com/org/oneulsogae/infra/payments/command/entity/PaymentMethodEntity.kt` 전체 내용:
 
 ```kotlin
-package com.org.meeple.infra.payments.command.entity
+package com.org.oneulsogae.infra.payments.command.entity
 
-import com.org.meeple.infra.common.BaseEntity
+import com.org.oneulsogae.infra.common.BaseEntity
 import jakarta.persistence.Column
 import jakarta.persistence.Entity
 import jakarta.persistence.Table
@@ -80,12 +80,12 @@ class PaymentMethodEntity(
 
 - [ ] **Step 2: PaymentMethodEntityFixture 작성**
 
-`meeple-infra/src/testFixtures/kotlin/com/org/meeple/infra/fixture/PaymentMethodEntityFixture.kt` 전체 내용:
+`oneulsogae-infra/src/testFixtures/kotlin/com/org/oneulsogae/infra/fixture/PaymentMethodEntityFixture.kt` 전체 내용:
 
 ```kotlin
-package com.org.meeple.infra.fixture
+package com.org.oneulsogae.infra.fixture
 
-import com.org.meeple.infra.payments.command.entity.PaymentMethodEntity
+import com.org.oneulsogae.infra.payments.command.entity.PaymentMethodEntity
 
 /** [PaymentMethodEntity] 테스트 픽스처. 기본은 활성 무통장입금이다. */
 object PaymentMethodEntityFixture {
@@ -107,30 +107,30 @@ object PaymentMethodEntityFixture {
 
 - [ ] **Step 3: E2E 테스트 전체 재작성**
 
-`meeple-api/src/test/kotlin/com/org/meeple/api/payments/PaymentsCheckoutE2ETest.kt`를 아래 내용으로 **전체 교체**:
+`oneulsogae-api/src/test/kotlin/com/org/oneulsogae/api/payments/PaymentsCheckoutE2ETest.kt`를 아래 내용으로 **전체 교체**:
 
 ```kotlin
-package com.org.meeple.api.payments
+package com.org.oneulsogae.api.payments
 
-import com.org.meeple.common.gathering.GatheringStatus
-import com.org.meeple.common.integration.AbstractIntegrationSupport
-import com.org.meeple.common.integration.expect
-import com.org.meeple.common.integration.get
-import com.org.meeple.core.user.command.domain.IdentityVerificationStatus
-import com.org.meeple.infra.fixture.GatheringEntityFixture
-import com.org.meeple.infra.fixture.GatheringScheduleEntityFixture
-import com.org.meeple.infra.fixture.IdentityVerificationEntityFixture
-import com.org.meeple.infra.fixture.IntegrationUtil
-import com.org.meeple.infra.fixture.PaymentMethodEntityFixture
-import com.org.meeple.infra.fixture.UserDetailEntityFixture
-import com.org.meeple.infra.fixture.UserEntityFixture
-import com.org.meeple.infra.gathering.command.entity.QGatheringEntity
-import com.org.meeple.infra.gathering.command.entity.QGatheringScheduleEntity
-import com.org.meeple.infra.payments.command.entity.QPaymentMethodEntity
-import com.org.meeple.infra.user.command.entity.QIdentityVerificationEntity
-import com.org.meeple.infra.user.command.entity.QUserDetailEntity
-import com.org.meeple.infra.user.command.entity.QUserEntity
-import com.org.meeple.infra.user.command.entity.UserEntity
+import com.org.oneulsogae.common.gathering.GatheringStatus
+import com.org.oneulsogae.common.integration.AbstractIntegrationSupport
+import com.org.oneulsogae.common.integration.expect
+import com.org.oneulsogae.common.integration.get
+import com.org.oneulsogae.core.user.command.domain.IdentityVerificationStatus
+import com.org.oneulsogae.infra.fixture.GatheringEntityFixture
+import com.org.oneulsogae.infra.fixture.GatheringScheduleEntityFixture
+import com.org.oneulsogae.infra.fixture.IdentityVerificationEntityFixture
+import com.org.oneulsogae.infra.fixture.IntegrationUtil
+import com.org.oneulsogae.infra.fixture.PaymentMethodEntityFixture
+import com.org.oneulsogae.infra.fixture.UserDetailEntityFixture
+import com.org.oneulsogae.infra.fixture.UserEntityFixture
+import com.org.oneulsogae.infra.gathering.command.entity.QGatheringEntity
+import com.org.oneulsogae.infra.gathering.command.entity.QGatheringScheduleEntity
+import com.org.oneulsogae.infra.payments.command.entity.QPaymentMethodEntity
+import com.org.oneulsogae.infra.user.command.entity.QIdentityVerificationEntity
+import com.org.oneulsogae.infra.user.command.entity.QUserDetailEntity
+import com.org.oneulsogae.infra.user.command.entity.QUserEntity
+import com.org.oneulsogae.infra.user.command.entity.UserEntity
 import org.hamcrest.Matchers.contains
 import org.hamcrest.Matchers.hasSize
 import org.hamcrest.Matchers.nullValue
@@ -189,9 +189,9 @@ class PaymentsCheckoutE2ETest : AbstractIntegrationSupport({
 				)
 				val userId: Long = user.id!!
 				IntegrationUtil.persist(UserDetailEntityFixture.create(userId = userId, phoneNumber = "01011112222"))
-				// 재인증 이력: 과거 VERIFIED → 최신 VERIFIED → 진행 중(REQUESTED). 최신 VERIFIED("김미플")가 선택되어야 한다.
+				// 재인증 이력: 과거 VERIFIED → 최신 VERIFIED → 진행 중(REQUESTED). 최신 VERIFIED("김오늘의 소개")가 선택되어야 한다.
 				IntegrationUtil.persist(IdentityVerificationEntityFixture.create(userId = userId, realName = "김과거"))
-				IntegrationUtil.persist(IdentityVerificationEntityFixture.create(userId = userId, realName = "김미플"))
+				IntegrationUtil.persist(IdentityVerificationEntityFixture.create(userId = userId, realName = "김오늘의 소개"))
 				IntegrationUtil.persist(
 					IdentityVerificationEntityFixture.create(
 						userId = userId,
@@ -215,7 +215,7 @@ class PaymentsCheckoutE2ETest : AbstractIntegrationSupport({
 				} expect {
 					status(200)
 					body("success", true)
-					body("data.orderer.name", "김미플")
+					body("data.orderer.name", "김오늘의 소개")
 					body("data.orderer.email", "orderer@test.com")
 					body("data.orderer.phoneNumber", "01011112222")
 					body("data.product.gatheringId", gatheringId.toInt())
@@ -354,7 +354,7 @@ class PaymentsCheckoutE2ETest : AbstractIntegrationSupport({
 
 - [ ] **Step 4: 컴파일·RED 확인**
 
-Run: `./gradlew :meeple-api:test --tests "com.org.meeple.api.payments.PaymentsCheckoutE2ETest"`
+Run: `./gradlew :oneulsogae-api:test --tests "com.org.oneulsogae.api.payments.PaymentsCheckoutE2ETest"`
 Expected: 컴파일 성공(Q타입 `QPaymentMethodEntity`는 엔티티 추가로 생성됨), 테스트는 FAIL — 기존 엔드포인트가 `product`/`paymentMethods` 필드를 반환하지 않아 인증 케이스들이 실패한다(401 케이스만 통과 가능). **커밋하지 않는다** (Task 2는 gathering 파일만, 나머지는 Task 4에서 커밋).
 
 ---
@@ -362,12 +362,12 @@ Expected: 컴파일 성공(Q타입 `QPaymentMethodEntity`는 엔티티 추가로
 ### Task 2: gathering 금액 티어 캡슐화 리팩토링 + offline 회귀 + refactor 커밋
 
 **Files:**
-- Modify: `meeple-core/src/main/kotlin/com/org/meeple/core/gathering/query/dto/GatheringScheduleView.kt`
-- Modify: `meeple-core/src/main/kotlin/com/org/meeple/core/gathering/query/dto/GatheringDetailView.kt`
-- Modify: `meeple-api/src/main/kotlin/com/org/meeple/api/offline/response/GatheringDetailResponse.kt`
+- Modify: `oneulsogae-core/src/main/kotlin/com/org/oneulsogae/core/gathering/query/dto/GatheringScheduleView.kt`
+- Modify: `oneulsogae-core/src/main/kotlin/com/org/oneulsogae/core/gathering/query/dto/GatheringDetailView.kt`
+- Modify: `oneulsogae-api/src/main/kotlin/com/org/oneulsogae/api/offline/response/GatheringDetailResponse.kt`
 
 **Interfaces:**
-- Consumes: 기존 `GatheringScheduleView` 필드, `Gender`(meeple-common)
+- Consumes: 기존 `GatheringScheduleView` 필드, `Gender`(oneulsogae-common)
 - Produces (Task 4의 checkout 응답이 사용):
   - `GatheringScheduleView.feeFor(gender: Gender): Int`
   - `GatheringScheduleView.earlyBirdFeeFor(gender: Gender): Int?`
@@ -382,10 +382,10 @@ Expected: 컴파일 성공(Q타입 `QPaymentMethodEntity`는 엔티티 추가로
 `GatheringScheduleView.kt`의 data class 본문에 메서드를 추가한다(필드 선언은 그대로). 클래스 전체가 아래 형태가 되도록 수정:
 
 ```kotlin
-package com.org.meeple.core.gathering.query.dto
+package com.org.oneulsogae.core.gathering.query.dto
 
-import com.org.meeple.common.gathering.GatheringScheduleStatus
-import com.org.meeple.common.user.Gender
+import com.org.oneulsogae.common.gathering.GatheringScheduleStatus
+import com.org.oneulsogae.common.user.Gender
 import java.time.LocalDateTime
 
 /**
@@ -491,15 +491,15 @@ KDoc 교체 — 기존:
 
 - [ ] **Step 4: offline 회귀 확인 (GREEN 유지)**
 
-Run: `./gradlew :meeple-api:test --tests "com.org.meeple.api.offline.OfflineGatheringDetailE2ETest"`
+Run: `./gradlew :oneulsogae-api:test --tests "com.org.oneulsogae.api.offline.OfflineGatheringDetailE2ETest"`
 Expected: PASS (전 케이스 — 동작 불변 리팩토링 검증)
 
 - [ ] **Step 5: gathering 파일만 refactor 커밋**
 
 ```bash
-git add meeple-core/src/main/kotlin/com/org/meeple/core/gathering/query/dto/GatheringScheduleView.kt \
-        meeple-core/src/main/kotlin/com/org/meeple/core/gathering/query/dto/GatheringDetailView.kt \
-        meeple-api/src/main/kotlin/com/org/meeple/api/offline/response/GatheringDetailResponse.kt
+git add oneulsogae-core/src/main/kotlin/com/org/oneulsogae/core/gathering/query/dto/GatheringScheduleView.kt \
+        oneulsogae-core/src/main/kotlin/com/org/oneulsogae/core/gathering/query/dto/GatheringDetailView.kt \
+        oneulsogae-api/src/main/kotlin/com/org/oneulsogae/api/offline/response/GatheringDetailResponse.kt
 git commit -m "refactor(gathering): 일정 금액 티어 계산을 read model 메서드로 캡슐화
 
 Co-Authored-By: Claude Fable 5 <noreply@anthropic.com>"
@@ -512,13 +512,13 @@ Co-Authored-By: Claude Fable 5 <noreply@anthropic.com>"
 ### Task 3: payments core 확장 + 결제수단 DaoImpl
 
 **Files:**
-- Create: `meeple-core/src/main/kotlin/com/org/meeple/core/payments/PaymentsErrorCode.kt`
-- Create: `meeple-core/src/main/kotlin/com/org/meeple/core/payments/query/dto/PaymentMethodView.kt`
-- Create: `meeple-core/src/main/kotlin/com/org/meeple/core/payments/query/dto/PaymentMethodViews.kt`
-- Create: `meeple-core/src/main/kotlin/com/org/meeple/core/payments/query/dao/GetPaymentMethodDao.kt`
-- Modify: `meeple-core/src/main/kotlin/com/org/meeple/core/payments/query/dto/CheckoutView.kt`
-- Modify: `meeple-core/src/main/kotlin/com/org/meeple/core/payments/query/service/GetCheckoutService.kt`
-- Create: `meeple-infra/src/main/kotlin/com/org/meeple/infra/payments/query/GetPaymentMethodDaoImpl.kt`
+- Create: `oneulsogae-core/src/main/kotlin/com/org/oneulsogae/core/payments/PaymentsErrorCode.kt`
+- Create: `oneulsogae-core/src/main/kotlin/com/org/oneulsogae/core/payments/query/dto/PaymentMethodView.kt`
+- Create: `oneulsogae-core/src/main/kotlin/com/org/oneulsogae/core/payments/query/dto/PaymentMethodViews.kt`
+- Create: `oneulsogae-core/src/main/kotlin/com/org/oneulsogae/core/payments/query/dao/GetPaymentMethodDao.kt`
+- Modify: `oneulsogae-core/src/main/kotlin/com/org/oneulsogae/core/payments/query/dto/CheckoutView.kt`
+- Modify: `oneulsogae-core/src/main/kotlin/com/org/oneulsogae/core/payments/query/service/GetCheckoutService.kt`
+- Create: `oneulsogae-infra/src/main/kotlin/com/org/oneulsogae/infra/payments/query/GetPaymentMethodDaoImpl.kt`
 
 **Interfaces:**
 - Consumes: Task 1의 `PaymentMethodEntity`(Q타입 `QPaymentMethodEntity`), 기존 `ErrorCode`/`GetCheckoutOrdererDao`/`OrdererView`
@@ -530,17 +530,17 @@ Co-Authored-By: Claude Fable 5 <noreply@anthropic.com>"
 
 - [ ] **Step 1: PaymentsErrorCode 작성**
 
-`meeple-core/src/main/kotlin/com/org/meeple/core/payments/PaymentsErrorCode.kt` 전체 내용:
+`oneulsogae-core/src/main/kotlin/com/org/oneulsogae/core/payments/PaymentsErrorCode.kt` 전체 내용:
 
 ```kotlin
-package com.org.meeple.core.payments
+package com.org.oneulsogae.core.payments
 
-import com.org.meeple.core.common.error.ErrorCode
+import com.org.oneulsogae.core.common.error.ErrorCode
 import org.springframework.http.HttpStatus
 
 /**
  * 결제(payments) 도메인 에러 코드.
- * [com.org.meeple.core.common.error.BusinessException]에 넘겨 사용한다.
+ * [com.org.oneulsogae.core.common.error.BusinessException]에 넘겨 사용한다.
  */
 enum class PaymentsErrorCode(
 	override val code: String,
@@ -558,7 +558,7 @@ enum class PaymentsErrorCode(
 `PaymentMethodView.kt`:
 
 ```kotlin
-package com.org.meeple.core.payments.query.dto
+package com.org.oneulsogae.core.payments.query.dto
 
 /** 체크아웃 화면에 노출할 결제수단 한 건(read model). code는 프론트 계약 문자열(예: "BANK_TRANSFER")이다. */
 data class PaymentMethodView(
@@ -570,7 +570,7 @@ data class PaymentMethodView(
 `PaymentMethodViews.kt`:
 
 ```kotlin
-package com.org.meeple.core.payments.query.dto
+package com.org.oneulsogae.core.payments.query.dto
 
 /** 결제수단 read model 일급 컬렉션. 노출 순서(displayOrder asc, id asc)가 유지된 목록을 담는다. */
 data class PaymentMethodViews(
@@ -581,9 +581,9 @@ data class PaymentMethodViews(
 `GetPaymentMethodDao.kt`:
 
 ```kotlin
-package com.org.meeple.core.payments.query.dao
+package com.org.oneulsogae.core.payments.query.dao
 
-import com.org.meeple.core.payments.query.dto.PaymentMethodViews
+import com.org.oneulsogae.core.payments.query.dto.PaymentMethodViews
 
 /**
  * 결제수단 조회 dao(out-port). infra의 GetPaymentMethodDaoImpl이 구현한다.
@@ -600,7 +600,7 @@ interface GetPaymentMethodDao {
 `CheckoutView.kt` 전체 교체:
 
 ```kotlin
-package com.org.meeple.core.payments.query.dto
+package com.org.oneulsogae.core.payments.query.dto
 
 /**
  * 체크아웃(결제) 화면 진입 시 조회 데이터 read model — payments 도메인이 소유한 부분(주문자·결제수단).
@@ -615,13 +615,13 @@ data class CheckoutView(
 `GetCheckoutService.kt` 전체 교체:
 
 ```kotlin
-package com.org.meeple.core.payments.query.service
+package com.org.oneulsogae.core.payments.query.service
 
-import com.org.meeple.core.payments.query.dao.GetCheckoutOrdererDao
-import com.org.meeple.core.payments.query.dao.GetPaymentMethodDao
-import com.org.meeple.core.payments.query.dto.CheckoutView
-import com.org.meeple.core.payments.query.dto.OrdererView
-import com.org.meeple.core.payments.query.service.port.`in`.GetCheckoutUseCase
+import com.org.oneulsogae.core.payments.query.dao.GetCheckoutOrdererDao
+import com.org.oneulsogae.core.payments.query.dao.GetPaymentMethodDao
+import com.org.oneulsogae.core.payments.query.dto.CheckoutView
+import com.org.oneulsogae.core.payments.query.dto.OrdererView
+import com.org.oneulsogae.core.payments.query.service.port.`in`.GetCheckoutUseCase
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 
@@ -646,15 +646,15 @@ class GetCheckoutService(
 
 - [ ] **Step 4: GetPaymentMethodDaoImpl 작성**
 
-`meeple-infra/src/main/kotlin/com/org/meeple/infra/payments/query/GetPaymentMethodDaoImpl.kt` 전체 내용:
+`oneulsogae-infra/src/main/kotlin/com/org/oneulsogae/infra/payments/query/GetPaymentMethodDaoImpl.kt` 전체 내용:
 
 ```kotlin
-package com.org.meeple.infra.payments.query
+package com.org.oneulsogae.infra.payments.query
 
-import com.org.meeple.core.payments.query.dao.GetPaymentMethodDao
-import com.org.meeple.core.payments.query.dto.PaymentMethodView
-import com.org.meeple.core.payments.query.dto.PaymentMethodViews
-import com.org.meeple.infra.payments.command.entity.QPaymentMethodEntity
+import com.org.oneulsogae.core.payments.query.dao.GetPaymentMethodDao
+import com.org.oneulsogae.core.payments.query.dto.PaymentMethodView
+import com.org.oneulsogae.core.payments.query.dto.PaymentMethodViews
+import com.org.oneulsogae.infra.payments.command.entity.QPaymentMethodEntity
 import com.querydsl.core.types.Projections
 import com.querydsl.jpa.impl.JPAQueryFactory
 import org.springframework.stereotype.Component
@@ -683,7 +683,7 @@ class GetPaymentMethodDaoImpl(
 
 - [ ] **Step 5: 컴파일 확인**
 
-Run: `./gradlew :meeple-core:compileKotlin :meeple-infra:compileKotlin`
+Run: `./gradlew :oneulsogae-core:compileKotlin :oneulsogae-infra:compileKotlin`
 Expected: BUILD SUCCESSFUL. **커밋하지 않는다** (Task 4에서 일괄).
 
 ---
@@ -691,10 +691,10 @@ Expected: BUILD SUCCESSFUL. **커밋하지 않는다** (Task 4에서 일괄).
 ### Task 4: api 컨트롤러·응답 확장 + E2E GREEN + feat 커밋
 
 **Files:**
-- Modify: `meeple-api/src/main/kotlin/com/org/meeple/api/payments/PaymentsController.kt`
-- Modify: `meeple-api/src/main/kotlin/com/org/meeple/api/payments/response/CheckoutResponse.kt`
-- Create: `meeple-api/src/main/kotlin/com/org/meeple/api/payments/response/ProductResponse.kt`
-- Create: `meeple-api/src/main/kotlin/com/org/meeple/api/payments/response/PaymentMethodResponse.kt`
+- Modify: `oneulsogae-api/src/main/kotlin/com/org/oneulsogae/api/payments/PaymentsController.kt`
+- Modify: `oneulsogae-api/src/main/kotlin/com/org/oneulsogae/api/payments/response/CheckoutResponse.kt`
+- Create: `oneulsogae-api/src/main/kotlin/com/org/oneulsogae/api/payments/response/ProductResponse.kt`
+- Create: `oneulsogae-api/src/main/kotlin/com/org/oneulsogae/api/payments/response/PaymentMethodResponse.kt`
 
 **Interfaces:**
 - Consumes: Task 2의 `GatheringScheduleView` 금액 메서드·`GatheringDetailView.scheduleOrNull`, Task 3의 `CheckoutView`/`PaymentMethodViews`/`PaymentsErrorCode`, 기존 `GetGatheringsUseCase`/`BusinessException`/`ApiResponse`
@@ -705,11 +705,11 @@ Expected: BUILD SUCCESSFUL. **커밋하지 않는다** (Task 4에서 일괄).
 `ProductResponse.kt` 전체 내용:
 
 ```kotlin
-package com.org.meeple.api.payments.response
+package com.org.oneulsogae.api.payments.response
 
-import com.org.meeple.common.user.Gender
-import com.org.meeple.core.gathering.query.dto.GatheringDetailView
-import com.org.meeple.core.gathering.query.dto.GatheringScheduleView
+import com.org.oneulsogae.common.user.Gender
+import com.org.oneulsogae.core.gathering.query.dto.GatheringDetailView
+import com.org.oneulsogae.core.gathering.query.dto.GatheringScheduleView
 import java.time.LocalDateTime
 
 /**
@@ -750,10 +750,10 @@ data class ProductResponse(
 `PaymentMethodResponse.kt` 전체 내용:
 
 ```kotlin
-package com.org.meeple.api.payments.response
+package com.org.oneulsogae.api.payments.response
 
-import com.org.meeple.core.payments.query.dto.PaymentMethodView
-import com.org.meeple.core.payments.query.dto.PaymentMethodViews
+import com.org.oneulsogae.core.payments.query.dto.PaymentMethodView
+import com.org.oneulsogae.core.payments.query.dto.PaymentMethodViews
 
 /** 체크아웃 결제수단 응답 한 건. 활성 수단만 노출 순서대로 내려간다. */
 data class PaymentMethodResponse(
@@ -774,12 +774,12 @@ data class PaymentMethodResponse(
 `CheckoutResponse.kt` 전체 교체:
 
 ```kotlin
-package com.org.meeple.api.payments.response
+package com.org.oneulsogae.api.payments.response
 
-import com.org.meeple.common.user.Gender
-import com.org.meeple.core.gathering.query.dto.GatheringDetailView
-import com.org.meeple.core.gathering.query.dto.GatheringScheduleView
-import com.org.meeple.core.payments.query.dto.CheckoutView
+import com.org.oneulsogae.common.user.Gender
+import com.org.oneulsogae.core.gathering.query.dto.GatheringDetailView
+import com.org.oneulsogae.core.gathering.query.dto.GatheringScheduleView
+import com.org.oneulsogae.core.payments.query.dto.CheckoutView
 
 /** 체크아웃(결제) 화면 진입 시 조회 데이터 응답 — 주문자·상품·결제수단. */
 data class CheckoutResponse(
@@ -808,20 +808,20 @@ data class CheckoutResponse(
 `PaymentsController.kt` 전체 교체:
 
 ```kotlin
-package com.org.meeple.api.payments
+package com.org.oneulsogae.api.payments
 
-import com.org.meeple.api.payments.response.CheckoutResponse
-import com.org.meeple.auth.AuthUser
-import com.org.meeple.auth.LoginUser
-import com.org.meeple.common.user.Gender
-import com.org.meeple.core.common.error.BusinessException
-import com.org.meeple.core.common.response.ApiResponse
-import com.org.meeple.core.gathering.query.dto.GatheringDetailView
-import com.org.meeple.core.gathering.query.dto.GatheringScheduleView
-import com.org.meeple.core.gathering.query.service.port.`in`.GetGatheringsUseCase
-import com.org.meeple.core.payments.PaymentsErrorCode
-import com.org.meeple.core.payments.query.dto.CheckoutView
-import com.org.meeple.core.payments.query.service.port.`in`.GetCheckoutUseCase
+import com.org.oneulsogae.api.payments.response.CheckoutResponse
+import com.org.oneulsogae.auth.AuthUser
+import com.org.oneulsogae.auth.LoginUser
+import com.org.oneulsogae.common.user.Gender
+import com.org.oneulsogae.core.common.error.BusinessException
+import com.org.oneulsogae.core.common.response.ApiResponse
+import com.org.oneulsogae.core.gathering.query.dto.GatheringDetailView
+import com.org.oneulsogae.core.gathering.query.dto.GatheringScheduleView
+import com.org.oneulsogae.core.gathering.query.service.port.`in`.GetGatheringsUseCase
+import com.org.oneulsogae.core.payments.PaymentsErrorCode
+import com.org.oneulsogae.core.payments.query.dto.CheckoutView
+import com.org.oneulsogae.core.payments.query.service.port.`in`.GetCheckoutUseCase
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.tags.Tag
 import org.springframework.web.bind.annotation.GetMapping
@@ -863,22 +863,22 @@ class PaymentsController(
 
 - [ ] **Step 4: E2E 실행해 GREEN 확인**
 
-Run: `./gradlew :meeple-api:test --tests "com.org.meeple.api.payments.PaymentsCheckoutE2ETest"`
+Run: `./gradlew :oneulsogae-api:test --tests "com.org.oneulsogae.api.payments.PaymentsCheckoutE2ETest"`
 Expected: PASS (8개 케이스 모두)
 
 - [ ] **Step 5: offline 회귀 재확인 + 전체 컴파일**
 
-Run: `./gradlew :meeple-api:test --tests "com.org.meeple.api.offline.OfflineGatheringDetailE2ETest" :meeple-core:compileKotlin :meeple-infra:compileKotlin`
+Run: `./gradlew :oneulsogae-api:test --tests "com.org.oneulsogae.api.offline.OfflineGatheringDetailE2ETest" :oneulsogae-core:compileKotlin :oneulsogae-infra:compileKotlin`
 Expected: PASS / BUILD SUCCESSFUL
 
 - [ ] **Step 6: feat 커밋 (Task 1·3·4의 payments 변경 일괄)**
 
 ```bash
-git add meeple-core/src/main/kotlin/com/org/meeple/core/payments \
-        meeple-infra/src/main/kotlin/com/org/meeple/infra/payments \
-        meeple-api/src/main/kotlin/com/org/meeple/api/payments \
-        meeple-api/src/test/kotlin/com/org/meeple/api/payments \
-        meeple-infra/src/testFixtures/kotlin/com/org/meeple/infra/fixture/PaymentMethodEntityFixture.kt
+git add oneulsogae-core/src/main/kotlin/com/org/oneulsogae/core/payments \
+        oneulsogae-infra/src/main/kotlin/com/org/oneulsogae/infra/payments \
+        oneulsogae-api/src/main/kotlin/com/org/oneulsogae/api/payments \
+        oneulsogae-api/src/test/kotlin/com/org/oneulsogae/api/payments \
+        oneulsogae-infra/src/testFixtures/kotlin/com/org/oneulsogae/infra/fixture/PaymentMethodEntityFixture.kt
 git commit -m "feat(payments): 체크아웃 응답에 상품 정보·결제수단 추가
 
 Co-Authored-By: Claude Fable 5 <noreply@anthropic.com>"

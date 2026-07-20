@@ -10,7 +10,7 @@
 
 ## Global Constraints
 
-- 모듈 의존: core는 인프라 비의존. Controller/Request/Response는 meeple-api에만. QueryDSL 구현은 infra.
+- 모듈 의존: core는 인프라 비의존. Controller/Request/Response는 oneulsogae-api에만. QueryDSL 구현은 infra.
 - CQRS: 조회 서비스 `@Transactional(readOnly = true)`. query는 자기 dao + 타 도메인 in-port만 의존하고 command 도메인/포트를 참조하지 않는다(`GetMatchesService` 선례). 부수효과(저장·상태변경) 금지.
 - 조회 read model(DTO/프로젝션)을 반환한다(도메인 모델 금지).
 - 타입 명시: 변수·반환·람다 파라미터 타입을 생략하지 않는다.
@@ -19,36 +19,36 @@
 - 요청자 성별이 null이면 빈 리스트(예외 금지). `UserWithDetailView.getGender()`는 `gender!!`라 호출 금지 — `view.detail.gender`(nullable)를 직접 본다.
 - Tabs 들여쓰기; Korean KDoc.
 - 테스트: api 경계 → E2E(`AbstractIntegrationSupport` + `IntegrationUtil`/픽스처 + RestAssured DSL). 리포지토리 직접 의존 금지.
-- 빌드/테스트: `./gradlew :meeple-api:test --tests "<FQN>"` (Testcontainers MySQL/Redis 기동 — 수 분 소요 정상).
+- 빌드/테스트: `./gradlew :oneulsogae-api:test --tests "<FQN>"` (Testcontainers MySQL/Redis 기동 — 수 분 소요 정상).
 
 ---
 
 ## File Structure
 
 **core (match query 슬라이스)**
-- Create `meeple-core/.../match/query/dto/InvitableUser.kt` — read model
-- Create `meeple-core/.../match/query/dao/SearchInvitableUsersDao.kt` — query out-port(dao) 인터페이스
-- Create `meeple-core/.../match/query/service/port/in/SearchInvitableUsersUseCase.kt` — in-port
-- Create `meeple-core/.../match/query/service/SearchInvitableUsersService.kt` — 조회 서비스
+- Create `oneulsogae-core/.../match/query/dto/InvitableUser.kt` — read model
+- Create `oneulsogae-core/.../match/query/dao/SearchInvitableUsersDao.kt` — query out-port(dao) 인터페이스
+- Create `oneulsogae-core/.../match/query/service/port/in/SearchInvitableUsersUseCase.kt` — in-port
+- Create `oneulsogae-core/.../match/query/service/SearchInvitableUsersService.kt` — 조회 서비스
 
 **infra**
-- Create `meeple-infra/.../match/query/SearchInvitableUsersDaoImpl.kt` — QueryDSL 구현
+- Create `oneulsogae-infra/.../match/query/SearchInvitableUsersDaoImpl.kt` — QueryDSL 구현
 
 **api**
-- Create `meeple-api/.../match/request/SearchInvitableUsersRequest.kt`
-- Create `meeple-api/.../match/response/InvitableUserResponse.kt`
-- Modify `meeple-api/.../match/TeamController.kt` — `GET /invitable-users`
-- Test `meeple-api/src/test/.../api/match/SearchInvitableUsersE2ETest.kt`
+- Create `oneulsogae-api/.../match/request/SearchInvitableUsersRequest.kt`
+- Create `oneulsogae-api/.../match/response/InvitableUserResponse.kt`
+- Modify `oneulsogae-api/.../match/TeamController.kt` — `GET /invitable-users`
+- Test `oneulsogae-api/src/test/.../api/match/SearchInvitableUsersE2ETest.kt`
 
 ---
 
 ## Task 1: core 조회 계약 + 서비스
 
 **Files:**
-- Create: `meeple-core/src/main/kotlin/com/org/meeple/core/match/query/dto/InvitableUser.kt`
-- Create: `meeple-core/src/main/kotlin/com/org/meeple/core/match/query/dao/SearchInvitableUsersDao.kt`
-- Create: `meeple-core/src/main/kotlin/com/org/meeple/core/match/query/service/port/in/SearchInvitableUsersUseCase.kt`
-- Create: `meeple-core/src/main/kotlin/com/org/meeple/core/match/query/service/SearchInvitableUsersService.kt`
+- Create: `oneulsogae-core/src/main/kotlin/com/org/oneulsogae/core/match/query/dto/InvitableUser.kt`
+- Create: `oneulsogae-core/src/main/kotlin/com/org/oneulsogae/core/match/query/dao/SearchInvitableUsersDao.kt`
+- Create: `oneulsogae-core/src/main/kotlin/com/org/oneulsogae/core/match/query/service/port/in/SearchInvitableUsersUseCase.kt`
+- Create: `oneulsogae-core/src/main/kotlin/com/org/oneulsogae/core/match/query/service/SearchInvitableUsersService.kt`
 
 **Interfaces:**
 - Consumes: `GetUserWithDetailUseCase.getByUserId(userId: Long): UserWithDetailView` (기존, user 도메인 in-port). `UserWithDetailView.detail.gender: Gender?`.
@@ -62,7 +62,7 @@
 - [ ] **Step 1: read model `InvitableUser` 생성**
 
 ```kotlin
-package com.org.meeple.core.match.query.dto
+package com.org.oneulsogae.core.match.query.dto
 
 /**
  * 초대 가능한 유저 검색 결과(read model). 초대 UI에 노출할 식별자·닉네임·직업·회사명을 담는다.
@@ -79,10 +79,10 @@ data class InvitableUser(
 - [ ] **Step 2: dao 인터페이스 `SearchInvitableUsersDao` 생성**
 
 ```kotlin
-package com.org.meeple.core.match.query.dao
+package com.org.oneulsogae.core.match.query.dao
 
-import com.org.meeple.common.user.Gender
-import com.org.meeple.core.match.query.dto.InvitableUser
+import com.org.oneulsogae.common.user.Gender
+import com.org.oneulsogae.core.match.query.dto.InvitableUser
 
 /**
  * 초대 가능한 유저(닉네임 정확 일치) 조회 dao(query out-port). 실제 QueryDSL 구현은 infra가 담당한다.
@@ -98,9 +98,9 @@ interface SearchInvitableUsersDao {
 - [ ] **Step 3: in-port `SearchInvitableUsersUseCase` 생성**
 
 ```kotlin
-package com.org.meeple.core.match.query.service.port.`in`
+package com.org.oneulsogae.core.match.query.service.port.`in`
 
-import com.org.meeple.core.match.query.dto.InvitableUser
+import com.org.oneulsogae.core.match.query.dto.InvitableUser
 
 /**
  * 초대 가능한 유저를 닉네임으로 검색하는 유스케이스(인포트).
@@ -116,20 +116,20 @@ interface SearchInvitableUsersUseCase {
 - [ ] **Step 4: 서비스 `SearchInvitableUsersService` 생성**
 
 ```kotlin
-package com.org.meeple.core.match.query.service
+package com.org.oneulsogae.core.match.query.service
 
-import com.org.meeple.common.user.Gender
-import com.org.meeple.core.match.query.dao.SearchInvitableUsersDao
-import com.org.meeple.core.match.query.dto.InvitableUser
-import com.org.meeple.core.match.query.service.port.`in`.SearchInvitableUsersUseCase
-import com.org.meeple.core.user.query.service.port.`in`.GetUserWithDetailUseCase
+import com.org.oneulsogae.common.user.Gender
+import com.org.oneulsogae.core.match.query.dao.SearchInvitableUsersDao
+import com.org.oneulsogae.core.match.query.dto.InvitableUser
+import com.org.oneulsogae.core.match.query.service.port.`in`.SearchInvitableUsersUseCase
+import com.org.oneulsogae.core.user.query.service.port.`in`.GetUserWithDetailUseCase
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 
 /**
  * [SearchInvitableUsersUseCase] 구현. (조회 전용)
  * 요청자 성별을 user 도메인 in-port([GetUserWithDetailUseCase])로 읽어 dao에 넘긴다. (command 포트 미참조 — query 규칙)
- * 성별이 없으면(매칭 불가) 빈 리스트를 반환한다. ([com.org.meeple.core.user.query.dto.UserWithDetailView.getGender]는 null에서 NPE이므로 호출하지 않고 detail.gender를 직접 본다)
+ * 성별이 없으면(매칭 불가) 빈 리스트를 반환한다. ([com.org.oneulsogae.core.user.query.dto.UserWithDetailView.getGender]는 null에서 NPE이므로 호출하지 않고 detail.gender를 직접 본다)
  */
 @Service
 @Transactional(readOnly = true)
@@ -148,16 +148,16 @@ class SearchInvitableUsersService(
 
 - [ ] **Step 5: 컴파일 검증**
 
-Run: `./gradlew :meeple-core:compileKotlin`
+Run: `./gradlew :oneulsogae-core:compileKotlin`
 Expected: BUILD SUCCESSFUL
 
 - [ ] **Step 6: Commit**
 
 ```bash
-git add meeple-core/src/main/kotlin/com/org/meeple/core/match/query/dto/InvitableUser.kt \
-  meeple-core/src/main/kotlin/com/org/meeple/core/match/query/dao/SearchInvitableUsersDao.kt \
-  meeple-core/src/main/kotlin/com/org/meeple/core/match/query/service/port/in/SearchInvitableUsersUseCase.kt \
-  meeple-core/src/main/kotlin/com/org/meeple/core/match/query/service/SearchInvitableUsersService.kt
+git add oneulsogae-core/src/main/kotlin/com/org/oneulsogae/core/match/query/dto/InvitableUser.kt \
+  oneulsogae-core/src/main/kotlin/com/org/oneulsogae/core/match/query/dao/SearchInvitableUsersDao.kt \
+  oneulsogae-core/src/main/kotlin/com/org/oneulsogae/core/match/query/service/port/in/SearchInvitableUsersUseCase.kt \
+  oneulsogae-core/src/main/kotlin/com/org/oneulsogae/core/match/query/service/SearchInvitableUsersService.kt
 git commit -m "feat: 초대 가능 유저 검색 조회 계약·서비스(core query) 추가
 
 Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>"
@@ -168,7 +168,7 @@ Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>"
 ## Task 2: infra QueryDSL dao 구현
 
 **Files:**
-- Create: `meeple-infra/src/main/kotlin/com/org/meeple/infra/match/query/SearchInvitableUsersDaoImpl.kt`
+- Create: `oneulsogae-infra/src/main/kotlin/com/org/oneulsogae/infra/match/query/SearchInvitableUsersDaoImpl.kt`
 
 **Interfaces:**
 - Consumes: `SearchInvitableUsersDao` (Task 1), `InvitableUser` (Task 1). Q-classes: `QMatchUserEntity.matchUserEntity`, `QUserDetailEntity.userDetailEntity`, `QTeamMemberEntity.teamMemberEntity`.
@@ -180,14 +180,14 @@ Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>"
 `MatchUserEntity`(후보, gender 보유)에 `UserDetailEntity`(닉네임·직업·회사명)를 명시 조인하고, `team_members` NOT EXISTS로 활성 팀 소속을 거른다. 세 엔티티 모두 `@SQLRestriction("deleted_at is null")`(match_user는 하드 삭제)라 활성 행만 스캔된다.
 
 ```kotlin
-package com.org.meeple.infra.match.query
+package com.org.oneulsogae.infra.match.query
 
-import com.org.meeple.common.user.Gender
-import com.org.meeple.core.match.query.dao.SearchInvitableUsersDao
-import com.org.meeple.core.match.query.dto.InvitableUser
-import com.org.meeple.infra.match.command.entity.QMatchUserEntity
-import com.org.meeple.infra.match.command.entity.QTeamMemberEntity
-import com.org.meeple.infra.user.command.entity.QUserDetailEntity
+import com.org.oneulsogae.common.user.Gender
+import com.org.oneulsogae.core.match.query.dao.SearchInvitableUsersDao
+import com.org.oneulsogae.core.match.query.dto.InvitableUser
+import com.org.oneulsogae.infra.match.command.entity.QMatchUserEntity
+import com.org.oneulsogae.infra.match.command.entity.QTeamMemberEntity
+import com.org.oneulsogae.infra.user.command.entity.QUserDetailEntity
 import com.querydsl.core.types.Projections
 import com.querydsl.jpa.JPAExpressions
 import com.querydsl.jpa.impl.JPAQueryFactory
@@ -237,13 +237,13 @@ class SearchInvitableUsersDaoImpl(
 
 - [ ] **Step 2: 컴파일 검증**
 
-Run: `./gradlew :meeple-infra:compileKotlin`
+Run: `./gradlew :oneulsogae-infra:compileKotlin`
 Expected: BUILD SUCCESSFUL
 
 - [ ] **Step 3: Commit**
 
 ```bash
-git add meeple-infra/src/main/kotlin/com/org/meeple/infra/match/query/SearchInvitableUsersDaoImpl.kt
+git add oneulsogae-infra/src/main/kotlin/com/org/oneulsogae/infra/match/query/SearchInvitableUsersDaoImpl.kt
 git commit -m "feat: 초대 가능 유저 검색 QueryDSL dao 구현
 
 Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>"
@@ -254,10 +254,10 @@ Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>"
 ## Task 3: api 엔드포인트 + E2E
 
 **Files:**
-- Create: `meeple-api/src/main/kotlin/com/org/meeple/api/match/request/SearchInvitableUsersRequest.kt`
-- Create: `meeple-api/src/main/kotlin/com/org/meeple/api/match/response/InvitableUserResponse.kt`
-- Modify: `meeple-api/src/main/kotlin/com/org/meeple/api/match/TeamController.kt`
-- Test: `meeple-api/src/test/kotlin/com/org/meeple/api/match/SearchInvitableUsersE2ETest.kt`
+- Create: `oneulsogae-api/src/main/kotlin/com/org/oneulsogae/api/match/request/SearchInvitableUsersRequest.kt`
+- Create: `oneulsogae-api/src/main/kotlin/com/org/oneulsogae/api/match/response/InvitableUserResponse.kt`
+- Modify: `oneulsogae-api/src/main/kotlin/com/org/oneulsogae/api/match/TeamController.kt`
+- Test: `oneulsogae-api/src/test/kotlin/com/org/oneulsogae/api/match/SearchInvitableUsersE2ETest.kt`
 
 **Interfaces:**
 - Consumes: `SearchInvitableUsersUseCase.search(requesterId: Long, nickname: String): List<InvitableUser>` (Task 1).
@@ -267,7 +267,7 @@ Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>"
 `SearchInvitableUsersRequest.kt` — GET 쿼리 파라미터를 객체로 바인딩(@ModelAttribute)하고 `@Valid`로 검증한다. 공백/누락이면 `MethodArgumentNotValidException`이 발생해 `GlobalExceptionHandler`가 400으로 내린다(본문 요청 검증과 동일 경로).
 
 ```kotlin
-package com.org.meeple.api.match.request
+package com.org.oneulsogae.api.match.request
 
 import jakarta.validation.constraints.NotBlank
 
@@ -284,9 +284,9 @@ data class SearchInvitableUsersRequest(
 `InvitableUserResponse.kt`:
 
 ```kotlin
-package com.org.meeple.api.match.response
+package com.org.oneulsogae.api.match.response
 
-import com.org.meeple.core.match.query.dto.InvitableUser
+import com.org.oneulsogae.core.match.query.dto.InvitableUser
 
 /**
  * 초대 가능 유저 검색 결과 항목 응답. 식별자·닉네임·직업·회사명을 담는다.
@@ -311,23 +311,23 @@ data class InvitableUserResponse(
 
 - [ ] **Step 2: E2E 테스트 작성(실패 확인용)**
 
-Create `meeple-api/src/test/kotlin/com/org/meeple/api/match/SearchInvitableUsersE2ETest.kt`:
+Create `oneulsogae-api/src/test/kotlin/com/org/oneulsogae/api/match/SearchInvitableUsersE2ETest.kt`:
 
 ```kotlin
-package com.org.meeple.api.match
+package com.org.oneulsogae.api.match
 
-import com.org.meeple.common.integration.AbstractIntegrationSupport
-import com.org.meeple.common.integration.expect
-import com.org.meeple.common.integration.get
-import com.org.meeple.common.match.TeamMemberStatus
-import com.org.meeple.common.user.Gender
-import com.org.meeple.infra.fixture.IntegrationUtil
-import com.org.meeple.infra.fixture.MatchUserEntityFixture
-import com.org.meeple.infra.fixture.UserDetailEntityFixture
-import com.org.meeple.infra.match.command.entity.QMatchUserEntity
-import com.org.meeple.infra.match.command.entity.QTeamMemberEntity
-import com.org.meeple.infra.match.command.entity.TeamMemberEntity
-import com.org.meeple.infra.user.command.entity.QUserDetailEntity
+import com.org.oneulsogae.common.integration.AbstractIntegrationSupport
+import com.org.oneulsogae.common.integration.expect
+import com.org.oneulsogae.common.integration.get
+import com.org.oneulsogae.common.match.TeamMemberStatus
+import com.org.oneulsogae.common.user.Gender
+import com.org.oneulsogae.infra.fixture.IntegrationUtil
+import com.org.oneulsogae.infra.fixture.MatchUserEntityFixture
+import com.org.oneulsogae.infra.fixture.UserDetailEntityFixture
+import com.org.oneulsogae.infra.match.command.entity.QMatchUserEntity
+import com.org.oneulsogae.infra.match.command.entity.QTeamMemberEntity
+import com.org.oneulsogae.infra.match.command.entity.TeamMemberEntity
+import com.org.oneulsogae.infra.user.command.entity.QUserDetailEntity
 import org.hamcrest.Matchers.containsInAnyOrder
 import org.hamcrest.Matchers.hasSize
 
@@ -456,12 +456,12 @@ class SearchInvitableUsersE2ETest : AbstractIntegrationSupport({
 
 - [ ] **Step 3: 테스트 실행 — 실패 확인**
 
-Run: `./gradlew :meeple-api:test --tests "com.org.meeple.api.match.SearchInvitableUsersE2ETest"`
+Run: `./gradlew :oneulsogae-api:test --tests "com.org.oneulsogae.api.match.SearchInvitableUsersE2ETest"`
 Expected: 컴파일 실패(엔드포인트·DTO 미존재) 또는 404.
 
 - [ ] **Step 4: TeamController에 엔드포인트 추가**
 
-`TeamController` 생성자에 `searchInvitableUsersUseCase`를 주입하고 GET 매핑을 추가한다. import 추가: `com.org.meeple.core.match.query.service.in.SearchInvitableUsersUseCase`(백틱 `in` 주의), `com.org.meeple.api.match.request.SearchInvitableUsersRequest`, `com.org.meeple.api.match.response.InvitableUserResponse`, `org.springframework.web.bind.annotation.GetMapping`. (`@Valid`, `AuthUser`, `LoginUser`, `ApiResponse`는 이미 import됨)
+`TeamController` 생성자에 `searchInvitableUsersUseCase`를 주입하고 GET 매핑을 추가한다. import 추가: `com.org.oneulsogae.core.match.query.service.in.SearchInvitableUsersUseCase`(백틱 `in` 주의), `com.org.oneulsogae.api.match.request.SearchInvitableUsersRequest`, `com.org.oneulsogae.api.match.response.InvitableUserResponse`, `org.springframework.web.bind.annotation.GetMapping`. (`@Valid`, `AuthUser`, `LoginUser`, `ApiResponse`는 이미 import됨)
 
 생성자에 추가:
 
@@ -486,20 +486,20 @@ Expected: 컴파일 실패(엔드포인트·DTO 미존재) 또는 404.
 		)
 ```
 
-> import 경로 주의: in-port 패키지는 `com.org.meeple.core.match.query.service.port.in`이고 `in`은 Kotlin 키워드라 백틱이 필요하다 → `import com.org.meeple.core.match.query.service.port.\`in\`.SearchInvitableUsersUseCase`.
+> import 경로 주의: in-port 패키지는 `com.org.oneulsogae.core.match.query.service.port.in`이고 `in`은 Kotlin 키워드라 백틱이 필요하다 → `import com.org.oneulsogae.core.match.query.service.port.\`in\`.SearchInvitableUsersUseCase`.
 
 - [ ] **Step 5: 테스트 실행 — 통과 확인**
 
-Run: `./gradlew :meeple-api:test --tests "com.org.meeple.api.match.SearchInvitableUsersE2ETest"`
+Run: `./gradlew :oneulsogae-api:test --tests "com.org.oneulsogae.api.match.SearchInvitableUsersE2ETest"`
 Expected: PASS (4 컨텍스트 전부)
 
 - [ ] **Step 6: Commit**
 
 ```bash
-git add meeple-api/src/main/kotlin/com/org/meeple/api/match/request/SearchInvitableUsersRequest.kt \
-  meeple-api/src/main/kotlin/com/org/meeple/api/match/response/InvitableUserResponse.kt \
-  meeple-api/src/main/kotlin/com/org/meeple/api/match/TeamController.kt \
-  meeple-api/src/test/kotlin/com/org/meeple/api/match/SearchInvitableUsersE2ETest.kt
+git add oneulsogae-api/src/main/kotlin/com/org/oneulsogae/api/match/request/SearchInvitableUsersRequest.kt \
+  oneulsogae-api/src/main/kotlin/com/org/oneulsogae/api/match/response/InvitableUserResponse.kt \
+  oneulsogae-api/src/main/kotlin/com/org/oneulsogae/api/match/TeamController.kt \
+  oneulsogae-api/src/test/kotlin/com/org/oneulsogae/api/match/SearchInvitableUsersE2ETest.kt
 git commit -m "feat: 초대 가능 유저 닉네임 검색 엔드포인트(GET /teams/v1/invitable-users)
 
 Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>"
@@ -511,9 +511,9 @@ Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>"
 
 **Files:** 없음 (검증)
 
-- [ ] **Step 1: meeple-api 전체 테스트**
+- [ ] **Step 1: oneulsogae-api 전체 테스트**
 
-Run: `./gradlew :meeple-api:test`
+Run: `./gradlew :oneulsogae-api:test`
 Expected: BUILD SUCCESSFUL (신규 E2E + 기존 전부 그린)
 
 - [ ] **Step 2: 전체 빌드**

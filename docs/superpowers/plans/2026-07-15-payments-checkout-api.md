@@ -4,7 +4,7 @@
 
 **Goal:** 결제 화면 진입 시 주문자 정보(실명·이메일·휴대폰)를 반환하는 `GET /payments/v1/checkout` API를 payments 도메인으로 신설한다.
 
-**Architecture:** 헥사고날 + CQRS. payments는 조회 전용이라 `query` 패키지만 둔다. Controller(meeple-api) → in-port `GetCheckoutUseCase` ← `GetCheckoutService`(meeple-core) → dao `GetCheckoutOrdererDao` ← `GetCheckoutOrdererDaoImpl`(meeple-infra, QueryDSL). DaoImpl이 user 계열 엔티티를 직접 투영한다(표시용 조인 패턴 — user 도메인 포트를 거치지 않는다).
+**Architecture:** 헥사고날 + CQRS. payments는 조회 전용이라 `query` 패키지만 둔다. Controller(oneulsogae-api) → in-port `GetCheckoutUseCase` ← `GetCheckoutService`(oneulsogae-core) → dao `GetCheckoutOrdererDao` ← `GetCheckoutOrdererDaoImpl`(oneulsogae-infra, QueryDSL). DaoImpl이 user 계열 엔티티를 직접 투영한다(표시용 조인 패턴 — user 도메인 포트를 거치지 않는다).
 
 **Tech Stack:** Kotlin 2.2.21 / Spring Boot 4.0.6 / QueryDSL(JPAQueryFactory) / Kotest DescribeSpec + Testcontainers + RestAssured DSL
 
@@ -24,9 +24,9 @@
 ### Task 1: 테스트 픽스처 보강 + 실패하는 E2E 테스트 작성
 
 **Files:**
-- Modify: `meeple-infra/src/testFixtures/kotlin/com/org/meeple/infra/fixture/UserDetailEntityFixture.kt` (phoneNumber 파라미터 추가)
-- Modify: `meeple-infra/src/testFixtures/kotlin/com/org/meeple/infra/fixture/IdentityVerificationEntityFixture.kt` (realName 파라미터 추가)
-- Test: `meeple-api/src/test/kotlin/com/org/meeple/api/payments/PaymentsCheckoutE2ETest.kt` (신규)
+- Modify: `oneulsogae-infra/src/testFixtures/kotlin/com/org/oneulsogae/infra/fixture/UserDetailEntityFixture.kt` (phoneNumber 파라미터 추가)
+- Modify: `oneulsogae-infra/src/testFixtures/kotlin/com/org/oneulsogae/infra/fixture/IdentityVerificationEntityFixture.kt` (realName 파라미터 추가)
+- Test: `oneulsogae-api/src/test/kotlin/com/org/oneulsogae/api/payments/PaymentsCheckoutE2ETest.kt` (신규)
 
 **Interfaces:**
 - Consumes: `AbstractIntegrationSupport`(accessTokenFor), `IntegrationUtil.persist/deleteAll`, RestAssured DSL `get/expect`
@@ -107,23 +107,23 @@
 
 - [ ] **Step 3: E2E 테스트 작성**
 
-`meeple-api/src/test/kotlin/com/org/meeple/api/payments/PaymentsCheckoutE2ETest.kt` 전체 내용:
+`oneulsogae-api/src/test/kotlin/com/org/oneulsogae/api/payments/PaymentsCheckoutE2ETest.kt` 전체 내용:
 
 ```kotlin
-package com.org.meeple.api.payments
+package com.org.oneulsogae.api.payments
 
-import com.org.meeple.common.integration.AbstractIntegrationSupport
-import com.org.meeple.common.integration.expect
-import com.org.meeple.common.integration.get
-import com.org.meeple.core.user.command.domain.IdentityVerificationStatus
-import com.org.meeple.infra.fixture.IdentityVerificationEntityFixture
-import com.org.meeple.infra.fixture.IntegrationUtil
-import com.org.meeple.infra.fixture.UserDetailEntityFixture
-import com.org.meeple.infra.fixture.UserEntityFixture
-import com.org.meeple.infra.user.command.entity.QIdentityVerificationEntity
-import com.org.meeple.infra.user.command.entity.QUserDetailEntity
-import com.org.meeple.infra.user.command.entity.QUserEntity
-import com.org.meeple.infra.user.command.entity.UserEntity
+import com.org.oneulsogae.common.integration.AbstractIntegrationSupport
+import com.org.oneulsogae.common.integration.expect
+import com.org.oneulsogae.common.integration.get
+import com.org.oneulsogae.core.user.command.domain.IdentityVerificationStatus
+import com.org.oneulsogae.infra.fixture.IdentityVerificationEntityFixture
+import com.org.oneulsogae.infra.fixture.IntegrationUtil
+import com.org.oneulsogae.infra.fixture.UserDetailEntityFixture
+import com.org.oneulsogae.infra.fixture.UserEntityFixture
+import com.org.oneulsogae.infra.user.command.entity.QIdentityVerificationEntity
+import com.org.oneulsogae.infra.user.command.entity.QUserDetailEntity
+import com.org.oneulsogae.infra.user.command.entity.QUserEntity
+import com.org.oneulsogae.infra.user.command.entity.UserEntity
 import org.hamcrest.Matchers.nullValue
 
 /**
@@ -145,9 +145,9 @@ class PaymentsCheckoutE2ETest : AbstractIntegrationSupport({
 				val userId: Long = user.id!!
 				IntegrationUtil.persist(UserDetailEntityFixture.create(userId = userId, phoneNumber = "01011112222"))
 				// 재인증 이력: 과거 VERIFIED → 최신 VERIFIED → 진행 중(REQUESTED) 순으로 쌓인 상황.
-				// 최신 VERIFIED 행("김미플")이 선택되어야 하고, REQUESTED 행(실명 없음)은 무시되어야 한다.
+				// 최신 VERIFIED 행("김오늘의 소개")이 선택되어야 하고, REQUESTED 행(실명 없음)은 무시되어야 한다.
 				IntegrationUtil.persist(IdentityVerificationEntityFixture.create(userId = userId, realName = "김과거"))
-				IntegrationUtil.persist(IdentityVerificationEntityFixture.create(userId = userId, realName = "김미플"))
+				IntegrationUtil.persist(IdentityVerificationEntityFixture.create(userId = userId, realName = "김오늘의 소개"))
 				IntegrationUtil.persist(
 					IdentityVerificationEntityFixture.create(
 						userId = userId,
@@ -162,7 +162,7 @@ class PaymentsCheckoutE2ETest : AbstractIntegrationSupport({
 				} expect {
 					status(200)
 					body("success", true)
-					body("data.orderer.name", "김미플")
+					body("data.orderer.name", "김오늘의 소개")
 					body("data.orderer.email", "orderer@test.com")
 					body("data.orderer.phoneNumber", "01011112222")
 				}
@@ -206,7 +206,7 @@ class PaymentsCheckoutE2ETest : AbstractIntegrationSupport({
 
 - [ ] **Step 4: 테스트 실행해 실패(RED) 확인**
 
-Run: `./gradlew :meeple-api:test --tests "com.org.meeple.api.payments.PaymentsCheckoutE2ETest"`
+Run: `./gradlew :oneulsogae-api:test --tests "com.org.oneulsogae.api.payments.PaymentsCheckoutE2ETest"`
 Expected: FAIL — 엔드포인트가 없어 인증 케이스들이 200 대신 404(또는 401)를 받는다. 비인증 401 케이스만 통과할 수 있다. (커밋은 Task 4에서 GREEN 확인 후 일괄 수행)
 
 ---
@@ -214,11 +214,11 @@ Expected: FAIL — 엔드포인트가 없어 인증 케이스들이 200 대신 4
 ### Task 2: core payments query 계층 (dto·dao·in-port·service)
 
 **Files:**
-- Create: `meeple-core/src/main/kotlin/com/org/meeple/core/payments/query/dto/OrdererView.kt`
-- Create: `meeple-core/src/main/kotlin/com/org/meeple/core/payments/query/dto/CheckoutView.kt`
-- Create: `meeple-core/src/main/kotlin/com/org/meeple/core/payments/query/dao/GetCheckoutOrdererDao.kt`
-- Create: `meeple-core/src/main/kotlin/com/org/meeple/core/payments/query/service/port/in/GetCheckoutUseCase.kt`
-- Create: `meeple-core/src/main/kotlin/com/org/meeple/core/payments/query/service/GetCheckoutService.kt`
+- Create: `oneulsogae-core/src/main/kotlin/com/org/oneulsogae/core/payments/query/dto/OrdererView.kt`
+- Create: `oneulsogae-core/src/main/kotlin/com/org/oneulsogae/core/payments/query/dto/CheckoutView.kt`
+- Create: `oneulsogae-core/src/main/kotlin/com/org/oneulsogae/core/payments/query/dao/GetCheckoutOrdererDao.kt`
+- Create: `oneulsogae-core/src/main/kotlin/com/org/oneulsogae/core/payments/query/service/port/in/GetCheckoutUseCase.kt`
+- Create: `oneulsogae-core/src/main/kotlin/com/org/oneulsogae/core/payments/query/service/GetCheckoutService.kt`
 
 **Interfaces:**
 - Consumes: 없음 (신규 패키지)
@@ -232,7 +232,7 @@ Expected: FAIL — 엔드포인트가 없어 인증 케이스들이 200 대신 4
 `OrdererView.kt`:
 
 ```kotlin
-package com.org.meeple.core.payments.query.dto
+package com.org.oneulsogae.core.payments.query.dto
 
 /**
  * 체크아웃 화면 주문자 정보 read model.
@@ -254,7 +254,7 @@ data class OrdererView(
 `CheckoutView.kt`:
 
 ```kotlin
-package com.org.meeple.core.payments.query.dto
+package com.org.oneulsogae.core.payments.query.dto
 
 /**
  * 체크아웃(결제) 화면 진입 시 조회 데이터 read model.
@@ -270,9 +270,9 @@ data class CheckoutView(
 `GetCheckoutOrdererDao.kt`:
 
 ```kotlin
-package com.org.meeple.core.payments.query.dao
+package com.org.oneulsogae.core.payments.query.dao
 
-import com.org.meeple.core.payments.query.dto.OrdererView
+import com.org.oneulsogae.core.payments.query.dto.OrdererView
 
 /**
  * 체크아웃 주문자 정보 조회 dao(out-port). infra의 GetCheckoutOrdererDaoImpl이 구현한다.
@@ -290,9 +290,9 @@ interface GetCheckoutOrdererDao {
 `GetCheckoutUseCase.kt`:
 
 ```kotlin
-package com.org.meeple.core.payments.query.service.port.`in`
+package com.org.oneulsogae.core.payments.query.service.port.`in`
 
-import com.org.meeple.core.payments.query.dto.CheckoutView
+import com.org.oneulsogae.core.payments.query.dto.CheckoutView
 
 /** 결제(체크아웃) 화면 진입 시 필요한 데이터 조회 유스케이스(in-port). */
 interface GetCheckoutUseCase {
@@ -304,12 +304,12 @@ interface GetCheckoutUseCase {
 `GetCheckoutService.kt`:
 
 ```kotlin
-package com.org.meeple.core.payments.query.service
+package com.org.oneulsogae.core.payments.query.service
 
-import com.org.meeple.core.payments.query.dao.GetCheckoutOrdererDao
-import com.org.meeple.core.payments.query.dto.CheckoutView
-import com.org.meeple.core.payments.query.dto.OrdererView
-import com.org.meeple.core.payments.query.service.port.`in`.GetCheckoutUseCase
+import com.org.oneulsogae.core.payments.query.dao.GetCheckoutOrdererDao
+import com.org.oneulsogae.core.payments.query.dto.CheckoutView
+import com.org.oneulsogae.core.payments.query.dto.OrdererView
+import com.org.oneulsogae.core.payments.query.service.port.`in`.GetCheckoutUseCase
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 
@@ -330,7 +330,7 @@ class GetCheckoutService(
 
 - [ ] **Step 4: 컴파일 확인**
 
-Run: `./gradlew :meeple-core:compileKotlin`
+Run: `./gradlew :oneulsogae-core:compileKotlin`
 Expected: BUILD SUCCESSFUL
 
 ---
@@ -338,7 +338,7 @@ Expected: BUILD SUCCESSFUL
 ### Task 3: infra QueryDSL DaoImpl
 
 **Files:**
-- Create: `meeple-infra/src/main/kotlin/com/org/meeple/infra/payments/query/GetCheckoutOrdererDaoImpl.kt`
+- Create: `oneulsogae-infra/src/main/kotlin/com/org/oneulsogae/infra/payments/query/GetCheckoutOrdererDaoImpl.kt`
 
 **Interfaces:**
 - Consumes: Task 2의 `GetCheckoutOrdererDao`·`OrdererView`, Q타입 `QUserEntity`/`QUserDetailEntity`/`QIdentityVerificationEntity`, `IdentityVerificationStatus.VERIFIED`
@@ -349,14 +349,14 @@ Expected: BUILD SUCCESSFUL
 `GetCheckoutOrdererDaoImpl.kt` 전체 내용:
 
 ```kotlin
-package com.org.meeple.infra.payments.query
+package com.org.oneulsogae.infra.payments.query
 
-import com.org.meeple.core.payments.query.dao.GetCheckoutOrdererDao
-import com.org.meeple.core.payments.query.dto.OrdererView
-import com.org.meeple.core.user.command.domain.IdentityVerificationStatus
-import com.org.meeple.infra.user.command.entity.QIdentityVerificationEntity
-import com.org.meeple.infra.user.command.entity.QUserDetailEntity
-import com.org.meeple.infra.user.command.entity.QUserEntity
+import com.org.oneulsogae.core.payments.query.dao.GetCheckoutOrdererDao
+import com.org.oneulsogae.core.payments.query.dto.OrdererView
+import com.org.oneulsogae.core.user.command.domain.IdentityVerificationStatus
+import com.org.oneulsogae.infra.user.command.entity.QIdentityVerificationEntity
+import com.org.oneulsogae.infra.user.command.entity.QUserDetailEntity
+import com.org.oneulsogae.infra.user.command.entity.QUserEntity
 import com.querydsl.core.Tuple
 import com.querydsl.jpa.impl.JPAQueryFactory
 import org.springframework.stereotype.Component
@@ -405,7 +405,7 @@ class GetCheckoutOrdererDaoImpl(
 
 - [ ] **Step 2: 컴파일 확인**
 
-Run: `./gradlew :meeple-infra:compileKotlin`
+Run: `./gradlew :oneulsogae-infra:compileKotlin`
 Expected: BUILD SUCCESSFUL (Q타입은 기존 엔티티에서 이미 생성됨)
 
 ---
@@ -413,9 +413,9 @@ Expected: BUILD SUCCESSFUL (Q타입은 기존 엔티티에서 이미 생성됨)
 ### Task 4: api 컨트롤러·응답 DTO + E2E GREEN + 커밋
 
 **Files:**
-- Create: `meeple-api/src/main/kotlin/com/org/meeple/api/payments/response/OrdererResponse.kt`
-- Create: `meeple-api/src/main/kotlin/com/org/meeple/api/payments/response/CheckoutResponse.kt`
-- Create: `meeple-api/src/main/kotlin/com/org/meeple/api/payments/PaymentsController.kt`
+- Create: `oneulsogae-api/src/main/kotlin/com/org/oneulsogae/api/payments/response/OrdererResponse.kt`
+- Create: `oneulsogae-api/src/main/kotlin/com/org/oneulsogae/api/payments/response/CheckoutResponse.kt`
+- Create: `oneulsogae-api/src/main/kotlin/com/org/oneulsogae/api/payments/PaymentsController.kt`
 
 **Interfaces:**
 - Consumes: Task 2의 `GetCheckoutUseCase`·`CheckoutView`·`OrdererView`, 기존 `@LoginUser`/`AuthUser`/`ApiResponse`
@@ -426,9 +426,9 @@ Expected: BUILD SUCCESSFUL (Q타입은 기존 엔티티에서 이미 생성됨)
 `OrdererResponse.kt`:
 
 ```kotlin
-package com.org.meeple.api.payments.response
+package com.org.oneulsogae.api.payments.response
 
-import com.org.meeple.core.payments.query.dto.OrdererView
+import com.org.oneulsogae.core.payments.query.dto.OrdererView
 
 /** 체크아웃 주문자 정보 응답. 본인인증·프로필 미완료 사용자는 각 필드가 null일 수 있다. */
 data class OrdererResponse(
@@ -450,9 +450,9 @@ data class OrdererResponse(
 `CheckoutResponse.kt`:
 
 ```kotlin
-package com.org.meeple.api.payments.response
+package com.org.oneulsogae.api.payments.response
 
-import com.org.meeple.core.payments.query.dto.CheckoutView
+import com.org.oneulsogae.core.payments.query.dto.CheckoutView
 
 /** 체크아웃(결제) 화면 진입 시 조회 데이터 응답. (추후 쿠폰 등 확장 지점) */
 data class CheckoutResponse(
@@ -470,13 +470,13 @@ data class CheckoutResponse(
 `PaymentsController.kt`:
 
 ```kotlin
-package com.org.meeple.api.payments
+package com.org.oneulsogae.api.payments
 
-import com.org.meeple.api.payments.response.CheckoutResponse
-import com.org.meeple.auth.AuthUser
-import com.org.meeple.auth.LoginUser
-import com.org.meeple.core.common.response.ApiResponse
-import com.org.meeple.core.payments.query.service.port.`in`.GetCheckoutUseCase
+import com.org.oneulsogae.api.payments.response.CheckoutResponse
+import com.org.oneulsogae.auth.AuthUser
+import com.org.oneulsogae.auth.LoginUser
+import com.org.oneulsogae.core.common.response.ApiResponse
+import com.org.oneulsogae.core.payments.query.service.port.`in`.GetCheckoutUseCase
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.tags.Tag
 import org.springframework.web.bind.annotation.GetMapping
@@ -505,23 +505,23 @@ class PaymentsController(
 
 - [ ] **Step 3: E2E 실행해 GREEN 확인**
 
-Run: `./gradlew :meeple-api:test --tests "com.org.meeple.api.payments.PaymentsCheckoutE2ETest"`
+Run: `./gradlew :oneulsogae-api:test --tests "com.org.oneulsogae.api.payments.PaymentsCheckoutE2ETest"`
 Expected: PASS (3개 케이스 모두)
 
 - [ ] **Step 4: 전체 빌드로 회귀 확인**
 
-Run: `./gradlew :meeple-core:compileKotlin :meeple-infra:compileKotlin :meeple-api:compileTestKotlin`
+Run: `./gradlew :oneulsogae-core:compileKotlin :oneulsogae-infra:compileKotlin :oneulsogae-api:compileTestKotlin`
 Expected: BUILD SUCCESSFUL
 
 - [ ] **Step 5: 커밋**
 
 ```bash
-git add meeple-core/src/main/kotlin/com/org/meeple/core/payments \
-        meeple-infra/src/main/kotlin/com/org/meeple/infra/payments \
-        meeple-api/src/main/kotlin/com/org/meeple/api/payments \
-        meeple-api/src/test/kotlin/com/org/meeple/api/payments \
-        meeple-infra/src/testFixtures/kotlin/com/org/meeple/infra/fixture/UserDetailEntityFixture.kt \
-        meeple-infra/src/testFixtures/kotlin/com/org/meeple/infra/fixture/IdentityVerificationEntityFixture.kt
+git add oneulsogae-core/src/main/kotlin/com/org/oneulsogae/core/payments \
+        oneulsogae-infra/src/main/kotlin/com/org/oneulsogae/infra/payments \
+        oneulsogae-api/src/main/kotlin/com/org/oneulsogae/api/payments \
+        oneulsogae-api/src/test/kotlin/com/org/oneulsogae/api/payments \
+        oneulsogae-infra/src/testFixtures/kotlin/com/org/oneulsogae/infra/fixture/UserDetailEntityFixture.kt \
+        oneulsogae-infra/src/testFixtures/kotlin/com/org/oneulsogae/infra/fixture/IdentityVerificationEntityFixture.kt
 git commit -m "feat(payments): 체크아웃 주문자 정보 조회 API 추가
 
 Co-Authored-By: Claude Fable 5 <noreply@anthropic.com>"
