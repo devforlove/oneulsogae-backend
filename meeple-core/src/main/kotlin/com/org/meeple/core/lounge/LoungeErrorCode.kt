@@ -34,4 +34,8 @@ enum class LoungeErrorCode(
 
 	/** 최근 24시간 안에 이미 셀소를 등록함. */
 	SELF_INTRO_DAILY_LIMIT_EXCEEDED("LOUNGE-007", "셀소는 하루에 한 번만 등록할 수 있습니다.", HttpStatus.TOO_MANY_REQUESTS),
+
+	// 셀프 소개팅 조회
+	/** 셀소를 id로 찾지 못함(없거나 삭제됨). */
+	SELF_INTRO_POST_NOT_FOUND("LOUNGE-008", "셀소를 찾을 수 없습니다.", HttpStatus.NOT_FOUND),
 }

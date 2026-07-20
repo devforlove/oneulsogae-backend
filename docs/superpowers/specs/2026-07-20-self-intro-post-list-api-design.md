@@ -43,12 +43,29 @@ query는 자기 dao에만 의존하며 command 도메인·포트를 참조하지
 - 유닛: `SelfIntroPostPageTest` — 한 건 더 읽기 판정·커서 산출·URL 채우기
 - E2E: `GetSelfIntroPostsE2ETest` — 26건 중 첫 페이지 24건 + 커서로 나머지 2건, 사진 없는 글도 노출(imageUrl null)
 
+## 상세 조회
+
+`GET /lounge/v1/self-intro-posts/{postId}` — 인증 필요. 글이 없거나 셀소 본문이 없으면 404(LOUNGE-008).
+
+- 응답: `postId`·`authorNickname`·`likeCount` + 프로필(`gender`·`age`·`height`·`activityArea`·`job`) +
+  본문 7개 항목 + `imageUrls`(노출 순서대로 presigned URL 전체)
+- 프로필은 `user_details`를 left join하고 활동지역은 `regions`를 조인해 "시/도 시/군/구"로 만든다.
+  **생년월일은 응답에 노출하지 않고**, 서버가 `TimeGenerator.today()` 기준 만 나이만 계산해 내려준다.
+- 본문(`self_intro_posts`)은 inner join — 본문 없는 글은 셀소 상세로 조회되지 않는다.
+- 사진은 상세 쿼리와 분리해 `display_order` 오름차순으로 따로 읽는다.
+  한 글에 여러 장이라 조인하면 상세 행이 사진 수만큼 곱해지기 때문이다.
+- 검증: `GetSelfIntroPostDetailE2ETest` — 사진 2장 상세(프로필·본문·순서)·없는 글 404
+
 ## 제외한 것
 
-상세 조회(`/lounge/{postId}`), 좋아요 등록/취소, `likedByMe` 플래그. 별도 작업이다.
+좋아요 등록/취소, `likedByMe` 플래그, 글 수정/삭제. 별도 작업이다.
 
 ## 프론트 필요 변경 (백엔드에서 손대지 않음)
 
 `LoungeTab.tsx`의 `mockLoungeFeed()` + `useLoungePosts()` 조합을 이 엔드포인트 호출로 교체:
 `item.seed`/`loungeImageUri` 폴백 대신 `imageUrl`을 쓰고(없으면 플레이스홀더), `author` → `authorNickname`,
-`id` → `postId`. 무한 스크롤은 `hasNext`/`nextCursor`로 잇는다. 상세 화면은 조회 API가 아직 없어 그대로 둔다.
+`id` → `postId`. 무한 스크롤은 `hasNext`/`nextCursor`로 잇는다.
+
+`SelfIntroDetail.tsx`: `mockSelfIntro()` 폴백 대신 상세 API 응답을 쓴다. `photos` → `imageUrls`,
+`gender`는 `MALE`/`FEMALE` enum이라 한국어 라벨 변환이 필요하고, `area` → `activityArea`,
+`age`/`height`는 서버 값을 그대로 쓴다. 좋아요·대화 신청 버튼은 API가 없어 계속 mock으로 둔다.

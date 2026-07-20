@@ -1,5 +1,6 @@
 package com.org.meeple.api.lounge
 
+import com.org.meeple.api.lounge.response.SelfIntroPostDetailResponse
 import com.org.meeple.api.lounge.response.SelfIntroPostPageResponse
 import com.org.meeple.api.lounge.response.SelfIntroPostResponse
 import com.org.meeple.auth.AuthUser
@@ -12,6 +13,7 @@ import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.tags.Tag
 import org.springframework.http.MediaType
 import org.springframework.web.bind.annotation.GetMapping
+import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RequestParam
@@ -23,6 +25,7 @@ import org.springframework.web.multipart.MultipartFile
  * - POST /lounge/v1/self-intro-posts: 사진(1~5장)과 본문을 업로드해 셀소 글을 등록한다.
  *   사진은 S3에 비공개로 저장되고 DB에는 오브젝트 키만 남는다. 등록은 최근 24시간에 1건으로 제한한다.
  * - GET /lounge/v1/self-intro-posts: 라운지 그리드용 목록을 최신순 24개씩 커서 페이징으로 조회한다.
+ * - GET /lounge/v1/self-intro-posts/{postId}: 셀소 상세(프로필·본문·사진 전체)를 조회한다.
  */
 @RestController
 @RequestMapping("/lounge/v1")
@@ -74,6 +77,17 @@ class SelfIntroPostController(
 		@RequestParam("cursor", required = false) cursor: Long?,
 	): ApiResponse<SelfIntroPostPageResponse> =
 		ApiResponse.success(SelfIntroPostPageResponse.of(getSelfIntroPostsUseCase.getPosts(cursor)))
+
+	/** 셀소 상세 한 건을 조회한다. */
+	@Operation(
+		summary = "셀소 상세 조회",
+		description = "셀소 한 건의 작성자 프로필(닉네임·성별·만 나이·키·활동지역·직업)·본문 7개 항목·사진 전체(열람용 presigned URL, 노출 순서)·좋아요 수를 조회한다. 글이 없거나 삭제됐으면 404(LOUNGE-008)를 반환한다.",
+	)
+	@GetMapping("/self-intro-posts/{postId}")
+	fun getSelfIntroPost(
+		@PathVariable("postId") postId: Long,
+	): ApiResponse<SelfIntroPostDetailResponse> =
+		ApiResponse.success(SelfIntroPostDetailResponse.of(getSelfIntroPostsUseCase.getPost(postId)))
 
 	/** MultipartFile에서 core가 받는 원시 바이트·메타([RegisterSelfIntroPostCommand.FilePart])를 뽑는다. */
 	private fun toFilePart(file: MultipartFile): RegisterSelfIntroPostCommand.FilePart =
