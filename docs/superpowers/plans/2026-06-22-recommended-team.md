@@ -4,7 +4,7 @@
 
 **Goal:** 팀이 없는 솔로 유저에게 반대 성별·같은 권역의 결성(ACTIVE) 팀 1개를 일일 배치로 추천 저장하고, 미팅탭에 표시한다.
 
-**Architecture:** 헥사고날/CQRS. 추천 결과는 `recommended_teams` 포인터 행(`userId→teamId`)으로 저장하고, 표시 데이터는 읽기 시점에 `teams ⋈ team_members ⋈ match_user`를 조인해 채운다(staleness 자동 흡수). 쓰기(배치)는 `meeple-scheduler`(core 비의존)에 두고 out-port를 `meeple-infra` 어댑터가 구현한다. 읽기(표시)는 match `query` 슬라이스.
+**Architecture:** 헥사고날/CQRS. 추천 결과는 `recommended_teams` 포인터 행(`userId→teamId`)으로 저장하고, 표시 데이터는 읽기 시점에 `teams ⋈ team_members ⋈ match_user`를 조인해 채운다(staleness 자동 흡수). 쓰기(배치)는 `oneulsogae-scheduler`(core 비의존)에 두고 out-port를 `oneulsogae-infra` 어댑터가 구현한다. 읽기(표시)는 match `query` 슬라이스.
 
 **Tech Stack:** Kotlin 2.2.21 / JVM 21, Spring Boot 4, Spring Data JPA + QueryDSL, MySQL, Kotest(유닛) + Testcontainers/RestAssured(E2E).
 
@@ -16,61 +16,61 @@
 - 노출: 유저당 **1개**, **일일 배치** 생성, **주기마다 교체**(이력 누적 없음). `recommended_teams.user_id` 유니크로 upsert 교체.
 - 타입 명시(변수·반환·람다 파라미터), `LocalDateTime.now()` 직접 호출 금지(`TimeGenerator` 주입), 명령/조회 분리, 엔티티당 어댑터 하나.
 - 커밋 메시지: `<type>(match): <설명>`. 커밋 말미에 `Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>`.
-- 빌드 검증: `./gradlew :meeple-api:test --tests "<클래스>"` (E2E는 meeple-api 모듈). QueryDSL Q클래스는 kapt가 생성하므로 새 엔티티 추가 후 `./gradlew :meeple-infra:kaptKotlin` 또는 전체 빌드로 `QRecommendedTeamEntity`를 생성해야 한다.
+- 빌드 검증: `./gradlew :oneulsogae-api:test --tests "<클래스>"` (E2E는 oneulsogae-api 모듈). QueryDSL Q클래스는 kapt가 생성하므로 새 엔티티 추가 후 `./gradlew :oneulsogae-infra:kaptKotlin` 또는 전체 빌드로 `QRecommendedTeamEntity`를 생성해야 한다.
 
 ---
 
 ## File Structure
 
 **Task 1 (읽기/표시 슬라이스 — 엔티티 포함)**
-- Create `meeple-infra/.../match/command/entity/RecommendedTeamEntity.kt` — 추천 포인터 엔티티(`recommended_teams`).
-- Create `meeple-core/.../match/query/dto/RecommendedTeam.kt` — 표시 read model(`RecommendedTeam` + `RecommendedTeamMember`).
-- Create `meeple-core/.../match/query/dao/GetRecommendedTeamDao.kt` — 조회 dao 인터페이스.
-- Create `meeple-infra/.../match/query/GetRecommendedTeamDaoImpl.kt` — QueryDSL 구현(조인).
-- Create `meeple-core/.../match/query/service/port/in/GetRecommendedTeamUseCase.kt` — 인포트.
-- Create `meeple-core/.../match/query/service/GetRecommendedTeamService.kt` — 조회 서비스.
-- Create `meeple-api/.../match/response/RecommendedTeamResponse.kt` — 응답 DTO.
-- Modify `meeple-api/.../match/TeamController.kt` — `GET /teams/v1/recommended-team` 추가.
-- Create `meeple-infra/src/testFixtures/.../fixture/RecommendedTeamEntityFixture.kt` — 테스트 픽스처.
-- Create `meeple-api/src/test/.../api/match/GetRecommendedTeamE2ETest.kt` — E2E.
+- Create `oneulsogae-infra/.../match/command/entity/RecommendedTeamEntity.kt` — 추천 포인터 엔티티(`recommended_teams`).
+- Create `oneulsogae-core/.../match/query/dto/RecommendedTeam.kt` — 표시 read model(`RecommendedTeam` + `RecommendedTeamMember`).
+- Create `oneulsogae-core/.../match/query/dao/GetRecommendedTeamDao.kt` — 조회 dao 인터페이스.
+- Create `oneulsogae-infra/.../match/query/GetRecommendedTeamDaoImpl.kt` — QueryDSL 구현(조인).
+- Create `oneulsogae-core/.../match/query/service/port/in/GetRecommendedTeamUseCase.kt` — 인포트.
+- Create `oneulsogae-core/.../match/query/service/GetRecommendedTeamService.kt` — 조회 서비스.
+- Create `oneulsogae-api/.../match/response/RecommendedTeamResponse.kt` — 응답 DTO.
+- Modify `oneulsogae-api/.../match/TeamController.kt` — `GET /teams/v1/recommended-team` 추가.
+- Create `oneulsogae-infra/src/testFixtures/.../fixture/RecommendedTeamEntityFixture.kt` — 테스트 픽스처.
+- Create `oneulsogae-api/src/test/.../api/match/GetRecommendedTeamE2ETest.kt` — E2E.
 - Doc `docs/migration/recommended_teams.sql` — DDL.
 
 **Task 2 (쓰기/배치 슬라이스)**
-- Create `meeple-infra/.../match/command/repository/RecommendedTeamJpaRepository.kt`
-- Create `meeple-scheduler/.../match/command/application/port/out/SaveRecommendedTeamPort.kt`
-- Create `meeple-infra/.../match/command/adapter/RecommendedTeamAdapter.kt` — `SaveRecommendedTeamPort` 구현(upsert).
-- Create `meeple-scheduler/.../match/query/dto/RecommendableSoloUser.kt`
-- Create `meeple-scheduler/.../match/query/dao/GetRecommendableSoloUserDao.kt`
-- Create `meeple-infra/.../match/query/GetRecommendableSoloUserDaoImpl.kt` — 팀 미소속 솔로 유저(키셋 페이징).
-- Create `meeple-scheduler/.../match/query/dao/GetCandidateTeamDao.kt`
-- Create `meeple-infra/.../match/query/GetCandidateTeamDaoImpl.kt` — 후보 팀 1개(반대 성별·같은 권역·ACTIVE).
-- Create `meeple-scheduler/.../match/command/domain/RecommendTeamBatchResult.kt`
-- Create `meeple-scheduler/.../match/command/application/port/in/RunRecommendTeamBatchUseCase.kt`
-- Create `meeple-scheduler/.../match/command/application/RunRecommendTeamBatchService.kt`
-- Create `meeple-scheduler/.../match/command/application/RecommendTeamBatchJob.kt`
-- Create `meeple-api/.../scheduler/match/RecommendTeamBatchScheduler.kt` — 크론 트리거.
-- Create `meeple-api/.../admin/AdminRecommendTeamBatchController.kt` — 수동 트리거.
-- Create `meeple-api/.../admin/response/RecommendTeamBatchResponse.kt`
-- Modify `meeple-api/src/main/resources/application.yml` — 크론 프로퍼티.
-- Create `meeple-api/src/test/.../api/admin/AdminRecommendTeamBatchE2ETest.kt` — E2E.
+- Create `oneulsogae-infra/.../match/command/repository/RecommendedTeamJpaRepository.kt`
+- Create `oneulsogae-scheduler/.../match/command/application/port/out/SaveRecommendedTeamPort.kt`
+- Create `oneulsogae-infra/.../match/command/adapter/RecommendedTeamAdapter.kt` — `SaveRecommendedTeamPort` 구현(upsert).
+- Create `oneulsogae-scheduler/.../match/query/dto/RecommendableSoloUser.kt`
+- Create `oneulsogae-scheduler/.../match/query/dao/GetRecommendableSoloUserDao.kt`
+- Create `oneulsogae-infra/.../match/query/GetRecommendableSoloUserDaoImpl.kt` — 팀 미소속 솔로 유저(키셋 페이징).
+- Create `oneulsogae-scheduler/.../match/query/dao/GetCandidateTeamDao.kt`
+- Create `oneulsogae-infra/.../match/query/GetCandidateTeamDaoImpl.kt` — 후보 팀 1개(반대 성별·같은 권역·ACTIVE).
+- Create `oneulsogae-scheduler/.../match/command/domain/RecommendTeamBatchResult.kt`
+- Create `oneulsogae-scheduler/.../match/command/application/port/in/RunRecommendTeamBatchUseCase.kt`
+- Create `oneulsogae-scheduler/.../match/command/application/RunRecommendTeamBatchService.kt`
+- Create `oneulsogae-scheduler/.../match/command/application/RecommendTeamBatchJob.kt`
+- Create `oneulsogae-api/.../scheduler/match/RecommendTeamBatchScheduler.kt` — 크론 트리거.
+- Create `oneulsogae-api/.../admin/AdminRecommendTeamBatchController.kt` — 수동 트리거.
+- Create `oneulsogae-api/.../admin/response/RecommendTeamBatchResponse.kt`
+- Modify `oneulsogae-api/src/main/resources/application.yml` — 크론 프로퍼티.
+- Create `oneulsogae-api/src/test/.../api/admin/AdminRecommendTeamBatchE2ETest.kt` — E2E.
 
-(경로 줄임: `meeple-infra/src/main/kotlin/com/org/meeple/infra`, `meeple-core/src/main/kotlin/com/org/meeple/core`, `meeple-scheduler/src/main/kotlin/com/org/meeple/scheduler`, `meeple-api/src/main/kotlin/com/org/meeple`)
+(경로 줄임: `oneulsogae-infra/src/main/kotlin/com/org/oneulsogae/infra`, `oneulsogae-core/src/main/kotlin/com/org/oneulsogae/core`, `oneulsogae-scheduler/src/main/kotlin/com/org/oneulsogae/scheduler`, `oneulsogae-api/src/main/kotlin/com/org/oneulsogae`)
 
 ---
 
 ## Task 1: 읽기/표시 슬라이스 (엔티티 + 미팅탭 조회 엔드포인트)
 
 **Files:**
-- Create: `meeple-infra/src/main/kotlin/com/org/meeple/infra/match/command/entity/RecommendedTeamEntity.kt`
-- Create: `meeple-core/src/main/kotlin/com/org/meeple/core/match/query/dto/RecommendedTeam.kt`
-- Create: `meeple-core/src/main/kotlin/com/org/meeple/core/match/query/dao/GetRecommendedTeamDao.kt`
-- Create: `meeple-infra/src/main/kotlin/com/org/meeple/infra/match/query/GetRecommendedTeamDaoImpl.kt`
-- Create: `meeple-core/src/main/kotlin/com/org/meeple/core/match/query/service/port/in/GetRecommendedTeamUseCase.kt`
-- Create: `meeple-core/src/main/kotlin/com/org/meeple/core/match/query/service/GetRecommendedTeamService.kt`
-- Create: `meeple-api/src/main/kotlin/com/org/meeple/api/match/response/RecommendedTeamResponse.kt`
-- Modify: `meeple-api/src/main/kotlin/com/org/meeple/api/match/TeamController.kt`
-- Create: `meeple-infra/src/testFixtures/kotlin/com/org/meeple/infra/fixture/RecommendedTeamEntityFixture.kt`
-- Create: `meeple-api/src/test/kotlin/com/org/meeple/api/match/GetRecommendedTeamE2ETest.kt`
+- Create: `oneulsogae-infra/src/main/kotlin/com/org/oneulsogae/infra/match/command/entity/RecommendedTeamEntity.kt`
+- Create: `oneulsogae-core/src/main/kotlin/com/org/oneulsogae/core/match/query/dto/RecommendedTeam.kt`
+- Create: `oneulsogae-core/src/main/kotlin/com/org/oneulsogae/core/match/query/dao/GetRecommendedTeamDao.kt`
+- Create: `oneulsogae-infra/src/main/kotlin/com/org/oneulsogae/infra/match/query/GetRecommendedTeamDaoImpl.kt`
+- Create: `oneulsogae-core/src/main/kotlin/com/org/oneulsogae/core/match/query/service/port/in/GetRecommendedTeamUseCase.kt`
+- Create: `oneulsogae-core/src/main/kotlin/com/org/oneulsogae/core/match/query/service/GetRecommendedTeamService.kt`
+- Create: `oneulsogae-api/src/main/kotlin/com/org/oneulsogae/api/match/response/RecommendedTeamResponse.kt`
+- Modify: `oneulsogae-api/src/main/kotlin/com/org/oneulsogae/api/match/TeamController.kt`
+- Create: `oneulsogae-infra/src/testFixtures/kotlin/com/org/oneulsogae/infra/fixture/RecommendedTeamEntityFixture.kt`
+- Create: `oneulsogae-api/src/test/kotlin/com/org/oneulsogae/api/match/GetRecommendedTeamE2ETest.kt`
 - Doc: `docs/migration/recommended_teams.sql`
 
 **Interfaces:**
@@ -83,26 +83,26 @@
 
 - [ ] **Step 1: 실패 E2E 테스트 작성**
 
-`meeple-api/src/test/kotlin/com/org/meeple/api/match/GetRecommendedTeamE2ETest.kt`:
+`oneulsogae-api/src/test/kotlin/com/org/oneulsogae/api/match/GetRecommendedTeamE2ETest.kt`:
 
 ```kotlin
-package com.org.meeple.api.match
+package com.org.oneulsogae.api.match
 
-import com.org.meeple.common.integration.AbstractIntegrationSupport
-import com.org.meeple.common.integration.expect
-import com.org.meeple.common.integration.get
-import com.org.meeple.common.match.TeamMemberStatus
-import com.org.meeple.common.match.TeamStatus
-import com.org.meeple.common.user.Gender
-import com.org.meeple.infra.fixture.IntegrationUtil
-import com.org.meeple.infra.fixture.MatchUserEntityFixture
-import com.org.meeple.infra.fixture.RecommendedTeamEntityFixture
-import com.org.meeple.infra.match.command.entity.QMatchUserEntity
-import com.org.meeple.infra.match.command.entity.QRecommendedTeamEntity
-import com.org.meeple.infra.match.command.entity.QTeamEntity
-import com.org.meeple.infra.match.command.entity.QTeamMemberEntity
-import com.org.meeple.infra.match.command.entity.TeamEntity
-import com.org.meeple.infra.match.command.entity.TeamMemberEntity
+import com.org.oneulsogae.common.integration.AbstractIntegrationSupport
+import com.org.oneulsogae.common.integration.expect
+import com.org.oneulsogae.common.integration.get
+import com.org.oneulsogae.common.match.TeamMemberStatus
+import com.org.oneulsogae.common.match.TeamStatus
+import com.org.oneulsogae.common.user.Gender
+import com.org.oneulsogae.infra.fixture.IntegrationUtil
+import com.org.oneulsogae.infra.fixture.MatchUserEntityFixture
+import com.org.oneulsogae.infra.fixture.RecommendedTeamEntityFixture
+import com.org.oneulsogae.infra.match.command.entity.QMatchUserEntity
+import com.org.oneulsogae.infra.match.command.entity.QRecommendedTeamEntity
+import com.org.oneulsogae.infra.match.command.entity.QTeamEntity
+import com.org.oneulsogae.infra.match.command.entity.QTeamMemberEntity
+import com.org.oneulsogae.infra.match.command.entity.TeamEntity
+import com.org.oneulsogae.infra.match.command.entity.TeamMemberEntity
 import org.hamcrest.Matchers.hasSize
 import org.hamcrest.Matchers.nullValue
 import java.time.LocalDate
@@ -197,17 +197,17 @@ class GetRecommendedTeamE2ETest : AbstractIntegrationSupport({
 
 - [ ] **Step 2: 테스트 실행 → 컴파일 실패 확인**
 
-Run: `./gradlew :meeple-api:test --tests "com.org.meeple.api.match.GetRecommendedTeamE2ETest"`
+Run: `./gradlew :oneulsogae-api:test --tests "com.org.oneulsogae.api.match.GetRecommendedTeamE2ETest"`
 Expected: FAIL — `RecommendedTeamEntity`/`QRecommendedTeamEntity`/`RecommendedTeamEntityFixture`/엔드포인트 미존재로 컴파일 에러.
 
 - [ ] **Step 3: 엔티티 생성**
 
-`meeple-infra/src/main/kotlin/com/org/meeple/infra/match/command/entity/RecommendedTeamEntity.kt`:
+`oneulsogae-infra/src/main/kotlin/com/org/oneulsogae/infra/match/command/entity/RecommendedTeamEntity.kt`:
 
 ```kotlin
-package com.org.meeple.infra.match.command.entity
+package com.org.oneulsogae.infra.match.command.entity
 
-import com.org.meeple.infra.common.BaseEntity
+import com.org.oneulsogae.infra.common.BaseEntity
 import jakarta.persistence.Column
 import jakarta.persistence.Entity
 import jakarta.persistence.Table
@@ -245,12 +245,12 @@ class RecommendedTeamEntity(
 
 - [ ] **Step 4: 읽기 모델·dao 인터페이스·인포트 생성**
 
-`meeple-core/src/main/kotlin/com/org/meeple/core/match/query/dto/RecommendedTeam.kt`:
+`oneulsogae-core/src/main/kotlin/com/org/oneulsogae/core/match/query/dto/RecommendedTeam.kt`:
 
 ```kotlin
-package com.org.meeple.core.match.query.dto
+package com.org.oneulsogae.core.match.query.dto
 
-import com.org.meeple.common.user.Gender
+import com.org.oneulsogae.common.user.Gender
 import java.time.LocalDate
 
 /**
@@ -274,12 +274,12 @@ data class RecommendedTeamMember(
 )
 ```
 
-`meeple-core/src/main/kotlin/com/org/meeple/core/match/query/dao/GetRecommendedTeamDao.kt`:
+`oneulsogae-core/src/main/kotlin/com/org/oneulsogae/core/match/query/dao/GetRecommendedTeamDao.kt`:
 
 ```kotlin
-package com.org.meeple.core.match.query.dao
+package com.org.oneulsogae.core.match.query.dao
 
-import com.org.meeple.core.match.query.dto.RecommendedTeam
+import com.org.oneulsogae.core.match.query.dto.RecommendedTeam
 
 /**
  * 솔로 유저에게 추천된 팀 조회 dao(query out-port). QueryDSL 구현은 infra가 담당한다.
@@ -291,12 +291,12 @@ interface GetRecommendedTeamDao {
 }
 ```
 
-`meeple-core/src/main/kotlin/com/org/meeple/core/match/query/service/port/in/GetRecommendedTeamUseCase.kt`:
+`oneulsogae-core/src/main/kotlin/com/org/oneulsogae/core/match/query/service/port/in/GetRecommendedTeamUseCase.kt`:
 
 ```kotlin
-package com.org.meeple.core.match.query.service.port.`in`
+package com.org.oneulsogae.core.match.query.service.port.`in`
 
-import com.org.meeple.core.match.query.dto.RecommendedTeam
+import com.org.oneulsogae.core.match.query.dto.RecommendedTeam
 
 /**
  * 팀 없는 솔로 유저에게 추천된 팀을 조회하는 유스케이스(인포트). 추천이 없으면 null.
@@ -309,20 +309,20 @@ interface GetRecommendedTeamUseCase {
 
 - [ ] **Step 5: dao 구현(QueryDSL 조인) 생성**
 
-`meeple-infra/src/main/kotlin/com/org/meeple/infra/match/query/GetRecommendedTeamDaoImpl.kt`:
+`oneulsogae-infra/src/main/kotlin/com/org/oneulsogae/infra/match/query/GetRecommendedTeamDaoImpl.kt`:
 
 ```kotlin
-package com.org.meeple.infra.match.query
+package com.org.oneulsogae.infra.match.query
 
-import com.org.meeple.common.match.TeamMemberStatus
-import com.org.meeple.common.match.TeamStatus
-import com.org.meeple.core.match.query.dao.GetRecommendedTeamDao
-import com.org.meeple.core.match.query.dto.RecommendedTeam
-import com.org.meeple.core.match.query.dto.RecommendedTeamMember
-import com.org.meeple.infra.match.command.entity.QMatchUserEntity
-import com.org.meeple.infra.match.command.entity.QRecommendedTeamEntity
-import com.org.meeple.infra.match.command.entity.QTeamEntity
-import com.org.meeple.infra.match.command.entity.QTeamMemberEntity
+import com.org.oneulsogae.common.match.TeamMemberStatus
+import com.org.oneulsogae.common.match.TeamStatus
+import com.org.oneulsogae.core.match.query.dao.GetRecommendedTeamDao
+import com.org.oneulsogae.core.match.query.dto.RecommendedTeam
+import com.org.oneulsogae.core.match.query.dto.RecommendedTeamMember
+import com.org.oneulsogae.infra.match.command.entity.QMatchUserEntity
+import com.org.oneulsogae.infra.match.command.entity.QRecommendedTeamEntity
+import com.org.oneulsogae.infra.match.command.entity.QTeamEntity
+import com.org.oneulsogae.infra.match.command.entity.QTeamMemberEntity
 import com.querydsl.core.Tuple
 import com.querydsl.core.types.Projections
 import com.querydsl.jpa.impl.JPAQueryFactory
@@ -390,14 +390,14 @@ class GetRecommendedTeamDaoImpl(
 
 - [ ] **Step 6: 조회 서비스 생성**
 
-`meeple-core/src/main/kotlin/com/org/meeple/core/match/query/service/GetRecommendedTeamService.kt`:
+`oneulsogae-core/src/main/kotlin/com/org/oneulsogae/core/match/query/service/GetRecommendedTeamService.kt`:
 
 ```kotlin
-package com.org.meeple.core.match.query.service
+package com.org.oneulsogae.core.match.query.service
 
-import com.org.meeple.core.match.query.dao.GetRecommendedTeamDao
-import com.org.meeple.core.match.query.dto.RecommendedTeam
-import com.org.meeple.core.match.query.service.port.`in`.GetRecommendedTeamUseCase
+import com.org.oneulsogae.core.match.query.dao.GetRecommendedTeamDao
+import com.org.oneulsogae.core.match.query.dto.RecommendedTeam
+import com.org.oneulsogae.core.match.query.service.port.`in`.GetRecommendedTeamUseCase
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 
@@ -418,15 +418,15 @@ class GetRecommendedTeamService(
 
 - [ ] **Step 7: 응답 DTO 생성**
 
-`meeple-api/src/main/kotlin/com/org/meeple/api/match/response/RecommendedTeamResponse.kt`:
+`oneulsogae-api/src/main/kotlin/com/org/oneulsogae/api/match/response/RecommendedTeamResponse.kt`:
 
 ```kotlin
-package com.org.meeple.api.match.response
+package com.org.oneulsogae.api.match.response
 
-import com.org.meeple.common.user.Gender
-import com.org.meeple.core.common.time.ageAt
-import com.org.meeple.core.match.query.dto.RecommendedTeam
-import com.org.meeple.core.match.query.dto.RecommendedTeamMember
+import com.org.oneulsogae.common.user.Gender
+import com.org.oneulsogae.core.common.time.ageAt
+import com.org.oneulsogae.core.match.query.dto.RecommendedTeam
+import com.org.oneulsogae.core.match.query.dto.RecommendedTeamMember
 import java.time.LocalDate
 
 /**
@@ -473,11 +473,11 @@ data class RecommendedTeamResponse(
 
 - [ ] **Step 8: TeamController에 엔드포인트 추가**
 
-`meeple-api/.../match/TeamController.kt` 수정 — import에 추가:
+`oneulsogae-api/.../match/TeamController.kt` 수정 — import에 추가:
 
 ```kotlin
-import com.org.meeple.api.match.response.RecommendedTeamResponse
-import com.org.meeple.core.match.query.service.port.`in`.GetRecommendedTeamUseCase
+import com.org.oneulsogae.api.match.response.RecommendedTeamResponse
+import com.org.oneulsogae.core.match.query.service.port.`in`.GetRecommendedTeamUseCase
 ```
 
 생성자에 의존성 추가(기존 `getReceivedInvitationsUseCase` 다음 줄):
@@ -503,12 +503,12 @@ import com.org.meeple.core.match.query.service.port.`in`.GetRecommendedTeamUseCa
 
 - [ ] **Step 9: 테스트 픽스처 생성**
 
-`meeple-infra/src/testFixtures/kotlin/com/org/meeple/infra/fixture/RecommendedTeamEntityFixture.kt`:
+`oneulsogae-infra/src/testFixtures/kotlin/com/org/oneulsogae/infra/fixture/RecommendedTeamEntityFixture.kt`:
 
 ```kotlin
-package com.org.meeple.infra.fixture
+package com.org.oneulsogae.infra.fixture
 
-import com.org.meeple.infra.match.command.entity.RecommendedTeamEntity
+import com.org.oneulsogae.infra.match.command.entity.RecommendedTeamEntity
 import java.time.LocalDate
 
 /**
@@ -550,22 +550,22 @@ CREATE TABLE recommended_teams (
 
 - [ ] **Step 11: 테스트 실행 → 통과 확인**
 
-Run: `./gradlew :meeple-api:test --tests "com.org.meeple.api.match.GetRecommendedTeamE2ETest"`
+Run: `./gradlew :oneulsogae-api:test --tests "com.org.oneulsogae.api.match.GetRecommendedTeamE2ETest"`
 Expected: PASS (3개 컨텍스트 모두 통과).
 
 - [ ] **Step 12: 커밋**
 
 ```bash
-git add meeple-infra/src/main/kotlin/com/org/meeple/infra/match/command/entity/RecommendedTeamEntity.kt \
-        meeple-core/src/main/kotlin/com/org/meeple/core/match/query/dto/RecommendedTeam.kt \
-        meeple-core/src/main/kotlin/com/org/meeple/core/match/query/dao/GetRecommendedTeamDao.kt \
-        meeple-infra/src/main/kotlin/com/org/meeple/infra/match/query/GetRecommendedTeamDaoImpl.kt \
-        meeple-core/src/main/kotlin/com/org/meeple/core/match/query/service/port/in/GetRecommendedTeamUseCase.kt \
-        meeple-core/src/main/kotlin/com/org/meeple/core/match/query/service/GetRecommendedTeamService.kt \
-        meeple-api/src/main/kotlin/com/org/meeple/api/match/response/RecommendedTeamResponse.kt \
-        meeple-api/src/main/kotlin/com/org/meeple/api/match/TeamController.kt \
-        meeple-infra/src/testFixtures/kotlin/com/org/meeple/infra/fixture/RecommendedTeamEntityFixture.kt \
-        meeple-api/src/test/kotlin/com/org/meeple/api/match/GetRecommendedTeamE2ETest.kt \
+git add oneulsogae-infra/src/main/kotlin/com/org/oneulsogae/infra/match/command/entity/RecommendedTeamEntity.kt \
+        oneulsogae-core/src/main/kotlin/com/org/oneulsogae/core/match/query/dto/RecommendedTeam.kt \
+        oneulsogae-core/src/main/kotlin/com/org/oneulsogae/core/match/query/dao/GetRecommendedTeamDao.kt \
+        oneulsogae-infra/src/main/kotlin/com/org/oneulsogae/infra/match/query/GetRecommendedTeamDaoImpl.kt \
+        oneulsogae-core/src/main/kotlin/com/org/oneulsogae/core/match/query/service/port/in/GetRecommendedTeamUseCase.kt \
+        oneulsogae-core/src/main/kotlin/com/org/oneulsogae/core/match/query/service/GetRecommendedTeamService.kt \
+        oneulsogae-api/src/main/kotlin/com/org/oneulsogae/api/match/response/RecommendedTeamResponse.kt \
+        oneulsogae-api/src/main/kotlin/com/org/oneulsogae/api/match/TeamController.kt \
+        oneulsogae-infra/src/testFixtures/kotlin/com/org/oneulsogae/infra/fixture/RecommendedTeamEntityFixture.kt \
+        oneulsogae-api/src/test/kotlin/com/org/oneulsogae/api/match/GetRecommendedTeamE2ETest.kt \
         docs/migration/recommended_teams.sql
 git commit -m "$(cat <<'EOF'
 feat(match): 솔로 유저 추천 팀(RecommendedTeam) 조회 슬라이스
@@ -580,23 +580,23 @@ EOF
 ## Task 2: 쓰기/배치 슬라이스 (일일 추천 배치 + 관리자 수동 트리거)
 
 **Files:**
-- Create: `meeple-infra/src/main/kotlin/com/org/meeple/infra/match/command/repository/RecommendedTeamJpaRepository.kt`
-- Create: `meeple-scheduler/src/main/kotlin/com/org/meeple/scheduler/match/command/application/port/out/SaveRecommendedTeamPort.kt`
-- Create: `meeple-infra/src/main/kotlin/com/org/meeple/infra/match/command/adapter/RecommendedTeamAdapter.kt`
-- Create: `meeple-scheduler/src/main/kotlin/com/org/meeple/scheduler/match/query/dto/RecommendableSoloUser.kt`
-- Create: `meeple-scheduler/src/main/kotlin/com/org/meeple/scheduler/match/query/dao/GetRecommendableSoloUserDao.kt`
-- Create: `meeple-infra/src/main/kotlin/com/org/meeple/infra/match/query/GetRecommendableSoloUserDaoImpl.kt`
-- Create: `meeple-scheduler/src/main/kotlin/com/org/meeple/scheduler/match/query/dao/GetCandidateTeamDao.kt`
-- Create: `meeple-infra/src/main/kotlin/com/org/meeple/infra/match/query/GetCandidateTeamDaoImpl.kt`
-- Create: `meeple-scheduler/src/main/kotlin/com/org/meeple/scheduler/match/command/domain/RecommendTeamBatchResult.kt`
-- Create: `meeple-scheduler/src/main/kotlin/com/org/meeple/scheduler/match/command/application/port/in/RunRecommendTeamBatchUseCase.kt`
-- Create: `meeple-scheduler/src/main/kotlin/com/org/meeple/scheduler/match/command/application/RunRecommendTeamBatchService.kt`
-- Create: `meeple-scheduler/src/main/kotlin/com/org/meeple/scheduler/match/command/application/RecommendTeamBatchJob.kt`
-- Create: `meeple-api/src/main/kotlin/com/org/meeple/scheduler/match/RecommendTeamBatchScheduler.kt`
-- Create: `meeple-api/src/main/kotlin/com/org/meeple/api/admin/AdminRecommendTeamBatchController.kt`
-- Create: `meeple-api/src/main/kotlin/com/org/meeple/api/admin/response/RecommendTeamBatchResponse.kt`
-- Modify: `meeple-api/src/main/resources/application.yml`
-- Create: `meeple-api/src/test/kotlin/com/org/meeple/api/admin/AdminRecommendTeamBatchE2ETest.kt`
+- Create: `oneulsogae-infra/src/main/kotlin/com/org/oneulsogae/infra/match/command/repository/RecommendedTeamJpaRepository.kt`
+- Create: `oneulsogae-scheduler/src/main/kotlin/com/org/oneulsogae/scheduler/match/command/application/port/out/SaveRecommendedTeamPort.kt`
+- Create: `oneulsogae-infra/src/main/kotlin/com/org/oneulsogae/infra/match/command/adapter/RecommendedTeamAdapter.kt`
+- Create: `oneulsogae-scheduler/src/main/kotlin/com/org/oneulsogae/scheduler/match/query/dto/RecommendableSoloUser.kt`
+- Create: `oneulsogae-scheduler/src/main/kotlin/com/org/oneulsogae/scheduler/match/query/dao/GetRecommendableSoloUserDao.kt`
+- Create: `oneulsogae-infra/src/main/kotlin/com/org/oneulsogae/infra/match/query/GetRecommendableSoloUserDaoImpl.kt`
+- Create: `oneulsogae-scheduler/src/main/kotlin/com/org/oneulsogae/scheduler/match/query/dao/GetCandidateTeamDao.kt`
+- Create: `oneulsogae-infra/src/main/kotlin/com/org/oneulsogae/infra/match/query/GetCandidateTeamDaoImpl.kt`
+- Create: `oneulsogae-scheduler/src/main/kotlin/com/org/oneulsogae/scheduler/match/command/domain/RecommendTeamBatchResult.kt`
+- Create: `oneulsogae-scheduler/src/main/kotlin/com/org/oneulsogae/scheduler/match/command/application/port/in/RunRecommendTeamBatchUseCase.kt`
+- Create: `oneulsogae-scheduler/src/main/kotlin/com/org/oneulsogae/scheduler/match/command/application/RunRecommendTeamBatchService.kt`
+- Create: `oneulsogae-scheduler/src/main/kotlin/com/org/oneulsogae/scheduler/match/command/application/RecommendTeamBatchJob.kt`
+- Create: `oneulsogae-api/src/main/kotlin/com/org/oneulsogae/scheduler/match/RecommendTeamBatchScheduler.kt`
+- Create: `oneulsogae-api/src/main/kotlin/com/org/oneulsogae/api/admin/AdminRecommendTeamBatchController.kt`
+- Create: `oneulsogae-api/src/main/kotlin/com/org/oneulsogae/api/admin/response/RecommendTeamBatchResponse.kt`
+- Modify: `oneulsogae-api/src/main/resources/application.yml`
+- Create: `oneulsogae-api/src/test/kotlin/com/org/oneulsogae/api/admin/AdminRecommendTeamBatchE2ETest.kt`
 
 **Interfaces:**
 - Consumes (Task 1): `RecommendedTeamEntity(userId, teamId, recommendedDate)` (teamId/recommendedDate는 var).
@@ -611,26 +611,26 @@ EOF
 
 - [ ] **Step 1: 실패 E2E 테스트 작성**
 
-`meeple-api/src/test/kotlin/com/org/meeple/api/admin/AdminRecommendTeamBatchE2ETest.kt`:
+`oneulsogae-api/src/test/kotlin/com/org/oneulsogae/api/admin/AdminRecommendTeamBatchE2ETest.kt`:
 
 ```kotlin
-package com.org.meeple.api.admin
+package com.org.oneulsogae.api.admin
 
-import com.org.meeple.common.integration.AbstractIntegrationSupport
-import com.org.meeple.common.integration.expect
-import com.org.meeple.common.integration.post
-import com.org.meeple.common.match.TeamMemberStatus
-import com.org.meeple.common.match.TeamStatus
-import com.org.meeple.common.user.Gender
-import com.org.meeple.infra.fixture.IntegrationUtil
-import com.org.meeple.infra.fixture.MatchUserEntityFixture
-import com.org.meeple.infra.match.command.entity.QMatchUserEntity
-import com.org.meeple.infra.match.command.entity.QRecommendedTeamEntity
-import com.org.meeple.infra.match.command.entity.QTeamEntity
-import com.org.meeple.infra.match.command.entity.QTeamMemberEntity
-import com.org.meeple.infra.match.command.entity.RecommendedTeamEntity
-import com.org.meeple.infra.match.command.entity.TeamEntity
-import com.org.meeple.infra.match.command.entity.TeamMemberEntity
+import com.org.oneulsogae.common.integration.AbstractIntegrationSupport
+import com.org.oneulsogae.common.integration.expect
+import com.org.oneulsogae.common.integration.post
+import com.org.oneulsogae.common.match.TeamMemberStatus
+import com.org.oneulsogae.common.match.TeamStatus
+import com.org.oneulsogae.common.user.Gender
+import com.org.oneulsogae.infra.fixture.IntegrationUtil
+import com.org.oneulsogae.infra.fixture.MatchUserEntityFixture
+import com.org.oneulsogae.infra.match.command.entity.QMatchUserEntity
+import com.org.oneulsogae.infra.match.command.entity.QRecommendedTeamEntity
+import com.org.oneulsogae.infra.match.command.entity.QTeamEntity
+import com.org.oneulsogae.infra.match.command.entity.QTeamMemberEntity
+import com.org.oneulsogae.infra.match.command.entity.RecommendedTeamEntity
+import com.org.oneulsogae.infra.match.command.entity.TeamEntity
+import com.org.oneulsogae.infra.match.command.entity.TeamMemberEntity
 import io.kotest.matchers.shouldBe
 import org.hamcrest.Matchers.greaterThanOrEqualTo
 
@@ -722,17 +722,17 @@ class AdminRecommendTeamBatchE2ETest : AbstractIntegrationSupport({
 
 - [ ] **Step 2: 테스트 실행 → 컴파일 실패 확인**
 
-Run: `./gradlew :meeple-api:test --tests "com.org.meeple.api.admin.AdminRecommendTeamBatchE2ETest"`
+Run: `./gradlew :oneulsogae-api:test --tests "com.org.oneulsogae.api.admin.AdminRecommendTeamBatchE2ETest"`
 Expected: FAIL — 엔드포인트/배치/포트/dao 미존재로 컴파일 에러.
 
 - [ ] **Step 3: 리포지토리 + 저장 포트 + 어댑터(upsert) 생성**
 
-`meeple-infra/.../match/command/repository/RecommendedTeamJpaRepository.kt`:
+`oneulsogae-infra/.../match/command/repository/RecommendedTeamJpaRepository.kt`:
 
 ```kotlin
-package com.org.meeple.infra.match.command.repository
+package com.org.oneulsogae.infra.match.command.repository
 
-import com.org.meeple.infra.match.command.entity.RecommendedTeamEntity
+import com.org.oneulsogae.infra.match.command.entity.RecommendedTeamEntity
 import org.springframework.data.jpa.repository.JpaRepository
 
 /**
@@ -745,10 +745,10 @@ interface RecommendedTeamJpaRepository : JpaRepository<RecommendedTeamEntity, Lo
 }
 ```
 
-`meeple-scheduler/.../match/command/application/port/out/SaveRecommendedTeamPort.kt`:
+`oneulsogae-scheduler/.../match/command/application/port/out/SaveRecommendedTeamPort.kt`:
 
 ```kotlin
-package com.org.meeple.scheduler.match.command.application.port.out
+package com.org.oneulsogae.scheduler.match.command.application.port.out
 
 import java.time.LocalDate
 
@@ -764,14 +764,14 @@ interface SaveRecommendedTeamPort {
 }
 ```
 
-`meeple-infra/.../match/command/adapter/RecommendedTeamAdapter.kt`:
+`oneulsogae-infra/.../match/command/adapter/RecommendedTeamAdapter.kt`:
 
 ```kotlin
-package com.org.meeple.infra.match.command.adapter
+package com.org.oneulsogae.infra.match.command.adapter
 
-import com.org.meeple.infra.match.command.entity.RecommendedTeamEntity
-import com.org.meeple.infra.match.command.repository.RecommendedTeamJpaRepository
-import com.org.meeple.scheduler.match.command.application.port.out.SaveRecommendedTeamPort
+import com.org.oneulsogae.infra.match.command.entity.RecommendedTeamEntity
+import com.org.oneulsogae.infra.match.command.repository.RecommendedTeamJpaRepository
+import com.org.oneulsogae.scheduler.match.command.application.port.out.SaveRecommendedTeamPort
 import org.springframework.stereotype.Component
 import java.time.LocalDate
 
@@ -798,12 +798,12 @@ class RecommendedTeamAdapter(
 
 - [ ] **Step 4: 대상(팀 미소속 솔로 유저) 조회 dao + dto 생성**
 
-`meeple-scheduler/.../match/query/dto/RecommendableSoloUser.kt`:
+`oneulsogae-scheduler/.../match/query/dto/RecommendableSoloUser.kt`:
 
 ```kotlin
-package com.org.meeple.scheduler.match.query.dto
+package com.org.oneulsogae.scheduler.match.query.dto
 
-import com.org.meeple.common.user.Gender
+import com.org.oneulsogae.common.user.Gender
 
 /**
  * 팀 추천을 받을 솔로 유저 read model. (match_user에 있으나 어떤 팀에도 속하지 않은 유저)
@@ -816,12 +816,12 @@ data class RecommendableSoloUser(
 )
 ```
 
-`meeple-scheduler/.../match/query/dao/GetRecommendableSoloUserDao.kt`:
+`oneulsogae-scheduler/.../match/query/dao/GetRecommendableSoloUserDao.kt`:
 
 ```kotlin
-package com.org.meeple.scheduler.match.query.dao
+package com.org.oneulsogae.scheduler.match.query.dao
 
-import com.org.meeple.scheduler.match.query.dto.RecommendableSoloUser
+import com.org.oneulsogae.scheduler.match.query.dto.RecommendableSoloUser
 
 /**
  * 팀 추천 대상(팀 미소속 솔로 유저) 조회 dao. QueryDSL 구현은 infra가 담당한다.
@@ -834,15 +834,15 @@ interface GetRecommendableSoloUserDao {
 }
 ```
 
-`meeple-infra/.../match/query/GetRecommendableSoloUserDaoImpl.kt`:
+`oneulsogae-infra/.../match/query/GetRecommendableSoloUserDaoImpl.kt`:
 
 ```kotlin
-package com.org.meeple.infra.match.query
+package com.org.oneulsogae.infra.match.query
 
-import com.org.meeple.infra.match.command.entity.QMatchUserEntity
-import com.org.meeple.infra.match.command.entity.QTeamMemberEntity
-import com.org.meeple.scheduler.match.query.dao.GetRecommendableSoloUserDao
-import com.org.meeple.scheduler.match.query.dto.RecommendableSoloUser
+import com.org.oneulsogae.infra.match.command.entity.QMatchUserEntity
+import com.org.oneulsogae.infra.match.command.entity.QTeamMemberEntity
+import com.org.oneulsogae.scheduler.match.query.dao.GetRecommendableSoloUserDao
+import com.org.oneulsogae.scheduler.match.query.dto.RecommendableSoloUser
 import com.querydsl.core.types.Projections
 import com.querydsl.jpa.JPAExpressions
 import com.querydsl.jpa.impl.JPAQueryFactory
@@ -889,12 +889,12 @@ class GetRecommendableSoloUserDaoImpl(
 
 - [ ] **Step 5: 후보 팀(반대 성별·같은 권역·ACTIVE) 조회 dao 생성**
 
-`meeple-scheduler/.../match/query/dao/GetCandidateTeamDao.kt`:
+`oneulsogae-scheduler/.../match/query/dao/GetCandidateTeamDao.kt`:
 
 ```kotlin
-package com.org.meeple.scheduler.match.query.dao
+package com.org.oneulsogae.scheduler.match.query.dao
 
-import com.org.meeple.common.user.Gender
+import com.org.oneulsogae.common.user.Gender
 
 /**
  * 추천 후보 팀 1개 조회 dao. QueryDSL 구현은 infra가 담당한다.
@@ -907,17 +907,17 @@ interface GetCandidateTeamDao {
 }
 ```
 
-`meeple-infra/.../match/query/GetCandidateTeamDaoImpl.kt`:
+`oneulsogae-infra/.../match/query/GetCandidateTeamDaoImpl.kt`:
 
 ```kotlin
-package com.org.meeple.infra.match.query
+package com.org.oneulsogae.infra.match.query
 
-import com.org.meeple.common.match.TeamStatus
-import com.org.meeple.common.user.Gender
-import com.org.meeple.infra.match.command.entity.QMatchUserEntity
-import com.org.meeple.infra.match.command.entity.QTeamEntity
-import com.org.meeple.infra.match.command.entity.QTeamMemberEntity
-import com.org.meeple.scheduler.match.query.dao.GetCandidateTeamDao
+import com.org.oneulsogae.common.match.TeamStatus
+import com.org.oneulsogae.common.user.Gender
+import com.org.oneulsogae.infra.match.command.entity.QMatchUserEntity
+import com.org.oneulsogae.infra.match.command.entity.QTeamEntity
+import com.org.oneulsogae.infra.match.command.entity.QTeamMemberEntity
+import com.org.oneulsogae.scheduler.match.query.dao.GetCandidateTeamDao
 import com.querydsl.core.types.dsl.BooleanExpression
 import com.querydsl.jpa.JPAExpressions
 import com.querydsl.jpa.impl.JPAQueryFactory
@@ -979,10 +979,10 @@ class GetCandidateTeamDaoImpl(
 
 - [ ] **Step 6: 배치 결과 VO + 인포트 생성**
 
-`meeple-scheduler/.../match/command/domain/RecommendTeamBatchResult.kt`:
+`oneulsogae-scheduler/.../match/command/domain/RecommendTeamBatchResult.kt`:
 
 ```kotlin
-package com.org.meeple.scheduler.match.command.domain
+package com.org.oneulsogae.scheduler.match.command.domain
 
 /** 팀 추천 배치 실행 요약. */
 data class RecommendTeamBatchResult(
@@ -997,12 +997,12 @@ data class RecommendTeamBatchResult(
 )
 ```
 
-`meeple-scheduler/.../match/command/application/port/in/RunRecommendTeamBatchUseCase.kt`:
+`oneulsogae-scheduler/.../match/command/application/port/in/RunRecommendTeamBatchUseCase.kt`:
 
 ```kotlin
-package com.org.meeple.scheduler.match.command.application.port.`in`
+package com.org.oneulsogae.scheduler.match.command.application.port.`in`
 
-import com.org.meeple.scheduler.match.command.domain.RecommendTeamBatchResult
+import com.org.oneulsogae.scheduler.match.command.domain.RecommendTeamBatchResult
 
 /**
  * 팀 추천 일일 배치 인포트(유스케이스).
@@ -1017,19 +1017,19 @@ interface RunRecommendTeamBatchUseCase {
 
 - [ ] **Step 7: 배치 서비스 생성**
 
-`meeple-scheduler/.../match/command/application/RunRecommendTeamBatchService.kt`:
+`oneulsogae-scheduler/.../match/command/application/RunRecommendTeamBatchService.kt`:
 
 ```kotlin
-package com.org.meeple.scheduler.match.command.application
+package com.org.oneulsogae.scheduler.match.command.application
 
-import com.org.meeple.common.user.Gender
-import com.org.meeple.scheduler.match.command.application.port.`in`.RunRecommendTeamBatchUseCase
-import com.org.meeple.scheduler.match.command.application.port.out.SaveRecommendedTeamPort
-import com.org.meeple.scheduler.match.command.application.port.out.TimeGenerator
-import com.org.meeple.scheduler.match.command.domain.RecommendTeamBatchResult
-import com.org.meeple.scheduler.match.query.dao.GetCandidateTeamDao
-import com.org.meeple.scheduler.match.query.dao.GetRecommendableSoloUserDao
-import com.org.meeple.scheduler.match.query.dto.RecommendableSoloUser
+import com.org.oneulsogae.common.user.Gender
+import com.org.oneulsogae.scheduler.match.command.application.port.`in`.RunRecommendTeamBatchUseCase
+import com.org.oneulsogae.scheduler.match.command.application.port.out.SaveRecommendedTeamPort
+import com.org.oneulsogae.scheduler.match.command.application.port.out.TimeGenerator
+import com.org.oneulsogae.scheduler.match.command.domain.RecommendTeamBatchResult
+import com.org.oneulsogae.scheduler.match.query.dao.GetCandidateTeamDao
+import com.org.oneulsogae.scheduler.match.query.dao.GetRecommendableSoloUserDao
+import com.org.oneulsogae.scheduler.match.query.dto.RecommendableSoloUser
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
@@ -1098,13 +1098,13 @@ class RunRecommendTeamBatchService(
 
 - [ ] **Step 8: 배치 진입점(Job) 생성**
 
-`meeple-scheduler/.../match/command/application/RecommendTeamBatchJob.kt`:
+`oneulsogae-scheduler/.../match/command/application/RecommendTeamBatchJob.kt`:
 
 ```kotlin
-package com.org.meeple.scheduler.match.command.application
+package com.org.oneulsogae.scheduler.match.command.application
 
-import com.org.meeple.scheduler.match.command.application.port.`in`.RunRecommendTeamBatchUseCase
-import com.org.meeple.scheduler.match.command.domain.RecommendTeamBatchResult
+import com.org.oneulsogae.scheduler.match.command.application.port.`in`.RunRecommendTeamBatchUseCase
+import com.org.oneulsogae.scheduler.match.command.domain.RecommendTeamBatchResult
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Component
@@ -1144,47 +1144,47 @@ class RecommendTeamBatchJob(
 
 - [ ] **Step 9: 크론 트리거 + 프로퍼티 추가**
 
-`meeple-api/.../scheduler/match/RecommendTeamBatchScheduler.kt`:
+`oneulsogae-api/.../scheduler/match/RecommendTeamBatchScheduler.kt`:
 
 ```kotlin
-package com.org.meeple.scheduler.match
+package com.org.oneulsogae.scheduler.match
 
-import com.org.meeple.scheduler.match.command.application.RecommendTeamBatchJob
+import com.org.oneulsogae.scheduler.match.command.application.RecommendTeamBatchJob
 import org.springframework.scheduling.annotation.Scheduled
 import org.springframework.stereotype.Component
 
 /**
  * 팀 추천 일일 배치 스케줄러(크론 트리거).
- * 정해진 크론 시각마다 [RecommendTeamBatchJob]을 실행한다. 실행 주기는 meeple.match.recommend-team-batch.cron 프로퍼티로 조정한다.
+ * 정해진 크론 시각마다 [RecommendTeamBatchJob]을 실행한다. 실행 주기는 oneulsogae.match.recommend-team-batch.cron 프로퍼티로 조정한다.
  */
 @Component
 class RecommendTeamBatchScheduler(
 	private val recommendTeamBatchJob: RecommendTeamBatchJob,
 ) {
 
-	@Scheduled(cron = "\${meeple.match.recommend-team-batch.cron}", zone = "Asia/Seoul")
+	@Scheduled(cron = "\${oneulsogae.match.recommend-team-batch.cron}", zone = "Asia/Seoul")
 	fun runRecommendTeam() {
 		recommendTeamBatchJob.run()
 	}
 }
 ```
 
-`meeple-api/src/main/resources/application.yml` 수정 — `meeple.match` 아래 `expire` 블록 다음에 추가:
+`oneulsogae-api/src/main/resources/application.yml` 수정 — `oneulsogae.match` 아래 `expire` 블록 다음에 추가:
 
 ```yaml
     recommend-team-batch:
-      # 팀 없는 솔로 유저에게 결성 팀 추천. 매일 04:00 (Asia/Seoul). 운영에서 MEEPLE_RECOMMEND_TEAM_BATCH_CRON 환경변수로 덮어쓸 수 있다.
-      cron: ${MEEPLE_RECOMMEND_TEAM_BATCH_CRON:0 0 4 * * *}
+      # 팀 없는 솔로 유저에게 결성 팀 추천. 매일 04:00 (Asia/Seoul). 운영에서 ONEULSOGAE_RECOMMEND_TEAM_BATCH_CRON 환경변수로 덮어쓸 수 있다.
+      cron: ${ONEULSOGAE_RECOMMEND_TEAM_BATCH_CRON:0 0 4 * * *}
 ```
 
 - [ ] **Step 10: 관리자 수동 트리거 컨트롤러 + 응답 생성**
 
-`meeple-api/.../admin/response/RecommendTeamBatchResponse.kt`:
+`oneulsogae-api/.../admin/response/RecommendTeamBatchResponse.kt`:
 
 ```kotlin
-package com.org.meeple.api.admin.response
+package com.org.oneulsogae.api.admin.response
 
-import com.org.meeple.scheduler.match.command.domain.RecommendTeamBatchResult
+import com.org.oneulsogae.scheduler.match.command.domain.RecommendTeamBatchResult
 
 /**
  * 팀 추천 배치 실행 결과 응답. (관리자 수동 트리거)
@@ -1211,17 +1211,17 @@ data class RecommendTeamBatchResponse(
 }
 ```
 
-`meeple-api/.../admin/AdminRecommendTeamBatchController.kt`:
+`oneulsogae-api/.../admin/AdminRecommendTeamBatchController.kt`:
 
 ```kotlin
-package com.org.meeple.api.admin
+package com.org.oneulsogae.api.admin
 
-import com.org.meeple.api.admin.response.RecommendTeamBatchResponse
-import com.org.meeple.core.common.error.BusinessException
-import com.org.meeple.core.common.response.ApiResponse
-import com.org.meeple.core.match.MatchErrorCode
-import com.org.meeple.scheduler.match.command.application.RecommendTeamBatchJob
-import com.org.meeple.scheduler.match.command.domain.RecommendTeamBatchResult
+import com.org.oneulsogae.api.admin.response.RecommendTeamBatchResponse
+import com.org.oneulsogae.core.common.error.BusinessException
+import com.org.oneulsogae.core.common.response.ApiResponse
+import com.org.oneulsogae.core.match.MatchErrorCode
+import com.org.oneulsogae.scheduler.match.command.application.RecommendTeamBatchJob
+import com.org.oneulsogae.scheduler.match.command.domain.RecommendTeamBatchResult
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.tags.Tag
 import org.springframework.web.bind.annotation.PostMapping
@@ -1257,32 +1257,32 @@ class AdminRecommendTeamBatchController(
 
 - [ ] **Step 11: 테스트 실행 → 통과 확인**
 
-Run: `./gradlew :meeple-api:test --tests "com.org.meeple.api.admin.AdminRecommendTeamBatchE2ETest"`
+Run: `./gradlew :oneulsogae-api:test --tests "com.org.oneulsogae.api.admin.AdminRecommendTeamBatchE2ETest"`
 Expected: PASS (추천 적재·교체·403·401 모두 통과).
 
 - [ ] **Step 12: Task 1 E2E 회귀 확인 + 커밋**
 
-Run: `./gradlew :meeple-api:test --tests "com.org.meeple.api.match.GetRecommendedTeamE2ETest" --tests "com.org.meeple.api.admin.AdminRecommendTeamBatchE2ETest"`
+Run: `./gradlew :oneulsogae-api:test --tests "com.org.oneulsogae.api.match.GetRecommendedTeamE2ETest" --tests "com.org.oneulsogae.api.admin.AdminRecommendTeamBatchE2ETest"`
 Expected: PASS (양쪽 모두).
 
 ```bash
-git add meeple-infra/src/main/kotlin/com/org/meeple/infra/match/command/repository/RecommendedTeamJpaRepository.kt \
-        meeple-scheduler/src/main/kotlin/com/org/meeple/scheduler/match/command/application/port/out/SaveRecommendedTeamPort.kt \
-        meeple-infra/src/main/kotlin/com/org/meeple/infra/match/command/adapter/RecommendedTeamAdapter.kt \
-        meeple-scheduler/src/main/kotlin/com/org/meeple/scheduler/match/query/dto/RecommendableSoloUser.kt \
-        meeple-scheduler/src/main/kotlin/com/org/meeple/scheduler/match/query/dao/GetRecommendableSoloUserDao.kt \
-        meeple-infra/src/main/kotlin/com/org/meeple/infra/match/query/GetRecommendableSoloUserDaoImpl.kt \
-        meeple-scheduler/src/main/kotlin/com/org/meeple/scheduler/match/query/dao/GetCandidateTeamDao.kt \
-        meeple-infra/src/main/kotlin/com/org/meeple/infra/match/query/GetCandidateTeamDaoImpl.kt \
-        meeple-scheduler/src/main/kotlin/com/org/meeple/scheduler/match/command/domain/RecommendTeamBatchResult.kt \
-        meeple-scheduler/src/main/kotlin/com/org/meeple/scheduler/match/command/application/port/in/RunRecommendTeamBatchUseCase.kt \
-        meeple-scheduler/src/main/kotlin/com/org/meeple/scheduler/match/command/application/RunRecommendTeamBatchService.kt \
-        meeple-scheduler/src/main/kotlin/com/org/meeple/scheduler/match/command/application/RecommendTeamBatchJob.kt \
-        meeple-api/src/main/kotlin/com/org/meeple/scheduler/match/RecommendTeamBatchScheduler.kt \
-        meeple-api/src/main/kotlin/com/org/meeple/api/admin/AdminRecommendTeamBatchController.kt \
-        meeple-api/src/main/kotlin/com/org/meeple/api/admin/response/RecommendTeamBatchResponse.kt \
-        meeple-api/src/main/resources/application.yml \
-        meeple-api/src/test/kotlin/com/org/meeple/api/admin/AdminRecommendTeamBatchE2ETest.kt
+git add oneulsogae-infra/src/main/kotlin/com/org/oneulsogae/infra/match/command/repository/RecommendedTeamJpaRepository.kt \
+        oneulsogae-scheduler/src/main/kotlin/com/org/oneulsogae/scheduler/match/command/application/port/out/SaveRecommendedTeamPort.kt \
+        oneulsogae-infra/src/main/kotlin/com/org/oneulsogae/infra/match/command/adapter/RecommendedTeamAdapter.kt \
+        oneulsogae-scheduler/src/main/kotlin/com/org/oneulsogae/scheduler/match/query/dto/RecommendableSoloUser.kt \
+        oneulsogae-scheduler/src/main/kotlin/com/org/oneulsogae/scheduler/match/query/dao/GetRecommendableSoloUserDao.kt \
+        oneulsogae-infra/src/main/kotlin/com/org/oneulsogae/infra/match/query/GetRecommendableSoloUserDaoImpl.kt \
+        oneulsogae-scheduler/src/main/kotlin/com/org/oneulsogae/scheduler/match/query/dao/GetCandidateTeamDao.kt \
+        oneulsogae-infra/src/main/kotlin/com/org/oneulsogae/infra/match/query/GetCandidateTeamDaoImpl.kt \
+        oneulsogae-scheduler/src/main/kotlin/com/org/oneulsogae/scheduler/match/command/domain/RecommendTeamBatchResult.kt \
+        oneulsogae-scheduler/src/main/kotlin/com/org/oneulsogae/scheduler/match/command/application/port/in/RunRecommendTeamBatchUseCase.kt \
+        oneulsogae-scheduler/src/main/kotlin/com/org/oneulsogae/scheduler/match/command/application/RunRecommendTeamBatchService.kt \
+        oneulsogae-scheduler/src/main/kotlin/com/org/oneulsogae/scheduler/match/command/application/RecommendTeamBatchJob.kt \
+        oneulsogae-api/src/main/kotlin/com/org/oneulsogae/scheduler/match/RecommendTeamBatchScheduler.kt \
+        oneulsogae-api/src/main/kotlin/com/org/oneulsogae/api/admin/AdminRecommendTeamBatchController.kt \
+        oneulsogae-api/src/main/kotlin/com/org/oneulsogae/api/admin/response/RecommendTeamBatchResponse.kt \
+        oneulsogae-api/src/main/resources/application.yml \
+        oneulsogae-api/src/test/kotlin/com/org/oneulsogae/api/admin/AdminRecommendTeamBatchE2ETest.kt
 git commit -m "$(cat <<'EOF'
 feat(match): 솔로 유저 팀 추천 일일 배치 + 관리자 수동 트리거
 

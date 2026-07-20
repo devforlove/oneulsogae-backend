@@ -1,7 +1,7 @@
 # 어드민 회사 이미지 인증 목록 조회 API 설계
 
 **작성일:** 2026-07-05
-**대상 브랜치:** feat/meeple-admin-module
+**대상 브랜치:** feat/oneulsogae-admin-module
 
 ## 목표
 
@@ -13,14 +13,14 @@
 
 - 도메인: `CompanyImageVerification`(core) — `userId`, `imageKey`(S3 오브젝트 키), `status`(제출 시 `PENDING`). 파일은 S3에 비공개 저장, DB엔 키만 보관.
 - 엔티티: `CompanyImageVerificationEntity`(infra) — `idx_user_id` 인덱스 보유, soft delete(`@SQLRestriction`).
-- 상태 enum: `com.org.meeple.common.user.CompanyImageVerificationStatus`(common) — `description` 한글 라벨 보유.
+- 상태 enum: `com.org.oneulsogae.common.user.CompanyImageVerificationStatus`(common) — `description` 한글 라벨 보유.
 - 미러 대상 패턴: `GET /admin/v1/reports`(어드민 신고 조회) — admin query 슬라이스 + infra QueryDSL daoImpl + api 컨트롤러/응답 DTO.
 - S3: `S3Config`(S3Client 빈), `S3Properties`(`app.s3.*`), `S3FileStorageAdapter`(업로드). 이 어댑터 주석이 *"어드민 조회가 필요해지면 presigned GET URL을 발급하는 조회 포트를 추가한다"*고 이미 예고.
 - 테스트: E2E는 실제 S3를 띄우지 않고 `TestFileStorageConfig`가 `FileStoragePort`를 인메모리 페이크로 대체.
 
 ## 아키텍처 (기존 신고 조회 슬라이스 미러링)
 
-`meeple-admin`은 core에 의존하지 않는 자립 모듈 규칙을 유지한다. presign은 admin이 out-port 인터페이스만 소유하고 infra가 S3로 구현한다.
+`oneulsogae-admin`은 core에 의존하지 않는 자립 모듈 규칙을 유지한다. presign은 admin이 out-port 인터페이스만 소유하고 infra가 S3로 구현한다.
 
 ### 엔드포인트
 
@@ -32,7 +32,7 @@ GET /admin/v1/company-image-verifications?page=0&size=20&status=PENDING
 - 최신순(`id desc`) offset 페이징.
 - `/admin/v1/**`는 SecurityConfig의 `hasRole(ADMIN)`으로 이미 보호 → **보안 설정 변경 없음**.
 
-### meeple-admin — `admin/companyverification/query/`
+### oneulsogae-admin — `admin/companyverification/query/`
 
 - `dto/AdminCompanyVerificationView`
   - 필드: `id: Long, userId: Long, nickname: String?, email: String?, status: CompanyImageVerificationStatus, createdAt: LocalDateTime?, imageKey: String, imageUrl: String? = null`
@@ -51,7 +51,7 @@ GET /admin/v1/company-image-verifications?page=0&size=20&status=PENDING
 - `service/port/out/CompanyVerificationImageUrlPort` (query out-port)
   - `fun presignedGetUrl(imageKey: String): String` — admin은 인터페이스만 소유.
 
-### meeple-infra — `infra/user/query/`
+### oneulsogae-infra — `infra/user/query/`
 
 - `GetAdminCompanyVerificationDaoImpl` (`@Component`, QueryDSL)
   - `company_image_verifications`(`v`) ⨝ `user_details`(`nickname`, leftJoin on `userId`) ⨝ `users`(`email`, leftJoin on `id`).
@@ -63,7 +63,7 @@ GET /admin/v1/company-image-verifications?page=0&size=20&status=PENDING
 - `S3Config`: `S3Presigner` 빈 추가(s3Client와 동일하게 region·forcePathStyle·credentials·endpointOverride 구성).
 - `S3Properties`: presigned URL 만료 프로퍼티 추가(예: `presignedGetExpiryMinutes: Long = 10`).
 
-### meeple-api — `api/admin/`
+### oneulsogae-api — `api/admin/`
 
 - `AdminCompanyVerificationController` (`@RequestMapping("/admin/v1/company-image-verifications")`)
   - `GetAdminCompanyVerificationsUseCase` 주입. `status`는 `CompanyImageVerificationStatus?` 파라미터(스프링이 enum 변환, 잘못된 값 400).
@@ -93,5 +93,5 @@ GET /admin/v1/company-image-verifications?page=0&size=20&status=PENDING
 1. `GET /admin/v1/company-image-verifications` 200 — 최신순 페이징, 조인 필드·imageUrl 포함. (E2E 통과)
 2. `?status=PENDING` 등 필터가 해당 상태만 반환. (E2E 통과)
 3. `size`/`page` 페이징 메타데이터(totalElements/totalPages/hasNext) 정확. (E2E 통과)
-4. admin 모듈 core import 0건, `project(":meeple-core")` 미추가 유지.
+4. admin 모듈 core import 0건, `project(":oneulsogae-core")` 미추가 유지.
 5. 전체 빌드·기존 테스트 통과.

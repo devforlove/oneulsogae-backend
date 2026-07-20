@@ -37,8 +37,8 @@
   "success": true,
   "data": {
     "orderer": {
-      "name": "김미플",
-      "email": "meeple@example.com",
+      "name": "김오늘의 소개",
+      "email": "oneulsogae@example.com",
       "phoneNumber": "01012345678"
     }
   },
@@ -56,17 +56,17 @@
 coin 도메인의 query 패턴을 그대로 따른다. payments는 당분간 조회만 있으므로 **`query` 패키지만** 둔다(`matchuser`가 command만 두는 것과 대칭).
 
 ```
-meeple-core/…/core/payments/query/
+oneulsogae-core/…/core/payments/query/
   service/GetCheckoutService.kt           @Service @Transactional(readOnly = true)
   service/port/in/GetCheckoutUseCase.kt   fun getCheckout(userId: Long): CheckoutView
   dao/GetCheckoutOrdererDao.kt            fun findOrdererByUserId(userId: Long): OrdererView?
   dto/CheckoutView.kt                     data class CheckoutView(val orderer: OrdererView)
   dto/OrdererView.kt                      name/email/phoneNumber 모두 String?
 
-meeple-infra/…/infra/payments/query/
+oneulsogae-infra/…/infra/payments/query/
   GetCheckoutOrdererDaoImpl.kt            QueryDSL 2쿼리(JPAQueryFactory만 주입)
 
-meeple-api/…/api/payments/
+oneulsogae-api/…/api/payments/
   PaymentsController.kt                   @RequestMapping("/payments/v1"), GET /checkout
   response/CheckoutResponse.kt            companion object of(CheckoutView)
   response/OrdererResponse.kt             companion object of(OrdererView)
@@ -79,7 +79,7 @@ meeple-api/…/api/payments/
 
 ## 테스트
 
-- **E2E**(`meeple-api`, `AbstractIntegrationSupport` + Testcontainers + 엔티티 픽스처 + `RestAssuredDsl`):
+- **E2E**(`oneulsogae-api`, `AbstractIntegrationSupport` + Testcontainers + 엔티티 픽스처 + `RestAssuredDsl`):
   1. 본인인증 완료 유저(VERIFIED `identity_verifications` 행 + `user_details.phone_number` + `users.email` 픽스처) → 세 필드 정상 반환.
   2. 프로필·본인인증 없는 유저 → `orderer` 각 필드 `null` 반환, 200.
   3. 비인증 요청 → 401.

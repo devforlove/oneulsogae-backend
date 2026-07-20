@@ -108,12 +108,12 @@ findNearestFreshPartner(target, pool):
 
 ## 5. 스케줄 변경
 
-`meeple-api/src/main/resources/application.yml`의 매칭 배치 cron 기본값을 **정오 1회**로 변경:
+`oneulsogae-api/src/main/resources/application.yml`의 매칭 배치 cron 기본값을 **정오 1회**로 변경:
 ```yaml
-meeple:
+oneulsogae:
   match:
     batch:
-      cron: ${MEEPLE_MATCH_BATCH_CRON:0 0 12 * * *}   # 매일 12:00:00 (Asia/Seoul)
+      cron: ${ONEULSOGAE_MATCH_BATCH_CRON:0 0 12 * * *}   # 매일 12:00:00 (Asia/Seoul)
 ```
 `MatchBatchScheduler`(`@Scheduled(zone="Asia/Seoul")`)·`MatchBatchJob`(동시 실행 가드)는 그대로. 환경변수 override 유지.
 
@@ -121,7 +121,7 @@ meeple:
 
 - **`MatchPool` 순수 → Kotest 유닛**: 버킷팅, `freshCandidates`(가용/최근순), `remove`(가용 제외), `contains`.
 - **`DailyMatchBatchService` → 유닛**(가짜 dao/port): 가까운 지역 우선 짝, 재소개/오늘매칭/성사 유저 제외, 같은 런 이중 매칭 방지, 후보 없음 시 스킵.
-- **`RunDailyMatchBatchIntegrationTest` 재작성**(meeple-api E2E, Testcontainers): Redis 정리가 사라져 단순화. 기존 시나리오(같은 지역 PROPOSED·DAILY / 후보 없음 / 성사 제외 / 이중 매칭 방지 / 근접 우선) + **"오늘 매칭된 유저 제외"** 시나리오 추가.
+- **`RunDailyMatchBatchIntegrationTest` 재작성**(oneulsogae-api E2E, Testcontainers): Redis 정리가 사라져 단순화. 기존 시나리오(같은 지역 PROPOSED·DAILY / 후보 없음 / 성사 제외 / 이중 매칭 방지 / 근접 우선) + **"오늘 매칭된 유저 제외"** 시나리오 추가.
 - `MatchIntroducerTest` **삭제**. `AdminMatchBatchE2ETest` 유지(엔드포인트 → Job 경로).
 
 ## 7. 가독성 원칙 (요구사항: 가독성 최우선)

@@ -35,7 +35,7 @@
 
 ### 4.2 엔티티 정의
 
-위치: `meeple-infra/.../match/command/entity/RecommendedTeamEntity.kt`
+위치: `oneulsogae-infra/.../match/command/entity/RecommendedTeamEntity.kt`
 
 ```kotlin
 @Entity
@@ -75,7 +75,7 @@ class RecommendedTeamEntity(
 
 ### 5.1 쓰기 경로 — 일일 배치
 
-- **모듈**: `meeple-scheduler` (core 비의존, 솔로 배치와 동일).
+- **모듈**: `oneulsogae-scheduler` (core 비의존, 솔로 배치와 동일).
 - **out-port**: `SaveRecommendedTeamPort` (upsert). 후보 조회용 dao(대상 솔로 유저, ACTIVE 팀 풀).
 - **infra adapter**: `RecommendedTeamAdapter`가 `SaveRecommendedTeamPort`를 구현(엔티티당 어댑터 하나). `userId` 유니크로 교체.
 - **배치 로직**:

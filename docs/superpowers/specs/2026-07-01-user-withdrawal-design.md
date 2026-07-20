@@ -31,7 +31,7 @@
 
 ## 3. 흐름 A — 탈퇴 (동기)
 
-**HTTP**: `DELETE /users/v1/account` (인증 필수, `@LoginUser AuthUser`). 신규 `UserAccountController`(`meeple-api`).
+**HTTP**: `DELETE /users/v1/account` (인증 필수, `@LoginUser AuthUser`). 신규 `UserAccountController`(`oneulsogae-api`).
 
 **Service**: `WithdrawUserService` (core, `@Transactional`), in-port `WithdrawUserUseCase.withdraw(userId)`.
 
@@ -81,9 +81,9 @@
        // user_details: 전 PII 필드 null + deleted_at=now — 네이티브
   ```
   익명화 규칙은 도메인이 소유: `User.purge()`(상태/이메일/providerId 치환), `UserDetail.anonymize()`(id/userId 외 전부 null). 단 영속화는 소프트삭제 행 대상이라 네이티브 out-port로 반영.
-- **scheduler**(`meeple-scheduler`): `PurgeWithdrawnUserBatchJob`(진입점, 중복실행 방지) + `PurgeWithdrawnUserBatchService` + out-port `GetPurgableWithdrawnUserPort.findIdsWithdrawnBefore(cutoff)` / `PurgeWithdrawnUserPort.purge(userId)` + `TimeGenerator`.
+- **scheduler**(`oneulsogae-scheduler`): `PurgeWithdrawnUserBatchJob`(진입점, 중복실행 방지) + `PurgeWithdrawnUserBatchService` + out-port `GetPurgableWithdrawnUserPort.findIdsWithdrawnBefore(cutoff)` / `PurgeWithdrawnUserPort.purge(userId)` + `TimeGenerator`.
 - **infra**: `GetPurgableWithdrawnUserDaoImpl`(네이티브, `deleted_at < cutoff AND status <> 'WITHDRAWN'`인 id 목록 — 이미 파기된 행 제외=멱등) / `PurgeWithdrawnUserBridgeAdapter`(scheduler `PurgeWithdrawnUserPort` → core `PurgeWithdrawnUserUseCase` 위임) / `anonymize*Port` 네이티브 구현.
-- **meeple-api**: `PurgeWithdrawnUserBatchScheduler`(`@Scheduled(cron=…, zone="Asia/Seoul")`, 하루 1회) + cron config 프로퍼티.
+- **oneulsogae-api**: `PurgeWithdrawnUserBatchScheduler`(`@Scheduled(cron=…, zone="Asia/Seoul")`, 하루 1회) + cron config 프로퍼티.
 
 보존: `coin_histories`/`coin_balances`는 파기 단계에서도 건드리지 않는다. user_id 링크는 익명화된 user를 가리켜 비식별. (전자상거래법 재화 원장 보존)
 
@@ -113,7 +113,7 @@
 ## 9. 테스트 전략
 
 - **도메인 유닛(Kotest)**: `User.purge()`(status/email/providerId 치환), `UserDetail.anonymize()`(전 필드 null). 유예 경계 계산이 도메인에 있으면 함께.
-- **E2E(meeple-api)**:
+- **E2E(oneulsogae-api)**:
   - 탈퇴: ACTIVE 사용자 `DELETE /users/v1/account` → 200, users `deleted_at` set·status 원본 유지, user_details/coin 보존, refresh_token revoked, match_user 제거, 쿠키 삭제.
   - 온보딩 단계 사용자 탈퇴 → 200.
   - 재탈퇴(잔여 토큰 직접 호출) → 404(`USER-001`).

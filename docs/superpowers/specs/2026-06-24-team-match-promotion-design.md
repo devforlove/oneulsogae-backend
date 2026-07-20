@@ -48,10 +48,10 @@
 
 ## 컴포넌트 (추가/변경)
 
-### meeple-common
+### oneulsogae-common
 - `TeamMatchType`에 값 추가: `RECOMMENDED("추천 팀 매칭")`
 
-### meeple-core — `match/command/domain` (솔로 `Match` 미러링, 신규)
+### oneulsogae-core — `match/command/domain` (솔로 `Match` 미러링, 신규)
 - `TeamMatch` (data class)
   - 필드: `id`, `matchedTeams: MatchedTeams`, `introducedDate`, `expiresAt`, `matchType: TeamMatchType`,
     `status: MatchStatus = PROPOSED`, `dateInitAmount`, `dateAcceptAmount`, `deletedAt: LocalDateTime? = null`
@@ -65,17 +65,17 @@
   - `companion fun of(teamIds: List<Long>): MatchedTeams`
   - `fun memberKey(): String = values.map { it.teamId }.sorted().joinToString("-")`
 
-### meeple-core — `match/command/application/port/out` (신규)
+### oneulsogae-core — `match/command/application/port/out` (신규)
 - `GetRecommendedTeamPort { fun findRecommendedTeamId(userId: Long): Long? }`
 - `SaveTeamMatchPort { fun save(teamMatch: TeamMatch): TeamMatch }`
 
-### meeple-core — `match/command/application`
+### oneulsogae-core — `match/command/application`
 - `AcceptTeamInvitationService`
   - 생성자에 `GetRecommendedTeamPort`, `SaveTeamMatchPort` 주입
   - private `promoteRecommendedTeams(team: Team, now: LocalDateTime)` 추가
   - `accept()` 끝에서 `if (accepted.status == TeamStatus.ACTIVE) promoteRecommendedTeams(accepted, now)` 호출
 
-### meeple-infra — `match/command`
+### oneulsogae-infra — `match/command`
 - `TeamMatchJpaRepository : JpaRepository<TeamMatchEntity, Long>` (신규)
 - `MatchedTeamJpaRepository : JpaRepository<MatchedTeamEntity, Long>` (신규)
 - `TeamMatchMapper`: `TeamMatch.toEntity()`(헤더), `TeamMatchEntity.toDomain(matchedTeams)`
@@ -95,7 +95,7 @@
 
 ## 테스트
 
-### 단위 (Kotest, meeple-core)
+### 단위 (Kotest, oneulsogae-core)
 - `TeamMatch.propose()`:
   - `memberKey`가 두 teamId 정렬 후 `"-"` join
   - `expiresAt == now + EXPIRATION`, `introducedDate == now.toLocalDate()`
@@ -103,7 +103,7 @@
   - `dateInitAmount == 40`, `dateAcceptAmount == 40`, `matchType == RECOMMENDED`
 - `MatchedTeams.memberKey()` 정렬/조인 동작 및 `of()` 생성
 
-### E2E (meeple-api)
+### E2E (oneulsogae-api)
 - invite → accept API 호출로 팀 결성, 사전에 두 멤버의 추천 팀(ACTIVE) 시드
 - 시나리오: ①양쪽 추천 → 2매치 ②한쪽만 → 1매치 ③추천 DEACTIVATED → 스킵 ④동일 추천 → 1매치
 - 검증: 현재 `team_matches` 조회 엔드포인트/리드모델이 없으므로, infra `testFixtures`에

@@ -22,7 +22,7 @@
 
 ## 설계
 
-### 1. 인증 경계 (meeple-api)
+### 1. 인증 경계 (oneulsogae-api)
 
 - `SecurityConfig`: `/inquiries/v1`를 `permitAll()` 화이트리스트에 추가한다.
   (기존 `/auth/v1/refresh`·`/ws/chat/**` 등과 동일 방식)
@@ -38,7 +38,7 @@
   - 검증 로직(이메일 형식·메시지 길이)은 그대로. `userId`는 검증 대상이 아니다.
 - `CreateInquiryService`는 시그니처 변경 없이 `command.userId`(nullable)를 그대로 전달한다.
 
-### 3. 영속성 (meeple-infra)
+### 3. 영속성 (oneulsogae-infra)
 
 - `InquiryEntity.userId: Long?` + `@Column(name = "user_id", nullable = true)`.
 - `InquiryMapper`: 타입만 nullable로 맞추면 현재 매핑 그대로 동작한다.
@@ -65,7 +65,7 @@
 
 ## 프론트엔드 (직접 수정하지 않음 — `meeple-frontend`에 안내)
 
-`meeple-backend`만 수정한다. 프론트엔드는 아래만 직접 반영한다:
+`oneulsogae-backend`만 수정한다. 프론트엔드는 아래만 직접 반영한다:
 
 - **호출 자체는 변경 불필요**: 비로그인 상태에서도 동일하게 `POST /inquiries/v1`를 호출한다.
   쿠키/토큰이 없으면 백엔드가 익명 문의로 처리한다.

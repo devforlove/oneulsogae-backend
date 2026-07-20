@@ -4,19 +4,19 @@
 
 **Goal:** 고객센터 1:1 문의를 서버에 저장하는 `inquiry` 도메인의 생성(command) 슬라이스를 추가한다.
 
-**Architecture:** 헥사고날(Ports & Adapters) + CQRS. `meeple-common`에 enum, `meeple-core`에 도메인·포트·서비스, `meeple-infra`에 엔티티·어댑터, `meeple-api`에 컨트롤러·DTO. notice 도메인을 그대로 참조한다. 조회/답변 API는 만들지 않되 엔티티에 `status`/`answer` 컬럼만 선반영한다.
+**Architecture:** 헥사고날(Ports & Adapters) + CQRS. `oneulsogae-common`에 enum, `oneulsogae-core`에 도메인·포트·서비스, `oneulsogae-infra`에 엔티티·어댑터, `oneulsogae-api`에 컨트롤러·DTO. notice 도메인을 그대로 참조한다. 조회/답변 API는 만들지 않되 엔티티에 `status`/`answer` 컬럼만 선반영한다.
 
 **Tech Stack:** Kotlin 2.2.21 / JVM 21, Spring Boot 4.0.6, Spring Data JPA, MySQL, Kotest(DescribeSpec) 유닛, RestAssured + Testcontainers E2E.
 
 ## Global Constraints
 
-- 응답·코드 주석·커밋 메시지는 한국어. **`meeple-backend`만 수정**(프론트엔드 미수정).
+- 응답·코드 주석·커밋 메시지는 한국어. **`oneulsogae-backend`만 수정**(프론트엔드 미수정).
 - 타입 명시: 변수·반환 타입·람다 파라미터 타입 생략 금지.
 - 도메인 검증은 도메인 모델의 `validate…` 함수로 캡슐화(서비스에 `if…throw` 나열 금지).
 - 명령 서비스 `@Transactional`(인자 없음). out-port는 `Save…Port`.
 - enum 컬럼은 `@Enumerated(EnumType.STRING)`. 모든 엔티티는 `BaseEntity` 상속 + soft delete `@SQLRestriction("deleted_at is null")`.
 - 컨트롤러는 in-port `UseCase` 주입, 응답은 `ApiResponse.success(...)` 래핑, 인증 사용자는 `@LoginUser user: AuthUser` → `user.id`.
-- 패키지 루트 `com.org.meeple`. 들여쓰기는 탭(기존 파일과 동일).
+- 패키지 루트 `com.org.oneulsogae`. 들여쓰기는 탭(기존 파일과 동일).
 - 커밋 메시지 형식 `<type>(inquiry): <설명>`, 끝에 `Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>`.
 - 카테고리 enum 값은 프론트 `INQUIRY_CATEGORIES`와 정확히 일치: `ACCOUNT`, `PAYMENT`, `MATCHING`, `REPORT`, `ETC`. message 길이 10~1000.
 
@@ -24,37 +24,37 @@
 
 생성할 파일:
 
-- `meeple-common/src/main/kotlin/com/org/meeple/common/inquiry/InquiryCategory.kt` — 문의 유형 enum
-- `meeple-common/src/main/kotlin/com/org/meeple/common/inquiry/InquiryStatus.kt` — 문의 상태 enum
-- `meeple-core/src/main/kotlin/com/org/meeple/core/inquiry/InquiryErrorCode.kt` — 도메인 에러 코드
-- `meeple-core/src/main/kotlin/com/org/meeple/core/inquiry/command/domain/Inquiry.kt` — 도메인 모델 + 검증
-- `meeple-core/src/main/kotlin/com/org/meeple/core/inquiry/command/application/port/in/CreateInquiryUseCase.kt`
-- `meeple-core/src/main/kotlin/com/org/meeple/core/inquiry/command/application/port/in/command/CreateInquiryCommand.kt`
-- `meeple-core/src/main/kotlin/com/org/meeple/core/inquiry/command/application/port/out/SaveInquiryPort.kt`
-- `meeple-core/src/main/kotlin/com/org/meeple/core/inquiry/command/application/CreateInquiryService.kt`
-- `meeple-infra/src/main/kotlin/com/org/meeple/infra/inquiry/command/entity/InquiryEntity.kt`
-- `meeple-infra/src/main/kotlin/com/org/meeple/infra/inquiry/command/repository/InquiryJpaRepository.kt`
-- `meeple-infra/src/main/kotlin/com/org/meeple/infra/inquiry/command/mapper/InquiryMapper.kt`
-- `meeple-infra/src/main/kotlin/com/org/meeple/infra/inquiry/command/adapter/InquiryAdapter.kt`
-- `meeple-api/src/main/kotlin/com/org/meeple/api/inquiry/InquiryController.kt`
-- `meeple-api/src/main/kotlin/com/org/meeple/api/inquiry/request/CreateInquiryRequest.kt`
-- `meeple-api/src/main/kotlin/com/org/meeple/api/inquiry/response/CreateInquiryResponse.kt`
+- `oneulsogae-common/src/main/kotlin/com/org/oneulsogae/common/inquiry/InquiryCategory.kt` — 문의 유형 enum
+- `oneulsogae-common/src/main/kotlin/com/org/oneulsogae/common/inquiry/InquiryStatus.kt` — 문의 상태 enum
+- `oneulsogae-core/src/main/kotlin/com/org/oneulsogae/core/inquiry/InquiryErrorCode.kt` — 도메인 에러 코드
+- `oneulsogae-core/src/main/kotlin/com/org/oneulsogae/core/inquiry/command/domain/Inquiry.kt` — 도메인 모델 + 검증
+- `oneulsogae-core/src/main/kotlin/com/org/oneulsogae/core/inquiry/command/application/port/in/CreateInquiryUseCase.kt`
+- `oneulsogae-core/src/main/kotlin/com/org/oneulsogae/core/inquiry/command/application/port/in/command/CreateInquiryCommand.kt`
+- `oneulsogae-core/src/main/kotlin/com/org/oneulsogae/core/inquiry/command/application/port/out/SaveInquiryPort.kt`
+- `oneulsogae-core/src/main/kotlin/com/org/oneulsogae/core/inquiry/command/application/CreateInquiryService.kt`
+- `oneulsogae-infra/src/main/kotlin/com/org/oneulsogae/infra/inquiry/command/entity/InquiryEntity.kt`
+- `oneulsogae-infra/src/main/kotlin/com/org/oneulsogae/infra/inquiry/command/repository/InquiryJpaRepository.kt`
+- `oneulsogae-infra/src/main/kotlin/com/org/oneulsogae/infra/inquiry/command/mapper/InquiryMapper.kt`
+- `oneulsogae-infra/src/main/kotlin/com/org/oneulsogae/infra/inquiry/command/adapter/InquiryAdapter.kt`
+- `oneulsogae-api/src/main/kotlin/com/org/oneulsogae/api/inquiry/InquiryController.kt`
+- `oneulsogae-api/src/main/kotlin/com/org/oneulsogae/api/inquiry/request/CreateInquiryRequest.kt`
+- `oneulsogae-api/src/main/kotlin/com/org/oneulsogae/api/inquiry/response/CreateInquiryResponse.kt`
 
 테스트 파일:
 
-- `meeple-api/src/test/kotlin/com/org/meeple/domain/inquiry/InquiryTest.kt` — 도메인 유닛(Kotest)
-- `meeple-api/src/test/kotlin/com/org/meeple/api/inquiry/InquiryCreateE2ETest.kt` — 생성 E2E
+- `oneulsogae-api/src/test/kotlin/com/org/oneulsogae/domain/inquiry/InquiryTest.kt` — 도메인 유닛(Kotest)
+- `oneulsogae-api/src/test/kotlin/com/org/oneulsogae/api/inquiry/InquiryCreateE2ETest.kt` — 생성 E2E
 
 ---
 
 ### Task 1: 공통 enum + 도메인 모델 + 검증 (유닛 테스트)
 
 **Files:**
-- Create: `meeple-common/src/main/kotlin/com/org/meeple/common/inquiry/InquiryCategory.kt`
-- Create: `meeple-common/src/main/kotlin/com/org/meeple/common/inquiry/InquiryStatus.kt`
-- Create: `meeple-core/src/main/kotlin/com/org/meeple/core/inquiry/InquiryErrorCode.kt`
-- Create: `meeple-core/src/main/kotlin/com/org/meeple/core/inquiry/command/domain/Inquiry.kt`
-- Test: `meeple-api/src/test/kotlin/com/org/meeple/domain/inquiry/InquiryTest.kt`
+- Create: `oneulsogae-common/src/main/kotlin/com/org/oneulsogae/common/inquiry/InquiryCategory.kt`
+- Create: `oneulsogae-common/src/main/kotlin/com/org/oneulsogae/common/inquiry/InquiryStatus.kt`
+- Create: `oneulsogae-core/src/main/kotlin/com/org/oneulsogae/core/inquiry/InquiryErrorCode.kt`
+- Create: `oneulsogae-core/src/main/kotlin/com/org/oneulsogae/core/inquiry/command/domain/Inquiry.kt`
+- Test: `oneulsogae-api/src/test/kotlin/com/org/oneulsogae/domain/inquiry/InquiryTest.kt`
 
 **Interfaces:**
 - Produces:
@@ -66,9 +66,9 @@
 
 - [ ] **Step 1: 공통 enum 두 개를 작성한다**
 
-`meeple-common/src/main/kotlin/com/org/meeple/common/inquiry/InquiryCategory.kt`:
+`oneulsogae-common/src/main/kotlin/com/org/oneulsogae/common/inquiry/InquiryCategory.kt`:
 ```kotlin
-package com.org.meeple.common.inquiry
+package com.org.oneulsogae.common.inquiry
 
 /** 고객센터 문의 유형. 프론트 INQUIRY_CATEGORIES와 1:1로 대응한다. */
 enum class InquiryCategory(val description: String) {
@@ -81,9 +81,9 @@ enum class InquiryCategory(val description: String) {
 }
 ```
 
-`meeple-common/src/main/kotlin/com/org/meeple/common/inquiry/InquiryStatus.kt`:
+`oneulsogae-common/src/main/kotlin/com/org/oneulsogae/common/inquiry/InquiryStatus.kt`:
 ```kotlin
-package com.org.meeple.common.inquiry
+package com.org.oneulsogae.common.inquiry
 
 /** 문의 처리 상태. */
 enum class InquiryStatus(val description: String) {
@@ -98,11 +98,11 @@ enum class InquiryStatus(val description: String) {
 
 - [ ] **Step 2: 도메인 에러 코드를 작성한다**
 
-`meeple-core/src/main/kotlin/com/org/meeple/core/inquiry/InquiryErrorCode.kt`:
+`oneulsogae-core/src/main/kotlin/com/org/oneulsogae/core/inquiry/InquiryErrorCode.kt`:
 ```kotlin
-package com.org.meeple.core.inquiry
+package com.org.oneulsogae.core.inquiry
 
-import com.org.meeple.core.common.error.ErrorCode
+import com.org.oneulsogae.core.common.error.ErrorCode
 import org.springframework.http.HttpStatus
 
 enum class InquiryErrorCode(
@@ -119,15 +119,15 @@ enum class InquiryErrorCode(
 
 - [ ] **Step 3: 실패하는 도메인 유닛 테스트를 작성한다**
 
-`meeple-api/src/test/kotlin/com/org/meeple/domain/inquiry/InquiryTest.kt`:
+`oneulsogae-api/src/test/kotlin/com/org/oneulsogae/domain/inquiry/InquiryTest.kt`:
 ```kotlin
-package com.org.meeple.domain.inquiry
+package com.org.oneulsogae.domain.inquiry
 
-import com.org.meeple.common.inquiry.InquiryCategory
-import com.org.meeple.common.inquiry.InquiryStatus
-import com.org.meeple.core.common.error.BusinessException
-import com.org.meeple.core.inquiry.InquiryErrorCode
-import com.org.meeple.core.inquiry.command.domain.Inquiry
+import com.org.oneulsogae.common.inquiry.InquiryCategory
+import com.org.oneulsogae.common.inquiry.InquiryStatus
+import com.org.oneulsogae.core.common.error.BusinessException
+import com.org.oneulsogae.core.inquiry.InquiryErrorCode
+import com.org.oneulsogae.core.inquiry.command.domain.Inquiry
 import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.core.spec.style.DescribeSpec
 import io.kotest.matchers.shouldBe
@@ -183,19 +183,19 @@ class InquiryTest : DescribeSpec({
 
 - [ ] **Step 4: 테스트가 컴파일 실패(미정의)하는지 확인한다**
 
-Run: `./gradlew :meeple-api:test --tests "com.org.meeple.domain.inquiry.InquiryTest"`
+Run: `./gradlew :oneulsogae-api:test --tests "com.org.oneulsogae.domain.inquiry.InquiryTest"`
 Expected: 컴파일 실패 — `Inquiry` / `create` 미정의 (unresolved reference).
 
 - [ ] **Step 5: 도메인 모델을 작성한다**
 
-`meeple-core/src/main/kotlin/com/org/meeple/core/inquiry/command/domain/Inquiry.kt`:
+`oneulsogae-core/src/main/kotlin/com/org/oneulsogae/core/inquiry/command/domain/Inquiry.kt`:
 ```kotlin
-package com.org.meeple.core.inquiry.command.domain
+package com.org.oneulsogae.core.inquiry.command.domain
 
-import com.org.meeple.common.inquiry.InquiryCategory
-import com.org.meeple.common.inquiry.InquiryStatus
-import com.org.meeple.core.common.error.BusinessException
-import com.org.meeple.core.inquiry.InquiryErrorCode
+import com.org.oneulsogae.common.inquiry.InquiryCategory
+import com.org.oneulsogae.common.inquiry.InquiryStatus
+import com.org.oneulsogae.core.common.error.BusinessException
+import com.org.oneulsogae.core.inquiry.InquiryErrorCode
 import java.time.LocalDateTime
 
 private const val MESSAGE_MIN_LENGTH: Int = 10
@@ -206,7 +206,7 @@ private val EMAIL_REGEX: Regex = Regex("^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$")
  * 고객센터 1:1 문의 도메인 모델. (명령 측 — 생성/저장에 쓴다)
  * 접수 시각은 별도 필드 없이 영속성의 created_at(JPA Auditing)으로 갈음한다.
  * status/answer/answeredAt는 추후 운영자 답변용으로 선반영했고, 생성 시에는 PENDING·null이다.
- * 영속성은 [com.org.meeple.infra.inquiry.command.entity.InquiryEntity]가 담당한다.
+ * 영속성은 [com.org.oneulsogae.infra.inquiry.command.entity.InquiryEntity]가 담당한다.
  */
 data class Inquiry(
 	val id: Long = 0,
@@ -253,15 +253,15 @@ data class Inquiry(
 
 - [ ] **Step 6: 테스트 통과를 확인한다**
 
-Run: `./gradlew :meeple-api:test --tests "com.org.meeple.domain.inquiry.InquiryTest"`
+Run: `./gradlew :oneulsogae-api:test --tests "com.org.oneulsogae.domain.inquiry.InquiryTest"`
 Expected: PASS (5개 it 모두 통과).
 
 - [ ] **Step 7: 커밋한다**
 
 ```bash
-git add meeple-common/src/main/kotlin/com/org/meeple/common/inquiry \
-        meeple-core/src/main/kotlin/com/org/meeple/core/inquiry \
-        meeple-api/src/test/kotlin/com/org/meeple/domain/inquiry
+git add oneulsogae-common/src/main/kotlin/com/org/oneulsogae/common/inquiry \
+        oneulsogae-core/src/main/kotlin/com/org/oneulsogae/core/inquiry \
+        oneulsogae-api/src/test/kotlin/com/org/oneulsogae/domain/inquiry
 git commit -m "feat(inquiry): 문의 도메인 모델·enum·검증 추가
 
 Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>"
@@ -272,10 +272,10 @@ Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>"
 ### Task 2: core 포트 + 생성 서비스
 
 **Files:**
-- Create: `meeple-core/src/main/kotlin/com/org/meeple/core/inquiry/command/application/port/in/command/CreateInquiryCommand.kt`
-- Create: `meeple-core/src/main/kotlin/com/org/meeple/core/inquiry/command/application/port/in/CreateInquiryUseCase.kt`
-- Create: `meeple-core/src/main/kotlin/com/org/meeple/core/inquiry/command/application/port/out/SaveInquiryPort.kt`
-- Create: `meeple-core/src/main/kotlin/com/org/meeple/core/inquiry/command/application/CreateInquiryService.kt`
+- Create: `oneulsogae-core/src/main/kotlin/com/org/oneulsogae/core/inquiry/command/application/port/in/command/CreateInquiryCommand.kt`
+- Create: `oneulsogae-core/src/main/kotlin/com/org/oneulsogae/core/inquiry/command/application/port/in/CreateInquiryUseCase.kt`
+- Create: `oneulsogae-core/src/main/kotlin/com/org/oneulsogae/core/inquiry/command/application/port/out/SaveInquiryPort.kt`
+- Create: `oneulsogae-core/src/main/kotlin/com/org/oneulsogae/core/inquiry/command/application/CreateInquiryService.kt`
 
 **Interfaces:**
 - Consumes (Task 1): `Inquiry`, `Inquiry.create(...)`, `InquiryCategory`
@@ -291,9 +291,9 @@ Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>"
 
 `.../port/in/command/CreateInquiryCommand.kt`:
 ```kotlin
-package com.org.meeple.core.inquiry.command.application.port.`in`.command
+package com.org.oneulsogae.core.inquiry.command.application.port.`in`.command
 
-import com.org.meeple.common.inquiry.InquiryCategory
+import com.org.oneulsogae.common.inquiry.InquiryCategory
 
 data class CreateInquiryCommand(
 	val userId: Long,
@@ -307,10 +307,10 @@ data class CreateInquiryCommand(
 
 `.../port/in/CreateInquiryUseCase.kt`:
 ```kotlin
-package com.org.meeple.core.inquiry.command.application.port.`in`
+package com.org.oneulsogae.core.inquiry.command.application.port.`in`
 
-import com.org.meeple.core.inquiry.command.application.port.`in`.command.CreateInquiryCommand
-import com.org.meeple.core.inquiry.command.domain.Inquiry
+import com.org.oneulsogae.core.inquiry.command.application.port.`in`.command.CreateInquiryCommand
+import com.org.oneulsogae.core.inquiry.command.domain.Inquiry
 
 interface CreateInquiryUseCase {
 
@@ -322,9 +322,9 @@ interface CreateInquiryUseCase {
 
 `.../port/out/SaveInquiryPort.kt`:
 ```kotlin
-package com.org.meeple.core.inquiry.command.application.port.out
+package com.org.oneulsogae.core.inquiry.command.application.port.out
 
-import com.org.meeple.core.inquiry.command.domain.Inquiry
+import com.org.oneulsogae.core.inquiry.command.domain.Inquiry
 
 interface SaveInquiryPort {
 
@@ -336,12 +336,12 @@ interface SaveInquiryPort {
 
 `.../application/CreateInquiryService.kt`:
 ```kotlin
-package com.org.meeple.core.inquiry.command.application
+package com.org.oneulsogae.core.inquiry.command.application
 
-import com.org.meeple.core.inquiry.command.application.port.`in`.CreateInquiryUseCase
-import com.org.meeple.core.inquiry.command.application.port.`in`.command.CreateInquiryCommand
-import com.org.meeple.core.inquiry.command.application.port.out.SaveInquiryPort
-import com.org.meeple.core.inquiry.command.domain.Inquiry
+import com.org.oneulsogae.core.inquiry.command.application.port.`in`.CreateInquiryUseCase
+import com.org.oneulsogae.core.inquiry.command.application.port.`in`.command.CreateInquiryCommand
+import com.org.oneulsogae.core.inquiry.command.application.port.out.SaveInquiryPort
+import com.org.oneulsogae.core.inquiry.command.domain.Inquiry
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 
@@ -365,13 +365,13 @@ class CreateInquiryService(
 
 - [ ] **Step 5: core 컴파일을 확인한다**
 
-Run: `./gradlew :meeple-core:compileKotlin`
+Run: `./gradlew :oneulsogae-core:compileKotlin`
 Expected: BUILD SUCCESSFUL.
 
 - [ ] **Step 6: 커밋한다**
 
 ```bash
-git add meeple-core/src/main/kotlin/com/org/meeple/core/inquiry/command/application
+git add oneulsogae-core/src/main/kotlin/com/org/oneulsogae/core/inquiry/command/application
 git commit -m "feat(inquiry): 문의 생성 포트·서비스 추가
 
 Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>"
@@ -382,10 +382,10 @@ Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>"
 ### Task 3: infra 엔티티 + 매퍼 + 어댑터
 
 **Files:**
-- Create: `meeple-infra/src/main/kotlin/com/org/meeple/infra/inquiry/command/entity/InquiryEntity.kt`
-- Create: `meeple-infra/src/main/kotlin/com/org/meeple/infra/inquiry/command/repository/InquiryJpaRepository.kt`
-- Create: `meeple-infra/src/main/kotlin/com/org/meeple/infra/inquiry/command/mapper/InquiryMapper.kt`
-- Create: `meeple-infra/src/main/kotlin/com/org/meeple/infra/inquiry/command/adapter/InquiryAdapter.kt`
+- Create: `oneulsogae-infra/src/main/kotlin/com/org/oneulsogae/infra/inquiry/command/entity/InquiryEntity.kt`
+- Create: `oneulsogae-infra/src/main/kotlin/com/org/oneulsogae/infra/inquiry/command/repository/InquiryJpaRepository.kt`
+- Create: `oneulsogae-infra/src/main/kotlin/com/org/oneulsogae/infra/inquiry/command/mapper/InquiryMapper.kt`
+- Create: `oneulsogae-infra/src/main/kotlin/com/org/oneulsogae/infra/inquiry/command/adapter/InquiryAdapter.kt`
 
 **Interfaces:**
 - Consumes (Task 1·2): `Inquiry`, `InquiryCategory`, `InquiryStatus`, `SaveInquiryPort`, infra `BaseEntity`
@@ -399,11 +399,11 @@ Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>"
 
 `.../command/entity/InquiryEntity.kt`:
 ```kotlin
-package com.org.meeple.infra.inquiry.command.entity
+package com.org.oneulsogae.infra.inquiry.command.entity
 
-import com.org.meeple.common.inquiry.InquiryCategory
-import com.org.meeple.common.inquiry.InquiryStatus
-import com.org.meeple.infra.common.BaseEntity
+import com.org.oneulsogae.common.inquiry.InquiryCategory
+import com.org.oneulsogae.common.inquiry.InquiryStatus
+import com.org.oneulsogae.infra.common.BaseEntity
 import jakarta.persistence.Column
 import jakarta.persistence.Entity
 import jakarta.persistence.EnumType
@@ -457,9 +457,9 @@ class InquiryEntity(
 
 `.../command/repository/InquiryJpaRepository.kt`:
 ```kotlin
-package com.org.meeple.infra.inquiry.command.repository
+package com.org.oneulsogae.infra.inquiry.command.repository
 
-import com.org.meeple.infra.inquiry.command.entity.InquiryEntity
+import com.org.oneulsogae.infra.inquiry.command.entity.InquiryEntity
 import org.springframework.data.jpa.repository.JpaRepository
 
 interface InquiryJpaRepository : JpaRepository<InquiryEntity, Long>
@@ -469,10 +469,10 @@ interface InquiryJpaRepository : JpaRepository<InquiryEntity, Long>
 
 `.../command/mapper/InquiryMapper.kt`:
 ```kotlin
-package com.org.meeple.infra.inquiry.command.mapper
+package com.org.oneulsogae.infra.inquiry.command.mapper
 
-import com.org.meeple.core.inquiry.command.domain.Inquiry
-import com.org.meeple.infra.inquiry.command.entity.InquiryEntity
+import com.org.oneulsogae.core.inquiry.command.domain.Inquiry
+import com.org.oneulsogae.infra.inquiry.command.entity.InquiryEntity
 
 fun InquiryEntity.toDomain(): Inquiry =
 	Inquiry(
@@ -502,13 +502,13 @@ fun Inquiry.toEntity(): InquiryEntity =
 
 `.../command/adapter/InquiryAdapter.kt`:
 ```kotlin
-package com.org.meeple.infra.inquiry.command.adapter
+package com.org.oneulsogae.infra.inquiry.command.adapter
 
-import com.org.meeple.core.inquiry.command.application.port.out.SaveInquiryPort
-import com.org.meeple.core.inquiry.command.domain.Inquiry
-import com.org.meeple.infra.inquiry.command.mapper.toDomain
-import com.org.meeple.infra.inquiry.command.mapper.toEntity
-import com.org.meeple.infra.inquiry.command.repository.InquiryJpaRepository
+import com.org.oneulsogae.core.inquiry.command.application.port.out.SaveInquiryPort
+import com.org.oneulsogae.core.inquiry.command.domain.Inquiry
+import com.org.oneulsogae.infra.inquiry.command.mapper.toDomain
+import com.org.oneulsogae.infra.inquiry.command.mapper.toEntity
+import com.org.oneulsogae.infra.inquiry.command.repository.InquiryJpaRepository
 import org.springframework.stereotype.Component
 
 /**
@@ -527,13 +527,13 @@ class InquiryAdapter(
 
 - [ ] **Step 5: infra 컴파일을 확인한다 (QInquiryEntity 생성 포함)**
 
-Run: `./gradlew :meeple-infra:compileKotlin`
+Run: `./gradlew :oneulsogae-infra:compileKotlin`
 Expected: BUILD SUCCESSFUL. (`QInquiryEntity`가 build 디렉터리에 생성된다.)
 
 - [ ] **Step 6: 커밋한다**
 
 ```bash
-git add meeple-infra/src/main/kotlin/com/org/meeple/infra/inquiry
+git add oneulsogae-infra/src/main/kotlin/com/org/oneulsogae/infra/inquiry
 git commit -m "feat(inquiry): 문의 엔티티·매퍼·어댑터 추가
 
 Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>"
@@ -544,10 +544,10 @@ Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>"
 ### Task 4: api 컨트롤러 + DTO + E2E
 
 **Files:**
-- Create: `meeple-api/src/main/kotlin/com/org/meeple/api/inquiry/request/CreateInquiryRequest.kt`
-- Create: `meeple-api/src/main/kotlin/com/org/meeple/api/inquiry/response/CreateInquiryResponse.kt`
-- Create: `meeple-api/src/main/kotlin/com/org/meeple/api/inquiry/InquiryController.kt`
-- Test: `meeple-api/src/test/kotlin/com/org/meeple/api/inquiry/InquiryCreateE2ETest.kt`
+- Create: `oneulsogae-api/src/main/kotlin/com/org/oneulsogae/api/inquiry/request/CreateInquiryRequest.kt`
+- Create: `oneulsogae-api/src/main/kotlin/com/org/oneulsogae/api/inquiry/response/CreateInquiryResponse.kt`
+- Create: `oneulsogae-api/src/main/kotlin/com/org/oneulsogae/api/inquiry/InquiryController.kt`
+- Test: `oneulsogae-api/src/test/kotlin/com/org/oneulsogae/api/inquiry/InquiryCreateE2ETest.kt`
 
 **Interfaces:**
 - Consumes (Task 1·2·3): `CreateInquiryUseCase`, `CreateInquiryCommand`, `Inquiry`, `InquiryCategory`, `InquiryStatus`, `QInquiryEntity`, `AuthUser`, `@LoginUser`, `ApiResponse`
@@ -560,10 +560,10 @@ Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>"
 
 `.../inquiry/request/CreateInquiryRequest.kt`:
 ```kotlin
-package com.org.meeple.api.inquiry.request
+package com.org.oneulsogae.api.inquiry.request
 
-import com.org.meeple.common.inquiry.InquiryCategory
-import com.org.meeple.core.inquiry.command.application.port.`in`.command.CreateInquiryCommand
+import com.org.oneulsogae.common.inquiry.InquiryCategory
+import com.org.oneulsogae.core.inquiry.command.application.port.`in`.command.CreateInquiryCommand
 import jakarta.validation.constraints.Email
 import jakarta.validation.constraints.NotBlank
 import jakarta.validation.constraints.NotNull
@@ -595,9 +595,9 @@ data class CreateInquiryRequest(
 
 `.../inquiry/response/CreateInquiryResponse.kt`:
 ```kotlin
-package com.org.meeple.api.inquiry.response
+package com.org.oneulsogae.api.inquiry.response
 
-import com.org.meeple.core.inquiry.command.domain.Inquiry
+import com.org.oneulsogae.core.inquiry.command.domain.Inquiry
 
 data class CreateInquiryResponse(
 	val inquiryId: Long,
@@ -613,14 +613,14 @@ data class CreateInquiryResponse(
 
 `.../inquiry/InquiryController.kt`:
 ```kotlin
-package com.org.meeple.api.inquiry
+package com.org.oneulsogae.api.inquiry
 
-import com.org.meeple.api.inquiry.request.CreateInquiryRequest
-import com.org.meeple.api.inquiry.response.CreateInquiryResponse
-import com.org.meeple.auth.AuthUser
-import com.org.meeple.auth.LoginUser
-import com.org.meeple.core.common.response.ApiResponse
-import com.org.meeple.core.inquiry.command.application.port.`in`.CreateInquiryUseCase
+import com.org.oneulsogae.api.inquiry.request.CreateInquiryRequest
+import com.org.oneulsogae.api.inquiry.response.CreateInquiryResponse
+import com.org.oneulsogae.auth.AuthUser
+import com.org.oneulsogae.auth.LoginUser
+import com.org.oneulsogae.core.common.response.ApiResponse
+import com.org.oneulsogae.core.inquiry.command.application.port.`in`.CreateInquiryUseCase
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.tags.Tag
 import jakarta.validation.Valid
@@ -648,18 +648,18 @@ class InquiryController(
 
 - [ ] **Step 4: 실패하는 E2E 테스트를 작성한다**
 
-`meeple-api/src/test/kotlin/com/org/meeple/api/inquiry/InquiryCreateE2ETest.kt`:
+`oneulsogae-api/src/test/kotlin/com/org/oneulsogae/api/inquiry/InquiryCreateE2ETest.kt`:
 ```kotlin
-package com.org.meeple.api.inquiry
+package com.org.oneulsogae.api.inquiry
 
-import com.org.meeple.common.inquiry.InquiryCategory
-import com.org.meeple.common.inquiry.InquiryStatus
-import com.org.meeple.common.integration.AbstractIntegrationSupport
-import com.org.meeple.common.integration.expect
-import com.org.meeple.common.integration.post
-import com.org.meeple.infra.fixture.IntegrationUtil
-import com.org.meeple.infra.inquiry.command.entity.InquiryEntity
-import com.org.meeple.infra.inquiry.command.entity.QInquiryEntity
+import com.org.oneulsogae.common.inquiry.InquiryCategory
+import com.org.oneulsogae.common.inquiry.InquiryStatus
+import com.org.oneulsogae.common.integration.AbstractIntegrationSupport
+import com.org.oneulsogae.common.integration.expect
+import com.org.oneulsogae.common.integration.post
+import com.org.oneulsogae.infra.fixture.IntegrationUtil
+import com.org.oneulsogae.infra.inquiry.command.entity.InquiryEntity
+import com.org.oneulsogae.infra.inquiry.command.entity.QInquiryEntity
 import io.kotest.matchers.shouldBe
 import org.hamcrest.Matchers.notNullValue
 
@@ -724,24 +724,24 @@ class InquiryCreateE2ETest : AbstractIntegrationSupport({
 
 - [ ] **Step 5: E2E가 실패(또는 컴파일 실패)하는지 확인한다**
 
-Run: `./gradlew :meeple-api:test --tests "com.org.meeple.api.inquiry.InquiryCreateE2ETest"`
+Run: `./gradlew :oneulsogae-api:test --tests "com.org.oneulsogae.api.inquiry.InquiryCreateE2ETest"`
 Expected: 처음엔 컨트롤러 미연결/엔드포인트 부재로 실패. (Step 1~3을 먼저 작성했다면 이 단계에서 바로 통과할 수 있으나, 반드시 한 번 실행해 통과를 눈으로 확인한다.)
 
 - [ ] **Step 6: 전체 테스트로 통과를 확인한다**
 
-Run: `./gradlew :meeple-api:test --tests "com.org.meeple.api.inquiry.InquiryCreateE2ETest"`
+Run: `./gradlew :oneulsogae-api:test --tests "com.org.oneulsogae.api.inquiry.InquiryCreateE2ETest"`
 Expected: PASS (3개 컨텍스트 모두 통과 — 401이 다르면 Step 4 주의에 따라 조정 후 재실행).
 
 - [ ] **Step 7: 모듈 전체 테스트로 회귀를 확인한다**
 
-Run: `./gradlew :meeple-api:test`
+Run: `./gradlew :oneulsogae-api:test`
 Expected: BUILD SUCCESSFUL (기존 테스트 포함 전부 통과).
 
 - [ ] **Step 8: 커밋한다**
 
 ```bash
-git add meeple-api/src/main/kotlin/com/org/meeple/api/inquiry \
-        meeple-api/src/test/kotlin/com/org/meeple/api/inquiry
+git add oneulsogae-api/src/main/kotlin/com/org/oneulsogae/api/inquiry \
+        oneulsogae-api/src/test/kotlin/com/org/oneulsogae/api/inquiry
 git commit -m "feat(inquiry): 문의 생성 API·E2E 추가
 
 Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>"

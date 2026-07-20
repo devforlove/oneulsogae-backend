@@ -55,7 +55,7 @@ return savedTeam
 
 ## 변경 / 추가 목록
 
-### match 도메인 (meeple-core)
+### match 도메인 (oneulsogae-core)
 - `TeamMatch.close()` = `copy(status = CLOSED, matchedTeams = matchedTeams.deactivateAll())` (소프트삭제 안 함, 기록 보존)
 - `TeamMatch.isMatched()` = `status == MatchStatus.MATCHED`
 - `TeamMatch.opponentTeamIdOf(teamId): Long` (또는 `MatchedTeams.opponentTeamIdOf`)
@@ -63,7 +63,7 @@ return savedTeam
 - 이벤트 `OpponentsNotifiedOnDisband(disbandedTeamId: Long, recipientUserIds: List<Long>)`
   (match/command/domain/event)
 
-### match 아웃포트 / 어댑터 (meeple-core / meeple-infra)
+### match 아웃포트 / 어댑터 (oneulsogae-core / oneulsogae-infra)
 - 신규 out-port `GetTeamMatchPort.findActiveByTeamId(teamId: Long): List<TeamMatch>` (command 전용, 쿼리 dao 미재사용 = CQRS)
 - `TeamMatchAdapter`가 구현. 파생 쿼리 조합:
   - `matchedTeamJpaRepository.findByTeamId(teamId)` → teamMatchIds
@@ -71,7 +71,7 @@ return savedTeam
   - `matchedTeamJpaRepository.findByTeamMatchIdIn(teamMatchIds)` → 양 팀 묶어 `MatchedTeams` 조립
   - 인덱스: `idx_team_id`, PK IN, `ux_team_match_id_team_id` 선두 seek로 받쳐짐(풀스캔 없음)
 
-### chat 도메인 (meeple-core) — 신규 in-port
+### chat 도메인 (oneulsogae-core) — 신규 in-port
 - `DeactivateChatRoomMemberUseCase.deactivate(matchId: Long, userIds: List<Long>)`
 - `DeactivateChatRoomMemberService`(@Transactional):
   ```
@@ -82,7 +82,7 @@ return savedTeam
 - 일급 컬렉션 `ChatRoomMembers.deactivate(userIds: Set<Long>): ChatRoomMembers`
   = 대상 userId 멤버만 `deactivate()`해서 반환
 
-### 알림 (meeple-common / meeple-core)
+### 알림 (oneulsogae-common / oneulsogae-core)
 - `AlarmType.MANY_TO_MANY_OPPONENT_DISBANDED("상대 팀 해체")` 추가
 - `TeamEventHandler.onOpponentsNotifiedOnDisband(event)`:
   수신자별 `SaveAlarmCommand(userId, type = MANY_TO_MANY_OPPONENT_DISBANDED,
@@ -105,6 +105,6 @@ return savedTeam
 
 - 도메인 유닛(Kotest): `TeamMatch.close()/isMatched()/opponentTeamIdOf()`, `MatchedTeams.deactivateAll()`,
   `ChatRoomMembers.deactivate(userIds)`
-- E2E(meeple-api, AbstractIntegrationSupport):
+- E2E(oneulsogae-api, AbstractIntegrationSupport):
   - MATCHED 매칭 + 채팅방 보유 팀 해체 → 매칭 유지, 나간 팀원 `chatroom_member` DEACTIVE, 상대 팀원 알림 row 생성
   - 미성사(PROPOSED/PARTIALLY_ACCEPTED) 매칭 보유 팀 해체 → 매칭 CLOSED + matched_teams DEACTIVE, 상대 팀원 알림 row 생성

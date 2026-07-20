@@ -4,7 +4,7 @@
 
 ## 도메인 레이어링 (헥사고날)
 
-도메인별 표준 구조 (예: `meeple-core/.../user/`):
+도메인별 표준 구조 (예: `oneulsogae-core/.../user/`):
 
 ```
 <domain>/
@@ -25,10 +25,10 @@
 
 - **Controller**는 Service가 아니라 **in-port `UseCase` 인터페이스**를 주입한다. (예: `MatchController` → `GetMatchesUseCase`)
 - **Service**는 `@Service` + `@Transactional`로 UseCase를 구현하고, 필요한 포트들을 주입받는다.
-- **Adapter**(`@Component`, `meeple-infra`)가 out-port를 구현하고 JPA Repository에 위임하며, `toDomain()`/`toEntity()`로 도메인 ↔ 엔티티를 변환한다.
+- **Adapter**(`@Component`, `oneulsogae-infra`)가 out-port를 구현하고 JPA Repository에 위임하며, `toDomain()`/`toEntity()`로 도메인 ↔ 엔티티를 변환한다.
 - **네이밍**: `<동사><명사>UseCase` / `<동사><명사>Service` (Get/Register/Recommend/Acquire …).
 - **에러 처리**: 도메인별 `ErrorCode` enum + `BusinessException` 사용. (예: `MatchErrorCode.MATCH_NOT_FOUND`)
-- **`user` 도메인이 사용자 프로필을 소유한다.** 계정/식별(`User`, 회사 이메일 인증)뿐 아니라 **프로필(command 도메인 `UserDetail`·query read model `UserDetailView`/`UserWithDetailView`, 닉네임·프로필이미지·성별·나이 등)도 `user` 도메인**에 둔다. (엔티티 `com.org.meeple.infra.user.command.entity.UserDetailEntity`, 에러코드 `UserErrorCode.USER_DETAIL_NOT_FOUND` 등) 프로필은 매칭 산출물이 아니라 여러 도메인이 읽는 공유 사용자 데이터이므로 특정 도메인(match 등)에 두지 않는다.
+- **`user` 도메인이 사용자 프로필을 소유한다.** 계정/식별(`User`, 회사 이메일 인증)뿐 아니라 **프로필(command 도메인 `UserDetail`·query read model `UserDetailView`/`UserWithDetailView`, 닉네임·프로필이미지·성별·나이 등)도 `user` 도메인**에 둔다. (엔티티 `com.org.oneulsogae.infra.user.command.entity.UserDetailEntity`, 에러코드 `UserErrorCode.USER_DETAIL_NOT_FOUND` 등) 프로필은 매칭 산출물이 아니라 여러 도메인이 읽는 공유 사용자 데이터이므로 특정 도메인(match 등)에 두지 않는다.
   - match·chat·alarm 등 **다른 도메인이 프로필을 필요로 하면**: core에서는 user의 in-port(`GetUserDetailUseCase`/`GetUserWithDetailUseCase`)로 참조하고, 목록·상세의 **표시용 프로필 조인**은 infra 읽기 어댑터가 `UserDetailEntity`를 조인해 자기 도메인 read model로 투영한다. (예: `ChatParticipantDaoImpl` → `ChatParticipant`, `MatchWithPartnerDaoImpl` → 상대 프로필)
 
 ## 도메인 간 참조 규칙
@@ -96,7 +96,7 @@ fun getChatRoom(id: Long): ChatRoom {
 
 `chat` 도메인은 위 CQS를 **패키지 수준의 CQRS**로 한 단계 더 분리한 첫 사례다. 명령(쓰기)과 조회(읽기)를 `command`/`query` 패키지로 나누고, 각 측의 영속성 구현 기법(command `*Adapter` ↔ query `*DaoImpl`)까지 구분한다. **이 `command`/`query` 패키지 분리는 이후 `user`·`match`·`coin`·`scheduler` 도메인에도 동일하게 적용했다.** (아래 구조는 chat 예시이며, 다른 도메인도 같은 골격을 따른다. 단 조회 구현 기법은 도메인마다 다를 수 있다 — 조인이면 QueryDSL `*DaoImpl`, 전용 리포지토리 위임이면 그 기법을 따른다)
 
-### core (`meeple-core/.../chat/`)
+### core (`oneulsogae-core/.../chat/`)
 
 ```
 chat/
@@ -117,9 +117,9 @@ chat/
 - 명령·조회 서비스 모두 `application` 대신 **`service`** 패키지명을 쓴다(`command/service`, `query/service`). (chat 한정 — user/match/coin은 `command/application`, `query/service`를 쓴다)
 - 조회 측은 `port/out` 대신 **`dao`(조회 인터페이스, `*Dao`) + `dto`(읽기 모델)**로 둔다. dao는 도메인이 아니라 read model만 반환한다.
 - read model(`query/dto`): `ChatRoomSummary`(목록), `ChatRoomDetail`(상세), `ChatRoomView`(상세 헤더용 방 상태), `ChatParticipant`(+`ChatParticipants`), `ChatMessageView`(+ 일급 컬렉션 `ChatMessageViews`). 일급 컬렉션은 감싸는 read model에 맞춰 명명한다(`ChatMessageViews` ⊃ `ChatMessageView`).
-- `<Domain>ErrorCode`는 command 도메인과 query read model 양쪽이 쓰므로 **도메인 루트**(예 `com.org.meeple.core.chat.ChatErrorCode`, `com.org.meeple.core.coin.CoinErrorCode`)에 둔다. (command에 두면 query→command 결합이 생긴다)
+- `<Domain>ErrorCode`는 command 도메인과 query read model 양쪽이 쓰므로 **도메인 루트**(예 `com.org.oneulsogae.core.chat.ChatErrorCode`, `com.org.oneulsogae.core.coin.CoinErrorCode`)에 둔다. (command에 두면 query→command 결합이 생긴다)
 
-### infra (`meeple-infra/.../chat/`)
+### infra (`oneulsogae-infra/.../chat/`)
 
 ```
 chat/

@@ -20,7 +20,7 @@ v1 checkout은 주문자 정보만 반환하고 모임·금액은 offline API가
 {
   "success": true,
   "data": {
-    "orderer": { "name": "김미플", "email": "orderer@test.com", "phoneNumber": "01012345678" },
+    "orderer": { "name": "김오늘의 소개", "email": "orderer@test.com", "phoneNumber": "01012345678" },
     "product": {
       "gatheringId": 1, "scheduleId": 3, "gender": "MALE",
       "title": "보드게임 모임", "imageUrl": "https://…(presigned)", "region": "서울 강남구",

@@ -19,7 +19,7 @@
 
 ## 변경 대상
 
-### 1. HTTP 경계 — `meeple-api`
+### 1. HTTP 경계 — `oneulsogae-api`
 
 `TeamMatchController`에 엔드포인트 추가:
 
@@ -31,9 +31,9 @@ DELETE /team-matches/v1/{teamMatchId}  → ApiResponse<Unit>
 - `endTeamMatchUseCase.endTeamMatch(user.id, teamMatchId)` 위임 후 `ApiResponse.success()`.
 - 컨트롤러에 `EndTeamMatchUseCase` 주입 추가.
 
-### 2. in-port — `meeple-core`
+### 2. in-port — `oneulsogae-core`
 
-`com.org.meeple.core.match.command.application.port.in.EndTeamMatchUseCase`
+`com.org.oneulsogae.core.match.command.application.port.in.EndTeamMatchUseCase`
 
 ```kotlin
 interface EndTeamMatchUseCase {
@@ -42,9 +42,9 @@ interface EndTeamMatchUseCase {
 }
 ```
 
-### 3. Service — `meeple-core`
+### 3. Service — `oneulsogae-core`
 
-`com.org.meeple.core.match.command.application.EndTeamMatchService`
+`com.org.oneulsogae.core.match.command.application.EndTeamMatchService`
 
 `EndMatchService`(흐름) + `SendTeamInterestService`(행위자 팀 식별)를 합친 구조.
 
@@ -87,7 +87,7 @@ override fun endTeamMatch(userId: Long, teamMatchId: Long) {
 
 트랜잭션 경계는 1:1과 동일: 매칭 상태 변경 + 채팅 처리는 한 트랜잭션(원자성), 알림만 커밋 후 best-effort.
 
-### 4. 도메인 모델 — `meeple-core` (1:1 `Match` 미러)
+### 4. 도메인 모델 — `oneulsogae-core` (1:1 `Match` 미러)
 
 `TeamMatch`:
 
@@ -141,7 +141,7 @@ fun leave(now: LocalDateTime): MatchedTeam =
 >
 > 설계 메모 2 (soft delete on leave의 결과): `TeamMatchAdapter.findById`는 `matched_teams`를 `@SQLRestriction("deleted_at is null")` 엔티티로 로드하므로, **한 팀이 나간(soft delete된) 뒤 그 팀 매칭을 다시 조회하면 나간 팀 행이 빠진 채(상대 팀만) 로드된다.** 모든 정상 흐름은 이 상태에서도 올바르게 동작한다(마지막 팀이 나갈 때 남은 한 팀만 로드돼도 `allDeactivated()=true`로 헤더 CLOSED 판정, 알림 미발송이 성립). 부수 효과로 **이미 나간 팀이 종료를 다시 호출하면 그 팀이 참가 팀 목록에서 빠져 로드되어 `findByActiveMember`가 null → `NOT_TEAM_MATCH_PARTICIPANT`(403)** 가 된다(1:1의 409와 다른 지점). 그래서 `validateTerminable`에는 "이미 나간 팀" 검사를 넣지 않는다(도달 불가능). 또한 즉시 soft delete라 `findActiveByTeamId`에서 나간 팀이 그 매칭을 더 이상 진행 중으로 보지 않는다.
 
-### 5. ErrorCode — `meeple-core`
+### 5. ErrorCode — `oneulsogae-core`
 
 `TeamMatchErrorCode`에 추가 (1:1 `MatchErrorCode.MATCH_NOT_MATCHED` 미러):
 
@@ -153,7 +153,7 @@ TEAM_MATCH_NOT_MATCHED("TEAM-MATCH-004", "성사된 팀 매칭만 종료할 수 
 
 ### 6. 도메인 이벤트 + 핸들러 + 알림 타입
 
-이벤트 `com.org.meeple.core.match.command.domain.event.TeamMatchEnded`:
+이벤트 `com.org.oneulsogae.core.match.command.domain.event.TeamMatchEnded`:
 
 ```kotlin
 /**
@@ -203,14 +203,14 @@ MANY_TO_MANY_MATCH_ENDED("매칭 종료"),
 
 ## 테스트
 
-### 유닛 (Kotest, `meeple-core`)
+### 유닛 (Kotest, `oneulsogae-core`)
 
 - `TeamMatch.validateTerminable`: 비참가 팀(`NOT_TEAM_MATCH_PARTICIPANT`), CLOSED(`TEAM_MATCH_ALREADY_CLOSED`), 미성사(`TEAM_MATCH_NOT_MATCHED`), 정상(예외 없음).
 - `TeamMatch.leave`: 상대 팀 활성 → 내 팀만 DEACTIVE+deletedAt, 헤더는 MATCHED 유지. 상대 팀 이미 DEACTIVE → 헤더까지 CLOSED+deletedAt.
 - `TeamMatch.isLastActiveTeam`: 상대 활성 → false, 상대 DEACTIVE → true.
 - `MatchedTeams` 신규 메서드(`isLastActiveTeam`/`allDeactivated`/`leave`).
 
-### E2E (`meeple-api`, `AbstractIntegrationSupport` + 픽스처)
+### E2E (`oneulsogae-api`, `AbstractIntegrationSupport` + 픽스처)
 
 - 정상 종료: 내 팀 `matched_team` 비활성·soft delete(조회에서 제외)·우리 팀원 채팅 멤버 비활성·상대 팀 유지·상대 팀 두 명에 알림 생성(`MANY_TO_MANY_MATCH_ENDED`, `fromTeamId`=나간 팀, `link`=`/`).
 - 비참가자 → 403(`NOT_TEAM_MATCH_PARTICIPANT`).

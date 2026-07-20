@@ -10,7 +10,7 @@
 
 ## Global Constraints
 
-- **`meeple-admin`은 `meeple-core`를 의존하지 않는다** (admin 소스 `com.org.meeple.core.*` 0건).
+- **`oneulsogae-admin`은 `oneulsogae-core`를 의존하지 않는다** (admin 소스 `com.org.oneulsogae.core.*` 0건).
 - match_user 갱신은 **단일 컬럼 부분갱신 + 행 없으면 no-op**(기존 `updateRefuseSameCompanyIntro` 관례). 예외 없음.
 - 명령 서비스 `@Transactional`(user_details·match_user 원자적). 타입 명시. 커밋 형식 `<type>(admin): <설명>`.
 
@@ -19,10 +19,10 @@
 ## Task 1: admin out-port + infra 구현 + 서비스 배선
 
 **Files:**
-- Create: `meeple-admin/src/main/kotlin/com/org/meeple/admin/companyverification/command/application/port/out/UpdateMatchUserCompanyNamePort.kt`
-- Modify: `meeple-admin/src/main/kotlin/com/org/meeple/admin/companyverification/command/application/ReviewCompanyImageVerificationService.kt`
-- Modify: `meeple-infra/src/main/kotlin/com/org/meeple/infra/matchuser/command/repository/MatchUserJpaRepository.kt`
-- Modify: `meeple-infra/src/main/kotlin/com/org/meeple/infra/matchuser/command/adapter/MatchUserAdapter.kt`
+- Create: `oneulsogae-admin/src/main/kotlin/com/org/oneulsogae/admin/companyverification/command/application/port/out/UpdateMatchUserCompanyNamePort.kt`
+- Modify: `oneulsogae-admin/src/main/kotlin/com/org/oneulsogae/admin/companyverification/command/application/ReviewCompanyImageVerificationService.kt`
+- Modify: `oneulsogae-infra/src/main/kotlin/com/org/oneulsogae/infra/matchuser/command/repository/MatchUserJpaRepository.kt`
+- Modify: `oneulsogae-infra/src/main/kotlin/com/org/oneulsogae/infra/matchuser/command/adapter/MatchUserAdapter.kt`
 
 **Interfaces:**
 - Produces: `UpdateMatchUserCompanyNamePort.updateCompanyName(userId: Long, companyName: String)`; `MatchUserJpaRepository.updateCompanyName(userId, companyName): Int`.
@@ -32,7 +32,7 @@
 `UpdateMatchUserCompanyNamePort.kt`:
 
 ```kotlin
-package com.org.meeple.admin.companyverification.command.application.port.out
+package com.org.oneulsogae.admin.companyverification.command.application.port.out
 
 /**
  * 매칭 읽기 모델(match_user)의 회사명을 갱신하는 out-port.
@@ -66,7 +66,7 @@ fun interface UpdateMatchUserCompanyNamePort {
 `MatchUserAdapter.kt`의 import에 추가:
 
 ```kotlin
-import com.org.meeple.admin.companyverification.command.application.port.out.UpdateMatchUserCompanyNamePort
+import com.org.oneulsogae.admin.companyverification.command.application.port.out.UpdateMatchUserCompanyNamePort
 ```
 
 클래스 선언의 구현 인터페이스 목록에 `UpdateMatchUserCompanyNamePort`를 추가한다:
@@ -89,7 +89,7 @@ import com.org.meeple.admin.companyverification.command.application.port.out.Upd
 `ReviewCompanyImageVerificationService.kt`의 import에 추가:
 
 ```kotlin
-import com.org.meeple.admin.companyverification.command.application.port.out.UpdateMatchUserCompanyNamePort
+import com.org.oneulsogae.admin.companyverification.command.application.port.out.UpdateMatchUserCompanyNamePort
 ```
 
 클래스 KDoc에서 "[알려진 제약 — 보류] ..." 문단(6줄)을 제거하고 그 자리에 한 줄로 대체:
@@ -121,19 +121,19 @@ class ReviewCompanyImageVerificationService(
 
 - [ ] **Step 5: 컴파일 확인 + core 비의존 확인**
 
-Run: `./gradlew :meeple-api:compileKotlin -q`
+Run: `./gradlew :oneulsogae-api:compileKotlin -q`
 Expected: 성공(exit 0).
 
-Run: `grep -rn "com.org.meeple.core" meeple-admin/src --include="*.kt" | wc -l | tr -d ' '`
+Run: `grep -rn "com.org.oneulsogae.core" oneulsogae-admin/src --include="*.kt" | wc -l | tr -d ' '`
 Expected: `0`
 
 - [ ] **Step 6: 커밋**
 
 ```bash
-git add meeple-admin/src/main/kotlin/com/org/meeple/admin/companyverification/command/application/port/out/UpdateMatchUserCompanyNamePort.kt \
-        meeple-admin/src/main/kotlin/com/org/meeple/admin/companyverification/command/application/ReviewCompanyImageVerificationService.kt \
-        meeple-infra/src/main/kotlin/com/org/meeple/infra/matchuser/command/repository/MatchUserJpaRepository.kt \
-        meeple-infra/src/main/kotlin/com/org/meeple/infra/matchuser/command/adapter/MatchUserAdapter.kt
+git add oneulsogae-admin/src/main/kotlin/com/org/oneulsogae/admin/companyverification/command/application/port/out/UpdateMatchUserCompanyNamePort.kt \
+        oneulsogae-admin/src/main/kotlin/com/org/oneulsogae/admin/companyverification/command/application/ReviewCompanyImageVerificationService.kt \
+        oneulsogae-infra/src/main/kotlin/com/org/oneulsogae/infra/matchuser/command/repository/MatchUserJpaRepository.kt \
+        oneulsogae-infra/src/main/kotlin/com/org/oneulsogae/infra/matchuser/command/adapter/MatchUserAdapter.kt
 git commit -m "feat(admin): 회사 이미지 인증 승인 시 match_user.company_name 동기화
 
 admin UpdateMatchUserCompanyNamePort(infra MatchUserAdapter 구현, @Modifying 부분갱신·행없으면 no-op)을
@@ -147,7 +147,7 @@ Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>"
 ## Task 2: E2E 검증
 
 **Files:**
-- Modify: `meeple-api/src/test/kotlin/com/org/meeple/api/admin/AdminCompanyVerificationReviewE2ETest.kt`
+- Modify: `oneulsogae-api/src/test/kotlin/com/org/oneulsogae/api/admin/AdminCompanyVerificationReviewE2ETest.kt`
 
 **Interfaces:**
 - Consumes: `POST .../{id}/approve`, `MatchUserEntityFixture.create(userId, companyName, ...)`, `QMatchUserEntity`.
@@ -157,9 +157,9 @@ Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>"
 `AdminCompanyVerificationReviewE2ETest.kt`의 import에 추가(없으면):
 
 ```kotlin
-import com.org.meeple.infra.fixture.MatchUserEntityFixture
-import com.org.meeple.infra.matchuser.command.entity.MatchUserEntity
-import com.org.meeple.infra.matchuser.command.entity.QMatchUserEntity
+import com.org.oneulsogae.infra.fixture.MatchUserEntityFixture
+import com.org.oneulsogae.infra.matchuser.command.entity.MatchUserEntity
+import com.org.oneulsogae.infra.matchuser.command.entity.QMatchUserEntity
 ```
 
 파일 상단 헬퍼(`verificationById`/`detailByUserId` 근처)에 추가:
@@ -188,13 +188,13 @@ approve `describe` 블록에 케이스 추가:
 
 			post("/admin/v1/company-image-verifications/$id/approve") {
 				bearer(adminAccessTokenFor(9901L))
-				jsonBody("""{"companyName":"미플"}""")
+				jsonBody("""{"companyName":"오늘의 소개"}""")
 			} expect {
 				status(200)
 			}
 
-			detailByUserId(userId).companyName shouldBe "미플"
-			matchUserByUserId(userId).companyName shouldBe "미플"
+			detailByUserId(userId).companyName shouldBe "오늘의 소개"
+			matchUserByUserId(userId).companyName shouldBe "오늘의 소개"
 		}
 ```
 
@@ -206,7 +206,7 @@ approve `describe` 블록에 케이스 추가:
 
 - [ ] **Step 2: E2E 실행**
 
-Run: `./gradlew :meeple-api:test --tests "com.org.meeple.api.admin.AdminCompanyVerificationReviewE2ETest" -q`
+Run: `./gradlew :oneulsogae-api:test --tests "com.org.oneulsogae.api.admin.AdminCompanyVerificationReviewE2ETest" -q`
 Expected: PASS(신규 케이스 포함 7). 실패 시: match_user 갱신 안 되면 어댑터/쿼리·서비스 호출 점검; match_user 행 없이도 기존 승인 케이스가 통과하는지(no-op) 확인. 확신 안 서면 BLOCKED.
 
 - [ ] **Step 3: 전체 빌드 확인**
@@ -217,7 +217,7 @@ Expected: 성공(exit 0).
 - [ ] **Step 4: 커밋**
 
 ```bash
-git add meeple-api/src/test/kotlin/com/org/meeple/api/admin/AdminCompanyVerificationReviewE2ETest.kt
+git add oneulsogae-api/src/test/kotlin/com/org/oneulsogae/api/admin/AdminCompanyVerificationReviewE2ETest.kt
 git commit -m "test(admin): 승인 시 match_user 회사명 동기화 E2E 추가
 
 match_user 행이 있는 유저를 승인하면 user_details와 match_user 회사명이 함께 바뀜을 검증한다.

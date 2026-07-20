@@ -9,7 +9,7 @@
 
 ## 구성
 
-- **의존성**: `software.amazon.awssdk:sesv2` — 기존 AWS SDK BOM(2.46.21) 아래 추가(meeple-infra).
+- **의존성**: `software.amazon.awssdk:sesv2` — 기존 AWS SDK BOM(2.46.21) 아래 추가(oneulsogae-infra).
 - **`SesProperties`** (`app.ses`, `@ConfigurationPropertiesScan` 자동 등록): `region`(기본 `ap-northeast-2`, env `SES_REGION`), `fromAddress`(기본 `no-reply@meeple.life`, env `SES_FROM_ADDRESS`). 운영 EC2 `.env` 추가 없이 기본값으로 동작.
 - **`SesConfig`** (`@Configuration @Profile("prod")`): `SesV2Client` 빈 — 리전 + `DefaultCredentialsProvider`(IAM 인스턴스 롤) + `UrlConnectionHttpClient`. 로컬 엔드포인트 override 없음(로컬은 스텁 유지 — YAGNI). `destroyMethod = "close"`.
 
@@ -24,19 +24,19 @@
 
 ## 메일 내용 (텍스트, UTF-8)
 
-- 제목: `[미플] 회사 이메일 인증번호` / `[미플] 학교 이메일 인증번호`
+- 제목: `[오늘의 소개] 회사 이메일 인증번호` / `[오늘의 소개] 학교 이메일 인증번호`
 - 본문 (회사, 학교는 "회사"→"학교"만 다름):
   ```
   인증번호: {code}
 
-  미플에서 요청하신 회사 이메일 인증번호입니다.
+  오늘의 소개에서 요청하신 회사 이메일 인증번호입니다.
   10분 안에 화면에 입력해 주세요.
 
   본인이 요청하지 않았다면 이 메일을 무시하셔도 됩니다.
   ```
   (10분은 도메인 `CODE_TTL`과 일치. HTML 템플릿은 이번 범위 밖)
 
-## 설정 추가 (`meeple-api/src/main/resources/application.yml`)
+## 설정 추가 (`oneulsogae-api/src/main/resources/application.yml`)
 
 `app.s3` 블록 뒤에:
 

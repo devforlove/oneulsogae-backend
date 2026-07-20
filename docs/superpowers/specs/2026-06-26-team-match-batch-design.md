@@ -2,7 +2,7 @@
 
 ## 목표
 
-2:2 팀 매칭을 위한 일일 배치 `TeamMatchBatchJob`을 `meeple-scheduler`에 추가한다.
+2:2 팀 매칭을 위한 일일 배치 `TeamMatchBatchJob`을 `oneulsogae-scheduler`에 추가한다.
 기존 `SoloMatchBatchJob`(1:1)과 동일한 골격으로, **결성(ACTIVE) 팀끼리** 지역 근접 기반으로 소개(`team_matches` PROPOSED)를 만든다.
 
 ## 요구사항 (확정)
@@ -15,13 +15,13 @@
 3. **매칭 규칙**: 반대 성별 팀끼리(팀은 동성 구성). 지역 근접순으로 가까운 권역부터, 최근접 상위 N권역은 순서를 섞는다(`RegionShuffler`). 같은 권역 내 후보가 여럿이면 **팀 최근 로그인순**(구성원 최신 로그인 시각이 빠른 팀 우선).
 4. **저장**: 성사 후보 한 쌍을 `TeamMatch.propose(teamA, teamB, DAILY, now)`로 `team_matches`(PROPOSED) + `matched_teams`(WAITING)에 적재.
 5. **풀 1회 매칭**: 한 팀은 이번 실행에서 한 번만 매칭한다(매칭되면 양 팀을 풀에서 제거 — solo `MatchPool`과 동일).
-6. **크론**: 매일 13:00 (Asia/Seoul), `MEEPLE_TEAM_MATCH_BATCH_CRON`로 덮어쓰기, local 프로파일은 1분마다.
+6. **크론**: 매일 13:00 (Asia/Seoul), `ONEULSOGAE_TEAM_MATCH_BATCH_CRON`로 덮어쓰기, local 프로파일은 1분마다.
 
 ## 아키텍처 (solo 미러링)
 
-`meeple-scheduler`는 core에 비의존 → 자체 포트/DTO를 정의하고, core 도메인을 아는 `meeple-infra` 어댑터가 구현을 잇는다.
+`oneulsogae-scheduler`는 core에 비의존 → 자체 포트/DTO를 정의하고, core 도메인을 아는 `oneulsogae-infra` 어댑터가 구현을 잇는다.
 
-### meeple-scheduler (신규)
+### oneulsogae-scheduler (신규)
 - `query/dto/MatchableTeam.kt` — `(teamId, gender, regionId, lastLoginAt)` 읽기 모델. `lastLoginAt` = 팀 구성원 최신 로그인.
 - `query/dto/MatchedTeamIds.kt` — `Set<Long>` 일급 컬렉션.
 - `query/dao/GetMatchableTeamDao.kt` — `findMatchableTeams(loginAfter): List<MatchableTeam>`.
@@ -33,14 +33,14 @@
 - `command/application/TeamMatchBatchService.kt` — `RunTeamMatchBatchUseCase` 구현. (`RegionProximityPort`/`RegionShuffler`/`TimeGenerator` 재사용)
 - `command/adapter/TeamMatchBatchJob.kt` — 진입점 + `AtomicBoolean` 중복 실행 가드.
 
-### meeple-infra (신규/확장)
+### oneulsogae-infra (신규/확장)
 - `match/query/GetMatchableTeamDaoImpl.kt` — QueryDSL. `teams(status=ACTIVE)` ⋈ `team_members(status=ACTIVE)` ⋈ `match_user(userId)`, 팀별 group by, `max(last_login_at) >= loginAfter` having, select `team.id, team.gender, team.regionId, max(last_login_at)`.
 - `match/query/GetTeamMatchRecordDaoImpl.kt` — QueryDSL. `existsByPair`(member_key 동등), `findMatchedTeamIds`(MATCHED 헤더 ⋈ ACTIVE matched_teams), `findTeamIdsIntroducedOn`(introduced_date 동등).
 - `match/command/adapter/TeamMatchAdapter.kt` — `SaveTeamMatchRecordPort` 추가 구현 → `save(TeamMatch.propose(..., DAILY, now))`. (TeamMatchEntity 어댑터 1개 유지)
 
-### meeple-api (신규)
-- `scheduler/match/TeamMatchBatchScheduler.kt` — `@Scheduled(cron = "${meeple.match.team-match-batch.cron}")` → `TeamMatchBatchJob.run()`.
-- `application.yml` — `meeple.match.team-match-batch.cron` 기본 `0 0 13 * * *`, local 1분.
+### oneulsogae-api (신규)
+- `scheduler/match/TeamMatchBatchScheduler.kt` — `@Scheduled(cron = "${oneulsogae.match.team-match-batch.cron}")` → `TeamMatchBatchJob.run()`.
+- `application.yml` — `oneulsogae.match.team-match-batch.cron` 기본 `0 0 13 * * *`, local 1분.
 
 ## 매칭 알고리즘 (TeamMatchBatchService.run)
 
@@ -60,7 +60,7 @@ for target in matchables:
 
 ## 테스트
 
-`meeple-api` 통합 테스트 `RunTeamMatchBatchIntegrationTest` (Testcontainers, `RunRecommendedTeamBatchIntegrationTest` 미러):
+`oneulsogae-api` 통합 테스트 `RunTeamMatchBatchIntegrationTest` (Testcontainers, `RunRecommendedTeamBatchIntegrationTest` 미러):
 - 반대 성별·근접 권역의 ACTIVE 팀 둘(각 구성원 2주 내 로그인) → `team_matches` PROPOSED 1건 생성.
 - 구성원이 2주 내 로그인 안 함 → 제외.
 - 팀이 ACTIVE 아님 → 제외.

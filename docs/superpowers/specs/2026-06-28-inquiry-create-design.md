@@ -24,7 +24,7 @@ meeple-frontend 고객센터 "문의하기" 화면(`src/domains/inquiry`)이 현
 
 ## 모듈별 구성
 
-### meeple-common — `com.org.meeple.common.inquiry`
+### oneulsogae-common — `com.org.oneulsogae.common.inquiry`
 
 `InquiryCategory(val description: String)` — 프론트 `INQUIRY_CATEGORIES`와 1:1:
 - `ACCOUNT("계정·로그인")`, `PAYMENT("결제·코인")`, `MATCHING("매칭·채팅")`, `REPORT("신고·이용 제한")`, `ETC("기타 문의")`
@@ -32,7 +32,7 @@ meeple-frontend 고객센터 "문의하기" 화면(`src/domains/inquiry`)이 현
 `InquiryStatus(val description: String)`:
 - `PENDING("대기")`, `ANSWERED("답변완료")`
 
-### meeple-infra — `com.org.meeple.infra.inquiry.command`
+### oneulsogae-infra — `com.org.oneulsogae.infra.inquiry.command`
 
 `entity/InquiryEntity.kt` — `BaseEntity` 상속(id·createdAt·updatedAt·deletedAt, soft delete `@SQLRestriction("deleted_at is null")`). 테이블 `inquiries`.
 
@@ -51,7 +51,7 @@ meeple-frontend 고객센터 "문의하기" 화면(`src/domains/inquiry`)이 현
 - `mapper/InquiryMapper.kt` — `toDomain()` / `toEntity()` 확장함수
 - `adapter/InquiryAdapter.kt` — `@Component`, `SaveInquiryPort` 구현(엔티티당 어댑터 하나)
 
-### meeple-core — `com.org.meeple.core.inquiry.command`
+### oneulsogae-core — `com.org.oneulsogae.core.inquiry.command`
 
 `domain/Inquiry.kt`:
 ```
@@ -69,7 +69,7 @@ data class Inquiry(
 - `create(userId, category, email, message)` 팩토리: `validateInquiry(email, message)` 호출 후 `status = PENDING`으로 생성.
 - `validateInquiry(email, message)`: 이메일 형식 위반 → `INVALID_EMAIL`, message 길이 < 10 → `MESSAGE_TOO_SHORT`, > 1000 → `MESSAGE_TOO_LONG`. `BusinessException(InquiryErrorCode.*)` 던짐.
 
-`InquiryErrorCode` (`com.org.meeple.core.inquiry`):
+`InquiryErrorCode` (`com.org.oneulsogae.core.inquiry`):
 - `INVALID_EMAIL("INQ-001", "유효한 이메일 형식이 아닙니다.", BAD_REQUEST)`
 - `MESSAGE_TOO_SHORT("INQ-002", "문의 내용은 최소 10자 이상이어야 합니다.", BAD_REQUEST)`
 - `MESSAGE_TOO_LONG("INQ-003", "문의 내용은 1000자 이하여야 합니다.", BAD_REQUEST)`
@@ -82,7 +82,7 @@ data class Inquiry(
 서비스:
 - `application/CreateInquiryService.kt` — `@Service @Transactional`, `SaveInquiryPort` 주입, `saveInquiryPort.save(Inquiry.create(...))`
 
-### meeple-api — `com.org.meeple.api.inquiry`
+### oneulsogae-api — `com.org.oneulsogae.api.inquiry`
 
 - `InquiryController.kt` — `@RestController @RequestMapping("/inquiries/v1")`, `@PostMapping` + `@LoginUser user: AuthUser`, `ApiResponse.success(CreateInquiryResponse.of(...))` 반환. `createInquiryUseCase` in-port 주입.
 - `request/CreateInquiryRequest.kt` — `category`(`@NotNull`, `InquiryCategory`), `email`(`@NotBlank @Email`), `message`(`@NotBlank @Size(min=10, max=1000)`). `toCommand(userId)` 로 변환.
@@ -104,7 +104,7 @@ POST /inquiries/v1 (@LoginUser)
 ## 테스트
 
 - **도메인 유닛(Kotest)**: `Inquiry.create` — 정상 생성 시 `status == PENDING`·`answer == null`; 무효 이메일 → `INVALID_EMAIL`; message 9자 → `MESSAGE_TOO_SHORT`; 1001자 → `MESSAGE_TOO_LONG`; 경계값(10자·1000자) 통과.
-- **E2E (`meeple-api`)**: 인증 사용자로 `POST /inquiries/v1` 성공 → 응답 `inquiryId` 존재 + 저장 확인. (필요 시) 무효 입력 400.
+- **E2E (`oneulsogae-api`)**: 인증 사용자로 `POST /inquiries/v1` 성공 → 응답 `inquiryId` 존재 + 저장 확인. (필요 시) 무효 입력 400.
 
 ## 프론트엔드 연동 안내 (백엔드는 수정하지 않음)
 

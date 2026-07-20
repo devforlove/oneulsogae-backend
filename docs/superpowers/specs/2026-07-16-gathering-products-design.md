@@ -24,7 +24,7 @@ products로 옮기지 않고 gathering_schedules에 남긴다.
 | product 생성 로직 위치 | `GatheringSchedule.create()` 도메인이 `GatheringProducts`(일급 컬렉션)를 구성. 서비스는 저장만 오케스트레이션 |
 | 운영 DDL | 이번엔 코드만. 운영 반영 SQL은 본 문서에 기록해두고 별도 세션에서 적용 |
 
-## 1. 공용 타입 (meeple-common)
+## 1. 공용 타입 (oneulsogae-common)
 
 `common/gathering/GatheringProductType.kt`:
 
@@ -32,7 +32,7 @@ products로 옮기지 않고 gathering_schedules에 남긴다.
 - `EARLY_BIRD` — 얼리버드가(선착순 유효 시 적용)
 - `DISCOUNT` — 얼리버드 소진 후 적용되는 할인가
 
-## 2. 신규 엔티티 (meeple-infra)
+## 2. 신규 엔티티 (oneulsogae-infra)
 
 `GatheringProductEntity` → 테이블 `gathering_products`:
 
@@ -55,7 +55,7 @@ products로 옮기지 않고 gathering_schedules에 남긴다.
 - 할인율(%)은 어디에도 저장하지 않는다. 버림 나눗셈 때문에 금액에서 율을 정확히 역산할 수 없으므로,
   어드민 상세 응답의 `earlyBirdDiscountRate`는 남/녀 얼리버드가(저장 금액)로 대체된다. (어드민 프론트 수정 필요)
 
-## 4. 생성 흐름 (meeple-admin)
+## 4. 생성 흐름 (oneulsogae-admin)
 
 - 요청/커맨드(`CreateGatheringScheduleRequest`/`CreateGatheringScheduleCommand`)는 기존 형태 유지.
 - `GatheringSchedule.create()`가 기존 검증(시간 범위·얼리버드 세트·범위) 후

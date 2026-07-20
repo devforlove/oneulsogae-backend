@@ -1,0 +1,279 @@
+package com.org.oneulsogae.domain.match
+
+import com.org.oneulsogae.common.match.TeamMemberStatus
+import com.org.oneulsogae.common.match.TeamStatus
+import com.org.oneulsogae.common.user.Gender
+import com.org.oneulsogae.core.common.error.BusinessException
+import com.org.oneulsogae.core.teammatch.TeamErrorCode
+import com.org.oneulsogae.core.teammatch.command.domain.Team
+import com.org.oneulsogae.core.teammatch.command.domain.TeamMember
+import com.org.oneulsogae.core.teammatch.command.domain.TeamMembers
+import io.kotest.assertions.throwables.shouldThrow
+import io.kotest.core.spec.style.DescribeSpec
+import io.kotest.matchers.collections.shouldContainExactlyInAnyOrder
+import io.kotest.matchers.shouldBe
+import java.time.LocalDateTime
+
+/**
+ * [Team] 도메인 유닛 테스트.
+ * 프레임워크·인프라 없이 순수 도메인 로직(초대 결성, 입력 검증)을 검증한다.
+ */
+class TeamTest : DescribeSpec({
+
+	val ownerId: Long = 1L
+	val invitedUserId: Long = 2L
+	val validIntroduction: String = "함께 즐겁게 활동할 팀이에요"
+
+	describe("invite - 팀 결성") {
+		it("초대자와 초대 대상을 구성원으로 담아 초대중(INVITING) 팀을 결성한다") {
+			val team: Team = Team.invite(
+				ownerId = ownerId,
+				ownerGender = Gender.MALE,
+				invitedUserId = invitedUserId,
+				invitedGender = Gender.MALE,
+				name = "우리팀",
+				introduction = validIntroduction,
+				regionId = 1L,
+			)
+
+			team.status shouldBe TeamStatus.INVITING
+			team.name shouldBe "우리팀"
+			team.introduction shouldBe validIntroduction
+			// 활동지역 id(regions FK)를 보관한다.
+			team.regionId shouldBe 1L
+			team.members.userIds() shouldContainExactlyInAnyOrder listOf(ownerId, invitedUserId)
+
+			val statusByUserId: Map<Long, TeamMemberStatus> = team.members.values.associate { it.userId to it.status }
+			statusByUserId[ownerId] shouldBe TeamMemberStatus.ACTIVE
+			statusByUserId[invitedUserId] shouldBe TeamMemberStatus.INVITED
+		}
+
+		it("앞뒤 공백을 제거한 이름·소개로 결성한다") {
+			val team: Team = Team.invite(ownerId, Gender.MALE, invitedUserId, Gender.MALE, "  우리팀  ", "  $validIntroduction  ", 1L)
+
+			team.name shouldBe "우리팀"
+			team.introduction shouldBe validIntroduction
+			team.regionId shouldBe 1L
+		}
+	}
+
+	describe("invite - 입력 검증") {
+		it("자기 자신을 초대하면 CANNOT_INVITE_SELF를 던진다") {
+			val ex: BusinessException = shouldThrow {
+				Team.invite(ownerId, Gender.MALE, ownerId, Gender.MALE, "우리팀", validIntroduction, 1L)
+			}
+
+			ex.errorCode shouldBe TeamErrorCode.CANNOT_INVITE_SELF
+		}
+
+		it("초대 대상이 다른 성별이면 MUST_INVITE_SAME_GENDER를 던진다") {
+			val ex: BusinessException = shouldThrow {
+				Team.invite(ownerId, Gender.MALE, invitedUserId, Gender.FEMALE, "우리팀", validIntroduction, 1L)
+			}
+
+			ex.errorCode shouldBe TeamErrorCode.MUST_INVITE_SAME_GENDER
+		}
+
+		// 이름·소개 형식(공백·길이) 검증은 도메인이 아니라 요청(InviteTeamRequest의 Bean Validation)이 담당한다.
+		// (해당 케이스는 InviteTeamE2ETest의 요청 검증 테스트로 커버)
+	}
+
+	describe("acceptInvitation - 초대 수락") {
+		fun invitingTeam(): Team =
+			Team(
+				name = "우리팀",
+				gender = Gender.MALE,
+				regionId = 1L,
+				members = TeamMembers(
+					listOf(
+						TeamMember(teamId = 0, userId = ownerId, status = TeamMemberStatus.ACTIVE),
+						TeamMember(teamId = 0, userId = invitedUserId, status = TeamMemberStatus.INVITED),
+					),
+				),
+				status = TeamStatus.INVITING,
+			)
+
+		it("초대받은 구성원이 수락하면 ACTIVE가 되고 전원 ACTIVE이므로 ACTIVE로 전이한다") {
+			val formed: Team = invitingTeam().acceptInvitation(invitedUserId)
+
+			formed.status shouldBe TeamStatus.ACTIVE
+			formed.members.find(invitedUserId)!!.status shouldBe TeamMemberStatus.ACTIVE
+		}
+
+		it("INVITING이 아니면 INVALID_TEAM_STATUS를 던진다") {
+			val ex: BusinessException = shouldThrow {
+				invitingTeam().copy(status = TeamStatus.ACTIVE).acceptInvitation(invitedUserId)
+			}
+
+			ex.errorCode shouldBe TeamErrorCode.INVALID_TEAM_STATUS
+		}
+
+		it("구성원이 아니면 NOT_TEAM_MEMBER를 던진다") {
+			val ex: BusinessException = shouldThrow { invitingTeam().acceptInvitation(999L) }
+
+			ex.errorCode shouldBe TeamErrorCode.NOT_TEAM_MEMBER
+		}
+
+		it("이미 ACTIVE인(초대받지 않은) 구성원이 수락하면 NOT_INVITED_MEMBER를 던진다") {
+			val ex: BusinessException = shouldThrow { invitingTeam().acceptInvitation(ownerId) }
+
+			ex.errorCode shouldBe TeamErrorCode.NOT_INVITED_MEMBER
+		}
+	}
+
+	describe("withdrawInvitation - 거절·초대취소") {
+		val now: LocalDateTime = LocalDateTime.of(2026, 6, 20, 12, 0)
+
+		fun invitingTeam(): Team =
+			Team(
+				name = "우리팀",
+				gender = Gender.MALE,
+				regionId = 1L,
+				members = TeamMembers(
+					listOf(
+						TeamMember(teamId = 0, userId = ownerId, status = TeamMemberStatus.ACTIVE),
+						TeamMember(teamId = 0, userId = invitedUserId, status = TeamMemberStatus.INVITED),
+					),
+				),
+				status = TeamStatus.INVITING,
+			)
+
+		it("INVITING 팀의 구성원이 철회하면 DEACTIVATED + 전원 비활성·soft delete가 된다") {
+			val deactivated: Team = invitingTeam().withdrawInvitation(ownerId, now)
+
+			deactivated.status shouldBe TeamStatus.DEACTIVATED
+			deactivated.deletedAt shouldBe now
+			deactivated.members.values.forEach { it.status shouldBe TeamMemberStatus.DEACTIVE }
+		}
+
+		it("INVITING이 아니면 INVALID_TEAM_STATUS를 던진다") {
+			val ex: BusinessException = shouldThrow {
+				invitingTeam().copy(status = TeamStatus.ACTIVE).withdrawInvitation(ownerId, now)
+			}
+			ex.errorCode shouldBe TeamErrorCode.INVALID_TEAM_STATUS
+		}
+
+		it("구성원이 아니면 NOT_TEAM_MEMBER를 던진다") {
+			val ex: BusinessException = shouldThrow { invitingTeam().withdrawInvitation(999L, now) }
+			ex.errorCode shouldBe TeamErrorCode.NOT_TEAM_MEMBER
+		}
+	}
+
+	describe("update - 팀 정보 수정") {
+		fun invitingTeam(status: TeamStatus = TeamStatus.INVITING): Team =
+			Team(
+				name = "우리팀",
+				gender = Gender.MALE,
+				regionId = 1L,
+				introduction = validIntroduction,
+				members = TeamMembers(
+					listOf(
+						TeamMember(teamId = 0, userId = ownerId, status = TeamMemberStatus.ACTIVE),
+						TeamMember(teamId = 0, userId = invitedUserId, status = TeamMemberStatus.INVITED),
+					),
+				),
+				status = status,
+			)
+
+		it("INVITING 팀의 구성원이 수정하면 이름·소개·활동지역이 바뀐다 (상태·구성원은 유지)") {
+			val updated: Team = invitingTeam().update(ownerId, "새 팀 이름", "새롭게 바꾼 팀 소개입니다", 2L)
+
+			updated.name shouldBe "새 팀 이름"
+			updated.introduction shouldBe "새롭게 바꾼 팀 소개입니다"
+			updated.regionId shouldBe 2L
+			updated.status shouldBe TeamStatus.INVITING
+			updated.members.userIds() shouldContainExactlyInAnyOrder listOf(ownerId, invitedUserId)
+		}
+
+		it("ACTIVE 팀도 구성원이 수정할 수 있다") {
+			val updated: Team = invitingTeam(TeamStatus.ACTIVE).update(invitedUserId, "새 팀 이름", "새롭게 바꾼 팀 소개입니다", 2L)
+
+			updated.name shouldBe "새 팀 이름"
+			updated.status shouldBe TeamStatus.ACTIVE
+		}
+
+		it("앞뒤 공백을 제거한 이름·소개로 수정한다") {
+			val updated: Team = invitingTeam().update(ownerId, "  새 팀 이름  ", "  새롭게 바꾼 팀 소개입니다  ", 2L)
+
+			updated.name shouldBe "새 팀 이름"
+			updated.introduction shouldBe "새롭게 바꾼 팀 소개입니다"
+		}
+
+		it("DEACTIVATED 팀이면 INVALID_TEAM_STATUS를 던진다") {
+			val ex: BusinessException = shouldThrow {
+				invitingTeam(TeamStatus.DEACTIVATED).update(ownerId, "새 팀 이름", "새롭게 바꾼 팀 소개입니다", 2L)
+			}
+			ex.errorCode shouldBe TeamErrorCode.INVALID_TEAM_STATUS
+		}
+
+		it("구성원이 아니면 NOT_TEAM_MEMBER를 던진다") {
+			val ex: BusinessException = shouldThrow {
+				invitingTeam().update(999L, "새 팀 이름", "새롭게 바꾼 팀 소개입니다", 2L)
+			}
+			ex.errorCode shouldBe TeamErrorCode.NOT_TEAM_MEMBER
+		}
+	}
+
+	describe("disband - 해체·떠나기 (구성원 단위)") {
+		val now: LocalDateTime = LocalDateTime.of(2026, 6, 20, 12, 0)
+
+		fun formedTeam(status: TeamStatus = TeamStatus.ACTIVE): Team =
+			Team(
+				name = "우리팀",
+				gender = Gender.MALE,
+				regionId = 1L,
+				members = TeamMembers(
+					listOf(
+						TeamMember(teamId = 0, userId = ownerId, status = TeamMemberStatus.ACTIVE),
+						TeamMember(teamId = 0, userId = invitedUserId, status = TeamMemberStatus.ACTIVE),
+					),
+				),
+				status = status,
+			)
+
+		it("ACTIVE 팀의 한 구성원이 떠나면 DISBANDED가 되고, 떠난 구성원만 비활성·soft delete된다 (팀 헤더는 유지)") {
+			val disbanded: Team = formedTeam().disband(invitedUserId, now)
+
+			// 남은 활성 구성원(owner)이 있어 팀은 DISBANDED, 헤더는 소프트 삭제하지 않는다.
+			disbanded.status shouldBe TeamStatus.DISBANDED
+			disbanded.deletedAt shouldBe null
+			// 떠난 구성원만 DEACTIVE + deletedAt, 남은 구성원은 ACTIVE 유지.
+			val left: TeamMember = disbanded.members.find(invitedUserId)!!
+			left.status shouldBe TeamMemberStatus.DEACTIVE
+			left.deletedAt shouldBe now
+			disbanded.members.find(ownerId)!!.status shouldBe TeamMemberStatus.ACTIVE
+			disbanded.activeMemberIds() shouldBe listOf(ownerId)
+		}
+
+		it("DISBANDED 팀의 마지막 구성원이 떠나면 DEACTIVATED + 팀 헤더까지 soft delete된다") {
+			// owner가 먼저 떠나 DISBANDED가 된 팀에서, 남은 invited가 마저 떠난다.
+			val afterFirst: Team = formedTeam().disband(ownerId, now)
+			afterFirst.status shouldBe TeamStatus.DISBANDED
+
+			val deactivated: Team = afterFirst.disband(invitedUserId, now)
+
+			deactivated.status shouldBe TeamStatus.DEACTIVATED
+			deactivated.deletedAt shouldBe now
+			deactivated.activeMemberIds() shouldBe emptyList()
+		}
+
+		it("ACTIVE/DISBANDED가 아니면 INVALID_TEAM_STATUS를 던진다") {
+			val ex: BusinessException = shouldThrow {
+				formedTeam(TeamStatus.INVITING).disband(ownerId, now)
+			}
+			ex.errorCode shouldBe TeamErrorCode.INVALID_TEAM_STATUS
+		}
+
+		it("구성원이 아니면 NOT_TEAM_MEMBER를 던진다") {
+			val ex: BusinessException = shouldThrow { formedTeam().disband(999L, now) }
+			ex.errorCode shouldBe TeamErrorCode.NOT_TEAM_MEMBER
+		}
+
+		it("이미 떠난(DEACTIVE) 구성원이 다시 떠나면 NOT_TEAM_MEMBER를 던진다") {
+			val afterFirst: Team = formedTeam().disband(ownerId, now)
+
+			val ex: BusinessException = shouldThrow { afterFirst.disband(ownerId, now) }
+			ex.errorCode shouldBe TeamErrorCode.NOT_TEAM_MEMBER
+		}
+	}
+})

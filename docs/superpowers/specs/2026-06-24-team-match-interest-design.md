@@ -34,7 +34,7 @@
 기존 1:1 매칭 흐름(`SendInterestService` + `Match`/`MatchMembers` + `MatchEventHandler`)을
 팀 매칭 도메인 객체에 그대로 대응시킨다. 헥사고날 레이어링·CQRS 컨벤션을 따른다.
 
-### 1. API 경계 (meeple-api)
+### 1. API 경계 (oneulsogae-api)
 
 - 신규 `TeamMatchController` (`/team-matches/v1`). `TeamMatch`는 `Team`과 별개 애그리거트라 `TeamController`와 분리한다.
 - `POST /team-matches/v1/{teamMatchId}/interest` → `SendTeamInterestUseCase.sendInterest(userId, teamMatchId)`.
@@ -43,7 +43,7 @@
   - `status: MatchStatus`
   - `matchedTeams: List<{ teamId: Long, status: MatchedTeamStatus }>`
 
-### 2. 유스케이스 / 서비스 (meeple-core, command)
+### 2. 유스케이스 / 서비스 (oneulsogae-core, command)
 
 `SendTeamInterestService : SendTeamInterestUseCase` — `SendInterestService`와 동일한 구조.
 
@@ -108,13 +108,13 @@ override fun sendInterest(userId: Long, teamMatchId: Long): TeamMatch {
 - AlarmType은 기존 **`MANY_TO_MANY_INTEREST_RECEIVED` / `MANY_TO_MANY_MATCHED`를 재사용**(신규 AlarmType 불필요).
 - 문구용 닉네임은 `GetUserDetailUseCase`로 조회, 미존재 시 폴백 문구.
 
-### 5. 아웃포트 / 어댑터 (meeple-infra)
+### 5. 아웃포트 / 어댑터 (oneulsogae-infra)
 
 - `GetTeamMatchPort.findById(teamMatchId: Long): TeamMatch?` **추가**(현재 `findActiveByTeamId`만 존재).
   - `TeamMatchAdapter`에 구현: 헤더 로드 + 참가 팀(`matched_teams`) 로드 후 `toDomain`.
 - `SaveTeamMatchPort.save`는 기존 그대로 재사용(헤더+참가팀 upsert). 기존 행 update 경로가 정상 동작하는지 확인.
 
-### 6. 에러 / 락 (meeple-core)
+### 6. 에러 / 락 (oneulsogae-core)
 
 - 신규 `TeamMatchErrorCode`(core/match):
   - `TEAM_MATCH_NOT_FOUND`
@@ -143,12 +143,12 @@ override fun sendInterest(userId: Long, teamMatchId: Long): TeamMatch {
 
 ## 테스트
 
-도메인 유닛(Kotest, meeple-core):
+도메인 유닛(Kotest, oneulsogae-core):
 - `TeamMatch.respond`: WAITING→APPLY→`PARTIALLY_ACCEPTED`, 양 팀 APPLY→`MATCHED` + 전원 ACTIVE + 만료 연장.
 - `validateRespondable`: 비참가 팀/종료 매칭 예외.
 - `MatchedTeams`: `apply`/`allApplied`/`anyApplied`/`activateAll`/`isParticipant`.
 
-api E2E(meeple-api, AbstractIntegrationSupport):
+api E2E(oneulsogae-api, AbstractIntegrationSupport):
 - 한 팀이 신청 → `PARTIALLY_ACCEPTED` + 신청 코인 차감 + 상대 팀 알림.
 - 이어 상대 팀이 신청 → `MATCHED` + 수락 코인 차감 + 4인 채팅방 생성 + 알림.
 - 비참가 사용자 호출 → 예외.

@@ -4,13 +4,13 @@
 
 **Goal:** 어드민이 직장 서류 이미지 인증을 승인(회사명 기입 → 유저 companyName 확정 + status=APPROVED) 또는 반려(status=REJECTED)하는 API를 추가한다.
 
-**Architecture:** `meeple-admin`의 첫 command 슬라이스(`companyverification/command`). admin은 core 비의존이라 자체 도메인(`AdminCompanyImageVerification`)·command out-port를 두고, infra의 기존 어댑터가 그 포트를 추가 구현한다(엔티티당 어댑터 하나, core/admin 동명 포트는 import alias). 범위는 최소(회사명+상태만) — 가입 상태 전환·코인·추천 없음.
+**Architecture:** `oneulsogae-admin`의 첫 command 슬라이스(`companyverification/command`). admin은 core 비의존이라 자체 도메인(`AdminCompanyImageVerification`)·command out-port를 두고, infra의 기존 어댑터가 그 포트를 추가 구현한다(엔티티당 어댑터 하나, core/admin 동명 포트는 import alias). 범위는 최소(회사명+상태만) — 가입 상태 전환·코인·추천 없음.
 
 **Tech Stack:** Kotlin 2.2.21 / Spring Boot 4 / Spring Data JPA / QueryDSL / Kotest E2E(Testcontainers).
 
 ## Global Constraints
 
-- **`meeple-admin`은 `meeple-core`를 의존하지 않는다.** admin 소스에 `com.org.meeple.core.*` import 0건.
+- **`oneulsogae-admin`은 `oneulsogae-core`를 의존하지 않는다.** admin 소스에 `com.org.oneulsogae.core.*` import 0건.
 - **타입 명시**: 변수·반환 타입·람다 파라미터 타입 생략 금지.
 - **CQRS**: 명령 서비스 `@Transactional`(readOnly 아님).
 - **에러코드**: 없는 id → 기존 `AdminErrorCode.COMPANY_IMAGE_VERIFICATION_NOT_FOUND`("COMPANY-IMAGE-001", NOT_FOUND) 재사용.
@@ -27,21 +27,21 @@
 - `AdminErrorCode.COMPANY_IMAGE_VERIFICATION_NOT_FOUND` 이미 존재.
 - infra `CompanyImageVerificationRepositoryAdapter`: `CompanyImageVerificationJpaRepository`(JpaRepository, `findById` 제공) 주입, core `SaveCompanyImageVerificationPort` 구현 중. 엔티티 `CompanyImageVerificationEntity`(BaseEntity `id: Long?`, `var status`, `val userId`, `val imageKey`).
 - infra `UserDetailCoreAdapter`: `UserDetailJpaRepository`(`findByUserId(userId): UserDetailEntity?`) 주입, core user detail 포트 구현 중. 엔티티 `UserDetailEntity`(`var companyName`).
-- infra는 이미 `implementation(project(":meeple-admin"))` 의존.
+- infra는 이미 `implementation(project(":oneulsogae-admin"))` 의존.
 - 요청 DTO 검증 관례: `@field:NotBlank(message="...") val x: String? = null` + 컨트롤러 `@RequestBody @Valid`.
 - E2E DSL: `post("/p") { bearer(token); jsonBody("""{...}""") } expect { status(200); body(...) }`. DB 재조회: `IntegrationUtil.getQuery().selectFrom(Q).where(...).fetchOne()`. 픽스처: `UserEntityFixture`, `UserDetailEntityFixture`, `CompanyImageVerificationEntityFixture`. 어드민 토큰: `adminAccessTokenFor(9901L)`.
 
 ---
 
-## Task 1: meeple-admin — command 슬라이스 (도메인·UseCase·Service·out-port)
+## Task 1: oneulsogae-admin — command 슬라이스 (도메인·UseCase·Service·out-port)
 
 **Files:**
-- Create: `meeple-admin/src/main/kotlin/com/org/meeple/admin/companyverification/command/domain/AdminCompanyImageVerification.kt`
-- Create: `meeple-admin/src/main/kotlin/com/org/meeple/admin/companyverification/command/application/port/in/ReviewCompanyImageVerificationUseCase.kt`
-- Create: `meeple-admin/src/main/kotlin/com/org/meeple/admin/companyverification/command/application/port/out/GetCompanyImageVerificationPort.kt`
-- Create: `meeple-admin/src/main/kotlin/com/org/meeple/admin/companyverification/command/application/port/out/SaveCompanyImageVerificationPort.kt`
-- Create: `meeple-admin/src/main/kotlin/com/org/meeple/admin/companyverification/command/application/port/out/UpdateUserCompanyNamePort.kt`
-- Create: `meeple-admin/src/main/kotlin/com/org/meeple/admin/companyverification/command/application/ReviewCompanyImageVerificationService.kt`
+- Create: `oneulsogae-admin/src/main/kotlin/com/org/oneulsogae/admin/companyverification/command/domain/AdminCompanyImageVerification.kt`
+- Create: `oneulsogae-admin/src/main/kotlin/com/org/oneulsogae/admin/companyverification/command/application/port/in/ReviewCompanyImageVerificationUseCase.kt`
+- Create: `oneulsogae-admin/src/main/kotlin/com/org/oneulsogae/admin/companyverification/command/application/port/out/GetCompanyImageVerificationPort.kt`
+- Create: `oneulsogae-admin/src/main/kotlin/com/org/oneulsogae/admin/companyverification/command/application/port/out/SaveCompanyImageVerificationPort.kt`
+- Create: `oneulsogae-admin/src/main/kotlin/com/org/oneulsogae/admin/companyverification/command/application/port/out/UpdateUserCompanyNamePort.kt`
+- Create: `oneulsogae-admin/src/main/kotlin/com/org/oneulsogae/admin/companyverification/command/application/ReviewCompanyImageVerificationService.kt`
 
 **Interfaces:**
 - Produces:
@@ -56,9 +56,9 @@
 `command/domain/AdminCompanyImageVerification.kt`:
 
 ```kotlin
-package com.org.meeple.admin.companyverification.command.domain
+package com.org.oneulsogae.admin.companyverification.command.domain
 
-import com.org.meeple.common.user.CompanyImageVerificationStatus
+import com.org.oneulsogae.common.user.CompanyImageVerificationStatus
 
 /**
  * 어드민 심사용 회사 이미지 인증 도메인 모델(최소). 상태 전이(승인/반려)를 캡슐화한다.
@@ -80,7 +80,7 @@ data class AdminCompanyImageVerification(
 `command/application/port/in/ReviewCompanyImageVerificationUseCase.kt`:
 
 ```kotlin
-package com.org.meeple.admin.companyverification.command.application.port.`in`
+package com.org.oneulsogae.admin.companyverification.command.application.port.`in`
 
 /** 어드민 회사 이미지 인증 심사(승인/반려) 유스케이스. */
 interface ReviewCompanyImageVerificationUseCase {
@@ -98,9 +98,9 @@ interface ReviewCompanyImageVerificationUseCase {
 `command/application/port/out/GetCompanyImageVerificationPort.kt`:
 
 ```kotlin
-package com.org.meeple.admin.companyverification.command.application.port.out
+package com.org.oneulsogae.admin.companyverification.command.application.port.out
 
-import com.org.meeple.admin.companyverification.command.domain.AdminCompanyImageVerification
+import com.org.oneulsogae.admin.companyverification.command.domain.AdminCompanyImageVerification
 
 /** 심사 대상 인증을 로드하는 out-port. */
 fun interface GetCompanyImageVerificationPort {
@@ -113,9 +113,9 @@ fun interface GetCompanyImageVerificationPort {
 `command/application/port/out/SaveCompanyImageVerificationPort.kt`:
 
 ```kotlin
-package com.org.meeple.admin.companyverification.command.application.port.out
+package com.org.oneulsogae.admin.companyverification.command.application.port.out
 
-import com.org.meeple.admin.companyverification.command.domain.AdminCompanyImageVerification
+import com.org.oneulsogae.admin.companyverification.command.domain.AdminCompanyImageVerification
 
 /** 인증 상태 변경을 저장하는 out-port. (status만 반영하고 다른 필드는 보존) */
 fun interface SaveCompanyImageVerificationPort {
@@ -127,7 +127,7 @@ fun interface SaveCompanyImageVerificationPort {
 `command/application/port/out/UpdateUserCompanyNamePort.kt`:
 
 ```kotlin
-package com.org.meeple.admin.companyverification.command.application.port.out
+package com.org.oneulsogae.admin.companyverification.command.application.port.out
 
 /** 유저의 회사명을 갱신하는 out-port. (승인 시 어드민이 기입한 회사명을 프로필에 확정한다) */
 fun interface UpdateUserCompanyNamePort {
@@ -141,15 +141,15 @@ fun interface UpdateUserCompanyNamePort {
 `command/application/ReviewCompanyImageVerificationService.kt`:
 
 ```kotlin
-package com.org.meeple.admin.companyverification.command.application
+package com.org.oneulsogae.admin.companyverification.command.application
 
-import com.org.meeple.admin.common.error.AdminErrorCode
-import com.org.meeple.admin.common.error.AdminException
-import com.org.meeple.admin.companyverification.command.application.port.`in`.ReviewCompanyImageVerificationUseCase
-import com.org.meeple.admin.companyverification.command.application.port.out.GetCompanyImageVerificationPort
-import com.org.meeple.admin.companyverification.command.application.port.out.SaveCompanyImageVerificationPort
-import com.org.meeple.admin.companyverification.command.application.port.out.UpdateUserCompanyNamePort
-import com.org.meeple.admin.companyverification.command.domain.AdminCompanyImageVerification
+import com.org.oneulsogae.admin.common.error.AdminErrorCode
+import com.org.oneulsogae.admin.common.error.AdminException
+import com.org.oneulsogae.admin.companyverification.command.application.port.`in`.ReviewCompanyImageVerificationUseCase
+import com.org.oneulsogae.admin.companyverification.command.application.port.out.GetCompanyImageVerificationPort
+import com.org.oneulsogae.admin.companyverification.command.application.port.out.SaveCompanyImageVerificationPort
+import com.org.oneulsogae.admin.companyverification.command.application.port.out.UpdateUserCompanyNamePort
+import com.org.oneulsogae.admin.companyverification.command.domain.AdminCompanyImageVerification
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 
@@ -190,16 +190,16 @@ class ReviewCompanyImageVerificationService(
 
 - [ ] **Step 5: 컴파일 확인 + core 비의존 확인**
 
-Run: `./gradlew :meeple-admin:compileKotlin -q`
+Run: `./gradlew :oneulsogae-admin:compileKotlin -q`
 Expected: 성공(exit 0). (infra/api 미구현이라 전체 빌드는 Task 3 후 성공)
 
-Run: `grep -rn "com.org.meeple.core" meeple-admin/src --include="*.kt" | wc -l | tr -d ' '`
+Run: `grep -rn "com.org.oneulsogae.core" oneulsogae-admin/src --include="*.kt" | wc -l | tr -d ' '`
 Expected: `0`
 
 - [ ] **Step 6: 커밋**
 
 ```bash
-git add meeple-admin/src/main/kotlin/com/org/meeple/admin/companyverification/command
+git add oneulsogae-admin/src/main/kotlin/com/org/oneulsogae/admin/companyverification/command
 git commit -m "feat(admin): 회사 이미지 인증 승인/반려 command 슬라이스 추가
 
 AdminCompanyImageVerification 도메인(approve/reject)·ReviewCompanyImageVerificationUseCase·
@@ -210,11 +210,11 @@ Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>"
 
 ---
 
-## Task 2: meeple-infra — 어댑터 확장 (admin command out-port 구현)
+## Task 2: oneulsogae-infra — 어댑터 확장 (admin command out-port 구현)
 
 **Files:**
-- Modify: `meeple-infra/src/main/kotlin/com/org/meeple/infra/user/command/adapter/CompanyImageVerificationRepositoryAdapter.kt`
-- Modify: `meeple-infra/src/main/kotlin/com/org/meeple/infra/user/command/adapter/UserDetailCoreAdapter.kt`
+- Modify: `oneulsogae-infra/src/main/kotlin/com/org/oneulsogae/infra/user/command/adapter/CompanyImageVerificationRepositoryAdapter.kt`
+- Modify: `oneulsogae-infra/src/main/kotlin/com/org/oneulsogae/infra/user/command/adapter/UserDetailCoreAdapter.kt`
 
 **Interfaces:**
 - Consumes (Task 1): admin `GetCompanyImageVerificationPort`, `SaveCompanyImageVerificationPort`(alias), `UpdateUserCompanyNamePort`, `AdminCompanyImageVerification`.
@@ -224,17 +224,17 @@ Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>"
 `CompanyImageVerificationRepositoryAdapter.kt` 전체를 아래로 교체(기존 core save 유지 + admin Get/Save 추가):
 
 ```kotlin
-package com.org.meeple.infra.user.command.adapter
+package com.org.oneulsogae.infra.user.command.adapter
 
-import com.org.meeple.admin.companyverification.command.application.port.out.GetCompanyImageVerificationPort
-import com.org.meeple.admin.companyverification.command.application.port.out.SaveCompanyImageVerificationPort as SaveAdminCompanyImageVerificationPort
-import com.org.meeple.admin.companyverification.command.domain.AdminCompanyImageVerification
-import com.org.meeple.core.user.command.application.port.out.SaveCompanyImageVerificationPort
-import com.org.meeple.core.user.command.domain.CompanyImageVerification
-import com.org.meeple.infra.user.command.entity.CompanyImageVerificationEntity
-import com.org.meeple.infra.user.command.mapper.toDomain
-import com.org.meeple.infra.user.command.mapper.toEntity
-import com.org.meeple.infra.user.command.repository.CompanyImageVerificationJpaRepository
+import com.org.oneulsogae.admin.companyverification.command.application.port.out.GetCompanyImageVerificationPort
+import com.org.oneulsogae.admin.companyverification.command.application.port.out.SaveCompanyImageVerificationPort as SaveAdminCompanyImageVerificationPort
+import com.org.oneulsogae.admin.companyverification.command.domain.AdminCompanyImageVerification
+import com.org.oneulsogae.core.user.command.application.port.out.SaveCompanyImageVerificationPort
+import com.org.oneulsogae.core.user.command.domain.CompanyImageVerification
+import com.org.oneulsogae.infra.user.command.entity.CompanyImageVerificationEntity
+import com.org.oneulsogae.infra.user.command.mapper.toDomain
+import com.org.oneulsogae.infra.user.command.mapper.toEntity
+import com.org.oneulsogae.infra.user.command.repository.CompanyImageVerificationJpaRepository
 import org.springframework.stereotype.Component
 
 /**
@@ -279,8 +279,8 @@ class CompanyImageVerificationRepositoryAdapter(
 `UserDetailCoreAdapter.kt`의 import 블록에 추가:
 
 ```kotlin
-import com.org.meeple.admin.companyverification.command.application.port.out.UpdateUserCompanyNamePort
-import com.org.meeple.infra.user.command.entity.UserDetailEntity
+import com.org.oneulsogae.admin.companyverification.command.application.port.out.UpdateUserCompanyNamePort
+import com.org.oneulsogae.infra.user.command.entity.UserDetailEntity
 ```
 
 클래스 선언의 구현 인터페이스 목록에 `UpdateUserCompanyNamePort`를 추가한다:
@@ -303,14 +303,14 @@ import com.org.meeple.infra.user.command.entity.UserDetailEntity
 
 - [ ] **Step 3: 컴파일 확인**
 
-Run: `./gradlew :meeple-infra:compileKotlin -q`
+Run: `./gradlew :oneulsogae-infra:compileKotlin -q`
 Expected: 성공(exit 0).
 
 - [ ] **Step 4: 커밋**
 
 ```bash
-git add meeple-infra/src/main/kotlin/com/org/meeple/infra/user/command/adapter/CompanyImageVerificationRepositoryAdapter.kt \
-        meeple-infra/src/main/kotlin/com/org/meeple/infra/user/command/adapter/UserDetailCoreAdapter.kt
+git add oneulsogae-infra/src/main/kotlin/com/org/oneulsogae/infra/user/command/adapter/CompanyImageVerificationRepositoryAdapter.kt \
+        oneulsogae-infra/src/main/kotlin/com/org/oneulsogae/infra/user/command/adapter/UserDetailCoreAdapter.kt
 git commit -m "feat(admin): 회사 이미지 인증 심사 out-port를 infra 어댑터에 구현
 
 CompanyImageVerificationRepositoryAdapter에 admin Get/Save(상태) 포트(alias)를,
@@ -321,11 +321,11 @@ Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>"
 
 ---
 
-## Task 3: meeple-api — 요청 DTO + 컨트롤러 approve/reject
+## Task 3: oneulsogae-api — 요청 DTO + 컨트롤러 approve/reject
 
 **Files:**
-- Create: `meeple-api/src/main/kotlin/com/org/meeple/api/admin/request/AdminApproveCompanyVerificationRequest.kt`
-- Modify: `meeple-api/src/main/kotlin/com/org/meeple/api/admin/AdminCompanyVerificationController.kt`
+- Create: `oneulsogae-api/src/main/kotlin/com/org/oneulsogae/api/admin/request/AdminApproveCompanyVerificationRequest.kt`
+- Modify: `oneulsogae-api/src/main/kotlin/com/org/oneulsogae/api/admin/AdminCompanyVerificationController.kt`
 
 **Interfaces:**
 - Consumes (Task 1): `ReviewCompanyImageVerificationUseCase.approve(id, companyName)`, `reject(id)`.
@@ -336,7 +336,7 @@ Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>"
 `request/AdminApproveCompanyVerificationRequest.kt`:
 
 ```kotlin
-package com.org.meeple.api.admin.request
+package com.org.oneulsogae.api.admin.request
 
 import jakarta.validation.constraints.NotBlank
 
@@ -352,8 +352,8 @@ data class AdminApproveCompanyVerificationRequest(
 `AdminCompanyVerificationController.kt`의 import 블록에 추가:
 
 ```kotlin
-import com.org.meeple.admin.companyverification.command.application.port.`in`.ReviewCompanyImageVerificationUseCase
-import com.org.meeple.api.admin.request.AdminApproveCompanyVerificationRequest
+import com.org.oneulsogae.admin.companyverification.command.application.port.`in`.ReviewCompanyImageVerificationUseCase
+import com.org.oneulsogae.api.admin.request.AdminApproveCompanyVerificationRequest
 import jakarta.validation.Valid
 import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.RequestBody
@@ -399,14 +399,14 @@ class AdminCompanyVerificationController(
 
 - [ ] **Step 3: 전체 컴파일 확인**
 
-Run: `./gradlew :meeple-api:compileKotlin -q`
+Run: `./gradlew :oneulsogae-api:compileKotlin -q`
 Expected: 성공(exit 0).
 
 - [ ] **Step 4: 커밋**
 
 ```bash
-git add meeple-api/src/main/kotlin/com/org/meeple/api/admin/request/AdminApproveCompanyVerificationRequest.kt \
-        meeple-api/src/main/kotlin/com/org/meeple/api/admin/AdminCompanyVerificationController.kt
+git add oneulsogae-api/src/main/kotlin/com/org/oneulsogae/api/admin/request/AdminApproveCompanyVerificationRequest.kt \
+        oneulsogae-api/src/main/kotlin/com/org/oneulsogae/api/admin/AdminCompanyVerificationController.kt
 git commit -m "feat(admin): 회사 이미지 인증 승인/반려 컨트롤러·요청 DTO 추가
 
 POST /admin/v1/company-image-verifications/{id}/approve(companyName)·/reject. 승인 요청 @NotBlank.
@@ -419,7 +419,7 @@ Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>"
 ## Task 4: E2E 테스트
 
 **Files:**
-- Test: `meeple-api/src/test/kotlin/com/org/meeple/api/admin/AdminCompanyVerificationReviewE2ETest.kt`
+- Test: `oneulsogae-api/src/test/kotlin/com/org/oneulsogae/api/admin/AdminCompanyVerificationReviewE2ETest.kt`
 
 **Interfaces:**
 - Consumes: `POST /admin/v1/company-image-verifications/{id}/approve|reject`, 픽스처, `IntegrationUtil`, `adminAccessTokenFor(id)`, E2E DSL(`post`/`expect`).
@@ -429,21 +429,21 @@ Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>"
 `AdminCompanyVerificationReviewE2ETest.kt`:
 
 ```kotlin
-package com.org.meeple.api.admin
+package com.org.oneulsogae.api.admin
 
-import com.org.meeple.common.integration.AbstractIntegrationSupport
-import com.org.meeple.common.integration.expect
-import com.org.meeple.common.integration.post
-import com.org.meeple.common.user.CompanyImageVerificationStatus
-import com.org.meeple.infra.fixture.CompanyImageVerificationEntityFixture
-import com.org.meeple.infra.fixture.IntegrationUtil
-import com.org.meeple.infra.fixture.UserDetailEntityFixture
-import com.org.meeple.infra.fixture.UserEntityFixture
-import com.org.meeple.infra.user.command.entity.CompanyImageVerificationEntity
-import com.org.meeple.infra.user.command.entity.QCompanyImageVerificationEntity
-import com.org.meeple.infra.user.command.entity.QUserDetailEntity
-import com.org.meeple.infra.user.command.entity.QUserEntity
-import com.org.meeple.infra.user.command.entity.UserDetailEntity
+import com.org.oneulsogae.common.integration.AbstractIntegrationSupport
+import com.org.oneulsogae.common.integration.expect
+import com.org.oneulsogae.common.integration.post
+import com.org.oneulsogae.common.user.CompanyImageVerificationStatus
+import com.org.oneulsogae.infra.fixture.CompanyImageVerificationEntityFixture
+import com.org.oneulsogae.infra.fixture.IntegrationUtil
+import com.org.oneulsogae.infra.fixture.UserDetailEntityFixture
+import com.org.oneulsogae.infra.fixture.UserEntityFixture
+import com.org.oneulsogae.infra.user.command.entity.CompanyImageVerificationEntity
+import com.org.oneulsogae.infra.user.command.entity.QCompanyImageVerificationEntity
+import com.org.oneulsogae.infra.user.command.entity.QUserDetailEntity
+import com.org.oneulsogae.infra.user.command.entity.QUserEntity
+import com.org.oneulsogae.infra.user.command.entity.UserDetailEntity
 import io.kotest.matchers.shouldBe
 
 /**
@@ -478,14 +478,14 @@ class AdminCompanyVerificationReviewE2ETest : AbstractIntegrationSupport({
 
 			post("/admin/v1/company-image-verifications/$id/approve") {
 				bearer(adminAccessTokenFor(9901L))
-				jsonBody("""{"companyName":"미플"}""")
+				jsonBody("""{"companyName":"오늘의 소개"}""")
 			} expect {
 				status(200)
 				body("success", true)
 			}
 
 			verificationById(id).status shouldBe CompanyImageVerificationStatus.APPROVED
-			detailByUserId(userId).companyName shouldBe "미플"
+			detailByUserId(userId).companyName shouldBe "오늘의 소개"
 		}
 
 		it("공백 회사명이면 400이다") {
@@ -506,7 +506,7 @@ class AdminCompanyVerificationReviewE2ETest : AbstractIntegrationSupport({
 		it("없는 id면 404다 (COMPANY-IMAGE-001)") {
 			post("/admin/v1/company-image-verifications/999999/approve") {
 				bearer(adminAccessTokenFor(9901L))
-				jsonBody("""{"companyName":"미플"}""")
+				jsonBody("""{"companyName":"오늘의 소개"}""")
 			} expect {
 				status(404)
 				body("error.code", "COMPANY-IMAGE-001")
@@ -547,7 +547,7 @@ class AdminCompanyVerificationReviewE2ETest : AbstractIntegrationSupport({
 
 - [ ] **Step 2: E2E 실행**
 
-Run: `./gradlew :meeple-api:test --tests "com.org.meeple.api.admin.AdminCompanyVerificationReviewE2ETest" -q`
+Run: `./gradlew :oneulsogae-api:test --tests "com.org.oneulsogae.api.admin.AdminCompanyVerificationReviewE2ETest" -q`
 Expected: PASS (4개 케이스). Task 1~3 구현이 완료됐으므로 통과해야 한다. 실패 시:
 - 테스트 코드 문제(픽스처·단언·정리)면 테스트를 고친다.
 - 프로덕션 코드 버그면 최소 수정하되 보고서에 명시. **404가 500이면** AdminException 핸들러 우선순위(AdminExceptionHandler `@Order(HIGHEST_PRECEDENCE)`)·에러코드 매핑을, **승인 후 companyName 미반영이면** UserDetailCoreAdapter 갱신·트랜잭션 커밋을 점검. 확신 안 서면 BLOCKED.
@@ -560,7 +560,7 @@ Expected: 성공(exit 0). (조회 E2E·기존 테스트 회귀 없음)
 - [ ] **Step 4: 커밋**
 
 ```bash
-git add meeple-api/src/test/kotlin/com/org/meeple/api/admin/AdminCompanyVerificationReviewE2ETest.kt
+git add oneulsogae-api/src/test/kotlin/com/org/oneulsogae/api/admin/AdminCompanyVerificationReviewE2ETest.kt
 git commit -m "test(admin): 회사 이미지 인증 승인/반려 E2E 추가
 
 승인(status=APPROVED·companyName 확정)·반려(status=REJECTED)·404(COMPANY-IMAGE-001)·공백 회사명 400을 검증한다.

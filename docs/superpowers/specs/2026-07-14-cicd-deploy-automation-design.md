@@ -1,11 +1,11 @@
 # CI/CD 배포 자동화 설계
 
 **작성일**: 2026-07-14
-**대상**: `meeple-backend` — GitHub Actions 기반 EC2 자동 배포
+**대상**: `oneulsogae-backend` — GitHub Actions 기반 EC2 자동 배포
 
 ## 배경
 
-현재 배포는 전부 수동이다. 로컬에서 `docker buildx`로 arm64 이미지를 빌드해 GHCR에 push하고, EC2에 SSM으로 접속해 `docker compose pull && up -d`를 실행한다. 이 과정을 GitHub Actions로 자동화한다. 기존 인프라(EC2 t4g.small + `meeple-ec2-role`, GHCR public 패키지, EC2의 `/opt/meeple/docker-compose.prod.yml`)는 그대로 재사용한다.
+현재 배포는 전부 수동이다. 로컬에서 `docker buildx`로 arm64 이미지를 빌드해 GHCR에 push하고, EC2에 SSM으로 접속해 `docker compose pull && up -d`를 실행한다. 이 과정을 GitHub Actions로 자동화한다. 기존 인프라(EC2 t4g.small + `oneulsogae-ec2-role`, GHCR public 패키지, EC2의 `/opt/meeple/docker-compose.prod.yml`)는 그대로 재사용한다.
 
 ## 결정 사항
 
@@ -38,20 +38,20 @@
 ```dockerfile
 FROM amazoncorretto:21
 WORKDIR /app
-COPY meeple-api/build/libs/*.jar app.jar
+COPY oneulsogae-api/build/libs/*.jar app.jar
 EXPOSE 8080
 ENV JAVA_OPTS="-Xms512m -Xmx1024m"
 ENTRYPOINT ["sh","-c","java $JAVA_OPTS -jar app.jar"]
 ```
 
 - CI는 `./gradlew build`로 jar을 먼저 만든 뒤 이 이미지를 빌드 → arm64라도 COPY만 하므로 빠름.
-- **영향**: 로컬 수동 빌드도 `./gradlew :meeple-api:bootJar` 선행 필요. `docs/deployment/aws-setup-guide.md`의 로컬 빌드 절차를 이에 맞게 갱신한다.
-- **`.dockerignore` 수정 필요**: 현재 `**/build`가 산출물을 제외해 러너에서 만든 jar이 빌드 컨텍스트에서 빠진다. `!meeple-api/build/libs/*.jar` 예외를 추가하거나 제외 규칙을 조정해 jar이 컨텍스트에 포함되게 한다. (다른 모듈의 `build/`는 계속 제외)
+- **영향**: 로컬 수동 빌드도 `./gradlew :oneulsogae-api:bootJar` 선행 필요. `docs/deployment/aws-setup-guide.md`의 로컬 빌드 절차를 이에 맞게 갱신한다.
+- **`.dockerignore` 수정 필요**: 현재 `**/build`가 산출물을 제외해 러너에서 만든 jar이 빌드 컨텍스트에서 빠진다. `!oneulsogae-api/build/libs/*.jar` 예외를 추가하거나 제외 규칙을 조정해 jar이 컨텍스트에 포함되게 한다. (다른 모듈의 `build/`는 계속 제외)
 
 ### 2. AWS OIDC 설정 (콘솔에서 1회, 워크플로 실행 전 선행)
 
 - **IAM → 자격 증명 공급자**: OpenID Connect, `token.actions.githubusercontent.com`
-- **IAM 역할 `meeple-github-deploy-role`**
+- **IAM 역할 `oneulsogae-github-deploy-role`**
   - 신뢰 정책: 위 OIDC + 리포 제한 `repo:devforlove/meeple-backend:*`
   - 권한(최소):
     - `ssm:SendCommand` — 리소스를 대상 EC2 인스턴스 ARN + `AWS-RunShellScript` 문서 ARN으로 제한
@@ -64,9 +64,9 @@ ENTRYPOINT ["sh","-c","java $JAVA_OPTS -jar app.jar"]
 
 | 변수 | 값 |
 |---|---|
-| `AWS_ROLE_ARN` | `arn:aws:iam::<계정ID>:role/meeple-github-deploy-role` |
+| `AWS_ROLE_ARN` | `arn:aws:iam::<계정ID>:role/oneulsogae-github-deploy-role` |
 | `AWS_REGION` | `ap-northeast-2` |
-| `EC2_INSTANCE_ID` | `i-xxxxxxxx` (meeple-api 인스턴스) |
+| `EC2_INSTANCE_ID` | `i-xxxxxxxx` (oneulsogae-api 인스턴스) |
 
 - GHCR는 Public → EC2 pull에 인증 불필요.
 - GHCR push는 `GITHUB_TOKEN`(`packages: write`)으로 처리 → 추가 시크릿 없음.

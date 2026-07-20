@@ -77,7 +77,7 @@ order by partner.chatRoomId asc, partner.userId asc
 ### 7. 테스트
 
 - **도메인 유닛(Kotest)**: `ChatRoomMember.join`이 `teamId`를 그대로 담는지(및 SOLO에서 null) 검증.
-- **E2E(`meeple-api`, Testcontainers)**:
+- **E2E(`oneulsogae-api`, Testcontainers)**:
   - TEAM 방(4인: 팀A 2 + 팀B 2)을 생성하고 팀A 구성원으로 목록 조회 → participants가 팀B 2명만인지(내 팀원 미포함) 검증.
   - SOLO 방은 기존대로 상대 1명이 나오는지(회귀) 검증.
   - infra `testFixtures`로 `chat_room_members.team_id`를 세팅(픽스처에 teamId 파라미터 추가 필요 시 포함).
@@ -90,14 +90,14 @@ order by partner.chatRoomId asc, partner.userId asc
 
 ## 영향받는 파일 (예상)
 
-- `meeple-infra/.../chat/command/entity/ChatRoomMemberEntity.kt` (컬럼)
-- `meeple-infra/.../chat/command/mapper/ChatRoomMemberMapper.kt` (왕복)
-- `meeple-infra/.../chat/query/GetChatRoomDaoImpl.kt` (self-join 필터)
-- `meeple-core/.../chat/command/domain/ChatRoomMember.kt` (필드·팩토리)
-- `meeple-core/.../chat/command/application/SaveChatRoomService.kt` (teamId 전달)
-- `meeple-core/.../chat/command/application/port/in/command/SaveChatRoomCommand.kt` (구조체 리스트 + `SaveChatRoomParticipant`)
-- `meeple-core/.../match/command/application/SendTeamInterestService.kt` (TEAM participants 구성)
-- `meeple-core/.../match/command/application/SendInterestService.kt` (SOLO participants 구성)
+- `oneulsogae-infra/.../chat/command/entity/ChatRoomMemberEntity.kt` (컬럼)
+- `oneulsogae-infra/.../chat/command/mapper/ChatRoomMemberMapper.kt` (왕복)
+- `oneulsogae-infra/.../chat/query/GetChatRoomDaoImpl.kt` (self-join 필터)
+- `oneulsogae-core/.../chat/command/domain/ChatRoomMember.kt` (필드·팩토리)
+- `oneulsogae-core/.../chat/command/application/SaveChatRoomService.kt` (teamId 전달)
+- `oneulsogae-core/.../chat/command/application/port/in/command/SaveChatRoomCommand.kt` (구조체 리스트 + `SaveChatRoomParticipant`)
+- `oneulsogae-core/.../match/command/application/SendTeamInterestService.kt` (TEAM participants 구성)
+- `oneulsogae-core/.../match/command/application/SendInterestService.kt` (SOLO participants 구성)
 - `docs/migration/chat_room_members_team_id.sql` (신규)
-- 도메인 유닛 테스트 + `meeple-api` E2E 테스트 + 필요 시 infra `testFixtures`
+- 도메인 유닛 테스트 + `oneulsogae-api` E2E 테스트 + 필요 시 infra `testFixtures`
 ```

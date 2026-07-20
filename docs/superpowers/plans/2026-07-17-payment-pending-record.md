@@ -13,7 +13,7 @@
 - 변수·반환·람다 파라미터 타입을 명시한다(표현식 본문 포함).
 - Controller/Service는 in-port, Service는 out-port를 주입. Adapter(infra)가 out-port 구현.
 - `ddl-auto: validate` — 엔티티와 실 DDL이 정확히 일치해야 한다.
-- 상태 전이 enum `PaymentStatus { PENDING, APPROVED, FAILED }` (payments 전용, `meeple-common` 아님).
+- 상태 전이 enum `PaymentStatus { PENDING, APPROVED, FAILED }` (payments 전용, `oneulsogae-common` 아님).
 - `payments.status`는 PG 청구 라이프사이클 원장 — 참가 승인 원장 `gathering_members.status`와는 다른 축(승인 성공 후에도 좌석은 PENDING 유지).
 - 응답 계약(`CompletePaymentResult`=amount) 불변 — 프론트엔드 대응 불필요.
 
@@ -24,27 +24,27 @@
 `PaymentStatus` enum, `Payment.status`, `PaymentEntity.status`(+payment_key 유니크), 어댑터의 양방향 매핑, `UpdatePaymentStatusPort`를 추가한다. 이 시점 서비스는 **여전히 승인 성공 시에만 저장**하되 `status=APPROVED`로 저장한다 — 동작은 바뀌지 않아 기존 E2E가 그대로 통과한다.
 
 **Files:**
-- Create: `meeple-core/src/main/kotlin/com/org/meeple/core/payments/command/domain/PaymentStatus.kt`
-- Create: `meeple-core/src/main/kotlin/com/org/meeple/core/payments/command/application/port/out/UpdatePaymentStatusPort.kt`
-- Modify: `meeple-core/src/main/kotlin/com/org/meeple/core/payments/command/domain/Payment.kt`
-- Modify: `meeple-core/src/main/kotlin/com/org/meeple/core/payments/command/application/CompletePaymentService.kt`
-- Modify: `meeple-infra/src/main/kotlin/com/org/meeple/infra/payments/command/entity/PaymentEntity.kt`
-- Modify: `meeple-infra/src/main/kotlin/com/org/meeple/infra/payments/command/adapter/PaymentAdapter.kt`
+- Create: `oneulsogae-core/src/main/kotlin/com/org/oneulsogae/core/payments/command/domain/PaymentStatus.kt`
+- Create: `oneulsogae-core/src/main/kotlin/com/org/oneulsogae/core/payments/command/application/port/out/UpdatePaymentStatusPort.kt`
+- Modify: `oneulsogae-core/src/main/kotlin/com/org/oneulsogae/core/payments/command/domain/Payment.kt`
+- Modify: `oneulsogae-core/src/main/kotlin/com/org/oneulsogae/core/payments/command/application/CompletePaymentService.kt`
+- Modify: `oneulsogae-infra/src/main/kotlin/com/org/oneulsogae/infra/payments/command/entity/PaymentEntity.kt`
+- Modify: `oneulsogae-infra/src/main/kotlin/com/org/oneulsogae/infra/payments/command/adapter/PaymentAdapter.kt`
 - Modify: `docs/migration/payments.sql`
 
 **Interfaces:**
 - Produces:
-  - `enum class PaymentStatus { PENDING, APPROVED, FAILED }` (패키지 `com.org.meeple.core.payments.command.domain`)
+  - `enum class PaymentStatus { PENDING, APPROVED, FAILED }` (패키지 `com.org.oneulsogae.core.payments.command.domain`)
   - `Payment(..., val status: PaymentStatus)` — 생성자 마지막 파라미터로 `status` 추가(기본값 없음)
   - `interface UpdatePaymentStatusPort { fun updateStatus(paymentId: Long, status: PaymentStatus) }`
   - `PaymentAdapter : SavePaymentPort, UpdatePaymentStatusPort`
 
 - [ ] **Step 1: `PaymentStatus` enum 생성**
 
-Create `meeple-core/src/main/kotlin/com/org/meeple/core/payments/command/domain/PaymentStatus.kt`:
+Create `oneulsogae-core/src/main/kotlin/com/org/oneulsogae/core/payments/command/domain/PaymentStatus.kt`:
 
 ```kotlin
-package com.org.meeple.core.payments.command.domain
+package com.org.oneulsogae.core.payments.command.domain
 
 /**
  * 결제(PG 청구) 라이프사이클 상태. 참가 승인 상태(gathering_members.status)와는 다른 축이다.
@@ -63,7 +63,7 @@ enum class PaymentStatus {
 
 - [ ] **Step 2: `Payment` 도메인에 status 추가**
 
-Modify `meeple-core/.../payments/command/domain/Payment.kt` — 클래스 doc 한 줄과 생성자 파라미터를 교체한다.
+Modify `oneulsogae-core/.../payments/command/domain/Payment.kt` — 클래스 doc 한 줄과 생성자 파라미터를 교체한다.
 
 doc의 `PG 최종 승인(confirm) 성공 건만 남기며,` 문장을 다음으로 바꾼다:
 
@@ -91,12 +91,12 @@ class Payment(
 
 - [ ] **Step 3: `UpdatePaymentStatusPort` 생성**
 
-Create `meeple-core/.../payments/command/application/port/out/UpdatePaymentStatusPort.kt`:
+Create `oneulsogae-core/.../payments/command/application/port/out/UpdatePaymentStatusPort.kt`:
 
 ```kotlin
-package com.org.meeple.core.payments.command.application.port.out
+package com.org.oneulsogae.core.payments.command.application.port.out
 
-import com.org.meeple.core.payments.command.domain.PaymentStatus
+import com.org.oneulsogae.core.payments.command.domain.PaymentStatus
 
 /** 결제 기록의 상태를 전이하는 아웃포트. PG 승인 결과로 PENDING → APPROVED/FAILED 전이에 쓴다. */
 interface UpdatePaymentStatusPort {
@@ -107,12 +107,12 @@ interface UpdatePaymentStatusPort {
 
 - [ ] **Step 4: `PaymentEntity`에 status var + payment_key 유니크**
 
-Modify `meeple-infra/.../payments/command/entity/PaymentEntity.kt`:
+Modify `oneulsogae-infra/.../payments/command/entity/PaymentEntity.kt`:
 
 import에 추가:
 
 ```kotlin
-import com.org.meeple.core.payments.command.domain.PaymentStatus
+import com.org.oneulsogae.core.payments.command.domain.PaymentStatus
 ```
 
 클래스 doc의 `PG 최종 승인(confirm) 성공 건만 저장한다 — ` 문구를 다음으로 교체:
@@ -147,17 +147,17 @@ import com.org.meeple.core.payments.command.domain.PaymentStatus
 
 - [ ] **Step 5: `PaymentAdapter`에 status 매핑 + updateStatus 구현**
 
-Modify `meeple-infra/.../payments/command/adapter/PaymentAdapter.kt` — 전체를 다음으로 교체:
+Modify `oneulsogae-infra/.../payments/command/adapter/PaymentAdapter.kt` — 전체를 다음으로 교체:
 
 ```kotlin
-package com.org.meeple.infra.payments.command.adapter
+package com.org.oneulsogae.infra.payments.command.adapter
 
-import com.org.meeple.core.payments.command.application.port.out.SavePaymentPort
-import com.org.meeple.core.payments.command.application.port.out.UpdatePaymentStatusPort
-import com.org.meeple.core.payments.command.domain.Payment
-import com.org.meeple.core.payments.command.domain.PaymentStatus
-import com.org.meeple.infra.payments.command.entity.PaymentEntity
-import com.org.meeple.infra.payments.command.repository.PaymentJpaRepository
+import com.org.oneulsogae.core.payments.command.application.port.out.SavePaymentPort
+import com.org.oneulsogae.core.payments.command.application.port.out.UpdatePaymentStatusPort
+import com.org.oneulsogae.core.payments.command.domain.Payment
+import com.org.oneulsogae.core.payments.command.domain.PaymentStatus
+import com.org.oneulsogae.infra.payments.command.entity.PaymentEntity
+import com.org.oneulsogae.infra.payments.command.repository.PaymentJpaRepository
 import org.springframework.stereotype.Component
 import org.springframework.transaction.annotation.Transactional
 
@@ -207,12 +207,12 @@ class PaymentAdapter(
 
 - [ ] **Step 6: `CompletePaymentService`의 저장에 status=APPROVED 명시 (동작 불변)**
 
-Modify `meeple-core/.../payments/command/application/CompletePaymentService.kt`.
+Modify `oneulsogae-core/.../payments/command/application/CompletePaymentService.kt`.
 
 import에 추가:
 
 ```kotlin
-import com.org.meeple.core.payments.command.domain.PaymentStatus
+import com.org.oneulsogae.core.payments.command.domain.PaymentStatus
 ```
 
 ③ 저장 블록의 `Payment(...)`에 `status`를 추가한다(기존 `paymentKey` 다음 줄):
@@ -267,18 +267,18 @@ CREATE TABLE payments (
 
 - [ ] **Step 8: 컴파일 확인**
 
-Run: `./gradlew :meeple-infra:compileKotlin -q`
+Run: `./gradlew :oneulsogae-infra:compileKotlin -q`
 Expected: 성공(에러 없음).
 
 - [ ] **Step 9: 기존 E2E가 그대로 통과하는지 확인**
 
-Run: `./gradlew :meeple-api:test --tests "com.org.meeple.api.payments.PaymentsCompleteE2ETest" -q`
+Run: `./gradlew :oneulsogae-api:test --tests "com.org.oneulsogae.api.payments.PaymentsCompleteE2ETest" -q`
 Expected: PASS (동작 불변 — 저장 status만 APPROVED로 바뀌고 아직 아무 테스트도 status를 단언하지 않는다).
 
 - [ ] **Step 10: 커밋**
 
 ```bash
-git add meeple-core meeple-infra docs/migration/payments.sql
+git add oneulsogae-core oneulsogae-infra docs/migration/payments.sql
 git commit -m "feat(payments): 결제 기록 status(PENDING/APPROVED/FAILED) 컬럼·상태전이 포트 추가"
 ```
 
@@ -289,8 +289,8 @@ git commit -m "feat(payments): 결제 기록 status(PENDING/APPROVED/FAILED) 컬
 `CompletePaymentService`를 `좌석확보 → PENDING 저장 → 승인 → 전이` 순서로 바꾸고, 승인 실패 시 `FAILED` 전이 + 좌석 복원 + 402를 수행한다. E2E를 먼저 갱신(실패 확인)한 뒤 서비스를 고쳐 통과시킨다.
 
 **Files:**
-- Modify: `meeple-api/src/test/kotlin/com/org/meeple/api/payments/PaymentsCompleteE2ETest.kt`
-- Modify: `meeple-core/src/main/kotlin/com/org/meeple/core/payments/command/application/CompletePaymentService.kt`
+- Modify: `oneulsogae-api/src/test/kotlin/com/org/oneulsogae/api/payments/PaymentsCompleteE2ETest.kt`
+- Modify: `oneulsogae-core/src/main/kotlin/com/org/oneulsogae/core/payments/command/application/CompletePaymentService.kt`
 
 **Interfaces:**
 - Consumes: Task 1의 `UpdatePaymentStatusPort.updateStatus(paymentId: Long, status: PaymentStatus)`, `PaymentStatus`, `Payment(..., status)`.
@@ -303,7 +303,7 @@ Modify `PaymentsCompleteE2ETest.kt`.
 import 추가(기존 import 블록):
 
 ```kotlin
-import com.org.meeple.core.payments.command.domain.PaymentStatus
+import com.org.oneulsogae.core.payments.command.domain.PaymentStatus
 ```
 
 (1) 성공 케이스(첫 번째 `it`, "얼리버드가로 PENDING 참가·결제 기록을 남기고 ..."): `saved?.paymentKey shouldBe "pay_key_1"` 다음 줄에 status 단언 추가:
@@ -346,7 +346,7 @@ import com.org.meeple.core.payments.command.domain.PaymentStatus
 
 - [ ] **Step 2: 테스트가 실패하는지 확인**
 
-Run: `./gradlew :meeple-api:test --tests "com.org.meeple.api.payments.PaymentsCompleteE2ETest" -q`
+Run: `./gradlew :oneulsogae-api:test --tests "com.org.oneulsogae.api.payments.PaymentsCompleteE2ETest" -q`
 Expected: FAIL — 성공 케이스의 APPROVED 단언은 통과한다(Task 1에서 이미 성공 시 status=APPROVED로 저장). 그러나 confirm-fail 케이스는 현재 서비스가 실패 시 아무것도 저장하지 않아 `failed`가 null → `PaymentStatus.FAILED` 단언에서 실패.
 
 - [ ] **Step 3: `CompletePaymentService`를 PENDING 선저장 흐름으로 교체**
@@ -356,7 +356,7 @@ Modify `CompletePaymentService.kt`.
 생성자에 `updatePaymentStatusPort`를 주입(기존 `savePaymentPort` 다음):
 
 ```kotlin
-import com.org.meeple.core.payments.command.application.port.out.UpdatePaymentStatusPort
+import com.org.oneulsogae.core.payments.command.application.port.out.UpdatePaymentStatusPort
 ```
 
 ```kotlin
@@ -414,13 +414,13 @@ import com.org.meeple.core.payments.command.application.port.out.UpdatePaymentSt
 
 - [ ] **Step 4: 테스트 통과 확인**
 
-Run: `./gradlew :meeple-api:test --tests "com.org.meeple.api.payments.PaymentsCompleteE2ETest" -q`
+Run: `./gradlew :oneulsogae-api:test --tests "com.org.oneulsogae.api.payments.PaymentsCompleteE2ETest" -q`
 Expected: PASS (성공=APPROVED, confirm-fail=FAILED 기록·좌석 복원 모두 만족).
 
 - [ ] **Step 5: 커밋**
 
 ```bash
-git add meeple-core meeple-api
+git add oneulsogae-core oneulsogae-api
 git commit -m "feat(payments): PG 승인 전 PENDING 결제기록 선저장·승인 결과로 상태 전이"
 ```
 
@@ -428,7 +428,7 @@ git commit -m "feat(payments): PG 승인 전 PENDING 결제기록 선저장·승
 
 ## 검증(전체)
 
-- [ ] `./gradlew :meeple-api:test --tests "com.org.meeple.api.payments.*" -q` — 체크아웃·결제완료 E2E 전부 PASS.
+- [ ] `./gradlew :oneulsogae-api:test --tests "com.org.oneulsogae.api.payments.*" -q` — 체크아웃·결제완료 E2E 전부 PASS.
 
 ## 배포 전 게이트(범위 밖, 기억용)
 

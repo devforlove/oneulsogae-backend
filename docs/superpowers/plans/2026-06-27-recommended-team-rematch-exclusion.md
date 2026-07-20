@@ -10,7 +10,7 @@
 
 ## Global Constraints
 
-- 응답·주석은 한국어. `meeple-backend`만 수정.
+- 응답·주석은 한국어. `oneulsogae-backend`만 수정.
 - 타입 명시: 변수·반환·람다 파라미터 타입을 생략하지 않는다.
 - 도메인 로직 캡슐화: 서비스가 일급 컬렉션 내부를 들춰 계산하지 말고 도메인 메서드(`Teams.matchHistories()`)로 응집.
 - 헥사고날: Controller→in-port, Service→out-port, infra Adapter가 out-port 구현. core port/out에 인터페이스, infra command/adapter에 구현.
@@ -18,7 +18,7 @@
 - 영속성: 엔티티마다 어댑터 하나. 조회 구현 우선순위 ①Spring Data 파생 쿼리. infra query→command repository 참조 허용.
 - 멱등: `recommended_team_histories`는 `UNIQUE(user_id, team_id)`. 저장은 `exists` 체크 후 신규만 insert(유니크 위반으로 성사 트랜잭션이 롤백되지 않도록).
 - 쓰기는 성사와 **같은 트랜잭션**(`completeMatch` 본문). AFTER_COMMIT 이벤트 아님.
-- 테스트: core 도메인→Kotest 유닛(`meeple-api/src/test/.../domain/match`), scheduler→Kotest 유닛(`meeple-api/src/test/.../scheduler/match`), api/infra 경계→E2E(`meeple-api/src/test/.../api/match`, `AbstractIntegrationSupport` + `IntegrationUtil`). 테스트 스키마는 `ddl-auto: create-drop`이라 새 엔티티가 자동 생성된다.
+- 테스트: core 도메인→Kotest 유닛(`oneulsogae-api/src/test/.../domain/match`), scheduler→Kotest 유닛(`oneulsogae-api/src/test/.../scheduler/match`), api/infra 경계→E2E(`oneulsogae-api/src/test/.../api/match`, `AbstractIntegrationSupport` + `IntegrationUtil`). 테스트 스키마는 `ddl-auto: create-drop`이라 새 엔티티가 자동 생성된다.
 - 작업 트리에 이전 세션의 무관한 미커밋 변경이 있다. 절대 건드리거나 스테이지하지 말 것. 각 태스크의 `git add`는 명시된 파일만.
 
 ---
@@ -28,10 +28,10 @@
 성사 시 남길 이력의 도메인 표현과, 두 팀에서 (구성원→상대 팀)을 만드는 도메인 메서드, 저장 out-port를 추가한다. Spring 컨텍스트 영향 없음(포트 구현은 Task 2).
 
 **Files:**
-- Create: `meeple-core/src/main/kotlin/com/org/meeple/core/match/command/domain/RecommendedTeamHistory.kt`
-- Modify: `meeple-core/src/main/kotlin/com/org/meeple/core/match/command/domain/Teams.kt`
-- Create: `meeple-core/src/main/kotlin/com/org/meeple/core/match/command/application/port/out/SaveRecommendedTeamHistoryPort.kt`
-- Test: `meeple-api/src/test/kotlin/com/org/meeple/domain/match/TeamsTest.kt` (기존 파일에 describe 추가)
+- Create: `oneulsogae-core/src/main/kotlin/com/org/oneulsogae/core/match/command/domain/RecommendedTeamHistory.kt`
+- Modify: `oneulsogae-core/src/main/kotlin/com/org/oneulsogae/core/match/command/domain/Teams.kt`
+- Create: `oneulsogae-core/src/main/kotlin/com/org/oneulsogae/core/match/command/application/port/out/SaveRecommendedTeamHistoryPort.kt`
+- Test: `oneulsogae-api/src/test/kotlin/com/org/oneulsogae/domain/match/TeamsTest.kt` (기존 파일에 describe 추가)
 
 **Interfaces:**
 - Produces:
@@ -41,7 +41,7 @@
 
 - [ ] **Step 1: `Teams.matchHistories()` 유닛 테스트 작성 (실패)**
 
-`TeamsTest.kt`의 `describe("opponentActiveMemberIds")` 블록 뒤(닫는 `})` 직전)에 추가. 파일 상단 import에 `import com.org.meeple.core.match.command.domain.RecommendedTeamHistory` 추가:
+`TeamsTest.kt`의 `describe("opponentActiveMemberIds")` 블록 뒤(닫는 `})` 직전)에 추가. 파일 상단 import에 `import com.org.oneulsogae.core.match.command.domain.RecommendedTeamHistory` 추가:
 
 ```kotlin
 	describe("matchHistories") {
@@ -65,7 +65,7 @@
 
 - [ ] **Step 2: 테스트 실패 확인**
 
-Run: `./gradlew :meeple-api:test --tests "com.org.meeple.domain.match.TeamsTest"`
+Run: `./gradlew :oneulsogae-api:test --tests "com.org.oneulsogae.domain.match.TeamsTest"`
 Expected: 컴파일 실패(`RecommendedTeamHistory`/`matchHistories` 미정의).
 
 - [ ] **Step 3: 도메인 모델 구현**
@@ -73,7 +73,7 @@ Expected: 컴파일 실패(`RecommendedTeamHistory`/`matchHistories` 미정의).
 `RecommendedTeamHistory.kt`:
 
 ```kotlin
-package com.org.meeple.core.match.command.domain
+package com.org.oneulsogae.core.match.command.domain
 
 /**
  * 매칭 성사 시 남기는 (유저 → 매칭한 상대 팀) 이력 한 건.
@@ -103,9 +103,9 @@ data class RecommendedTeamHistory(
 `SaveRecommendedTeamHistoryPort.kt`:
 
 ```kotlin
-package com.org.meeple.core.match.command.application.port.out
+package com.org.oneulsogae.core.match.command.application.port.out
 
-import com.org.meeple.core.match.command.domain.RecommendedTeamHistory
+import com.org.oneulsogae.core.match.command.domain.RecommendedTeamHistory
 
 /**
  * 성사 (유저 → 상대 팀) 이력 저장 out-port. infra 어댑터가 구현한다.
@@ -118,16 +118,16 @@ interface SaveRecommendedTeamHistoryPort {
 
 - [ ] **Step 6: 테스트 통과 확인**
 
-Run: `./gradlew :meeple-api:test --tests "com.org.meeple.domain.match.TeamsTest"`
+Run: `./gradlew :oneulsogae-api:test --tests "com.org.oneulsogae.domain.match.TeamsTest"`
 Expected: PASS (기존 케이스 + matchHistories 2건)
 
 - [ ] **Step 7: 커밋**
 
 ```bash
-git add meeple-core/src/main/kotlin/com/org/meeple/core/match/command/domain/RecommendedTeamHistory.kt \
-        meeple-core/src/main/kotlin/com/org/meeple/core/match/command/domain/Teams.kt \
-        meeple-core/src/main/kotlin/com/org/meeple/core/match/command/application/port/out/SaveRecommendedTeamHistoryPort.kt \
-        meeple-api/src/test/kotlin/com/org/meeple/domain/match/TeamsTest.kt
+git add oneulsogae-core/src/main/kotlin/com/org/oneulsogae/core/match/command/domain/RecommendedTeamHistory.kt \
+        oneulsogae-core/src/main/kotlin/com/org/oneulsogae/core/match/command/domain/Teams.kt \
+        oneulsogae-core/src/main/kotlin/com/org/oneulsogae/core/match/command/application/port/out/SaveRecommendedTeamHistoryPort.kt \
+        oneulsogae-api/src/test/kotlin/com/org/oneulsogae/domain/match/TeamsTest.kt
 git commit -m "feat(match): 매칭 성사 이력 도메인 모델·저장 포트 추가"
 ```
 
@@ -139,10 +139,10 @@ git commit -m "feat(match): 매칭 성사 이력 도메인 모델·저장 포트
 
 **Files:**
 - Create: `docs/migration/recommended_team_histories.sql`
-- Create: `meeple-infra/src/main/kotlin/com/org/meeple/infra/match/command/entity/RecommendedTeamHistoryEntity.kt`
-- Create: `meeple-infra/src/main/kotlin/com/org/meeple/infra/match/command/repository/RecommendedTeamHistoryJpaRepository.kt`
-- Create: `meeple-infra/src/main/kotlin/com/org/meeple/infra/match/command/adapter/RecommendedTeamHistoryAdapter.kt`
-- Test: `meeple-api/src/test/kotlin/com/org/meeple/api/match/RecommendedTeamHistoryAdapterE2ETest.kt`
+- Create: `oneulsogae-infra/src/main/kotlin/com/org/oneulsogae/infra/match/command/entity/RecommendedTeamHistoryEntity.kt`
+- Create: `oneulsogae-infra/src/main/kotlin/com/org/oneulsogae/infra/match/command/repository/RecommendedTeamHistoryJpaRepository.kt`
+- Create: `oneulsogae-infra/src/main/kotlin/com/org/oneulsogae/infra/match/command/adapter/RecommendedTeamHistoryAdapter.kt`
+- Test: `oneulsogae-api/src/test/kotlin/com/org/oneulsogae/api/match/RecommendedTeamHistoryAdapterE2ETest.kt`
 
 **Interfaces:**
 - Consumes: `SaveRecommendedTeamHistoryPort`, `RecommendedTeamHistory` (Task 1)
@@ -156,13 +156,13 @@ git commit -m "feat(match): 매칭 성사 이력 도메인 모델·저장 포트
 `RecommendedTeamHistoryAdapterE2ETest.kt`:
 
 ```kotlin
-package com.org.meeple.api.match
+package com.org.oneulsogae.api.match
 
-import com.org.meeple.common.integration.AbstractIntegrationSupport
-import com.org.meeple.core.match.command.application.port.out.SaveRecommendedTeamHistoryPort
-import com.org.meeple.core.match.command.domain.RecommendedTeamHistory
-import com.org.meeple.infra.fixture.IntegrationUtil
-import com.org.meeple.infra.match.command.entity.QRecommendedTeamHistoryEntity
+import com.org.oneulsogae.common.integration.AbstractIntegrationSupport
+import com.org.oneulsogae.core.match.command.application.port.out.SaveRecommendedTeamHistoryPort
+import com.org.oneulsogae.core.match.command.domain.RecommendedTeamHistory
+import com.org.oneulsogae.infra.fixture.IntegrationUtil
+import com.org.oneulsogae.infra.match.command.entity.QRecommendedTeamHistoryEntity
 import io.kotest.matchers.collections.shouldContainExactlyInAnyOrder
 import org.springframework.beans.factory.annotation.Autowired
 
@@ -211,7 +211,7 @@ private fun teamIdsOf(userId: Long): List<Long> {
 
 - [ ] **Step 2: 테스트 실패 확인**
 
-Run: `./gradlew :meeple-api:test --tests "com.org.meeple.api.match.RecommendedTeamHistoryAdapterE2ETest"`
+Run: `./gradlew :oneulsogae-api:test --tests "com.org.oneulsogae.api.match.RecommendedTeamHistoryAdapterE2ETest"`
 Expected: 컴파일 실패(`RecommendedTeamHistoryEntity`/`QRecommendedTeamHistoryEntity`/어댑터 빈 미존재).
 
 - [ ] **Step 3: 엔티티 구현**
@@ -219,9 +219,9 @@ Expected: 컴파일 실패(`RecommendedTeamHistoryEntity`/`QRecommendedTeamHisto
 `RecommendedTeamHistoryEntity.kt`:
 
 ```kotlin
-package com.org.meeple.infra.match.command.entity
+package com.org.oneulsogae.infra.match.command.entity
 
-import com.org.meeple.infra.common.BaseEntity
+import com.org.oneulsogae.infra.common.BaseEntity
 import jakarta.persistence.Column
 import jakarta.persistence.Entity
 import jakarta.persistence.Table
@@ -254,9 +254,9 @@ class RecommendedTeamHistoryEntity(
 `RecommendedTeamHistoryJpaRepository.kt`:
 
 ```kotlin
-package com.org.meeple.infra.match.command.repository
+package com.org.oneulsogae.infra.match.command.repository
 
-import com.org.meeple.infra.match.command.entity.RecommendedTeamHistoryEntity
+import com.org.oneulsogae.infra.match.command.entity.RecommendedTeamHistoryEntity
 import org.springframework.data.jpa.repository.JpaRepository
 
 interface RecommendedTeamHistoryJpaRepository : JpaRepository<RecommendedTeamHistoryEntity, Long> {
@@ -274,12 +274,12 @@ interface RecommendedTeamHistoryJpaRepository : JpaRepository<RecommendedTeamHis
 `RecommendedTeamHistoryAdapter.kt`:
 
 ```kotlin
-package com.org.meeple.infra.match.command.adapter
+package com.org.oneulsogae.infra.match.command.adapter
 
-import com.org.meeple.core.match.command.application.port.out.SaveRecommendedTeamHistoryPort
-import com.org.meeple.core.match.command.domain.RecommendedTeamHistory
-import com.org.meeple.infra.match.command.entity.RecommendedTeamHistoryEntity
-import com.org.meeple.infra.match.command.repository.RecommendedTeamHistoryJpaRepository
+import com.org.oneulsogae.core.match.command.application.port.out.SaveRecommendedTeamHistoryPort
+import com.org.oneulsogae.core.match.command.domain.RecommendedTeamHistory
+import com.org.oneulsogae.infra.match.command.entity.RecommendedTeamHistoryEntity
+import com.org.oneulsogae.infra.match.command.repository.RecommendedTeamHistoryJpaRepository
 import org.springframework.stereotype.Component
 
 /**
@@ -323,17 +323,17 @@ CREATE TABLE recommended_team_histories (
 
 - [ ] **Step 7: 테스트 통과 확인**
 
-Run: `./gradlew :meeple-api:test --tests "com.org.meeple.api.match.RecommendedTeamHistoryAdapterE2ETest"`
+Run: `./gradlew :oneulsogae-api:test --tests "com.org.oneulsogae.api.match.RecommendedTeamHistoryAdapterE2ETest"`
 Expected: PASS (저장 + 멱등 재호출 후 user1→{10,20}, user2→{10})
 
 - [ ] **Step 8: 커밋**
 
 ```bash
 git add docs/migration/recommended_team_histories.sql \
-        meeple-infra/src/main/kotlin/com/org/meeple/infra/match/command/entity/RecommendedTeamHistoryEntity.kt \
-        meeple-infra/src/main/kotlin/com/org/meeple/infra/match/command/repository/RecommendedTeamHistoryJpaRepository.kt \
-        meeple-infra/src/main/kotlin/com/org/meeple/infra/match/command/adapter/RecommendedTeamHistoryAdapter.kt \
-        meeple-api/src/test/kotlin/com/org/meeple/api/match/RecommendedTeamHistoryAdapterE2ETest.kt
+        oneulsogae-infra/src/main/kotlin/com/org/oneulsogae/infra/match/command/entity/RecommendedTeamHistoryEntity.kt \
+        oneulsogae-infra/src/main/kotlin/com/org/oneulsogae/infra/match/command/repository/RecommendedTeamHistoryJpaRepository.kt \
+        oneulsogae-infra/src/main/kotlin/com/org/oneulsogae/infra/match/command/adapter/RecommendedTeamHistoryAdapter.kt \
+        oneulsogae-api/src/test/kotlin/com/org/oneulsogae/api/match/RecommendedTeamHistoryAdapterE2ETest.kt
 git commit -m "feat(match): 매칭 성사 이력 테이블·멱등 저장 어댑터 추가"
 ```
 
@@ -344,8 +344,8 @@ git commit -m "feat(match): 매칭 성사 이력 테이블·멱등 저장 어댑
 `SendTeamInterestService.completeMatch()`가 성사 시 같은 트랜잭션에서 이력을 기록하도록 포트를 주입·호출하고, 성사 E2E에 이력 4행 검증을 추가한다.
 
 **Files:**
-- Modify: `meeple-core/src/main/kotlin/com/org/meeple/core/match/command/application/SendTeamInterestService.kt`
-- Test: `meeple-api/src/test/kotlin/com/org/meeple/api/match/SendTeamInterestE2ETest.kt`
+- Modify: `oneulsogae-core/src/main/kotlin/com/org/oneulsogae/core/match/command/application/SendTeamInterestService.kt`
+- Test: `oneulsogae-api/src/test/kotlin/com/org/oneulsogae/api/match/SendTeamInterestE2ETest.kt`
 
 **Interfaces:**
 - Consumes: `SaveRecommendedTeamHistoryPort` (Task 1), `Teams.matchHistories()` (Task 1), `RecommendedTeamHistoryAdapter` 빈 (Task 2), `QRecommendedTeamHistoryEntity` (Task 2)
@@ -356,7 +356,7 @@ git commit -m "feat(match): 매칭 성사 이력 테이블·멱등 저장 어댑
 
 (a) 파일 상단 import에 추가:
 ```kotlin
-import com.org.meeple.infra.match.command.entity.QRecommendedTeamHistoryEntity
+import com.org.oneulsogae.infra.match.command.entity.QRecommendedTeamHistoryEntity
 import io.kotest.matchers.collections.shouldContainExactlyInAnyOrder
 ```
 
@@ -384,7 +384,7 @@ private fun recommendedTeamHistoryTeamIds(userId: Long): List<Long> {
 
 - [ ] **Step 2: 테스트 실패 확인**
 
-Run: `./gradlew :meeple-api:test --tests "com.org.meeple.api.match.SendTeamInterestE2ETest"`
+Run: `./gradlew :oneulsogae-api:test --tests "com.org.oneulsogae.api.match.SendTeamInterestE2ETest"`
 Expected: MATCHED 케이스에서 이력 행이 없어 실패(`shouldContainExactlyInAnyOrder` 불일치, 빈 리스트).
 
 - [ ] **Step 3: 서비스에 포트 주입·호출**
@@ -393,7 +393,7 @@ Expected: MATCHED 케이스에서 이력 행이 없어 실패(`shouldContainExac
 
 (a) import 추가:
 ```kotlin
-import com.org.meeple.core.match.command.application.port.out.SaveRecommendedTeamHistoryPort
+import com.org.oneulsogae.core.match.command.application.port.out.SaveRecommendedTeamHistoryPort
 ```
 
 (b) 생성자에 의존성 추가(`saveTeamMatchPort` 다음 줄):
@@ -411,14 +411,14 @@ import com.org.meeple.core.match.command.application.port.out.SaveRecommendedTea
 
 - [ ] **Step 4: 테스트 통과 확인**
 
-Run: `./gradlew :meeple-api:test --tests "com.org.meeple.api.match.SendTeamInterestE2ETest"`
+Run: `./gradlew :oneulsogae-api:test --tests "com.org.oneulsogae.api.match.SendTeamInterestE2ETest"`
 Expected: PASS (MATCHED 케이스에서 4행 기록 확인, 기존 케이스 전부 유지)
 
 - [ ] **Step 5: 커밋**
 
 ```bash
-git add meeple-core/src/main/kotlin/com/org/meeple/core/match/command/application/SendTeamInterestService.kt \
-        meeple-api/src/test/kotlin/com/org/meeple/api/match/SendTeamInterestE2ETest.kt
+git add oneulsogae-core/src/main/kotlin/com/org/oneulsogae/core/match/command/application/SendTeamInterestService.kt \
+        oneulsogae-api/src/test/kotlin/com/org/oneulsogae/api/match/SendTeamInterestE2ETest.kt
 git commit -m "feat(match): 팀 매칭 성사 시 재매칭 제외 이력 기록"
 ```
 
@@ -429,10 +429,10 @@ git commit -m "feat(match): 팀 매칭 성사 시 재매칭 제외 이력 기록
 배치가 유저별 매칭 이력을 단건 seek로 조회해 후보에서 제외하도록 조회 dao와 배치 통합을 추가한다.
 
 **Files:**
-- Create: `meeple-scheduler/src/main/kotlin/com/org/meeple/scheduler/match/query/dao/GetRecommendedTeamHistoryDao.kt`
-- Create: `meeple-infra/src/main/kotlin/com/org/meeple/infra/match/query/GetRecommendedTeamHistoryDaoImpl.kt`
-- Modify: `meeple-scheduler/src/main/kotlin/com/org/meeple/scheduler/match/command/application/RecommendedTeamBatchService.kt`
-- Test: `meeple-api/src/test/kotlin/com/org/meeple/scheduler/match/RecommendedTeamBatchServiceTest.kt`
+- Create: `oneulsogae-scheduler/src/main/kotlin/com/org/oneulsogae/scheduler/match/query/dao/GetRecommendedTeamHistoryDao.kt`
+- Create: `oneulsogae-infra/src/main/kotlin/com/org/oneulsogae/infra/match/query/GetRecommendedTeamHistoryDaoImpl.kt`
+- Modify: `oneulsogae-scheduler/src/main/kotlin/com/org/oneulsogae/scheduler/match/command/application/RecommendedTeamBatchService.kt`
+- Test: `oneulsogae-api/src/test/kotlin/com/org/oneulsogae/scheduler/match/RecommendedTeamBatchServiceTest.kt`
 
 **Interfaces:**
 - Consumes: `RecommendedTeamHistoryJpaRepository` (Task 2)
@@ -443,21 +443,21 @@ git commit -m "feat(match): 팀 매칭 성사 시 재매칭 제외 이력 기록
 `RecommendedTeamBatchServiceTest.kt`:
 
 ```kotlin
-package com.org.meeple.scheduler.match
+package com.org.oneulsogae.scheduler.match
 
-import com.org.meeple.common.user.Gender
-import com.org.meeple.scheduler.match.command.application.RecommendedTeamBatchService
-import com.org.meeple.scheduler.match.command.application.port.out.RegionProximityPort
-import com.org.meeple.scheduler.match.command.application.port.out.RegionShuffler
-import com.org.meeple.scheduler.match.command.application.port.out.SaveRecommendedTeamPort
-import com.org.meeple.scheduler.match.command.application.port.out.TimeGenerator
-import com.org.meeple.scheduler.match.command.domain.RecommendedTeamBatchResult
-import com.org.meeple.scheduler.match.query.dao.GetCandidateTeamDao
-import com.org.meeple.scheduler.match.query.dao.GetRecommendableSoloUserDao
-import com.org.meeple.scheduler.match.query.dao.GetRecommendedTeamHistoryDao
-import com.org.meeple.scheduler.match.query.dao.GetRecommendedTeamRecordDao
-import com.org.meeple.scheduler.match.query.dto.CandidateTeam
-import com.org.meeple.scheduler.match.query.dto.RecommendableSoloUser
+import com.org.oneulsogae.common.user.Gender
+import com.org.oneulsogae.scheduler.match.command.application.RecommendedTeamBatchService
+import com.org.oneulsogae.scheduler.match.command.application.port.out.RegionProximityPort
+import com.org.oneulsogae.scheduler.match.command.application.port.out.RegionShuffler
+import com.org.oneulsogae.scheduler.match.command.application.port.out.SaveRecommendedTeamPort
+import com.org.oneulsogae.scheduler.match.command.application.port.out.TimeGenerator
+import com.org.oneulsogae.scheduler.match.command.domain.RecommendedTeamBatchResult
+import com.org.oneulsogae.scheduler.match.query.dao.GetCandidateTeamDao
+import com.org.oneulsogae.scheduler.match.query.dao.GetRecommendableSoloUserDao
+import com.org.oneulsogae.scheduler.match.query.dao.GetRecommendedTeamHistoryDao
+import com.org.oneulsogae.scheduler.match.query.dao.GetRecommendedTeamRecordDao
+import com.org.oneulsogae.scheduler.match.query.dto.CandidateTeam
+import com.org.oneulsogae.scheduler.match.query.dto.RecommendableSoloUser
 import io.kotest.core.spec.style.DescribeSpec
 import io.kotest.matchers.collections.shouldContainExactly
 import io.kotest.matchers.shouldBe
@@ -536,7 +536,7 @@ class RecommendedTeamBatchServiceTest : DescribeSpec({
 
 - [ ] **Step 2: 테스트 실패 확인**
 
-Run: `./gradlew :meeple-api:test --tests "com.org.meeple.scheduler.match.RecommendedTeamBatchServiceTest"`
+Run: `./gradlew :oneulsogae-api:test --tests "com.org.oneulsogae.scheduler.match.RecommendedTeamBatchServiceTest"`
 Expected: 컴파일 실패(`GetRecommendedTeamHistoryDao` 미정의 + 생성자 인자 불일치).
 
 - [ ] **Step 3: 조회 dao 인터페이스**
@@ -544,7 +544,7 @@ Expected: 컴파일 실패(`GetRecommendedTeamHistoryDao` 미정의 + 생성자 
 `GetRecommendedTeamHistoryDao.kt`:
 
 ```kotlin
-package com.org.meeple.scheduler.match.query.dao
+package com.org.oneulsogae.scheduler.match.query.dao
 
 /**
  * 유저가 과거 MATCHED한 상대 팀 조회 dao. (조회 전용) 구현은 infra가 담당한다.
@@ -562,11 +562,11 @@ interface GetRecommendedTeamHistoryDao {
 `GetRecommendedTeamHistoryDaoImpl.kt`:
 
 ```kotlin
-package com.org.meeple.infra.match.query
+package com.org.oneulsogae.infra.match.query
 
-import com.org.meeple.infra.match.command.entity.RecommendedTeamHistoryEntity
-import com.org.meeple.infra.match.command.repository.RecommendedTeamHistoryJpaRepository
-import com.org.meeple.scheduler.match.query.dao.GetRecommendedTeamHistoryDao
+import com.org.oneulsogae.infra.match.command.entity.RecommendedTeamHistoryEntity
+import com.org.oneulsogae.infra.match.command.repository.RecommendedTeamHistoryJpaRepository
+import com.org.oneulsogae.scheduler.match.query.dao.GetRecommendedTeamHistoryDao
 import org.springframework.stereotype.Component
 
 /**
@@ -591,7 +591,7 @@ class GetRecommendedTeamHistoryDaoImpl(
 
 (a) import 추가:
 ```kotlin
-import com.org.meeple.scheduler.match.query.dao.GetRecommendedTeamHistoryDao
+import com.org.oneulsogae.scheduler.match.query.dao.GetRecommendedTeamHistoryDao
 ```
 
 (b) 생성자에 의존성 추가(`getCandidateTeamDao` 다음 줄):
@@ -634,7 +634,7 @@ import com.org.meeple.scheduler.match.query.dao.GetRecommendedTeamHistoryDao
 
 - [ ] **Step 6: 유닛 테스트 통과 확인**
 
-Run: `./gradlew :meeple-api:test --tests "com.org.meeple.scheduler.match.RecommendedTeamBatchServiceTest"`
+Run: `./gradlew :oneulsogae-api:test --tests "com.org.oneulsogae.scheduler.match.RecommendedTeamBatchServiceTest"`
 Expected: PASS
 
 - [ ] **Step 7: 전체 빌드 확인**
@@ -645,10 +645,10 @@ Expected: BUILD SUCCESSFUL (스프링 컨텍스트가 새 dao/adapter 빈으로 
 - [ ] **Step 8: 커밋**
 
 ```bash
-git add meeple-scheduler/src/main/kotlin/com/org/meeple/scheduler/match/query/dao/GetRecommendedTeamHistoryDao.kt \
-        meeple-infra/src/main/kotlin/com/org/meeple/infra/match/query/GetRecommendedTeamHistoryDaoImpl.kt \
-        meeple-scheduler/src/main/kotlin/com/org/meeple/scheduler/match/command/application/RecommendedTeamBatchService.kt \
-        meeple-api/src/test/kotlin/com/org/meeple/scheduler/match/RecommendedTeamBatchServiceTest.kt
+git add oneulsogae-scheduler/src/main/kotlin/com/org/oneulsogae/scheduler/match/query/dao/GetRecommendedTeamHistoryDao.kt \
+        oneulsogae-infra/src/main/kotlin/com/org/oneulsogae/infra/match/query/GetRecommendedTeamHistoryDaoImpl.kt \
+        oneulsogae-scheduler/src/main/kotlin/com/org/oneulsogae/scheduler/match/command/application/RecommendedTeamBatchService.kt \
+        oneulsogae-api/src/test/kotlin/com/org/oneulsogae/scheduler/match/RecommendedTeamBatchServiceTest.kt
 git commit -m "feat(match): 추천 팀 배치에 유저별 재매칭 팀 제외 적용"
 ```
 

@@ -1,10 +1,10 @@
 # -*- coding: utf-8 -*-
-"""미플 사업계획서 .hwpx(OWPML) 생성기 — Python 표준 라이브러리만 사용."""
+"""오늘의 소개 사업계획서 .hwpx(OWPML) 생성기 — Python 표준 라이브러리만 사용."""
 import os
 import zipfile
 from xml.sax.saxutils import escape
 
-OUT = os.path.join(os.path.dirname(os.path.abspath(__file__)), "미플_사업계획서.hwpx")
+OUT = os.path.join(os.path.dirname(os.path.abspath(__file__)), "오늘의 소개_사업계획서.hwpx")
 
 # ---------------------------------------------------------------------------
 # 본문 콘텐츠 정의 (블록 리스트)
@@ -16,13 +16,13 @@ def T(widths, rows, header=True):
 
 CONTENT = [
     ("title", "사 업 계 획 서"),
-    ("subtitle", "미플(Meeple) — 직장인 신원검증 기반 소개팅·소셜 매칭 플랫폼"),
+    ("subtitle", "오늘의 소개(Oneulsogae) — 직장인 신원검증 기반 소개팅·소셜 매칭 플랫폼"),
     ("p", "정부지원사업 제출용(PSST 양식). 본 문서의 기술·기능 내용은 실제 구현된 코드를 근거로 작성하였으며, 시장규모·재무·팀 등 코드로 확인할 수 없는 항목은 【작성 필요】로 표시하였습니다."),
 
     ("h1", "□ 창업아이템 개요 (요약)"),
     T([10630, 31890], [
         ["구분", "내용"],
-        ["아이템명", "미플(Meeple) — 직장인 신원검증 기반 소개팅·소셜 매칭 플랫폼"],
+        ["아이템명", "오늘의 소개(Oneulsogae) — 직장인 신원검증 기반 소개팅·소셜 매칭 플랫폼"],
         ["핵심 가치", "회사 이메일 인증으로 검증된 직장인만 참여하는 신뢰 기반 매칭"],
         ["핵심 기능", "① 1:1 자동 소개팅 매칭 ② 코인 기반 경제 ③ 실시간 채팅 ④ 2:2 팀 결성"],
         ["산출물", "Kotlin/Spring Boot 기반 백엔드(헥사고날 아키텍처), REST API + WebSocket"],
@@ -37,7 +37,7 @@ CONTENT = [
     ("bul", "기존 소개팅앱의 신뢰 문제: 익명·허위 프로필, 신원 미검증으로 인한 사기·불쾌 경험이 이용 이탈의 핵심 원인이다."),
     ("bul", "검증의 부재: 직업·소속을 자기신고에 의존하는 구조는 '검증된 직장인'이라는 가치를 보장하지 못한다."),
     ("h2", "1-2. 목적 및 해결하고자 하는 문제"),
-    ("p", "미플은 회사 이메일 도메인 인증을 온보딩 필수 절차로 두어, 신원이 검증된 직장인만 매칭 풀에 진입하게 한다. 이를 통해 '상대가 실제 직장인인가'라는 신뢰 비용을 플랫폼이 구조적으로 해결한다."),
+    ("p", "오늘의 소개은 회사 이메일 도메인 인증을 온보딩 필수 절차로 두어, 신원이 검증된 직장인만 매칭 풀에 진입하게 한다. 이를 통해 '상대가 실제 직장인인가'라는 신뢰 비용을 플랫폼이 구조적으로 해결한다."),
     ("bul", "회사 이메일 인증번호 발송·검증 후 회사명 자동 매핑(미매핑 시 직접 입력)"),
     ("bul", "인증 완료(ACTIVE) 사용자만 매칭 대상에 포함"),
     ("bul", "온보딩 단계: ONBOARDING → EMAIL_VERIFICATION_PENDING → COMPANY_NOT_RESOLVED → ACTIVE"),
@@ -70,7 +70,7 @@ CONTENT = [
 
     ("h1", "3. 성장전략 (Scale-up)"),
     ("h2", "3-1. 비즈니스 모델 (코인 경제)"),
-    ("p", "미플의 핵심 수익원은 코인이다. 매칭 행위(신청/수락)에 코인을 소모하고, 사용자는 코인을 구매하여 충전한다."),
+    ("p", "오늘의 소개의 핵심 수익원은 코인이다. 매칭 행위(신청/수락)에 코인을 소모하고, 사용자는 코인을 구매하여 충전한다."),
     T([18610, 10630, 13280], [
         ["행위", "코인 비용", "비고"],
         ["소개팅 신청", "32 코인", "DATING_INIT"],
@@ -113,7 +113,7 @@ CONTENT = [
         ["3단계", "【작성 필요】", "미팅(N:N), 추천 고도화, 정식 출시"],
         ["4단계", "【작성 필요】", "사용자 확보·수익화·스케일업"],
     ]),
-    ("p", "※ 본 사업계획서는 meeple-backend 코드베이스의 실제 구현 기능을 근거로 작성되었습니다."),
+    ("p", "※ 본 사업계획서는 oneulsogae-backend 코드베이스의 실제 구현 기능을 근거로 작성되었습니다."),
 ]
 
 # ---------------------------------------------------------------------------
@@ -400,9 +400,9 @@ CONTENT_HPF = ('<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\n'
     'xmlns:ha="http://www.hancom.co.kr/hwpml/2011/app" '
     'version="" unique-identifier="" id="">'
     '<opf:metadata>'
-    '<opf:title>미플 사업계획서</opf:title>'
+    '<opf:title>오늘의 소개 사업계획서</opf:title>'
     '<opf:language>ko</opf:language>'
-    '<opf:meta name="creator" content="meeple"/>'
+    '<opf:meta name="creator" content="oneulsogae"/>'
     '</opf:metadata>'
     '<opf:manifest>'
     '<opf:item id="header" href="Contents/header.xml" media-type="application/xml"/>'

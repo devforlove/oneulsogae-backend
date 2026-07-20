@@ -7,8 +7,8 @@
 
 현재 1:1 매칭은 두 경로로 동작한다.
 
-- **일일 배치**(`RunDailyMatchBatchService` / `MatchIntroducer`, meeple-scheduler): 전체 활성 유저를 돌며 각자에게 1명씩 소개.
-- **온보딩 즉시 추천**(`RecommendMatchService`, meeple-core): 가입/온보딩 직후 그 유저에게 1명 즉시 추천.
+- **일일 배치**(`RunDailyMatchBatchService` / `MatchIntroducer`, oneulsogae-scheduler): 전체 활성 유저를 돌며 각자에게 1명씩 소개.
+- **온보딩 즉시 추천**(`RecommendMatchService`, oneulsogae-core): 가입/온보딩 직후 그 유저에게 1명 즉시 추천.
 
 두 경로 모두 **`regionCode`(시도 기반 1~5 광역코드) 정확 일치 + 풀 내 랜덤(SPOP)** 으로 후보를 고른다. `RegionEntity`에 지역 대표 위경도(lat/long)가 있으나 매칭엔 쓰이지 않는다.
 
@@ -116,7 +116,7 @@
 
 - **`RegionProximity` 순수 계산기 → Kotest 유닛**: 가까운 지역이 먼저, 자기 지역 거리 0, 좌표 동률 시 안정 정렬.
 - **`MatchIntroducer` 근접 순회 → 유닛**(가짜 포트): 가까운 지역 우선 채택, history 충돌 시 다음 후보/지역으로 진행, 전 지역 소진 시 `null`.
-- **E2E(meeple-api)**: 온보딩 추천·일일 배치 기존 E2E를 `regionId` 기준으로 갱신. `AbstractIntegrationSupport` + 픽스처 + `RestAssuredDsl`. 거리 우선/이력 제외가 결과에 반영되는지 검증.
+- **E2E(oneulsogae-api)**: 온보딩 추천·일일 배치 기존 E2E를 `regionId` 기준으로 갱신. `AbstractIntegrationSupport` + 픽스처 + `RestAssuredDsl`. 거리 우선/이력 제외가 결과에 반영되는지 검증.
 
 ## 8. 성능 / 트레이드오프
 

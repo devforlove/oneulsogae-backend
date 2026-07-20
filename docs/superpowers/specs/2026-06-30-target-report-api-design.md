@@ -41,10 +41,10 @@
 
 ## 변경 상세
 
-### meeple-common
-- `com.org.meeple.common.report.ReportTargetType { USER, TEAM }` 추가.
+### oneulsogae-common
+- `com.org.oneulsogae.common.report.ReportTargetType { USER, TEAM }` 추가.
 
-### meeple-core (report 도메인)
+### oneulsogae-core (report 도메인)
 - `Report.create(...)`의 매칭 종류 파라미터를 `ChatRoomMatchType` → `ReportTargetType`로 변경
   (report 도메인이 chat enum에 의존하지 않도록 커플링 정리). `USER`→`to_user_id`, `TEAM`→`to_team_id`.
 - 기존 `CreateReportService`는 `ChatRoomMatchType`(SOLO/TEAM) → `ReportTargetType`(USER/TEAM)로 매핑해 호출.
@@ -56,17 +56,17 @@
     - `TEAM` → `getTeamByIdUseCase.getById(targetId)` (없으면 TEAM-005)
     - 검증 후 `Report.create(...)` → `saveReportPort.save(...)`. `chatRoomId`는 null.
 
-### meeple-core (teammatch 도메인)
+### oneulsogae-core (teammatch 도메인)
 - 신규 in-port `GetTeamByIdUseCase.getById(teamId: Long): Team` — 없으면 `TEAM_NOT_FOUND` throw.
 - 구현 `GetTeamByIdService`가 기존 out-port `GetTeamPort.findById`로 조회.
 - report는 반환 `Team`을 존재 검증 용도로만 사용.
 
-### meeple-api
+### oneulsogae-api
 - `ReportController`에 `@PostMapping("/targets")` 추가, `CreateTargetReportUseCase` 주입.
 - 요청 DTO `CreateTargetReportRequest(type, targetType, targetId, description)` + `toCommand()`.
 - 응답은 기존 `ReportResponse` 재사용.
 
-### meeple-infra / DB
+### oneulsogae-infra / DB
 - **변경 없음.** `reports` 테이블에 `to_user_id`/`to_team_id`/`chat_room_id` 컬럼이 이미 존재.
 - `ReportEntity`/`ReportAdapter`/`ReportMapper` 재사용.
 

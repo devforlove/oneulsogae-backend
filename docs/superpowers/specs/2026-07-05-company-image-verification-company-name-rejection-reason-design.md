@@ -1,7 +1,7 @@
 # 회사 이미지 인증: 제출 희망 회사명 + 거절사유 저장 설계
 
 **작성일:** 2026-07-05
-**대상 브랜치:** feat/meeple-admin-module
+**대상 브랜치:** feat/oneulsogae-admin-module
 
 ## 목표
 
@@ -20,7 +20,7 @@
 
 **마이그레이션(운영)**: `docs/migration/company_image_verifications_company_name_rejection_reason.sql`에 `ALTER TABLE ... ADD COLUMN` 2건을 둔다(주석 포함). 테스트는 `ddl-auto: create-drop`으로 엔티티에서 자동 생성되므로 스크립트 실행 불필요.
 
-## Part A — 유저 제출 희망 회사명 (meeple-core / user 제출)
+## Part A — 유저 제출 희망 회사명 (oneulsogae-core / user 제출)
 
 - **엔티티** `CompanyImageVerificationEntity`: `var companyName: String?`(@Column length=100, nullable)·`var rejectionReason: String?`(@Column length=500, nullable) 추가. (두 컬럼 모두 여기서 선언)
 - **도메인** `CompanyImageVerification`: `companyName: String?`·`rejectionReason: String? = null` 필드 추가.
@@ -37,7 +37,7 @@
   - `CompanyImageVerificationEntityFixture.create`: `companyName: String? = "테스트회사"`·`rejectionReason: String? = null` 파라미터 추가.
   - E2E `SubmitCompanyImageVerificationE2ETest`: 멀티파트에 `companyName` 파트 추가, 저장 검증. (누락/공백 시 400도 1건)
 
-## Part B — 거절사유 (meeple-admin reject)
+## Part B — 거절사유 (oneulsogae-admin reject)
 
 - **도메인** `AdminCompanyImageVerification`: `rejectionReason: String?` 필드 추가.
   - `approve(): copy(status = APPROVED, rejectionReason = null)` (승인 시 stale 사유 제거)

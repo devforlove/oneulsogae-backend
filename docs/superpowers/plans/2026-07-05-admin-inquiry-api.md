@@ -4,25 +4,25 @@
 
 **Goal:** 어드민이 사용자 문의를 목록·상세 조회하고 답변할 수 있는 API 3종(`/admin/v1/inquiries`)을 추가한다.
 
-**Architecture:** `meeple-admin`(core 비의존 자립 모듈)에 헥사고날 슬라이스를 추가한다. 조회는 notice/report의 query 패턴(QueryDSL DaoImpl → read model), 답변은 companyverification의 command 패턴(load→도메인 상태전이→save)을 미러링한다. 기존 `inquiries` 테이블/`InquiryEntity`를 재사용하고 컬럼 변경 없이 인덱스만 추가한다. 영속성은 `meeple-infra` 어댑터가 어드민 out-port를 구현한다.
+**Architecture:** `oneulsogae-admin`(core 비의존 자립 모듈)에 헥사고날 슬라이스를 추가한다. 조회는 notice/report의 query 패턴(QueryDSL DaoImpl → read model), 답변은 companyverification의 command 패턴(load→도메인 상태전이→save)을 미러링한다. 기존 `inquiries` 테이블/`InquiryEntity`를 재사용하고 컬럼 변경 없이 인덱스만 추가한다. 영속성은 `oneulsogae-infra` 어댑터가 어드민 out-port를 구현한다.
 
 **Tech Stack:** Kotlin 2.2.21 / Spring Boot 4 / Spring Data JPA / QueryDSL / Kotest(E2E·유닛) + Testcontainers / RestAssured DSL.
 
 ## Global Constraints
 
 - 응답은 항상 한국어. 커밋 메시지 형식 `<type>(admin): <설명>`, 마지막 줄 `Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>`.
-- `meeple-admin`은 core에 의존하지 않는다. 공용 enum `InquiryCategory`/`InquiryStatus`(`com.org.meeple.common.inquiry`)만 사용한다.
+- `oneulsogae-admin`은 core에 의존하지 않는다. 공용 enum `InquiryCategory`/`InquiryStatus`(`com.org.oneulsogae.common.inquiry`)만 사용한다.
 - 타입 명시: 변수·반환·람다 파라미터 타입 생략 금지. 도메인 검증은 도메인 모델에 캡슐화(서비스에 `if…throw` 나열 금지). 현재 시각은 admin `TimeGenerator.now()` 주입으로 얻고 도메인엔 파라미터로 넘긴다.
 - CQRS: 조회 서비스 `@Transactional(readOnly = true)` / 명령 서비스 `@Transactional`. 조회는 read model(DTO) 반환, 명령은 도메인 모델. 조회 dao와 명령 out-port를 섞지 않는다.
 - 어드민 경로 `/admin/**`는 `SecurityConfig`의 `hasRole("ADMIN")`로 자동 보호(메서드 어노테이션 불필요). 어드민 예외는 `AdminException(AdminErrorCode, message)` → `AdminExceptionHandler`가 `success=false`, `error.code` 봉투로 변환.
 - 페이징: `page`(default 0, `coerceAtLeast(0)`), `size`(default 20, `coerceIn(1, 100)`). offset/limit 직접 계산(Spring `Pageable` 미사용). 정렬 `created_at desc, id desc`.
-- 빌드 검증 명령: `./gradlew :meeple-admin:compileKotlin`, 유닛 `./gradlew :meeple-api:test --tests "<FQCN>"`, E2E `./gradlew :meeple-api:test --tests "<FQCN>"`.
+- 빌드 검증 명령: `./gradlew :oneulsogae-admin:compileKotlin`, 유닛 `./gradlew :oneulsogae-api:test --tests "<FQCN>"`, E2E `./gradlew :oneulsogae-api:test --tests "<FQCN>"`.
 
 ---
 
 ## 파일 구조 (생성/수정 목록)
 
-**meeple-admin (`com.org.meeple.admin.inquiry`)**
+**oneulsogae-admin (`com.org.oneulsogae.admin.inquiry`)**
 - 생성 `query/dto/AdminInquiryView.kt` — 목록 행 read model
 - 생성 `query/dto/AdminInquiryViews.kt` — 일급 컬렉션
 - 생성 `query/dto/AdminInquiryDetailView.kt` — 상세 read model
@@ -38,20 +38,20 @@
 - 생성 `command/application/AnswerInquiryService.kt` — 답변 서비스
 - 수정 `common/error/AdminErrorCode.kt` — `INQUIRY_NOT_FOUND`(404), `INQUIRY_ALREADY_ANSWERED`(409) 추가
 
-**meeple-infra**
+**oneulsogae-infra**
 - 생성 `infra/inquiry/query/GetAdminInquiryDaoImpl.kt` — QueryDSL 조회 구현
 - 수정 `infra/inquiry/command/adapter/InquiryAdapter.kt` — `GetAdminInquiryPort`+`AnswerAdminInquiryPort` 추가 구현
 - 수정 `infra/inquiry/command/entity/InquiryEntity.kt` — 복합 인덱스 추가
 - 생성 `src/testFixtures/.../infra/fixture/InquiryEntityFixture.kt` — 문의 픽스처
 
-**meeple-api (`com.org.meeple.api.admin`)**
+**oneulsogae-api (`com.org.oneulsogae.api.admin`)**
 - 생성 `AdminInquiryController.kt` — 목록/상세/답변 엔드포인트
 - 생성 `response/AdminInquiryResponse.kt` — 목록 행 응답
 - 생성 `response/AdminInquiryPageResponse.kt` — 페이지 응답
 - 생성 `response/AdminInquiryDetailResponse.kt` — 상세 응답
 - 생성 `request/AnswerInquiryRequest.kt` — 답변 요청
 
-**테스트 (meeple-api/src/test)**
+**테스트 (oneulsogae-api/src/test)**
 - 생성 `domain/inquiry/AdminInquiryPageTest.kt` — 페이지 파생값 유닛
 - 생성 `domain/inquiry/AdminInquiryTest.kt` — 답변 상태전이 유닛
 - 생성 `api/admin/AdminInquiryE2ETest.kt` — 목록·필터·상세·답변 E2E
@@ -63,11 +63,11 @@
 목록/상세 read model DTO와 페이지 파생값을 만들고, 페이지 계산을 유닛 테스트로 고정한다.
 
 **Files:**
-- Create: `meeple-admin/src/main/kotlin/com/org/meeple/admin/inquiry/query/dto/AdminInquiryView.kt`
-- Create: `meeple-admin/src/main/kotlin/com/org/meeple/admin/inquiry/query/dto/AdminInquiryViews.kt`
-- Create: `meeple-admin/src/main/kotlin/com/org/meeple/admin/inquiry/query/dto/AdminInquiryDetailView.kt`
-- Create: `meeple-admin/src/main/kotlin/com/org/meeple/admin/inquiry/query/dto/AdminInquiryPage.kt`
-- Test: `meeple-api/src/test/kotlin/com/org/meeple/domain/inquiry/AdminInquiryPageTest.kt`
+- Create: `oneulsogae-admin/src/main/kotlin/com/org/oneulsogae/admin/inquiry/query/dto/AdminInquiryView.kt`
+- Create: `oneulsogae-admin/src/main/kotlin/com/org/oneulsogae/admin/inquiry/query/dto/AdminInquiryViews.kt`
+- Create: `oneulsogae-admin/src/main/kotlin/com/org/oneulsogae/admin/inquiry/query/dto/AdminInquiryDetailView.kt`
+- Create: `oneulsogae-admin/src/main/kotlin/com/org/oneulsogae/admin/inquiry/query/dto/AdminInquiryPage.kt`
+- Test: `oneulsogae-api/src/test/kotlin/com/org/oneulsogae/domain/inquiry/AdminInquiryPageTest.kt`
 
 **Interfaces:**
 - Produces:
@@ -80,10 +80,10 @@
 
 `AdminInquiryView.kt`:
 ```kotlin
-package com.org.meeple.admin.inquiry.query.dto
+package com.org.oneulsogae.admin.inquiry.query.dto
 
-import com.org.meeple.common.inquiry.InquiryCategory
-import com.org.meeple.common.inquiry.InquiryStatus
+import com.org.oneulsogae.common.inquiry.InquiryCategory
+import com.org.oneulsogae.common.inquiry.InquiryStatus
 import java.time.LocalDateTime
 
 /** 어드민 문의 목록 한 건(read model). 본문(message)은 상세에서만 노출한다. */
@@ -98,7 +98,7 @@ data class AdminInquiryView(
 
 `AdminInquiryViews.kt`:
 ```kotlin
-package com.org.meeple.admin.inquiry.query.dto
+package com.org.oneulsogae.admin.inquiry.query.dto
 
 /** 어드민 문의 목록 read model 일급 컬렉션. */
 data class AdminInquiryViews(
@@ -112,10 +112,10 @@ data class AdminInquiryViews(
 
 `AdminInquiryDetailView.kt`:
 ```kotlin
-package com.org.meeple.admin.inquiry.query.dto
+package com.org.oneulsogae.admin.inquiry.query.dto
 
-import com.org.meeple.common.inquiry.InquiryCategory
-import com.org.meeple.common.inquiry.InquiryStatus
+import com.org.oneulsogae.common.inquiry.InquiryCategory
+import com.org.oneulsogae.common.inquiry.InquiryStatus
 import java.time.LocalDateTime
 
 /** 어드민 문의 상세 read model. 목록 필드 + 본문(message)·답변(answer/answeredAt)·작성자(userId). */
@@ -134,7 +134,7 @@ data class AdminInquiryDetailView(
 
 `AdminInquiryPage.kt`:
 ```kotlin
-package com.org.meeple.admin.inquiry.query.dto
+package com.org.oneulsogae.admin.inquiry.query.dto
 
 /**
  * 어드민 문의 목록 한 페이지(read model). offset(page·size) 페이징 결과.
@@ -163,13 +163,13 @@ data class AdminInquiryPage(
 
 `AdminInquiryPageTest.kt`:
 ```kotlin
-package com.org.meeple.domain.inquiry
+package com.org.oneulsogae.domain.inquiry
 
-import com.org.meeple.admin.inquiry.query.dto.AdminInquiryPage
-import com.org.meeple.admin.inquiry.query.dto.AdminInquiryView
-import com.org.meeple.admin.inquiry.query.dto.AdminInquiryViews
-import com.org.meeple.common.inquiry.InquiryCategory
-import com.org.meeple.common.inquiry.InquiryStatus
+import com.org.oneulsogae.admin.inquiry.query.dto.AdminInquiryPage
+import com.org.oneulsogae.admin.inquiry.query.dto.AdminInquiryView
+import com.org.oneulsogae.admin.inquiry.query.dto.AdminInquiryViews
+import com.org.oneulsogae.common.inquiry.InquiryCategory
+import com.org.oneulsogae.common.inquiry.InquiryStatus
 import io.kotest.core.spec.style.DescribeSpec
 import io.kotest.matchers.shouldBe
 
@@ -223,13 +223,13 @@ class AdminInquiryPageTest : DescribeSpec({
 
 - [ ] **Step 3: 테스트 실행 (통과 확인)**
 
-Run: `./gradlew :meeple-api:test --tests "com.org.meeple.domain.inquiry.AdminInquiryPageTest"`
+Run: `./gradlew :oneulsogae-api:test --tests "com.org.oneulsogae.domain.inquiry.AdminInquiryPageTest"`
 Expected: PASS (6 tests). read model 컴파일 + 파생값 계산 검증.
 
 - [ ] **Step 4: 커밋**
 
 ```bash
-git add meeple-admin/src/main/kotlin/com/org/meeple/admin/inquiry/query/dto meeple-api/src/test/kotlin/com/org/meeple/domain/inquiry/AdminInquiryPageTest.kt
+git add oneulsogae-admin/src/main/kotlin/com/org/oneulsogae/admin/inquiry/query/dto oneulsogae-api/src/test/kotlin/com/org/oneulsogae/domain/inquiry/AdminInquiryPageTest.kt
 git commit -m "$(cat <<'EOF'
 feat(admin): 어드민 문의 조회 read model·페이지 파생값 추가
 
@@ -245,18 +245,18 @@ EOF
 조회 in-port/서비스/dao(out-port)/QueryDSL 구현/컨트롤러/응답 DTO를 만들고, 엔티티에 복합 인덱스와 픽스처를 추가한 뒤 목록·상세를 E2E로 검증한다.
 
 **Files:**
-- Create: `meeple-admin/src/main/kotlin/com/org/meeple/admin/inquiry/query/dao/GetAdminInquiryDao.kt`
-- Create: `meeple-admin/src/main/kotlin/com/org/meeple/admin/inquiry/query/service/port/in/GetAdminInquiriesUseCase.kt`
-- Create: `meeple-admin/src/main/kotlin/com/org/meeple/admin/inquiry/query/service/GetAdminInquiriesService.kt`
-- Modify: `meeple-admin/src/main/kotlin/com/org/meeple/admin/common/error/AdminErrorCode.kt`
-- Create: `meeple-infra/src/main/kotlin/com/org/meeple/infra/inquiry/query/GetAdminInquiryDaoImpl.kt`
-- Modify: `meeple-infra/src/main/kotlin/com/org/meeple/infra/inquiry/command/entity/InquiryEntity.kt`
-- Create: `meeple-infra/src/testFixtures/kotlin/com/org/meeple/infra/fixture/InquiryEntityFixture.kt`
-- Create: `meeple-api/src/main/kotlin/com/org/meeple/api/admin/AdminInquiryController.kt`
-- Create: `meeple-api/src/main/kotlin/com/org/meeple/api/admin/response/AdminInquiryResponse.kt`
-- Create: `meeple-api/src/main/kotlin/com/org/meeple/api/admin/response/AdminInquiryPageResponse.kt`
-- Create: `meeple-api/src/main/kotlin/com/org/meeple/api/admin/response/AdminInquiryDetailResponse.kt`
-- Test: `meeple-api/src/test/kotlin/com/org/meeple/api/admin/AdminInquiryE2ETest.kt`
+- Create: `oneulsogae-admin/src/main/kotlin/com/org/oneulsogae/admin/inquiry/query/dao/GetAdminInquiryDao.kt`
+- Create: `oneulsogae-admin/src/main/kotlin/com/org/oneulsogae/admin/inquiry/query/service/port/in/GetAdminInquiriesUseCase.kt`
+- Create: `oneulsogae-admin/src/main/kotlin/com/org/oneulsogae/admin/inquiry/query/service/GetAdminInquiriesService.kt`
+- Modify: `oneulsogae-admin/src/main/kotlin/com/org/oneulsogae/admin/common/error/AdminErrorCode.kt`
+- Create: `oneulsogae-infra/src/main/kotlin/com/org/oneulsogae/infra/inquiry/query/GetAdminInquiryDaoImpl.kt`
+- Modify: `oneulsogae-infra/src/main/kotlin/com/org/oneulsogae/infra/inquiry/command/entity/InquiryEntity.kt`
+- Create: `oneulsogae-infra/src/testFixtures/kotlin/com/org/oneulsogae/infra/fixture/InquiryEntityFixture.kt`
+- Create: `oneulsogae-api/src/main/kotlin/com/org/oneulsogae/api/admin/AdminInquiryController.kt`
+- Create: `oneulsogae-api/src/main/kotlin/com/org/oneulsogae/api/admin/response/AdminInquiryResponse.kt`
+- Create: `oneulsogae-api/src/main/kotlin/com/org/oneulsogae/api/admin/response/AdminInquiryPageResponse.kt`
+- Create: `oneulsogae-api/src/main/kotlin/com/org/oneulsogae/api/admin/response/AdminInquiryDetailResponse.kt`
+- Test: `oneulsogae-api/src/test/kotlin/com/org/oneulsogae/api/admin/AdminInquiryE2ETest.kt`
 
 **Interfaces:**
 - Consumes (Task 1): `AdminInquiryView(s)`, `AdminInquiryDetailView`, `AdminInquiryPage`.
@@ -270,11 +270,11 @@ EOF
 
 `GetAdminInquiryDao.kt`:
 ```kotlin
-package com.org.meeple.admin.inquiry.query.dao
+package com.org.oneulsogae.admin.inquiry.query.dao
 
-import com.org.meeple.admin.inquiry.query.dto.AdminInquiryDetailView
-import com.org.meeple.admin.inquiry.query.dto.AdminInquiryViews
-import com.org.meeple.common.inquiry.InquiryStatus
+import com.org.oneulsogae.admin.inquiry.query.dto.AdminInquiryDetailView
+import com.org.oneulsogae.admin.inquiry.query.dto.AdminInquiryViews
+import com.org.oneulsogae.common.inquiry.InquiryStatus
 
 /** 어드민 문의 조회 dao(query out-port). [status]가 null이면 전체, 있으면 해당 상태만. */
 interface GetAdminInquiryDao {
@@ -294,11 +294,11 @@ interface GetAdminInquiryDao {
 
 `GetAdminInquiriesUseCase.kt`:
 ```kotlin
-package com.org.meeple.admin.inquiry.query.service.port.`in`
+package com.org.oneulsogae.admin.inquiry.query.service.port.`in`
 
-import com.org.meeple.admin.inquiry.query.dto.AdminInquiryDetailView
-import com.org.meeple.admin.inquiry.query.dto.AdminInquiryPage
-import com.org.meeple.common.inquiry.InquiryStatus
+import com.org.oneulsogae.admin.inquiry.query.dto.AdminInquiryDetailView
+import com.org.oneulsogae.admin.inquiry.query.dto.AdminInquiryPage
+import com.org.oneulsogae.common.inquiry.InquiryStatus
 
 /** 어드민 문의 조회 유스케이스. (조회 전용) */
 interface GetAdminInquiriesUseCase {
@@ -323,16 +323,16 @@ interface GetAdminInquiriesUseCase {
 
 `GetAdminInquiriesService.kt`:
 ```kotlin
-package com.org.meeple.admin.inquiry.query.service
+package com.org.oneulsogae.admin.inquiry.query.service
 
-import com.org.meeple.admin.common.error.AdminErrorCode
-import com.org.meeple.admin.common.error.AdminException
-import com.org.meeple.admin.inquiry.query.dao.GetAdminInquiryDao
-import com.org.meeple.admin.inquiry.query.dto.AdminInquiryDetailView
-import com.org.meeple.admin.inquiry.query.dto.AdminInquiryPage
-import com.org.meeple.admin.inquiry.query.dto.AdminInquiryViews
-import com.org.meeple.admin.inquiry.query.service.port.`in`.GetAdminInquiriesUseCase
-import com.org.meeple.common.inquiry.InquiryStatus
+import com.org.oneulsogae.admin.common.error.AdminErrorCode
+import com.org.oneulsogae.admin.common.error.AdminException
+import com.org.oneulsogae.admin.inquiry.query.dao.GetAdminInquiryDao
+import com.org.oneulsogae.admin.inquiry.query.dto.AdminInquiryDetailView
+import com.org.oneulsogae.admin.inquiry.query.dto.AdminInquiryPage
+import com.org.oneulsogae.admin.inquiry.query.dto.AdminInquiryViews
+import com.org.oneulsogae.admin.inquiry.query.service.port.`in`.GetAdminInquiriesUseCase
+import com.org.oneulsogae.common.inquiry.InquiryStatus
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 
@@ -385,14 +385,14 @@ class GetAdminInquiriesService(
 
 `GetAdminInquiryDaoImpl.kt`:
 ```kotlin
-package com.org.meeple.infra.inquiry.query
+package com.org.oneulsogae.infra.inquiry.query
 
-import com.org.meeple.admin.inquiry.query.dao.GetAdminInquiryDao
-import com.org.meeple.admin.inquiry.query.dto.AdminInquiryDetailView
-import com.org.meeple.admin.inquiry.query.dto.AdminInquiryView
-import com.org.meeple.admin.inquiry.query.dto.AdminInquiryViews
-import com.org.meeple.common.inquiry.InquiryStatus
-import com.org.meeple.infra.inquiry.command.entity.QInquiryEntity
+import com.org.oneulsogae.admin.inquiry.query.dao.GetAdminInquiryDao
+import com.org.oneulsogae.admin.inquiry.query.dto.AdminInquiryDetailView
+import com.org.oneulsogae.admin.inquiry.query.dto.AdminInquiryView
+import com.org.oneulsogae.admin.inquiry.query.dto.AdminInquiryViews
+import com.org.oneulsogae.common.inquiry.InquiryStatus
+import com.org.oneulsogae.infra.inquiry.command.entity.QInquiryEntity
 import com.querydsl.core.types.Projections
 import com.querydsl.core.types.dsl.BooleanExpression
 import com.querydsl.jpa.impl.JPAQueryFactory
@@ -402,7 +402,7 @@ import org.springframework.stereotype.Component
  * [GetAdminInquiryDao]의 QueryDSL 구현. (조회 전용)
  * 문의를 접수 시각(created_at) 내림차순(동률이면 id 내림차순)으로 offset/limit 페이징해 read model에 직접 투영한다.
  * status가 주어지면 동등 필터를 적용한다. (soft delete 행은 @SQLRestriction으로 양쪽 쿼리에서 제외)
- * 저장/갱신 out-port는 [com.org.meeple.infra.inquiry.command.adapter.InquiryAdapter]가 따로 구현한다.
+ * 저장/갱신 out-port는 [com.org.oneulsogae.infra.inquiry.command.adapter.InquiryAdapter]가 따로 구현한다.
  */
 @Component
 class GetAdminInquiryDaoImpl(
@@ -472,11 +472,11 @@ class GetAdminInquiryDaoImpl(
 
 `InquiryEntityFixture.kt`:
 ```kotlin
-package com.org.meeple.infra.fixture
+package com.org.oneulsogae.infra.fixture
 
-import com.org.meeple.common.inquiry.InquiryCategory
-import com.org.meeple.common.inquiry.InquiryStatus
-import com.org.meeple.infra.inquiry.command.entity.InquiryEntity
+import com.org.oneulsogae.common.inquiry.InquiryCategory
+import com.org.oneulsogae.common.inquiry.InquiryStatus
+import com.org.oneulsogae.infra.inquiry.command.entity.InquiryEntity
 import java.time.LocalDateTime
 
 /**
@@ -510,12 +510,12 @@ object InquiryEntityFixture {
 
 `AdminInquiryResponse.kt`:
 ```kotlin
-package com.org.meeple.api.admin.response
+package com.org.oneulsogae.api.admin.response
 
-import com.org.meeple.admin.inquiry.query.dto.AdminInquiryView
-import com.org.meeple.admin.inquiry.query.dto.AdminInquiryViews
-import com.org.meeple.common.inquiry.InquiryCategory
-import com.org.meeple.common.inquiry.InquiryStatus
+import com.org.oneulsogae.admin.inquiry.query.dto.AdminInquiryView
+import com.org.oneulsogae.admin.inquiry.query.dto.AdminInquiryViews
+import com.org.oneulsogae.common.inquiry.InquiryCategory
+import com.org.oneulsogae.common.inquiry.InquiryStatus
 import java.time.LocalDateTime
 
 /** 어드민 문의 목록 항목 응답. 본문(message)은 상세에서만 노출한다. */
@@ -544,9 +544,9 @@ data class AdminInquiryResponse(
 
 `AdminInquiryPageResponse.kt`:
 ```kotlin
-package com.org.meeple.api.admin.response
+package com.org.oneulsogae.api.admin.response
 
-import com.org.meeple.admin.inquiry.query.dto.AdminInquiryPage
+import com.org.oneulsogae.admin.inquiry.query.dto.AdminInquiryPage
 
 /** 어드민 문의 목록 페이지 응답. (offset 페이징) */
 data class AdminInquiryPageResponse(
@@ -573,11 +573,11 @@ data class AdminInquiryPageResponse(
 
 `AdminInquiryDetailResponse.kt`:
 ```kotlin
-package com.org.meeple.api.admin.response
+package com.org.oneulsogae.api.admin.response
 
-import com.org.meeple.admin.inquiry.query.dto.AdminInquiryDetailView
-import com.org.meeple.common.inquiry.InquiryCategory
-import com.org.meeple.common.inquiry.InquiryStatus
+import com.org.oneulsogae.admin.inquiry.query.dto.AdminInquiryDetailView
+import com.org.oneulsogae.common.inquiry.InquiryCategory
+import com.org.oneulsogae.common.inquiry.InquiryStatus
 import java.time.LocalDateTime
 
 /** 어드민 문의 상세 응답. 목록 필드 + 본문(message)·답변(answer/answeredAt)·작성자(userId). */
@@ -613,13 +613,13 @@ data class AdminInquiryDetailResponse(
 
 `AdminInquiryController.kt`:
 ```kotlin
-package com.org.meeple.api.admin
+package com.org.oneulsogae.api.admin
 
-import com.org.meeple.admin.inquiry.query.service.port.`in`.GetAdminInquiriesUseCase
-import com.org.meeple.api.admin.response.AdminInquiryDetailResponse
-import com.org.meeple.api.admin.response.AdminInquiryPageResponse
-import com.org.meeple.common.inquiry.InquiryStatus
-import com.org.meeple.core.common.response.ApiResponse
+import com.org.oneulsogae.admin.inquiry.query.service.port.`in`.GetAdminInquiriesUseCase
+import com.org.oneulsogae.api.admin.response.AdminInquiryDetailResponse
+import com.org.oneulsogae.api.admin.response.AdminInquiryPageResponse
+import com.org.oneulsogae.common.inquiry.InquiryStatus
+import com.org.oneulsogae.core.common.response.ApiResponse
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.tags.Tag
 import org.springframework.web.bind.annotation.GetMapping
@@ -668,16 +668,16 @@ class AdminInquiryController(
 
 `AdminInquiryE2ETest.kt`:
 ```kotlin
-package com.org.meeple.api.admin
+package com.org.oneulsogae.api.admin
 
-import com.org.meeple.common.inquiry.InquiryCategory
-import com.org.meeple.common.inquiry.InquiryStatus
-import com.org.meeple.common.integration.AbstractIntegrationSupport
-import com.org.meeple.common.integration.expect
-import com.org.meeple.common.integration.get
-import com.org.meeple.infra.fixture.InquiryEntityFixture
-import com.org.meeple.infra.fixture.IntegrationUtil
-import com.org.meeple.infra.inquiry.command.entity.QInquiryEntity
+import com.org.oneulsogae.common.inquiry.InquiryCategory
+import com.org.oneulsogae.common.inquiry.InquiryStatus
+import com.org.oneulsogae.common.integration.AbstractIntegrationSupport
+import com.org.oneulsogae.common.integration.expect
+import com.org.oneulsogae.common.integration.get
+import com.org.oneulsogae.infra.fixture.InquiryEntityFixture
+import com.org.oneulsogae.infra.fixture.IntegrationUtil
+import com.org.oneulsogae.infra.inquiry.command.entity.QInquiryEntity
 import org.hamcrest.Matchers.hasSize
 
 /**
@@ -790,18 +790,18 @@ class AdminInquiryE2ETest : AbstractIntegrationSupport({
 
 - [ ] **Step 11: 컴파일 확인**
 
-Run: `./gradlew :meeple-admin:compileKotlin :meeple-infra:compileKotlin :meeple-api:compileKotlin`
+Run: `./gradlew :oneulsogae-admin:compileKotlin :oneulsogae-infra:compileKotlin :oneulsogae-api:compileKotlin`
 Expected: BUILD SUCCESSFUL.
 
 - [ ] **Step 12: E2E 실행 (통과 확인)**
 
-Run: `./gradlew :meeple-api:test --tests "com.org.meeple.api.admin.AdminInquiryE2ETest"`
+Run: `./gradlew :oneulsogae-api:test --tests "com.org.oneulsogae.api.admin.AdminInquiryE2ETest"`
 Expected: PASS (5 tests: 목록 최신순·본문제외, status 필터, size 페이징, 상세, 없는 id 404).
 
 - [ ] **Step 13: 커밋**
 
 ```bash
-git add meeple-admin meeple-infra meeple-api
+git add oneulsogae-admin oneulsogae-infra oneulsogae-api
 git commit -m "$(cat <<'EOF'
 feat(admin): 어드민 문의 목록·상세 조회 API 및 상태 필터·인덱스 추가
 
@@ -817,9 +817,9 @@ EOF
 답변 도메인 모델과 상태전이 규칙(PENDING만 답변, 재답변 불허)을 만들고 유닛 테스트로 고정한다.
 
 **Files:**
-- Create: `meeple-admin/src/main/kotlin/com/org/meeple/admin/inquiry/command/domain/AdminInquiry.kt`
-- Modify: `meeple-admin/src/main/kotlin/com/org/meeple/admin/common/error/AdminErrorCode.kt`
-- Test: `meeple-api/src/test/kotlin/com/org/meeple/domain/inquiry/AdminInquiryTest.kt`
+- Create: `oneulsogae-admin/src/main/kotlin/com/org/oneulsogae/admin/inquiry/command/domain/AdminInquiry.kt`
+- Modify: `oneulsogae-admin/src/main/kotlin/com/org/oneulsogae/admin/common/error/AdminErrorCode.kt`
+- Test: `oneulsogae-api/src/test/kotlin/com/org/oneulsogae/domain/inquiry/AdminInquiryTest.kt`
 
 **Interfaces:**
 - Produces:
@@ -839,12 +839,12 @@ EOF
 
 `AdminInquiryTest.kt`:
 ```kotlin
-package com.org.meeple.domain.inquiry
+package com.org.oneulsogae.domain.inquiry
 
-import com.org.meeple.admin.common.error.AdminErrorCode
-import com.org.meeple.admin.common.error.AdminException
-import com.org.meeple.admin.inquiry.command.domain.AdminInquiry
-import com.org.meeple.common.inquiry.InquiryStatus
+import com.org.oneulsogae.admin.common.error.AdminErrorCode
+import com.org.oneulsogae.admin.common.error.AdminException
+import com.org.oneulsogae.admin.inquiry.command.domain.AdminInquiry
+import com.org.oneulsogae.common.inquiry.InquiryStatus
 import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.core.spec.style.DescribeSpec
 import io.kotest.matchers.shouldBe
@@ -883,18 +883,18 @@ class AdminInquiryTest : DescribeSpec({
 
 - [ ] **Step 3: 테스트 실행 (실패 확인)**
 
-Run: `./gradlew :meeple-api:test --tests "com.org.meeple.domain.inquiry.AdminInquiryTest"`
+Run: `./gradlew :oneulsogae-api:test --tests "com.org.oneulsogae.domain.inquiry.AdminInquiryTest"`
 Expected: FAIL — `AdminInquiry`/`AnsweredInquiry` 미정의(컴파일 에러).
 
 - [ ] **Step 4: 답변 도메인 작성**
 
 `AdminInquiry.kt`:
 ```kotlin
-package com.org.meeple.admin.inquiry.command.domain
+package com.org.oneulsogae.admin.inquiry.command.domain
 
-import com.org.meeple.admin.common.error.AdminErrorCode
-import com.org.meeple.admin.common.error.AdminException
-import com.org.meeple.common.inquiry.InquiryStatus
+import com.org.oneulsogae.admin.common.error.AdminErrorCode
+import com.org.oneulsogae.admin.common.error.AdminException
+import com.org.oneulsogae.common.inquiry.InquiryStatus
 import java.time.LocalDateTime
 
 /**
@@ -927,13 +927,13 @@ data class AnsweredInquiry(
 
 - [ ] **Step 5: 테스트 실행 (통과 확인)**
 
-Run: `./gradlew :meeple-api:test --tests "com.org.meeple.domain.inquiry.AdminInquiryTest"`
+Run: `./gradlew :oneulsogae-api:test --tests "com.org.oneulsogae.domain.inquiry.AdminInquiryTest"`
 Expected: PASS (2 tests).
 
 - [ ] **Step 6: 커밋**
 
 ```bash
-git add meeple-admin/src/main/kotlin/com/org/meeple/admin/inquiry/command/domain meeple-admin/src/main/kotlin/com/org/meeple/admin/common/error/AdminErrorCode.kt meeple-api/src/test/kotlin/com/org/meeple/domain/inquiry/AdminInquiryTest.kt
+git add oneulsogae-admin/src/main/kotlin/com/org/oneulsogae/admin/inquiry/command/domain oneulsogae-admin/src/main/kotlin/com/org/oneulsogae/admin/common/error/AdminErrorCode.kt oneulsogae-api/src/test/kotlin/com/org/oneulsogae/domain/inquiry/AdminInquiryTest.kt
 git commit -m "$(cat <<'EOF'
 feat(admin): 어드민 문의 답변 도메인·재답변 불허 규칙 추가
 
@@ -949,18 +949,18 @@ EOF
 답변 in-port/커맨드/out-port/서비스/어댑터 구현/컨트롤러 답변 엔드포인트/요청 DTO를 만들고 답변 성공·재답변 409·미존재 404·입력 400을 E2E로 검증한다.
 
 **Files:**
-- Create: `meeple-admin/src/main/kotlin/com/org/meeple/admin/inquiry/command/application/port/in/AnswerInquiryUseCase.kt`
-- Create: `meeple-admin/src/main/kotlin/com/org/meeple/admin/inquiry/command/application/port/in/command/AnswerInquiryCommand.kt`
-- Create: `meeple-admin/src/main/kotlin/com/org/meeple/admin/inquiry/command/application/port/out/GetAdminInquiryPort.kt`
-- Create: `meeple-admin/src/main/kotlin/com/org/meeple/admin/inquiry/command/application/port/out/AnswerAdminInquiryPort.kt`
-- Create: `meeple-admin/src/main/kotlin/com/org/meeple/admin/inquiry/command/application/AnswerInquiryService.kt`
-- Modify: `meeple-infra/src/main/kotlin/com/org/meeple/infra/inquiry/command/adapter/InquiryAdapter.kt`
-- Create: `meeple-api/src/main/kotlin/com/org/meeple/api/admin/request/AnswerInquiryRequest.kt`
-- Modify: `meeple-api/src/main/kotlin/com/org/meeple/api/admin/AdminInquiryController.kt`
-- Test: `meeple-api/src/test/kotlin/com/org/meeple/api/admin/AdminInquiryE2ETest.kt` (답변 describe 추가)
+- Create: `oneulsogae-admin/src/main/kotlin/com/org/oneulsogae/admin/inquiry/command/application/port/in/AnswerInquiryUseCase.kt`
+- Create: `oneulsogae-admin/src/main/kotlin/com/org/oneulsogae/admin/inquiry/command/application/port/in/command/AnswerInquiryCommand.kt`
+- Create: `oneulsogae-admin/src/main/kotlin/com/org/oneulsogae/admin/inquiry/command/application/port/out/GetAdminInquiryPort.kt`
+- Create: `oneulsogae-admin/src/main/kotlin/com/org/oneulsogae/admin/inquiry/command/application/port/out/AnswerAdminInquiryPort.kt`
+- Create: `oneulsogae-admin/src/main/kotlin/com/org/oneulsogae/admin/inquiry/command/application/AnswerInquiryService.kt`
+- Modify: `oneulsogae-infra/src/main/kotlin/com/org/oneulsogae/infra/inquiry/command/adapter/InquiryAdapter.kt`
+- Create: `oneulsogae-api/src/main/kotlin/com/org/oneulsogae/api/admin/request/AnswerInquiryRequest.kt`
+- Modify: `oneulsogae-api/src/main/kotlin/com/org/oneulsogae/api/admin/AdminInquiryController.kt`
+- Test: `oneulsogae-api/src/test/kotlin/com/org/oneulsogae/api/admin/AdminInquiryE2ETest.kt` (답변 describe 추가)
 
 **Interfaces:**
-- Consumes (Task 3): `AdminInquiry`, `AnsweredInquiry`, `AdminErrorCode.INQUIRY_ALREADY_ANSWERED`. (Task 2) `AdminErrorCode.INQUIRY_NOT_FOUND`. admin `TimeGenerator`(`com.org.meeple.admin.common.time.TimeGenerator`).
+- Consumes (Task 3): `AdminInquiry`, `AnsweredInquiry`, `AdminErrorCode.INQUIRY_ALREADY_ANSWERED`. (Task 2) `AdminErrorCode.INQUIRY_NOT_FOUND`. admin `TimeGenerator`(`com.org.oneulsogae.admin.common.time.TimeGenerator`).
 - Produces:
   - `AnswerInquiryUseCase.answer(command: AnswerInquiryCommand)`
   - `AnswerInquiryCommand(inquiryId: Long, answer: String)`
@@ -971,7 +971,7 @@ EOF
 
 `AnswerInquiryCommand.kt`:
 ```kotlin
-package com.org.meeple.admin.inquiry.command.application.port.`in`.command
+package com.org.oneulsogae.admin.inquiry.command.application.port.`in`.command
 
 /** 어드민 문의 답변 커맨드. */
 data class AnswerInquiryCommand(
@@ -982,9 +982,9 @@ data class AnswerInquiryCommand(
 
 `AnswerInquiryUseCase.kt`:
 ```kotlin
-package com.org.meeple.admin.inquiry.command.application.port.`in`
+package com.org.oneulsogae.admin.inquiry.command.application.port.`in`
 
-import com.org.meeple.admin.inquiry.command.application.port.`in`.command.AnswerInquiryCommand
+import com.org.oneulsogae.admin.inquiry.command.application.port.`in`.command.AnswerInquiryCommand
 
 /** 어드민 문의 답변 유스케이스. (명령) */
 interface AnswerInquiryUseCase {
@@ -998,9 +998,9 @@ interface AnswerInquiryUseCase {
 
 `GetAdminInquiryPort.kt`:
 ```kotlin
-package com.org.meeple.admin.inquiry.command.application.port.out
+package com.org.oneulsogae.admin.inquiry.command.application.port.out
 
-import com.org.meeple.admin.inquiry.command.domain.AdminInquiry
+import com.org.oneulsogae.admin.inquiry.command.domain.AdminInquiry
 
 /** 답변 대상 문의 로드 out-port. 없거나 soft-delete면 null. */
 fun interface GetAdminInquiryPort {
@@ -1010,9 +1010,9 @@ fun interface GetAdminInquiryPort {
 
 `AnswerAdminInquiryPort.kt`:
 ```kotlin
-package com.org.meeple.admin.inquiry.command.application.port.out
+package com.org.oneulsogae.admin.inquiry.command.application.port.out
 
-import com.org.meeple.admin.inquiry.command.domain.AnsweredInquiry
+import com.org.oneulsogae.admin.inquiry.command.domain.AnsweredInquiry
 
 /** 문의 답변 저장 out-port. answer/answered_at 저장 + status=ANSWERED 전이. infra 어댑터가 구현한다. */
 fun interface AnswerAdminInquiryPort {
@@ -1024,17 +1024,17 @@ fun interface AnswerAdminInquiryPort {
 
 `AnswerInquiryService.kt`:
 ```kotlin
-package com.org.meeple.admin.inquiry.command.application
+package com.org.oneulsogae.admin.inquiry.command.application
 
-import com.org.meeple.admin.common.error.AdminErrorCode
-import com.org.meeple.admin.common.error.AdminException
-import com.org.meeple.admin.common.time.TimeGenerator
-import com.org.meeple.admin.inquiry.command.application.port.`in`.AnswerInquiryUseCase
-import com.org.meeple.admin.inquiry.command.application.port.`in`.command.AnswerInquiryCommand
-import com.org.meeple.admin.inquiry.command.application.port.out.AnswerAdminInquiryPort
-import com.org.meeple.admin.inquiry.command.application.port.out.GetAdminInquiryPort
-import com.org.meeple.admin.inquiry.command.domain.AdminInquiry
-import com.org.meeple.admin.inquiry.command.domain.AnsweredInquiry
+import com.org.oneulsogae.admin.common.error.AdminErrorCode
+import com.org.oneulsogae.admin.common.error.AdminException
+import com.org.oneulsogae.admin.common.time.TimeGenerator
+import com.org.oneulsogae.admin.inquiry.command.application.port.`in`.AnswerInquiryUseCase
+import com.org.oneulsogae.admin.inquiry.command.application.port.`in`.command.AnswerInquiryCommand
+import com.org.oneulsogae.admin.inquiry.command.application.port.out.AnswerAdminInquiryPort
+import com.org.oneulsogae.admin.inquiry.command.application.port.out.GetAdminInquiryPort
+import com.org.oneulsogae.admin.inquiry.command.domain.AdminInquiry
+import com.org.oneulsogae.admin.inquiry.command.domain.AnsweredInquiry
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 
@@ -1064,25 +1064,25 @@ class AnswerInquiryService(
 
 `InquiryAdapter.kt` 전체를 아래로 교체(기존 `SaveInquiryPort` 구현 유지 + 어드민 포트 2종 추가):
 ```kotlin
-package com.org.meeple.infra.inquiry.command.adapter
+package com.org.oneulsogae.infra.inquiry.command.adapter
 
-import com.org.meeple.admin.inquiry.command.application.port.out.AnswerAdminInquiryPort
-import com.org.meeple.admin.inquiry.command.application.port.out.GetAdminInquiryPort
-import com.org.meeple.admin.inquiry.command.domain.AdminInquiry
-import com.org.meeple.admin.inquiry.command.domain.AnsweredInquiry
-import com.org.meeple.common.inquiry.InquiryStatus
-import com.org.meeple.core.inquiry.command.application.port.out.SaveInquiryPort
-import com.org.meeple.core.inquiry.command.domain.Inquiry
-import com.org.meeple.infra.inquiry.command.entity.InquiryEntity
-import com.org.meeple.infra.inquiry.command.mapper.toDomain
-import com.org.meeple.infra.inquiry.command.mapper.toEntity
-import com.org.meeple.infra.inquiry.command.repository.InquiryJpaRepository
+import com.org.oneulsogae.admin.inquiry.command.application.port.out.AnswerAdminInquiryPort
+import com.org.oneulsogae.admin.inquiry.command.application.port.out.GetAdminInquiryPort
+import com.org.oneulsogae.admin.inquiry.command.domain.AdminInquiry
+import com.org.oneulsogae.admin.inquiry.command.domain.AnsweredInquiry
+import com.org.oneulsogae.common.inquiry.InquiryStatus
+import com.org.oneulsogae.core.inquiry.command.application.port.out.SaveInquiryPort
+import com.org.oneulsogae.core.inquiry.command.domain.Inquiry
+import com.org.oneulsogae.infra.inquiry.command.entity.InquiryEntity
+import com.org.oneulsogae.infra.inquiry.command.mapper.toDomain
+import com.org.oneulsogae.infra.inquiry.command.mapper.toEntity
+import com.org.oneulsogae.infra.inquiry.command.repository.InquiryJpaRepository
 import org.springframework.stereotype.Component
 
 /**
  * [InquiryEntity]의 command 영속성 어댑터. (엔티티당 어댑터 하나)
  * 유저용 저장 out-port([SaveInquiryPort])와 어드민 로드·답변 out-port([GetAdminInquiryPort]·[AnswerAdminInquiryPort])를 함께 구현한다.
- * 어드민 조회는 [com.org.meeple.infra.inquiry.query.GetAdminInquiryDaoImpl]가 따로 담당한다.
+ * 어드민 조회는 [com.org.oneulsogae.infra.inquiry.query.GetAdminInquiryDaoImpl]가 따로 담당한다.
  */
 @Component
 class InquiryAdapter(
@@ -1113,9 +1113,9 @@ class InquiryAdapter(
 
 `AnswerInquiryRequest.kt`:
 ```kotlin
-package com.org.meeple.api.admin.request
+package com.org.oneulsogae.api.admin.request
 
-import com.org.meeple.admin.inquiry.command.application.port.`in`.command.AnswerInquiryCommand
+import com.org.oneulsogae.admin.inquiry.command.application.port.`in`.command.AnswerInquiryCommand
 import jakarta.validation.constraints.NotBlank
 import jakarta.validation.constraints.Size
 
@@ -1163,8 +1163,8 @@ class AdminInquiryController(
 
 추가 import(파일 상단 import 블록에):
 ```kotlin
-import com.org.meeple.admin.inquiry.command.application.port.`in`.AnswerInquiryUseCase
-import com.org.meeple.api.admin.request.AnswerInquiryRequest
+import com.org.oneulsogae.admin.inquiry.command.application.port.`in`.AnswerInquiryUseCase
+import com.org.oneulsogae.api.admin.request.AnswerInquiryRequest
 import jakarta.validation.Valid
 import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.RequestBody
@@ -1176,7 +1176,7 @@ import org.springframework.web.bind.annotation.RequestBody
 
 상단 import 추가:
 ```kotlin
-import com.org.meeple.common.integration.post
+import com.org.oneulsogae.common.integration.post
 ```
 
 추가 describe 블록:
@@ -1246,18 +1246,18 @@ import com.org.meeple.common.integration.post
 
 - [ ] **Step 8: 컴파일 확인**
 
-Run: `./gradlew :meeple-admin:compileKotlin :meeple-infra:compileKotlin :meeple-api:compileKotlin`
+Run: `./gradlew :oneulsogae-admin:compileKotlin :oneulsogae-infra:compileKotlin :oneulsogae-api:compileKotlin`
 Expected: BUILD SUCCESSFUL.
 
 - [ ] **Step 9: 전체 E2E 실행 (통과 확인)**
 
-Run: `./gradlew :meeple-api:test --tests "com.org.meeple.api.admin.AdminInquiryE2ETest"`
+Run: `./gradlew :oneulsogae-api:test --tests "com.org.oneulsogae.api.admin.AdminInquiryE2ETest"`
 Expected: PASS (9 tests: 조회 5 + 답변 4).
 
 - [ ] **Step 10: 커밋**
 
 ```bash
-git add meeple-admin meeple-infra meeple-api
+git add oneulsogae-admin oneulsogae-infra oneulsogae-api
 git commit -m "$(cat <<'EOF'
 feat(admin): 어드민 문의 답변 API 추가
 
@@ -1274,12 +1274,12 @@ EOF
 
 - [ ] **Step 1: 문의 도메인 유닛·E2E 전체 실행**
 
-Run: `./gradlew :meeple-api:test --tests "com.org.meeple.domain.inquiry.*" --tests "com.org.meeple.api.admin.AdminInquiryE2ETest"`
+Run: `./gradlew :oneulsogae-api:test --tests "com.org.oneulsogae.domain.inquiry.*" --tests "com.org.oneulsogae.api.admin.AdminInquiryE2ETest"`
 Expected: PASS (Page 6 + Domain 2 + E2E 9 = 17 tests).
 
 - [ ] **Step 2: 어드민·인프라 컴파일 회귀 확인**
 
-Run: `./gradlew :meeple-admin:compileKotlin :meeple-infra:compileKotlin :meeple-api:compileKotlin :meeple-api:compileTestKotlin`
+Run: `./gradlew :oneulsogae-admin:compileKotlin :oneulsogae-infra:compileKotlin :oneulsogae-api:compileKotlin :oneulsogae-api:compileTestKotlin`
 Expected: BUILD SUCCESSFUL. (인접 모듈에 영향 없음)
 
 ---

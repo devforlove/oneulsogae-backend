@@ -15,20 +15,20 @@
 - 후속 흐름: `PROPOSED` 매칭 생성 → 기존 관심 보내기(interest) 흐름. 구분용 `SoloMatchType.EXTRA` 신설.
 - 조회: 자격 후보를 종합점수로 정렬해 **상위 11명**을 프로필 포함 반환 + **전체 자격 후보 수**를 함께 반환.
 
-## 1. 매칭 알고리즘 공용 모듈 분리 — `meeple-matching`
+## 1. 매칭 알고리즘 공용 모듈 분리 — `oneulsogae-matching`
 
-새 gradle 모듈 신설. 순수 로직(프레임워크·인프라 비의존), `meeple-common`에만 의존. `scheduler`·`core`가 함께 의존한다.
+새 gradle 모듈 신설. 순수 로직(프레임워크·인프라 비의존), `oneulsogae-common`에만 의존. `scheduler`·`core`가 함께 의존한다.
 
 ```
-meeple-matching ──> meeple-common
-meeple-scheduler ──> common, meeple-matching
-meeple-core ──> common, meeple-matching
+oneulsogae-matching ──> oneulsogae-common
+oneulsogae-scheduler ──> common, oneulsogae-matching
+oneulsogae-core ──> common, oneulsogae-matching
 ```
 matching→common 단방향이라 사이클 없음.
 
 **이동/변경**
-- `MatchScorer` (scheduler → `com.org.meeple.matching`): 이동. `orderByScore`를 **제네릭 `<T>`** 로 바꿔 `MatchableUser` 결합 제거(`fun <T> orderByScore(scored: List<Pair<T, Double>>, random: Random): List<T>`).
-- `MatchScoringProfile` (scheduler query dto → `com.org.meeple.matching`): 이동. 순수 스코어링 입력이라 공용 모듈이 소유. scheduler/core의 조회 어댑터가 이 타입으로 투영한다.
+- `MatchScorer` (scheduler → `com.org.oneulsogae.matching`): 이동. `orderByScore`를 **제네릭 `<T>`** 로 바꿔 `MatchableUser` 결합 제거(`fun <T> orderByScore(scored: List<Pair<T, Double>>, random: Random): List<T>`).
+- `MatchScoringProfile` (scheduler query dto → `com.org.oneulsogae.matching`): 이동. 순수 스코어링 입력이라 공용 모듈이 소유. scheduler/core의 조회 어댑터가 이 타입으로 투영한다.
 - **신설 `MatchSelector`** (순수 object): "후보 점수화 → 버킷 무작위 정렬 → 재소개 제외 필터 → 최고점 1명 선택"을 공용화. 배치와 실시간 추가소개가 동일 선택 로직을 쓴다.
 
 **`MatchSelector` 시그니처(안)** — 공용을 위해 후보 최소 계약을 인터페이스로 둔다.
@@ -128,8 +128,8 @@ solomatch **command** 패키지(`@Transactional`).
 
 ## 4. 공용/기타 변경
 
-- `meeple-common` `CoinUsageType`에 `EXTRA_INTRO("추가 소개", 30)` 추가.
-- `meeple-common` `SoloMatchType`에 `EXTRA("추가 소개")` 추가.
+- `oneulsogae-common` `CoinUsageType`에 `EXTRA_INTRO("추가 소개", 30)` 추가.
+- `oneulsogae-common` `SoloMatchType`에 `EXTRA("추가 소개")` 추가.
 - core `MatchErrorCode`에 `EXTRA_INTRO_NO_CANDIDATE`(소개 가능한 후보 없음) 추가. 매칭 불가는 기존 코드 재사용/필요 시 신설.
 - 신규 core out-port
   - `GetExtraIntroCandidatePort`(command): 요청자 기준 자격 후보 경량 행 + 요청자 프로필.
@@ -138,9 +138,9 @@ solomatch **command** 패키지(`@Transactional`).
 
 ## 5. 테스트 전략
 
-- **알고리즘 유닛(Kotest, meeple-api 테스트 소스셋 또는 matching 모듈)**: `MatchScorer`(기존 이전) + 신규 `MatchSelector`(시각·Random 고정) — 정렬·동점 무작위·재소개 제외·최고점 선택.
+- **알고리즘 유닛(Kotest, oneulsogae-api 테스트 소스셋 또는 matching 모듈)**: `MatchScorer`(기존 이전) + 신규 `MatchSelector`(시각·Random 고정) — 정렬·동점 무작위·재소개 제외·최고점 선택.
 - **배치 회귀**: 기존 배치 E2E/유닛이 새 모듈 경로에서 그대로 통과.
-- **E2E(meeple-api)**:
+- **E2E(oneulsogae-api)**:
   - 조회: 상위 11명 정렬·전체 수 정확성, 자격 필터(반대 성별·최근 로그인·재소개 제외·매칭 가능).
   - 추가 소개 성공: 코인 30 차감·`EXTRA` 매칭 `PROPOSED` 생성·이후 interest 흐름 진입.
   - 후보 없음: `EXTRA_INTRO_NO_CANDIDATE`, 코인 미차감.
