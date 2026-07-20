@@ -52,6 +52,8 @@ jobs:
           tags: |
             ghcr.io/devforlove/meeple-backend:latest
             ghcr.io/devforlove/meeple-backend:${{ github.sha }}
+            ghcr.io/devforlove/oneulsogae-backend:latest
+            ghcr.io/devforlove/oneulsogae-backend:${{ github.sha }}
 
       - name: Configure AWS credentials (OIDC)
         uses: aws-actions/configure-aws-credentials@v4
@@ -65,8 +67,8 @@ jobs:
           CMD_ID=$(aws ssm send-command \
             --document-name "AWS-RunShellScript" \
             --targets "Key=InstanceIds,Values=${{ vars.EC2_INSTANCE_ID }}" \
-            --comment "deploy meeple-backend ${{ github.sha }}" \
-            --parameters 'commands=["cd /opt/meeple && docker compose -f docker-compose.prod.yml pull && docker compose -f docker-compose.prod.yml up -d"]' \
+            --comment "deploy oneulsogae-backend ${{ github.sha }}" \
+            --parameters 'commands=["cd /opt/oneulsogae && docker compose -f docker-compose.prod.yml pull && docker compose -f docker-compose.prod.yml up -d"]' \
             --region "${{ vars.AWS_REGION }}" \
             --query "Command.CommandId" --output text)
           echo "SSM Command ID: $CMD_ID"
