@@ -1,0 +1,36 @@
+name: oidc-debug
+
+# OIDC 신뢰 정책 진단 전용. 원인 확인 후 이 파일은 삭제한다.
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write
+
+jobs:
+  debug:
+    runs-on: ubuntu-latest
+    steps:
+      - name: OIDC 토큰 클레임 확인
+        run: |
+          set -euo pipefail
+          TOKEN=$(curl -sH "Authorization: bearer $ACTIONS_ID_TOKEN_REQUEST_TOKEN" \
+            "$ACTIONS_ID_TOKEN_REQUEST_URL&audience=sts.amazonaws.com" | jq -r '.value')
+          # 토큰 전체는 절대 출력하지 않는다. payload의 식별 클레임만 디코드한다.
+          PAYLOAD=$(echo "$TOKEN" | cut -d. -f2)
+          PAYLOAD="$PAYLOAD$(printf '=%.0s' $(seq $(( (4 - ${#PAYLOAD} % 4) % 4 ))))"
+          echo "$PAYLOAD" | tr '_-' '/+' | base64 -d 2>/dev/null \
+            | jq '{sub, aud, iss, repository, repository_owner, ref, workflow, environment}'
+
+      - name: 워크플로가 사용할 역할 ARN 확인
+        run: echo "AWS_ROLE_ARN=${{ vars.AWS_ROLE_ARN }}"
+
+      - name: AssumeRole 시도
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ vars.AWS_ROLE_ARN }}
+          aws-region: ${{ vars.AWS_REGION }}
+
+      - name: 성공 시 신원 출력
+        run: aws sts get-caller-identity
