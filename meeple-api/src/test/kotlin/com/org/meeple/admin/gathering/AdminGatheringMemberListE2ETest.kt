@@ -20,8 +20,8 @@ import com.org.meeple.infra.gathering.command.entity.QGatheringMemberEntity
 import com.org.meeple.infra.gathering.command.entity.QGatheringProfileEntity
 import com.org.meeple.infra.gathering.command.entity.QGatheringScheduleEntity
 import com.org.meeple.infra.gathering.command.entity.QMemberVerificationEntity
-import com.org.meeple.infra.payments.command.entity.PaymentEntity
-import com.org.meeple.infra.payments.command.entity.QPaymentEntity
+import com.org.meeple.infra.payments.command.entity.GatheringPaymentEntity
+import com.org.meeple.infra.payments.command.entity.QGatheringPaymentEntity
 import com.org.meeple.infra.user.command.entity.QUserDetailEntity
 import com.org.meeple.infra.user.command.entity.QUserEntity
 import org.hamcrest.Matchers.contains
@@ -58,7 +58,7 @@ class AdminGatheringMemberListE2ETest : AbstractIntegrationSupport({
 					),
 				)
 				IntegrationUtil.persist(
-					PaymentEntity(userId = firstUserId, gatheringId = gatheringId, scheduleId = scheduleId, productId = 1L, paymentKey = "pay_key_admin_1", orderId = "ord_admin_1", gender = Gender.MALE, amount = 10000, status = PaymentStatus.APPROVED),
+					GatheringPaymentEntity(userId = firstUserId, gatheringId = gatheringId, scheduleId = scheduleId, productId = 1L, paymentKey = "pay_key_admin_1", orderId = "ord_admin_1", gender = Gender.MALE, amount = 10000, status = PaymentStatus.APPROVED),
 				)
 
 				val secondUserId: Long = IntegrationUtil.persist(UserEntityFixture.create(providerId = "admin-list-2")).id!!
@@ -71,10 +71,10 @@ class AdminGatheringMemberListE2ETest : AbstractIntegrationSupport({
 				)
 				// 재접수 이력: 과거 8000 → 최신 5600. 최신 금액이 조인되어야 한다.
 				IntegrationUtil.persist(
-					PaymentEntity(userId = secondUserId, gatheringId = gatheringId, scheduleId = scheduleId, productId = 2L, paymentKey = "pay_key_admin_2", orderId = "ord_admin_2", gender = Gender.FEMALE, amount = 8000, status = PaymentStatus.APPROVED),
+					GatheringPaymentEntity(userId = secondUserId, gatheringId = gatheringId, scheduleId = scheduleId, productId = 2L, paymentKey = "pay_key_admin_2", orderId = "ord_admin_2", gender = Gender.FEMALE, amount = 8000, status = PaymentStatus.APPROVED),
 				)
 				IntegrationUtil.persist(
-					PaymentEntity(userId = secondUserId, gatheringId = gatheringId, scheduleId = scheduleId, productId = 2L, paymentKey = "pay_key_admin_3", orderId = "ord_admin_3", gender = Gender.FEMALE, amount = 5600, status = PaymentStatus.APPROVED),
+					GatheringPaymentEntity(userId = secondUserId, gatheringId = gatheringId, scheduleId = scheduleId, productId = 2L, paymentKey = "pay_key_admin_3", orderId = "ord_admin_3", gender = Gender.FEMALE, amount = 5600, status = PaymentStatus.APPROVED),
 				)
 
 				get("/admin/v1/gatherings/schedules/$scheduleId/members") {
@@ -129,7 +129,7 @@ class AdminGatheringMemberListE2ETest : AbstractIntegrationSupport({
 		IntegrationUtil.deleteAll(QMemberVerificationEntity.memberVerificationEntity)
 		IntegrationUtil.deleteAll(QGatheringProfileEntity.gatheringProfileEntity)
 		IntegrationUtil.deleteAll(QGatheringMemberEntity.gatheringMemberEntity)
-		IntegrationUtil.deleteAll(QPaymentEntity.paymentEntity)
+		IntegrationUtil.deleteAll(QGatheringPaymentEntity.gatheringPaymentEntity)
 		IntegrationUtil.deleteAll(QGatheringScheduleEntity.gatheringScheduleEntity)
 		IntegrationUtil.deleteAll(QGatheringEntity.gatheringEntity)
 		IntegrationUtil.deleteAll(QUserDetailEntity.userDetailEntity)

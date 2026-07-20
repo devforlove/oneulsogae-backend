@@ -24,8 +24,8 @@ import com.org.meeple.infra.gathering.command.entity.QGatheringMemberEntity
 import com.org.meeple.infra.gathering.command.entity.QGatheringProductEntity
 import com.org.meeple.infra.gathering.command.entity.QGatheringScheduleEntity
 import com.org.meeple.core.payments.command.domain.PaymentStatus
-import com.org.meeple.infra.payments.command.entity.PaymentEntity
-import com.org.meeple.infra.payments.command.entity.QPaymentEntity
+import com.org.meeple.infra.payments.command.entity.GatheringPaymentEntity
+import com.org.meeple.infra.payments.command.entity.QGatheringPaymentEntity
 import io.kotest.matchers.shouldBe
 
 /**
@@ -133,8 +133,8 @@ class PaymentsCompleteE2ETest : AbstractIntegrationSupport({
 				schedule?.maleRemaining shouldBe 3
 				schedule?.earlyBirdRemaining shouldBe 1
 
-				val payment: QPaymentEntity = QPaymentEntity.paymentEntity
-				val saved: PaymentEntity? = IntegrationUtil.getQuery().selectFrom(payment)
+				val payment: QGatheringPaymentEntity = QGatheringPaymentEntity.gatheringPaymentEntity
+				val saved: GatheringPaymentEntity? = IntegrationUtil.getQuery().selectFrom(payment)
 					.where(payment.scheduleId.eq(scheduleId), payment.userId.eq(userId))
 					.fetchOne()
 				saved?.amount shouldBe 7000
@@ -323,8 +323,8 @@ class PaymentsCompleteE2ETest : AbstractIntegrationSupport({
 				findSchedule(scheduleId)?.maleRemaining shouldBe 4
 				findMember(scheduleId, userId)?.status shouldBe GatheringMemberStatus.CANCELED
 
-				val payment: QPaymentEntity = QPaymentEntity.paymentEntity
-				val failed: PaymentEntity? = IntegrationUtil.getQuery().selectFrom(payment)
+				val payment: QGatheringPaymentEntity = QGatheringPaymentEntity.gatheringPaymentEntity
+				val failed: GatheringPaymentEntity? = IntegrationUtil.getQuery().selectFrom(payment)
 					.where(payment.scheduleId.eq(scheduleId), payment.userId.eq(userId))
 					.fetchOne()
 				failed?.status shouldBe PaymentStatus.FAILED

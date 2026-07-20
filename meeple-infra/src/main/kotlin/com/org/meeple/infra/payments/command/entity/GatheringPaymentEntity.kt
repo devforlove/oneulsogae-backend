@@ -12,20 +12,20 @@ import jakarta.persistence.Table
 import org.hibernate.annotations.SQLRestriction
 
 /**
- * 결제 기록 한 건. 접수 시점에 PENDING으로 저장하고 PG 승인 결과로 APPROVED/FAILED로 전이한다 — 결제수단 등 상세는 없고 접수 내용(누가·어느 일정·얼마)만 보관한다.
+ * 모임(좌석) 결제 기록 한 건. 접수 시점에 PENDING으로 저장하고 PG 승인 결과로 APPROVED/FAILED로 전이한다 — 결제수단 등 상세는 없고 접수 내용(누가·어느 일정·얼마)만 보관한다.
  * 재접수(거절 후 다시 결제완료)마다 새 행이 쌓인다 — (schedule_id, user_id)는 유니크가 아니다.
  * (schedule_id, user_id) 인덱스로 일정별 참가자 목록의 결제금액 조인을 커버한다.
  */
 @Entity
 @SQLRestriction("deleted_at is null")
 @Table(
-	name = "payments",
+	name = "gathering_payments",
 	indexes = [
 		// 일정별 참가자의 결제 기록 조회.
 		Index(name = "idx_schedule_id_user_id", columnList = "schedule_id, user_id"),
 	],
 )
-class PaymentEntity(
+class GatheringPaymentEntity(
 	@Column(name = "user_id", nullable = false)
 	val userId: Long,
 

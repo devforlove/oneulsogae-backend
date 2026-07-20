@@ -14,9 +14,9 @@ import com.org.meeple.core.payments.command.application.port.`in`.command.Comple
 import com.org.meeple.core.payments.command.application.port.`in`.result.CompletePaymentResult
 import com.org.meeple.core.payments.command.application.port.out.PaymentConfirmResult
 import com.org.meeple.core.payments.command.application.port.out.PaymentGatewayPort
-import com.org.meeple.core.payments.command.application.port.out.SavePaymentPort
-import com.org.meeple.core.payments.command.application.port.out.UpdatePaymentStatusPort
-import com.org.meeple.core.payments.command.domain.Payment
+import com.org.meeple.core.payments.command.application.port.out.SaveGatheringPaymentPort
+import com.org.meeple.core.payments.command.application.port.out.UpdateGatheringPaymentStatusPort
+import com.org.meeple.core.payments.command.domain.GatheringPayment
 import com.org.meeple.core.payments.command.domain.PaymentStatus
 import com.org.meeple.core.user.query.service.port.`in`.GetUserDetailUseCase
 import org.springframework.stereotype.Service
@@ -35,8 +35,8 @@ class CompletePaymentService(
 	private val registerGatheringMemberUseCase: RegisterGatheringMemberUseCase,
 	private val releaseGatheringSeatUseCase: ReleaseGatheringSeatUseCase,
 	private val paymentGatewayPort: PaymentGatewayPort,
-	private val savePaymentPort: SavePaymentPort,
-	private val updatePaymentStatusPort: UpdatePaymentStatusPort,
+	private val saveGatheringPaymentPort: SaveGatheringPaymentPort,
+	private val updateGatheringPaymentStatusPort: UpdateGatheringPaymentStatusPort,
 ) : CompletePaymentUseCase {
 
 	override fun complete(userId: Long, command: CompletePaymentCommand): CompletePaymentResult {
@@ -63,8 +63,8 @@ class CompletePaymentService(
 		)
 
 		// ② PENDING 결제 기록 선저장 (자기 트랜잭션). paymentKey를 승인 전에 durable하게 남긴다.
-		val payment: Payment = savePaymentPort.save(
-			Payment(
+		val payment: GatheringPayment = saveGatheringPaymentPort.save(
+			GatheringPayment(
 				userId = userId,
 				gatheringId = product.gatheringId,
 				scheduleId = product.scheduleId,
@@ -81,13 +81,13 @@ class CompletePaymentService(
 		val confirmed: PaymentConfirmResult = paymentGatewayPort.confirm(command.paymentKey, command.orderId, registered.amount)
 		if (!confirmed.approved) {
 			// ④-실패: 기록을 FAILED로 남기고(사유·이력 보존) 좌석 복원 후 402.
-			updatePaymentStatusPort.updateStatus(payment.id!!, PaymentStatus.FAILED, confirmed.failReason)
+			updateGatheringPaymentStatusPort.updateStatus(payment.id!!, PaymentStatus.FAILED, confirmed.failReason)
 			releaseGatheringSeatUseCase.release(product.scheduleId, userId)
 			throw BusinessException(PaymentsErrorCode.PAYMENT_CONFIRM_FAILED)
 		}
 
 		// ④-성공: 기록을 APPROVED로 전이. 좌석은 PENDING 유지(어드민 승인 존치).
-		updatePaymentStatusPort.updateStatus(payment.id!!, PaymentStatus.APPROVED)
+		updateGatheringPaymentStatusPort.updateStatus(payment.id!!, PaymentStatus.APPROVED)
 		return CompletePaymentResult(amount = registered.amount)
 	}
 }
