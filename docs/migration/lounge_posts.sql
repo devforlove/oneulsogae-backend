@@ -13,17 +13,17 @@ CREATE TABLE lounge_posts (
 );
 
 -- 셀프 소개팅(셀소) 본문. lounge_posts와 1:1.
--- 성별·나이·키·지역·직업은 프로필(user_details) 소유라 복사하지 않고 조회 시 조인한다.
+-- 성별·나이·키·지역·직업은 프로필(user_details) 소유라 복사하지 않고 조회 시 조인한다. 본문 항목은 모두 필수다.
 CREATE TABLE self_intro_posts (
     id BIGINT AUTO_INCREMENT PRIMARY KEY,
     post_id BIGINT NOT NULL,
-    long_distance VARCHAR(40) DEFAULT NULL,
-    desired_age VARCHAR(40) DEFAULT NULL,
-    mbti VARCHAR(10) DEFAULT NULL,
-    marriage_thought VARCHAR(500) DEFAULT NULL,
-    preferred_partner VARCHAR(500) DEFAULT NULL,
-    charm_point VARCHAR(500) DEFAULT NULL,
-    free_word VARCHAR(500) DEFAULT NULL,
+    long_distance VARCHAR(40) NOT NULL,
+    desired_age VARCHAR(40) NOT NULL,
+    mbti VARCHAR(10) NOT NULL,
+    marriage_thought VARCHAR(500) NOT NULL,
+    preferred_partner VARCHAR(500) NOT NULL,
+    charm_point VARCHAR(500) NOT NULL,
+    free_word VARCHAR(500) NOT NULL,
     created_at DATETIME(6) NOT NULL,
     updated_at DATETIME(6) NOT NULL,
     deleted_at DATETIME(6) DEFAULT NULL,
