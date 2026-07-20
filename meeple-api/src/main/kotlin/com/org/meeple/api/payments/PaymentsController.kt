@@ -1,8 +1,10 @@
 package com.org.meeple.api.payments
 
+import com.org.meeple.api.payments.request.CompleteCoinPurchaseRequest
 import com.org.meeple.api.payments.request.CompletePaymentRequest
 import com.org.meeple.api.payments.response.CheckoutResponse
 import com.org.meeple.api.payments.response.CoinCheckoutResponse
+import com.org.meeple.api.payments.response.CompleteCoinPurchaseResponse
 import com.org.meeple.api.payments.response.CompletePaymentResponse
 import com.org.meeple.auth.AuthUser
 import com.org.meeple.auth.LoginUser
@@ -14,6 +16,7 @@ import com.org.meeple.core.gathering.query.dto.GatheringProductIdentity
 import com.org.meeple.core.gathering.query.dto.GatheringScheduleView
 import com.org.meeple.core.gathering.query.service.port.`in`.GetGatheringsUseCase
 import com.org.meeple.core.payments.PaymentsErrorCode
+import com.org.meeple.core.payments.command.application.port.`in`.CompleteCoinPurchaseUseCase
 import com.org.meeple.core.payments.command.application.port.`in`.CompletePaymentUseCase
 import com.org.meeple.core.payments.query.dto.CheckoutView
 import com.org.meeple.core.payments.query.service.port.`in`.GetCheckoutUseCase
@@ -36,6 +39,7 @@ class PaymentsController(
 	private val getGatheringsUseCase: GetGatheringsUseCase,
 	private val completePaymentUseCase: CompletePaymentUseCase,
 	private val getCoinCheckoutUseCase: GetCoinCheckoutUseCase,
+	private val completeCoinPurchaseUseCase: CompleteCoinPurchaseUseCase,
 	private val getPaymentMethodsUseCase: GetPaymentMethodsUseCase,
 ) {
 
@@ -81,6 +85,23 @@ class PaymentsController(
 				getPaymentMethodsUseCase.getActiveMethods(),
 			),
 		)
+
+	/**
+	 * 코인 구매 결제완료를 접수한다. PENDING 결제 기록으로 paymentKey를 선기록한 뒤 PG 최종 승인(confirm)을 받고,
+	 * 성공하면 구매한 코인을 즉시 잔액에 적립한다(모임 좌석과 달리 운영자 승인 없이 즉시 지급).
+	 */
+	@Operation(
+		summary = "코인 결제완료 접수",
+		description = "코인 구매 결제 완료를 접수해 PG 최종 승인(confirm)을 받고, 성공 시 구매한 코인을 즉시 잔액에 적립한다. " +
+			"상품은 itemId로 지정한다(코인 체크아웃의 item.id). 실결제가는 서버가 상품 할인가로 확정한다. " +
+			"코인 상품 없음 404(COIN-004), 결제 승인 실패 402(PAYMENTS-004).",
+	)
+	@PostMapping("/coin/complete")
+	fun completeCoinPurchase(
+		@LoginUser user: AuthUser,
+		@RequestBody @Valid request: CompleteCoinPurchaseRequest,
+	): ApiResponse<CompleteCoinPurchaseResponse> =
+		ApiResponse.success(CompleteCoinPurchaseResponse.of(completeCoinPurchaseUseCase.complete(user.id, request.toCommand())))
 
 	/**
 	 * 결제완료를 접수한다. 본인 프로필 성별을 강제해 좌석을 확보(승인대기 PENDING)한 뒤 PG 최종 승인(confirm)을 받고
