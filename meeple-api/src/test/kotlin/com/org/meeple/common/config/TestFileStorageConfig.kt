@@ -7,6 +7,7 @@ import com.org.meeple.admin.gathering.query.service.port.out.GatheringImageUrlPo
 import com.org.meeple.core.gathering.command.application.port.out.FileStoragePort as GatheringFileStoragePort
 import com.org.meeple.core.gathering.query.service.port.out.GatheringImageUrlPort as UserGatheringImageUrlPort
 import com.org.meeple.core.lounge.command.application.port.out.FileStoragePort as LoungeFileStoragePort
+import com.org.meeple.core.lounge.query.service.port.out.LoungeImageUrlPort
 import com.org.meeple.core.user.command.application.port.out.FileStoragePort as UserFileStoragePort
 import org.springframework.boot.test.context.TestConfiguration
 import org.springframework.context.annotation.Bean
@@ -37,6 +38,11 @@ class TestFileStorageConfig {
 	@Primary
 	fun fakeLoungeFileStoragePort(): LoungeFileStoragePort =
 		LoungeFileStoragePort { key: String, _: ByteArray, _: String -> key }
+
+	@Bean
+	@Primary
+	fun fakeLoungeImageUrlPort(): LoungeImageUrlPort =
+		LoungeImageUrlPort { imageKey: String -> "https://presigned.test/$imageKey" }
 
 	@Bean
 	@Primary

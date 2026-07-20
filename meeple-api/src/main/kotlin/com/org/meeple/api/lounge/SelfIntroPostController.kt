@@ -1,14 +1,17 @@
 package com.org.meeple.api.lounge
 
+import com.org.meeple.api.lounge.response.SelfIntroPostPageResponse
 import com.org.meeple.api.lounge.response.SelfIntroPostResponse
 import com.org.meeple.auth.AuthUser
 import com.org.meeple.auth.LoginUser
 import com.org.meeple.core.common.response.ApiResponse
 import com.org.meeple.core.lounge.command.application.port.`in`.RegisterSelfIntroPostUseCase
 import com.org.meeple.core.lounge.command.application.port.`in`.command.RegisterSelfIntroPostCommand
+import com.org.meeple.core.lounge.query.service.port.`in`.GetSelfIntroPostsUseCase
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.tags.Tag
 import org.springframework.http.MediaType
+import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RequestParam
@@ -19,12 +22,14 @@ import org.springframework.web.multipart.MultipartFile
  * 라운지 셀프 소개팅(셀소) 엔드포인트. (인증 필요)
  * - POST /lounge/v1/self-intro-posts: 사진(1~5장)과 본문을 업로드해 셀소 글을 등록한다.
  *   사진은 S3에 비공개로 저장되고 DB에는 오브젝트 키만 남는다. 등록은 최근 24시간에 1건으로 제한한다.
+ * - GET /lounge/v1/self-intro-posts: 라운지 그리드용 목록을 최신순 24개씩 커서 페이징으로 조회한다.
  */
 @RestController
 @RequestMapping("/lounge/v1")
-@Tag(name = "라운지 셀소", description = "라운지 셀프 소개팅 등록 엔드포인트 (인증 필요)")
+@Tag(name = "라운지 셀소", description = "라운지 셀프 소개팅 등록·조회 엔드포인트 (인증 필요)")
 class SelfIntroPostController(
 	private val registerSelfIntroPostUseCase: RegisterSelfIntroPostUseCase,
+	private val getSelfIntroPostsUseCase: GetSelfIntroPostsUseCase,
 ) {
 
 	/** 사진(JPEG·PNG, 1~5장, 장당 최대 10MB)과 본문 7개 항목을 받아 셀소 글을 등록한다. */
@@ -58,6 +63,17 @@ class SelfIntroPostController(
 			SelfIntroPostResponse.of(registerSelfIntroPostUseCase.register(user.id, command)),
 		)
 	}
+
+	/** 라운지 그리드용 셀소 목록을 최신순 한 페이지(24개) 조회한다. */
+	@Operation(
+		summary = "셀소 목록 조회",
+		description = "라운지 그리드용 셀소 목록을 최신순으로 24개씩 내려준다. 각 항목은 글 식별자(postId)·작성자 닉네임·좋아요 수·대표 사진 열람용 URL(presigned)을 담는다. 다음 페이지는 응답의 nextCursor를 cursor 파라미터로 그대로 넘겨 조회한다(hasNext=false면 마지막 페이지).",
+	)
+	@GetMapping("/self-intro-posts")
+	fun getSelfIntroPosts(
+		@RequestParam("cursor", required = false) cursor: Long?,
+	): ApiResponse<SelfIntroPostPageResponse> =
+		ApiResponse.success(SelfIntroPostPageResponse.of(getSelfIntroPostsUseCase.getPosts(cursor)))
 
 	/** MultipartFile에서 core가 받는 원시 바이트·메타([RegisterSelfIntroPostCommand.FilePart])를 뽑는다. */
 	private fun toFilePart(file: MultipartFile): RegisterSelfIntroPostCommand.FilePart =
