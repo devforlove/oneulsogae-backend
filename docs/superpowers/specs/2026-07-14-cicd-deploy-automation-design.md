@@ -1,7 +1,7 @@
 # CI/CD 배포 자동화 설계
 
 **작성일**: 2026-07-14
-**대상**: `meeple-backend` — GitHub Actions 기반 EC2 자동 배포
+**대상**: `oneulsogae-backend` — GitHub Actions 기반 EC2 자동 배포
 
 ## 배경
 

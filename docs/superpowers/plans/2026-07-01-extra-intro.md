@@ -10,7 +10,7 @@
 
 ## Global Constraints
 
-- 응답·주석·커밋 메시지는 **한국어**. `meeple-backend`만 수정(프론트는 안내만).
+- 응답·주석·커밋 메시지는 **한국어**. `oneulsogae-backend`만 수정(프론트는 안내만).
 - 커밋 메시지: `<type>(<domain>): <설명>`, 도메인은 `match`. 커밋 말미에 `Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>`.
 - 타입 명시(변수·반환·람다 파라미터). `LocalDateTime.now()` 직접 호출 금지 → `TimeGenerator` 주입. 현재 브랜치: `feat/extra-intro`.
 - CQRS: command/query 포트·서비스·트랜잭션 분리. query는 자기 dao에만 의존. command out-port는 `command/adapter`, 조회는 `query`의 `*DaoImpl`.

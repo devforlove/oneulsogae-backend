@@ -10,7 +10,7 @@
 
 ## Global Constraints
 
-- 응답·주석·커밋 메시지는 한국어. `meeple-backend`만 수정(프론트엔드 변경은 안내만).
+- 응답·주석·커밋 메시지는 한국어. `oneulsogae-backend`만 수정(프론트엔드 변경은 안내만).
 - 타입 명시: 변수·반환·람다 파라미터 타입을 생략하지 않는다(표현식 본문 포함).
 - 현재 시각은 `TimeGenerator`로 주입받아 `now()`로 얻고 도메인엔 파라미터로 넘긴다. `LocalDateTime.now()` 직접 호출 금지(픽스처 제외).
 - 다른 도메인의 데이터·동작은 그 도메인의 in-port `UseCase`로만 호출한다(out-port·Service 구현체 직접 주입 금지).

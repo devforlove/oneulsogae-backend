@@ -10,7 +10,7 @@
 
 ## Global Constraints
 
-- 응답/주석/메세지는 한국어. `meeple-backend`만 수정(프론트는 안내만).
+- 응답/주석/메세지는 한국어. `oneulsogae-backend`만 수정(프론트는 안내만).
 - 타입 명시(변수·반환·람다 파라미터), `LocalDateTime.now()` 직접 호출 금지(`TimeGenerator.now()` 주입), 도메인 규칙은 도메인 모델에 캡슐화.
 - 명령 경로: out-port·도메인은 `command` 패키지. 다른 도메인은 in-port로만 참조.
 - 도메인 모델은 불변(data class `copy`로 새 인스턴스 반환).

@@ -10,7 +10,7 @@
 
 ## Global Constraints
 
-- 응답은 항상 한국어로 한다. `meeple-backend`만 수정한다(프론트엔드 변경 금지 — 응답 DTO 변화 없음).
+- 응답은 항상 한국어로 한다. `oneulsogae-backend`만 수정한다(프론트엔드 변경 금지 — 응답 DTO 변화 없음).
 - 변수·반환 타입·람다 파라미터 타입을 명시한다. `LocalDateTime.now()` 직접 호출 금지(도메인은 `now` 파라미터 주입).
 - 스키마 변경은 엔티티 `@Column` + `docs/migration/*.sql` 문서화 + 로컬 `ddl-auto: update` 패턴을 따른다(Flyway 미사용).
 - CQRS: command out-port는 `command/adapter`, 조회는 `query`의 `*DaoImpl`. 조회 경로는 부수효과 없음.

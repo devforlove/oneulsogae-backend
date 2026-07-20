@@ -1,4 +1,4 @@
-rootProject.name = "meeple-backend"
+rootProject.name = "oneulsogae-backend"
 
 include("oneulsogae-api")
 include("oneulsogae-core")

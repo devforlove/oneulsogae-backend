@@ -10,7 +10,7 @@
 
 ## Global Constraints
 
-- 응답·코드 주석·커밋 메시지는 한국어. **`meeple-backend`만 수정**(프론트엔드 미수정).
+- 응답·코드 주석·커밋 메시지는 한국어. **`oneulsogae-backend`만 수정**(프론트엔드 미수정).
 - 타입 명시: 변수·반환 타입·람다 파라미터 타입 생략 금지.
 - 도메인 검증은 도메인 모델의 `validate…` 함수로 캡슐화(서비스에 `if…throw` 나열 금지).
 - 명령 서비스 `@Transactional`(인자 없음). out-port는 `Save…Port`.

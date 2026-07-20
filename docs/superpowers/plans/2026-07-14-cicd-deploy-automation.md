@@ -2,7 +2,7 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** GitHub Actions 수동 트리거로 meeple-backend를 빌드·테스트·GHCR push 후 EC2에 SSM으로 자동 배포한다.
+**Goal:** GitHub Actions 수동 트리거로 oneulsogae-backend를 빌드·테스트·GHCR push 후 EC2에 SSM으로 자동 배포한다.
 
 **Architecture:** x86 러너에서 `./gradlew build`(테스트 게이트)로 jar을 만든 뒤, jar만 받는 arm64 런타임 이미지를 GHCR에 push한다. GitHub↔AWS OIDC로 단기 자격증명을 얻어 SSM SendCommand로 EC2에서 `docker compose pull && up -d`를 실행하고, 명령 완료를 폴링해 실패 시 job을 실패시킨다.
 
@@ -274,7 +274,7 @@ jobs:
           CMD_ID=$(aws ssm send-command \
             --document-name "AWS-RunShellScript" \
             --targets "Key=InstanceIds,Values=${{ vars.EC2_INSTANCE_ID }}" \
-            --comment "deploy meeple-backend ${{ github.sha }}" \
+            --comment "deploy oneulsogae-backend ${{ github.sha }}" \
             --parameters 'commands=["cd /opt/meeple && docker compose -f docker-compose.prod.yml pull && docker compose -f docker-compose.prod.yml up -d"]' \
             --region "${{ vars.AWS_REGION }}" \
             --query "Command.CommandId" --output text)

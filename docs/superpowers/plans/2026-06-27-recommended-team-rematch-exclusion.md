@@ -10,7 +10,7 @@
 
 ## Global Constraints
 
-- 응답·주석은 한국어. `meeple-backend`만 수정.
+- 응답·주석은 한국어. `oneulsogae-backend`만 수정.
 - 타입 명시: 변수·반환·람다 파라미터 타입을 생략하지 않는다.
 - 도메인 로직 캡슐화: 서비스가 일급 컬렉션 내부를 들춰 계산하지 말고 도메인 메서드(`Teams.matchHistories()`)로 응집.
 - 헥사고날: Controller→in-port, Service→out-port, infra Adapter가 out-port 구현. core port/out에 인터페이스, infra command/adapter에 구현.

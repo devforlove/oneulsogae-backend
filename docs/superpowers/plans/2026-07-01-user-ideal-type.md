@@ -10,7 +10,7 @@
 
 ## Global Constraints
 
-- 응답은 항상 한국어. `meeple-backend`만 수정(프론트는 안내만).
+- 응답은 항상 한국어. `oneulsogae-backend`만 수정(프론트는 안내만).
 - 타입 명시(변수·반환·람다 파라미터). 표현식 본문 함수 포함.
 - 도메인 규칙은 도메인 모델의 `validate…` 함수로 캡슐화. 서비스에 `if…throw` 나열 금지.
 - 조회 서비스 `@Transactional(readOnly = true)`, 명령 서비스 `@Transactional`. `Get…Port`/`Save…Port` 분리.

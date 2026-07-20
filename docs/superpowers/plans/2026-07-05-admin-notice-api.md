@@ -11,7 +11,7 @@
 ## Global Constraints
 
 - 응답은 항상 한국어. 코드 주석/에러 메시지 한국어.
-- `meeple-backend`만 수정. 프론트엔드 변경 금지.
+- `oneulsogae-backend`만 수정. 프론트엔드 변경 금지.
 - 어드민 모듈(`oneulsogae-admin`)은 core에 의존하지 않는다(self-contained). core `Notice`/`NoticeView` 등을 import하지 않는다.
 - 타입 명시: 변수·반환 타입·람다 파라미터 타입 생략 금지.
 - `LocalDateTime.now()` 직접 호출 금지(이 기능은 created_at을 JPA Auditing이 채우므로 시각 직접 생성 없음).

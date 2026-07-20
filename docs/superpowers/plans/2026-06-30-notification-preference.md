@@ -11,7 +11,7 @@
 ## Global Constraints
 
 - **응답·주석은 한국어.**
-- **`meeple-backend`만 수정.** 프론트(`meeple-frontend`)는 건드리지 않는다(연동 방법은 spec의 "프론트엔드 대응" 절 참고).
+- **`oneulsogae-backend`만 수정.** 프론트(`meeple-frontend`)는 건드리지 않는다(연동 방법은 spec의 "프론트엔드 대응" 절 참고).
 - 모듈 의존 방향 준수: `common`(무의존) ← `core`(common만) ← `infra`(core·common). 도메인 간 참조는 **상대 도메인 in-port UseCase 주입**(out-port·구현체 직접 주입 금지).
 - CQRS: command는 도메인 모델, query는 전용 read model(View). query는 core에서 command 도메인·포트를 참조하지 않는다(infra 내부 query→command 엔티티/리포지토리 참조는 허용).
 - 타입 명시(변수·반환·람다 파라미터). `LocalDateTime.now()` 직접 호출 금지(엔티티 픽스처/`SystemTimeGenerator` 제외 — 이 작업엔 시각 직접 사용 없음).

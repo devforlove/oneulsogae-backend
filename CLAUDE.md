@@ -1,6 +1,6 @@
 # CLAUDE.md
 
-`meeple-backend` — **헥사고날 아키텍처(Ports & Adapters)** 기반 Kotlin / Spring Boot 멀티모듈 백엔드.
+`oneulsogae-backend` — **헥사고날 아키텍처(Ports & Adapters)** 기반 Kotlin / Spring Boot 멀티모듈 백엔드.
 
 - **언어/런타임**: Kotlin 2.2.21, JVM 21
 - **프레임워크**: Spring Boot 4.0.6, Spring Data JPA, Spring Security + OAuth2 Client, JJWT
@@ -14,7 +14,7 @@
 
 ## 리포지토리 경계
 
-- **`meeple-backend`만 수정한다.** `meeple-backend` 작업 중에 `meeple-frontend`를 함께 수정하지 않는다. (백엔드 변경에 딸린 프론트엔드 변경도 자동으로 하지 않는다)
+- **`oneulsogae-backend`만 수정한다.** `oneulsogae-backend` 작업 중에 `meeple-frontend`를 함께 수정하지 않는다. (백엔드 변경에 딸린 프론트엔드 변경도 자동으로 하지 않는다)
 - 프론트엔드 변경이 필요하면 직접 고치지 말고, **무엇을 어떻게 바꿔야 하는지 사용자에게 알린다.** (예: 응답 필드 추가/리네임 시 대응할 DTO·매퍼 위치와 변경 내용을 안내)
 
 ## 작업 원칙 (Karpathy 가이드라인)

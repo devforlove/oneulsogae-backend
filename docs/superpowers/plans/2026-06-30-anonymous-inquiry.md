@@ -11,7 +11,7 @@
 ## Global Constraints
 
 - 응답·주석·커밋 메시지는 한국어로 작성한다.
-- `meeple-backend`만 수정한다. `meeple-frontend`는 건드리지 않는다(안내만).
+- `oneulsogae-backend`만 수정한다. `meeple-frontend`는 건드리지 않는다(안내만).
 - 타입을 명시한다(변수·반환·람다 파라미터). 표현식 본문 함수 포함.
 - `LocalDateTime.now()` 직접 호출 금지(이번 변경에는 시각 로직 없음).
 - 커밋 메시지 형식: `<type>(<domain>): <설명>`, 도메인은 `inquiry`.

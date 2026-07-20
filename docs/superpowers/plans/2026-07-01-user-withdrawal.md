@@ -11,7 +11,7 @@
 ## Global Constraints
 
 - 응답·주석·커밋 메시지는 한국어. 커밋 형식 `<type>(user): <설명>`.
-- `meeple-backend`만 수정. 프론트엔드 변경 금지(필요 사항은 안내만).
+- `oneulsogae-backend`만 수정. 프론트엔드 변경 금지(필요 사항은 안내만).
 - 타입 명시(변수·반환·람다 파라미터). `LocalDateTime.now()` 직접 호출 금지 — core는 `TimeGenerator`, scheduler는 자체 `TimeGenerator` 주입.
 - 모듈 의존 방향 준수: 컨트롤러는 in-port만 주입. core는 out-port 정의, infra가 구현. scheduler는 core에 의존하지 않고 자체 out-port만 두며 infra Bridge가 잇는다.
 - 소프트삭제 행 접근은 네이티브 쿼리(`nativeQuery = true`)로 `@SQLRestriction` 우회. 기존 `@Modifying(clearAutomatically = true)` 패턴을 따른다.

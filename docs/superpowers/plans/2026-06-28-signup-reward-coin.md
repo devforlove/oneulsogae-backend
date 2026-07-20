@@ -11,7 +11,7 @@
 ## Global Constraints
 
 - 응답·주석·커밋 메시지는 한국어로 작성한다.
-- `meeple-backend`만 수정한다. 프론트엔드 변경은 직접 하지 않고 안내만 한다.
+- `oneulsogae-backend`만 수정한다. 프론트엔드 변경은 직접 하지 않고 안내만 한다.
 - 도메인 간 참조는 in-port `UseCase`로만 한다(coin은 `AcquireCoinUseCase`).
 - `LocalDateTime.now()` 직접 호출 금지(코인 지급의 시각은 기존 `AcquireCoinService`가 `TimeGenerator`로 처리하므로 신규 시각 호출 없음).
 - 변수·반환·람다 파라미터 타입을 명시한다.

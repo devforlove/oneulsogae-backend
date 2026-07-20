@@ -71,7 +71,7 @@ include("oneulsogae-admin")
 수정 후 전체 모습:
 
 ```kotlin
-rootProject.name = "meeple-backend"
+rootProject.name = "oneulsogae-backend"
 
 include("oneulsogae-api")
 include("oneulsogae-core")
