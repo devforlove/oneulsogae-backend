@@ -31,13 +31,15 @@ class GetSelfIntroPostsService(
 			.withImageUrls { imageKey: String -> loungeImageUrlPort.presignedGetUrl(imageKey) }
 	}
 
-	override fun getPost(postId: Long): SelfIntroPostDetailView {
+	override fun getPost(userId: Long, postId: Long): SelfIntroPostDetailView {
 		val view: SelfIntroPostDetailView = getSelfIntroPostDao.findDetailByPostId(postId)
 			?: throw BusinessException(LoungeErrorCode.SELF_INTRO_POST_NOT_FOUND, "셀소를 찾을 수 없습니다: $postId")
-		return view.withPhotosAndAge(
-			imageKeys = getSelfIntroPostDao.findImageKeysByPostId(postId),
-			today = timeGenerator.today(),
-		) { imageKey: String -> loungeImageUrlPort.presignedGetUrl(imageKey) }
+		return view
+			.withPhotosAndAge(
+				imageKeys = getSelfIntroPostDao.findImageKeysByPostId(postId),
+				today = timeGenerator.today(),
+			) { imageKey: String -> loungeImageUrlPort.presignedGetUrl(imageKey) }
+			.withChatRequested(getSelfIntroPostDao.existsChatRequest(postId, userId))
 	}
 
 	companion object {

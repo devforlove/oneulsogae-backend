@@ -4,6 +4,7 @@ import com.org.oneulsogae.common.lounge.LoungePostType
 import com.org.oneulsogae.core.lounge.query.dao.GetSelfIntroPostDao
 import com.org.oneulsogae.core.lounge.query.dto.SelfIntroPostDetailView
 import com.org.oneulsogae.core.lounge.query.dto.SelfIntroPostView
+import com.org.oneulsogae.infra.lounge.command.entity.QLoungeChatRequestEntity
 import com.org.oneulsogae.infra.lounge.command.entity.QLoungePostEntity
 import com.org.oneulsogae.infra.lounge.command.entity.QLoungePostImageEntity
 import com.org.oneulsogae.infra.lounge.command.entity.QSelfIntroPostEntity
@@ -97,6 +98,16 @@ class GetSelfIntroPostDaoImpl(
 			.where(image.postId.eq(postId))
 			.orderBy(image.displayOrder.asc())
 			.fetch()
+	}
+
+	// (post_id, requester_user_id) 유니크 인덱스(ux_post_requester)를 그대로 타는 존재 확인이다.
+	override fun existsChatRequest(postId: Long, requesterUserId: Long): Boolean {
+		val request: QLoungeChatRequestEntity = QLoungeChatRequestEntity.loungeChatRequestEntity
+		return queryFactory
+			.selectOne()
+			.from(request)
+			.where(request.postId.eq(postId), request.requesterUserId.eq(requesterUserId))
+			.fetchFirst() != null
 	}
 
 	companion object {

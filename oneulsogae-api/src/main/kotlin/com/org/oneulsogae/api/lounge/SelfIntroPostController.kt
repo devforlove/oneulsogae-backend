@@ -81,13 +81,14 @@ class SelfIntroPostController(
 	/** 셀소 상세 한 건을 조회한다. */
 	@Operation(
 		summary = "셀소 상세 조회",
-		description = "셀소 한 건의 작성자 프로필(닉네임·성별·만 나이·키·활동지역·직업)·본문 7개 항목·사진 전체(열람용 presigned URL, 노출 순서)·좋아요 수를 조회한다. 대화 신청 버튼의 비용 안내에 쓸 chatRequestCoinAmount(신청 시 차감되는 코인 수)도 함께 내려준다. 글이 없거나 삭제됐으면 404(LOUNGE-008)를 반환한다.",
+		description = "셀소 한 건의 작성자 프로필(닉네임·성별·만 나이·키·활동지역·직업)·본문 7개 항목·사진 전체(열람용 presigned URL, 노출 순서)·좋아요 수를 조회한다. 대화 신청 버튼에 쓸 chatRequestCoinAmount(신청 시 차감되는 코인 수)와 chatRequestedByMe(요청한 사용자가 이 글에 이미 신청했는지 — true면 버튼을 '신청함'으로 바꾼다)도 함께 내려준다. 글이 없거나 삭제됐으면 404(LOUNGE-008)를 반환한다.",
 	)
 	@GetMapping("/self-intro-posts/{postId}")
 	fun getSelfIntroPost(
+		@LoginUser user: AuthUser,
 		@PathVariable("postId") postId: Long,
 	): ApiResponse<SelfIntroPostDetailResponse> =
-		ApiResponse.success(SelfIntroPostDetailResponse.of(getSelfIntroPostsUseCase.getPost(postId)))
+		ApiResponse.success(SelfIntroPostDetailResponse.of(getSelfIntroPostsUseCase.getPost(user.id, postId)))
 
 	/** MultipartFile에서 core가 받는 원시 바이트·메타([RegisterSelfIntroPostCommand.FilePart])를 뽑는다. */
 	private fun toFilePart(file: MultipartFile): RegisterSelfIntroPostCommand.FilePart =

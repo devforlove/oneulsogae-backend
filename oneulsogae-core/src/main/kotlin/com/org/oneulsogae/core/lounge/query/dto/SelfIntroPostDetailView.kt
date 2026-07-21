@@ -40,6 +40,11 @@ data class SelfIntroPostDetailView(
 	 * (실제 차감도 서버가 같은 유형의 정책값으로 산출한다 — [com.org.oneulsogae.core.lounge.command.application.RequestLoungeChatService])
 	 */
 	val chatRequestCoinAmount: Int = CoinUsageType.LOUNGE_CHAT_INIT.coinAmount,
+	/**
+	 * 조회한 사용자가 이 글에 이미 대화를 신청했는지 여부. 서비스가 채운다.
+	 * 신청 버튼을 "신청함"으로 바꾸는 데 쓴다. 상태(PENDING/ACCEPTED)는 구분하지 않는다 — 어느 쪽이든 다시 신청할 수 없다.
+	 */
+	val chatRequestedByMe: Boolean = false,
 ) {
 	/** dao 투영용 생성자. 나이·사진은 서비스가 채운다. */
 	constructor(
@@ -71,4 +76,8 @@ data class SelfIntroPostDetailView(
 			imageKeys = imageKeys,
 			imageUrls = imageKeys.map(presign),
 		)
+
+	/** 조회한 사용자의 기존 신청 여부를 반영한 상세를 만든다. */
+	fun withChatRequested(requested: Boolean): SelfIntroPostDetailView =
+		copy(chatRequestedByMe = requested)
 }

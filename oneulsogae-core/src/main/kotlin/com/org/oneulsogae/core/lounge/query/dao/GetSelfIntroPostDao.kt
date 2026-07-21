@@ -17,4 +17,10 @@ interface GetSelfIntroPostDao {
 
 	/** 글에 붙은 사진의 S3 오브젝트 키를 노출 순서(display_order 오름차순)대로 조회한다. */
 	fun findImageKeysByPostId(postId: Long): List<String>
+
+	/**
+	 * [requesterUserId]가 이 글에 이미 대화를 신청했는지 여부. (상세의 신청 버튼 상태 표시용)
+	 * 상태(PENDING/ACCEPTED)는 구분하지 않는다 — 어느 쪽이든 다시 신청할 수 없기 때문이다.
+	 */
+	fun existsChatRequest(postId: Long, requesterUserId: Long): Boolean
 }

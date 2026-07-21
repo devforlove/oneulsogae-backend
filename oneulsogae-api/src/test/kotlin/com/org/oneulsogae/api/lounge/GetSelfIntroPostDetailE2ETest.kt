@@ -4,6 +4,7 @@ import com.org.oneulsogae.common.coin.CoinUsageType
 import com.org.oneulsogae.common.integration.AbstractIntegrationSupport
 import com.org.oneulsogae.common.user.Gender
 import com.org.oneulsogae.infra.fixture.IntegrationUtil
+import com.org.oneulsogae.infra.fixture.LoungeChatRequestEntityFixture
 import com.org.oneulsogae.infra.fixture.LoungePostEntityFixture
 import com.org.oneulsogae.infra.fixture.LoungePostImageEntityFixture
 import com.org.oneulsogae.infra.fixture.RegionEntityFixture
@@ -11,6 +12,7 @@ import com.org.oneulsogae.infra.fixture.SelfIntroPostEntityFixture
 import com.org.oneulsogae.infra.fixture.UserDetailEntityFixture
 import com.org.oneulsogae.infra.fixture.UserEntityFixture
 import com.org.oneulsogae.infra.lounge.command.entity.LoungePostEntity
+import com.org.oneulsogae.infra.lounge.command.entity.QLoungeChatRequestEntity
 import com.org.oneulsogae.infra.region.entity.RegionEntity
 import io.restassured.RestAssured
 import org.hamcrest.Matchers
@@ -24,6 +26,11 @@ import java.time.Period
  * (presigned URL은 [com.org.oneulsogae.common.config.TestFileStorageConfig]의 페이크로 대체)
  */
 class GetSelfIntroPostDetailE2ETest : AbstractIntegrationSupport({
+
+	// 신청 여부 케이스가 만든 신청 행을 정리한다. (같은 글에 두 번 신청할 수 없어 다음 실행에 걸리지 않도록)
+	afterTest {
+		IntegrationUtil.deleteAll(QLoungeChatRequestEntity.loungeChatRequestEntity)
+	}
 
 	describe("GET /lounge/v1/self-intro-posts/{postId}") {
 
@@ -86,6 +93,50 @@ class GetSelfIntroPostDetailE2ETest : AbstractIntegrationSupport({
 					.body("data.imageUrls", Matchers.hasSize<Any>(2))
 					.body("data.imageUrls[0]", Matchers.equalTo("https://presigned.test/lounge-posts/$userId/first.jpg"))
 					.body("data.imageUrls[1]", Matchers.equalTo("https://presigned.test/lounge-posts/$userId/second.png"))
+			}
+		}
+
+		context("아직 대화를 신청하지 않은 사용자가 조회하면") {
+			it("chatRequestedByMe가 false다") {
+				val authorId: Long = IntegrationUtil.persist(UserEntityFixture.create(providerId = "lounge-detail-3")).id!!
+				val viewerId: Long = IntegrationUtil.persist(UserEntityFixture.create(providerId = "lounge-detail-4")).id!!
+				val post: LoungePostEntity = IntegrationUtil.persist(LoungePostEntityFixture.create(userId = authorId))
+				IntegrationUtil.persist(SelfIntroPostEntityFixture.create(postId = post.id!!))
+
+				RestAssured.given()
+					.header("Authorization", "Bearer ${accessTokenFor(viewerId)}")
+					.get("/lounge/v1/self-intro-posts/${post.id}")
+					.then()
+					.statusCode(200)
+					.body("data.chatRequestedByMe", Matchers.equalTo(false))
+			}
+		}
+
+		context("이미 대화를 신청한 사용자가 조회하면") {
+			it("chatRequestedByMe가 true다 (다른 사용자에게는 여전히 false)") {
+				val authorId: Long = IntegrationUtil.persist(UserEntityFixture.create(providerId = "lounge-detail-5")).id!!
+				val requesterId: Long = IntegrationUtil.persist(UserEntityFixture.create(providerId = "lounge-detail-6")).id!!
+				val otherId: Long = IntegrationUtil.persist(UserEntityFixture.create(providerId = "lounge-detail-7")).id!!
+				val post: LoungePostEntity = IntegrationUtil.persist(LoungePostEntityFixture.create(userId = authorId))
+				IntegrationUtil.persist(SelfIntroPostEntityFixture.create(postId = post.id!!))
+				IntegrationUtil.persist(
+					LoungeChatRequestEntityFixture.create(postId = post.id!!, requesterUserId = requesterId),
+				)
+
+				RestAssured.given()
+					.header("Authorization", "Bearer ${accessTokenFor(requesterId)}")
+					.get("/lounge/v1/self-intro-posts/${post.id}")
+					.then()
+					.statusCode(200)
+					.body("data.chatRequestedByMe", Matchers.equalTo(true))
+
+				// 신청 여부는 조회한 사용자 기준이라, 신청하지 않은 다른 사용자에게는 false로 내려간다.
+				RestAssured.given()
+					.header("Authorization", "Bearer ${accessTokenFor(otherId)}")
+					.get("/lounge/v1/self-intro-posts/${post.id}")
+					.then()
+					.statusCode(200)
+					.body("data.chatRequestedByMe", Matchers.equalTo(false))
 			}
 		}
 

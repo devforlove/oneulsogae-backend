@@ -353,6 +353,7 @@ lounge/response/AcceptLoungeChatResponse.kt
 
 1. **셀소 상세 화면**: "대화 신청" 버튼 → `POST /lounge/v1/self-intro-posts/{postId}/chat-requests`. 응답 `requestId`. 잔액 부족·중복 신청(409) 처리.
    비용은 **상세 조회 응답의 `data.chatRequestCoinAmount`를 그대로 표시**한다(하드코딩 금지 — 정책이 바뀌면 서버 값만 바뀐다). 글마다 다르지 않은 전역 정책값이라 목록 응답에는 싣지 않는다.
+   버튼 상태는 **상세 조회 응답의 `data.chatRequestedByMe`로 정한다.** true면 "신청함"으로 바꾸고 다시 누를 수 없게 한다(누르면 409 LOUNGE-010). 상태(PENDING/ACCEPTED)는 구분하지 않는다 — 어느 쪽이든 재신청이 불가능하다.
 2. **내 셀소 신청자 목록 화면**: `GET /lounge/v1/self-intro-posts/{postId}/chat-requests` — 신청자 카드(닉네임·성별·나이)와 상태별 액션(PENDING → "수락", ACCEPTED → "채팅방 이동"). 커서 페이징(`nextCursor`/`hasNext`).
 3. **수락 액션**: `POST /lounge/v1/chat-requests/{requestId}/accept` → 응답 `chatRoomId`로 채팅방 이동.
    수락 비용은 **목록 응답 루트의 `data.acceptCoinAmount`를 그대로 표시**한다(하드코딩 금지). 신청마다 다르지 않아 항목이 아니라 루트에 한 번만 온다.
