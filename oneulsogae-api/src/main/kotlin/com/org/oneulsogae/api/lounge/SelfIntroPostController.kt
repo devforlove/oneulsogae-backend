@@ -70,7 +70,7 @@ class SelfIntroPostController(
 	/** 라운지 그리드용 셀소 목록을 최신순 한 페이지(24개) 조회한다. (비로그인 허용) */
 	@Operation(
 		summary = "셀소 목록 조회",
-		description = "라운지 그리드용 셀소 목록을 최신순으로 24개씩 내려준다. 비로그인도 조회할 수 있으며, 그때 receivedPendingChatRequestCount·sentPendingChatRequestCount는 0, companyVerified는 false로 내려간다. 각 항목은 글 식별자(postId)·좋아요 수·대표 사진 열람용 URL(presigned)과 작성자 프로필(authorNickname·authorGender·authorAge·authorProfileImageCode·authorJob·authorCompanyName·authorActivityArea)을 담는다. 응답 루트의 receivedPendingChatRequestCount는 요청한 사용자가 자기 셀소로 받은 신청 중 아직 수락하지 않은 건수(내가 쓴 모든 셀소 합산), sentPendingChatRequestCount는 남의 셀소에 보낸 신청 중 아직 수락되지 않은 건수로, 각각 '받은 신청'·'보낸 신청' 배지에 쓴다. 둘 다 수락되면 줄어든다. 다음 페이지는 응답의 nextCursor를 cursor 파라미터로 그대로 넘겨 조회한다(hasNext=false면 마지막 페이지).",
+		description = "라운지 그리드용 셀소 목록을 최신순으로 24개씩 내려준다. 비로그인도 조회할 수 있으며, 그때 receivedPendingChatRequestCount는 0, companyVerified는 false로 내려간다. 각 항목은 글 식별자(postId)·좋아요 수·대표 사진 열람용 URL(presigned)과 작성자 프로필(authorNickname·authorGender·authorAge·authorProfileImageCode·authorJob·authorCompanyName·authorActivityArea)을 담는다. 응답 루트의 receivedPendingChatRequestCount는 요청한 사용자가 자기 셀소로 받은 신청 중 아직 수락하지 않은 건수(내가 쓴 모든 셀소 합산)로, '받은 신청' 배지에 쓴다. 수락하면 줄어든다. 다음 페이지는 응답의 nextCursor를 cursor 파라미터로 그대로 넘겨 조회한다(hasNext=false면 마지막 페이지).",
 	)
 	@GetMapping("/self-intro-posts")
 	fun getSelfIntroPosts(
