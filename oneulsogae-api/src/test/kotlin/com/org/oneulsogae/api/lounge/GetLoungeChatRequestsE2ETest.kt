@@ -126,5 +126,46 @@ class GetLoungeChatRequestsE2ETest : AbstractIntegrationSupport({
 					.body("error.code", Matchers.equalTo("LOUNGE-008"))
 			}
 		}
+
+		context("한 글에 페이지 크기(20)를 넘는 21건의 신청이 있으면") {
+			it("첫 페이지는 20건과 다음 커서를 내려주고, 커서로 나머지 1건을 이어서 받는다") {
+				val authorId: Long = IntegrationUtil.persist(UserEntityFixture.create(providerId = "lounge-list-author-3")).id!!
+				val post: LoungePostEntity = IntegrationUtil.persist(LoungePostEntityFixture.create(userId = authorId))
+				// (post_id, requester_user_id) 유니크 제약이 있어 신청자는 각각 다른 사용자여야 한다.
+				val requestIds: List<Long> = (1..21).map { index: Int ->
+					val requesterId: Long = IntegrationUtil.persist(
+						UserEntityFixture.create(providerId = "lounge-list-cursor-$index"),
+					).id!!
+					IntegrationUtil.persist(
+						LoungeChatRequestEntityFixture.create(postId = post.id!!, requesterUserId = requesterId),
+					).id!!
+				}
+				val cursor: Long = requestIds[1] // 첫 페이지 마지막(가장 오래된) 항목의 requestId
+
+				RestAssured.given()
+					.header("Authorization", "Bearer ${accessTokenFor(authorId)}")
+					.get("/lounge/v1/self-intro-posts/${post.id}/chat-requests")
+					.then()
+					.statusCode(200)
+					.body("data.items", Matchers.hasSize<Any>(20))
+					.body("data.hasNext", Matchers.equalTo(true))
+					.body("data.nextCursor", Matchers.equalTo(cursor.toInt()))
+					// 최신순이라 가장 나중에 신청한 건이 맨 앞, 잘라내기 직전(20번째) 건이 커서와 같다.
+					.body("data.items[0].requestId", Matchers.equalTo(requestIds[20].toInt()))
+					.body("data.items[19].requestId", Matchers.equalTo(cursor.toInt()))
+
+				RestAssured.given()
+					.header("Authorization", "Bearer ${accessTokenFor(authorId)}")
+					.queryParam("cursor", cursor)
+					.get("/lounge/v1/self-intro-posts/${post.id}/chat-requests")
+					.then()
+					.statusCode(200)
+					.body("data.items", Matchers.hasSize<Any>(1))
+					// 남은 가장 오래된 건이며, 첫 페이지 마지막 건(cursor)과 겹치지 않고 바로 이어진다.
+					.body("data.items[0].requestId", Matchers.equalTo(requestIds[0].toInt()))
+					.body("data.hasNext", Matchers.equalTo(false))
+					.body("data.nextCursor", Matchers.nullValue())
+			}
+		}
 	}
 })
