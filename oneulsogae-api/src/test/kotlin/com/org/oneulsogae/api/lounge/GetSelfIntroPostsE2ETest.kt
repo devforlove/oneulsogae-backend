@@ -2,6 +2,7 @@ package com.org.oneulsogae.api.lounge
 
 import com.org.oneulsogae.common.integration.AbstractIntegrationSupport
 import com.org.oneulsogae.common.lounge.LoungeChatRequestStatus
+import com.org.oneulsogae.common.user.Gender
 import com.org.oneulsogae.infra.fixture.IntegrationUtil
 import com.org.oneulsogae.infra.fixture.LoungeChatRequestEntityFixture
 import com.org.oneulsogae.infra.fixture.LoungePostEntityFixture
@@ -14,6 +15,8 @@ import com.org.oneulsogae.infra.lounge.command.entity.QLoungePostEntity
 import com.org.oneulsogae.infra.lounge.command.entity.QLoungePostImageEntity
 import io.restassured.RestAssured
 import org.hamcrest.Matchers
+import java.time.LocalDate
+import java.time.Period
 
 /**
  * `GET /lounge/v1/self-intro-posts` E2E 테스트.
@@ -39,7 +42,19 @@ class GetSelfIntroPostsE2ETest : AbstractIntegrationSupport({
 		context("셀소 26건이 있으면") {
 			it("최신순 24건과 다음 커서를 내려주고, 커서로 나머지 2건을 잇는다") {
 				val userId: Long = IntegrationUtil.persist(UserEntityFixture.create(providerId = "lounge-list-1")).id!!
-				IntegrationUtil.persist(UserDetailEntityFixture.create(userId = userId, nickname = "라운지주민"))
+				val birthday: LocalDate = LocalDate.of(1994, 2, 2)
+				IntegrationUtil.persist(
+					UserDetailEntityFixture.create(
+						userId = userId,
+						nickname = "라운지주민",
+						gender = Gender.FEMALE,
+						birthday = birthday,
+						profileImageCode = "PROFILE_03",
+						job = "기획자",
+						companyName = "오늘소개",
+					),
+				)
+				val expectedAge: Int = Period.between(birthday, LocalDate.now()).years
 				val postIds: List<Long> = (1..26).map { index: Int ->
 					val post: LoungePostEntity = IntegrationUtil.persist(
 						LoungePostEntityFixture.create(userId = userId, likeCount = index),
@@ -68,6 +83,11 @@ class GetSelfIntroPostsE2ETest : AbstractIntegrationSupport({
 					.body("data.items[0].authorNickname", Matchers.equalTo("라운지주민"))
 					.body("data.items[0].likeCount", Matchers.equalTo(26))
 					.body("data.items[0].imageUrl", Matchers.equalTo("https://presigned.test/lounge-posts/$userId/26.jpg"))
+					.body("data.items[0].authorGender", Matchers.equalTo("FEMALE"))
+					.body("data.items[0].authorAge", Matchers.equalTo(expectedAge))
+					.body("data.items[0].authorProfileImageCode", Matchers.equalTo("PROFILE_03"))
+					.body("data.items[0].authorJob", Matchers.equalTo("기획자"))
+					.body("data.items[0].authorCompanyName", Matchers.equalTo("오늘소개"))
 
 				RestAssured.given()
 					.header("Authorization", "Bearer ${accessTokenFor(userId)}")
@@ -96,6 +116,10 @@ class GetSelfIntroPostsE2ETest : AbstractIntegrationSupport({
 					.body("data.items[0].postId", Matchers.equalTo(post.id!!.toInt()))
 					.body("data.items[0].authorNickname", Matchers.equalTo("사진없음"))
 					.body("data.items[0].imageUrl", Matchers.nullValue())
+					// 직업·회사·프로필 이미지를 설정하지 않은 작성자는 해당 필드만 null로 내려간다. (글은 목록에서 빠지지 않는다)
+					.body("data.items[0].authorJob", Matchers.nullValue())
+					.body("data.items[0].authorCompanyName", Matchers.nullValue())
+					.body("data.items[0].authorProfileImageCode", Matchers.nullValue())
 			}
 		}
 

@@ -11,7 +11,10 @@
 - 응답
   ```json
   { "success": true, "data": {
-      "items": [{ "postId": 26, "authorNickname": "라운지주민", "likeCount": 12, "imageUrl": "https://..." }],
+      "items": [{ "postId": 26, "authorNickname": "라운지주민", "likeCount": 12, "imageUrl": "https://...",
+                  "authorGender": "FEMALE", "authorAge": 30, "authorProfileImageCode": "PROFILE_03",
+                  "authorJob": "기획자", "authorCompanyName": "오늘소개" }],
+      "receivedPendingChatRequestCount": 0, "sentPendingChatRequestCount": 0,
       "hasNext": true, "nextCursor": 3 } }
   ```
 - 다음 페이지는 `nextCursor`를 `cursor`로 그대로 넘긴다. `hasNext=false`면 마지막 페이지이고 `nextCursor`는 null이다.
@@ -21,15 +24,18 @@
 - `lounge_posts`에서 `type=SELF_INTRO`, `id` 내림차순(최신순). 커서는 `id < :cursor` keyset —
   복합 인덱스 `idx_type_id (type, id)`가 동등 조건 + 정렬을 받쳐 뒤 페이지도 seek로 끝난다(offset 스캔 없음).
 - 페이지 크기 + 1건을 읽어 COUNT 없이 다음 페이지 존재를 판정한다. (`SelfIntroPostPage.of`)
-- 작성자 닉네임은 `user_details`, 대표 사진은 `lounge_post_images`의 `display_order = 0` 행을 **left join**으로 붙인다.
-  프로필이나 사진이 없어도 글은 목록에서 빠지지 않는다(각각 null).
+- 작성자 프로필(닉네임·성별·생년월일·프로필 이미지 코드·직업·회사명)은 `user_details`, 대표 사진은 `lounge_post_images`의
+  `display_order = 0` 행을 **left join**으로 붙인다. 프로필이나 사진이 없어도 글은 목록에서 빠지지 않는다(각각 null).
+  만 나이는 dao가 `birthday`까지만 담고 서비스가 `TimeGenerator`의 오늘 날짜로 계산한다(`SelfIntroPostPage.withAuthorAges`).
+- 응답 루트의 `receivedPendingChatRequestCount`·`sentPendingChatRequestCount`는 요청한 사용자의 미수락 대화 신청 건수다.
+  ([대화 신청 설계](2026-07-21-lounge-chat-request-design.md) 참고)
 - 좋아요 수는 `lounge_posts.like_count`(비정규화 카운트)를 그대로 읽는다. 집계 조인 없음.
 - 사진은 비공개 저장이라 dao는 `imageKey`까지만 담고, 서비스가 presigned GET URL로 변환한다.
 
 ## 구성 요소 (CQRS query 패키지)
 
 - **oneulsogae-core `lounge/query`**
-  - `dto/SelfIntroPostView`(read model), `dto/SelfIntroPostPage`(커서 페이지 일급 컬렉션 — `of`·`nextCursor`·`withImageUrls`)
+  - `dto/SelfIntroPostView`(read model), `dto/SelfIntroPostPage`(커서 페이지 일급 컬렉션 — `of`·`nextCursor`·`withImageUrls`·`withAuthorAges`·`withPendingChatRequestCounts`)
   - `dao/GetSelfIntroPostDao`
   - `service/GetSelfIntroPostsService`(`@Transactional(readOnly = true)`, `PAGE_SIZE = 24`) + `service/port/in/GetSelfIntroPostsUseCase`
   - `service/port/out/LoungeImageUrlPort`(presign)

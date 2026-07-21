@@ -12,7 +12,17 @@ import io.kotest.matchers.shouldBe
 class SelfIntroPostPageTest : DescribeSpec({
 
 	fun view(postId: Long, imageKey: String? = "lounge-posts/1/$postId.jpg"): SelfIntroPostView =
-		SelfIntroPostView(postId = postId, authorNickname = "닉네임", likeCount = 3, imageKey = imageKey)
+		SelfIntroPostView(
+			postId = postId,
+			authorNickname = "닉네임",
+			likeCount = 3,
+			imageKey = imageKey,
+			authorGender = null,
+			authorBirthday = null,
+			authorProfileImageCode = null,
+			authorJob = null,
+			authorCompanyName = null,
+		)
 
 	describe("of") {
 		it("size보다 많이 읽었으면 초과분을 잘라내고 다음 페이지가 있다고 본다") {

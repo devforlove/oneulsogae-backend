@@ -1,5 +1,7 @@
 package com.org.oneulsogae.core.lounge.query.dto
 
+import java.time.LocalDate
+
 /**
  * 라운지 셀소 목록([SelfIntroPostView])의 커서 페이지(일급 컬렉션).
  * 최신(postId 내림차순)순 목록과 다음 페이지 존재 여부·커서를 함께 담아, 커서 산출 규칙을 한곳에 응집시킨다.
@@ -31,6 +33,15 @@ class SelfIntroPostPage private constructor(
 			values = values.map { view: SelfIntroPostView ->
 				view.copy(imageUrl = view.imageKey?.let(presign))
 			},
+			hasNext = hasNext,
+			receivedPendingChatRequestCount = receivedPendingChatRequestCount,
+			sentPendingChatRequestCount = sentPendingChatRequestCount,
+		)
+
+	/** 각 항목의 작성자 만 나이를 기준일([today])로 채운 페이지를 만든다. */
+	fun withAuthorAges(today: LocalDate): SelfIntroPostPage =
+		SelfIntroPostPage(
+			values = values.map { view: SelfIntroPostView -> view.withAge(today) },
 			hasNext = hasNext,
 			receivedPendingChatRequestCount = receivedPendingChatRequestCount,
 			sentPendingChatRequestCount = sentPendingChatRequestCount,

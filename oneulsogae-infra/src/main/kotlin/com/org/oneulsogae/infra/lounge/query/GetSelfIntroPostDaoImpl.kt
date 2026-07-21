@@ -42,6 +42,11 @@ class GetSelfIntroPostDaoImpl(
 					userDetail.nickname,
 					post.likeCount,
 					image.imageKey,
+					userDetail.gender,
+					userDetail.birthday,
+					userDetail.profileImageCode,
+					userDetail.job,
+					userDetail.companyName,
 				),
 			)
 			.from(post)

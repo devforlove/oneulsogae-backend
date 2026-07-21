@@ -1,5 +1,6 @@
 package com.org.oneulsogae.api.lounge.response
 
+import com.org.oneulsogae.common.user.Gender
 import com.org.oneulsogae.core.lounge.query.dto.SelfIntroPostPage
 import com.org.oneulsogae.core.lounge.query.dto.SelfIntroPostView
 
@@ -41,6 +42,12 @@ data class SelfIntroPostItemResponse(
 	val authorNickname: String?,
 	val likeCount: Int,
 	val imageUrl: String?,
+	val authorGender: Gender?,
+	/** 작성자 만 나이. 생년월일 미설정이면 null. */
+	val authorAge: Int?,
+	val authorProfileImageCode: String?,
+	val authorJob: String?,
+	val authorCompanyName: String?,
 ) {
 	companion object {
 
@@ -50,6 +57,11 @@ data class SelfIntroPostItemResponse(
 				authorNickname = view.authorNickname,
 				likeCount = view.likeCount,
 				imageUrl = view.imageUrl,
+				authorGender = view.authorGender,
+				authorAge = view.authorAge,
+				authorProfileImageCode = view.authorProfileImageCode,
+				authorJob = view.authorJob,
+				authorCompanyName = view.authorCompanyName,
 			)
 	}
 }
