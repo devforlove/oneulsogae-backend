@@ -19,6 +19,7 @@ import com.org.oneulsogae.core.solomatch.command.application.port.out.SaveMatchP
 import com.org.oneulsogae.core.solomatch.command.domain.Match
 import com.org.oneulsogae.core.solomatch.command.domain.event.InterestSent
 import com.org.oneulsogae.core.solomatch.command.domain.event.MatchAccepted
+import com.org.oneulsogae.core.user.query.service.port.`in`.CheckCompanyVerifiedUseCase
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 
@@ -32,6 +33,7 @@ import org.springframework.transaction.annotation.Transactional
  * 신청/수락 비용은 매칭에 저장된 값으로 서버가 산출한다. (클라이언트가 금액을 정하지 않음)
  * 코인 차감·상태 변경·채팅방 생성은 같은 트랜잭션이라 한 단계라도 실패하면 함께 롤백된다. 알람만 커밋 후 best-effort([MatchEventHandler])다.
  * 다른 도메인(coin/chat)은 자기 out-port가 아니라 in-port로 참조한다.
+ * 회사 인증 여부는 user 도메인 in-port([CheckCompanyVerifiedUseCase])로 검증한다. (미인증이면 코인 차감 전에 403으로 막는다)
  *
  * 매칭별 분산 락([DistributedLock])으로 보호한다. 락 키는 "MATCH_INTEREST::{matchId}" 형태로 매칭마다 독립적으로 잠긴다.
  * 경합 대상이 두 참가자가 공유하는 "매칭"이므로 userId가 아니라 matchId로 잠가야 한다. (사용자별로 잠그면 남/녀가
@@ -45,11 +47,15 @@ class SendInterestService(
 	private val spendCoinUseCase: SpendCoinUseCase,
 	private val saveChatRoomUseCase: SaveChatRoomUseCase,
 	private val domainEventPublisher: DomainEventPublisher,
+	private val checkCompanyVerifiedUseCase: CheckCompanyVerifiedUseCase,
 ) : SendInterestUseCase {
 
 	@DistributedLock(prefix = LockKeyConstraints.MATCH_INTEREST, keys = ["#matchId"], waitTime = 0)
 	@Transactional
 	override fun sendInterest(userId: Long, matchId: Long): Match {
+		// 회사 인증을 마친 사용자만 소개 기능을 쓸 수 있다. 코인 차감 전에 막아 미인증 요청에 과금이 생기지 않게 한다.
+		checkCompanyVerifiedUseCase.validateCompanyVerified(userId)
+
 		// 대상 매칭을 조회한다. 없으면 예외.
 		val match: Match = getMatchPort.findById(matchId)
 			?: throw BusinessException(MatchErrorCode.MATCH_NOT_FOUND)

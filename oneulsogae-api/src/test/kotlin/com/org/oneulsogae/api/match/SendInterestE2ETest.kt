@@ -66,9 +66,9 @@ class SendInterestE2ETest : AbstractIntegrationSupport({
 				val maleUserId = 1001L
 				val femaleUserId = 2001L
 				val match: SoloMatchEntity = persistMatch(maleUserId, femaleUserId)
-				// 보낸 사람(남성) 프로필 — 알람 문구에 닉네임이 들어간다.
+				// 보낸 사람(남성) 프로필 — 알람 문구에 닉네임이 들어간다. 회사 인증을 마친 사용자만 관심을 보낼 수 있어 회사명도 채운다.
 				IntegrationUtil.persist(
-					UserDetailEntityFixture.create(userId = maleUserId, gender = Gender.MALE, nickname = "철수"),
+					UserDetailEntityFixture.create(userId = maleUserId, gender = Gender.MALE, nickname = "철수", companyName = "오늘소개"),
 				)
 				IntegrationUtil.persist(CoinBalanceEntityFixture.create(userId = maleUserId, balance = 100))
 
@@ -106,9 +106,9 @@ class SendInterestE2ETest : AbstractIntegrationSupport({
 					femaleStatus = MatchMemberStatus.APPLY,
 					status = MatchStatus.PARTIALLY_ACCEPTED,
 				)
-				// 두 사람 프로필 — 성사 알람 문구에 각자 상대의 닉네임이 들어간다.
+				// 두 사람 프로필 — 성사 알람 문구에 각자 상대의 닉네임이 들어간다. 요청자는 회사 인증을 마쳤어야 관심을 보낼 수 있다.
 				IntegrationUtil.persist(
-					UserDetailEntityFixture.create(userId = maleUserId, gender = Gender.MALE, nickname = "철수"),
+					UserDetailEntityFixture.create(userId = maleUserId, gender = Gender.MALE, nickname = "철수", companyName = "오늘소개"),
 				)
 				IntegrationUtil.persist(
 					UserDetailEntityFixture.create(userId = femaleUserId, gender = Gender.FEMALE, nickname = "영희"),
@@ -146,6 +146,10 @@ class SendInterestE2ETest : AbstractIntegrationSupport({
 				val maleUserId = 1003L
 				val femaleUserId = 2003L
 				val match: SoloMatchEntity = persistMatch(maleUserId, femaleUserId)
+				// 회사 인증을 마쳐야 코인 잔액 검증까지 도달한다.
+				IntegrationUtil.persist(
+					UserDetailEntityFixture.create(userId = maleUserId, gender = Gender.MALE, companyName = "오늘소개"),
+				)
 				IntegrationUtil.persist(CoinBalanceEntityFixture.create(userId = maleUserId, balance = 10)) // 32보다 적음
 
 				post("/matches/v1/${match.id}/interest") {
@@ -158,6 +162,31 @@ class SendInterestE2ETest : AbstractIntegrationSupport({
 
 				// 차감 실패로 트랜잭션이 롤백되어 잔액 유지 + 매칭은 PROPOSED 그대로
 				coinBalanceOf(maleUserId) shouldBe 10
+				matchStatusOf(match.id!!) shouldBe MatchStatus.PROPOSED
+			}
+		}
+
+		context("요청자가 회사 인증을 마치지 않았으면") {
+			it("403(USER-035)을 반환하고 코인이 차감되지 않는다") {
+				val maleUserId = 1004L
+				val femaleUserId = 2004L
+				val match: SoloMatchEntity = persistMatch(maleUserId, femaleUserId)
+				// 회사명이 없는 프로필 = 회사 인증 미완료
+				IntegrationUtil.persist(
+					UserDetailEntityFixture.create(userId = maleUserId, gender = Gender.MALE),
+				)
+				IntegrationUtil.persist(CoinBalanceEntityFixture.create(userId = maleUserId, balance = 100))
+
+				post("/matches/v1/${match.id}/interest") {
+					bearer(accessTokenFor(maleUserId))
+				} expect {
+					status(403)
+					body("success", false)
+					body("error.code", "USER-035")
+				}
+
+				// 차단이 코인 차감보다 앞이라 잔액과 매칭 상태가 그대로다.
+				coinBalanceOf(maleUserId) shouldBe 100
 				matchStatusOf(match.id!!) shouldBe MatchStatus.PROPOSED
 			}
 		}
