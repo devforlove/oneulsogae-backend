@@ -11,9 +11,10 @@ interface GetSelfIntroPostsUseCase {
 
 	/**
 	 * 셀소 목록 한 페이지를 최신순으로 조회한다. [cursor]를 주면 그보다 과거 구간을 잇는다.
-	 * [userId]는 조회한 사용자로, 받은 미수락 신청 건수([SelfIntroPostPage.receivedPendingChatRequestCount]) 산출에만 쓴다.
+	 * [userId]는 조회한 사용자로, 미수락 신청 건수·회사 인증 여부 등 개인화 값 산출에만 쓴다.
+	 * 비로그인(null)이면 개인화 값은 0/false로 내려간다. (목록 자체는 공개)
 	 */
-	fun getPosts(userId: Long, cursor: Long?): SelfIntroPostPage
+	fun getPosts(userId: Long?, cursor: Long?): SelfIntroPostPage
 
 	/**
 	 * 셀소 상세 한 건을 조회한다. 없거나 삭제됐으면 404를 던진다.

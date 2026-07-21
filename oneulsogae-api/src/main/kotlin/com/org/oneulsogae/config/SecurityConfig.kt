@@ -65,6 +65,8 @@ class SecurityConfig(
 					.requestMatchers("/inquiries/v1").permitAll()
 					// 오프라인(비인증 공개) 모임 목록·상세 조회는 토큰 없이 접근할 수 있다.
 					.requestMatchers(HttpMethod.GET, "/offline/v1/gatherings", "/offline/v1/gatherings/*").permitAll()
+					// 라운지 셀소 목록 조회는 비로그인도 볼 수 있는 공개 콘텐츠다. (등록 POST·대화 신청은 인증 유지)
+					.requestMatchers(HttpMethod.GET, "/lounge/v1/self-intro-posts").permitAll()
 					// 소개 이미지 공개 프록시(presigned 302 리다이렉트)도 비로그인 접근을 허용한다.
 					.requestMatchers(HttpMethod.GET, "/images/**").permitAll()
 					// 어드민 API는 role=ADMIN 유저(토큰의 ROLE_ADMIN 권한)만 접근한다. (어드민도 같은 OAuth2+JWT 체계를 쓴다)

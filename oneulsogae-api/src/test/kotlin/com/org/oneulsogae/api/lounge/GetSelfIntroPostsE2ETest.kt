@@ -244,5 +244,23 @@ class GetSelfIntroPostsE2ETest : AbstractIntegrationSupport({
 					.body("data.companyVerified", Matchers.equalTo(false))
 			}
 		}
+
+		context("토큰 없이 조회하면") {
+			it("200으로 목록을 내려주고, 개인화 필드는 0/false다") {
+				val userId: Long = IntegrationUtil.persist(UserEntityFixture.create(providerId = "lounge-list-anon")).id!!
+				IntegrationUtil.persist(UserDetailEntityFixture.create(userId = userId, nickname = "공개유저"))
+				IntegrationUtil.persist(LoungePostEntityFixture.create(userId = userId))
+
+				RestAssured.given()
+					.get("/lounge/v1/self-intro-posts")
+					.then()
+					.statusCode(200)
+					.body("success", Matchers.equalTo(true))
+					.body("data.items.size()", Matchers.greaterThanOrEqualTo(1))
+					.body("data.receivedPendingChatRequestCount", Matchers.equalTo(0))
+					.body("data.sentPendingChatRequestCount", Matchers.equalTo(0))
+					.body("data.companyVerified", Matchers.equalTo(false))
+			}
+		}
 	}
 })
