@@ -44,7 +44,7 @@ class LoungeChatRequestAlarmE2ETest : AbstractIntegrationSupport({
 				val authorId: Long = IntegrationUtil.persist(UserEntityFixture.create(providerId = "lounge-alarm-author")).id!!
 				val requesterId: Long = IntegrationUtil.persist(UserEntityFixture.create(providerId = "lounge-alarm-user")).id!!
 				IntegrationUtil.persist(UserDetailEntityFixture.create(userId = authorId, nickname = "글쓴이", gender = Gender.FEMALE))
-				IntegrationUtil.persist(UserDetailEntityFixture.create(userId = requesterId, nickname = "신청자", gender = Gender.MALE))
+				IntegrationUtil.persist(UserDetailEntityFixture.create(userId = requesterId, nickname = "신청자", gender = Gender.MALE, companyName = "오늘소개"))
 				IntegrationUtil.persist(CoinBalanceEntityFixture.create(userId = authorId, balance = 100))
 				IntegrationUtil.persist(CoinBalanceEntityFixture.create(userId = requesterId, balance = 100))
 				val post: LoungePostEntity = IntegrationUtil.persist(LoungePostEntityFixture.create(userId = authorId))
