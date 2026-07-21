@@ -28,7 +28,7 @@ import org.springframework.security.core.authority.SimpleGrantedAuthority
  *
  * 이 프로젝트에는 mockk/mockito 등 목킹 라이브러리가 없으므로(확인됨), 브리프의 mockk 기반 단위테스트 대신
  * [AbstractIntegrationSupport]를 상속한 통합테스트로 작성한다. 실제 유저를 저장하고 실제 Authentication으로
- * 핸들러를 호출해, 응답이 `meeplemobile://auth?code=<code>`로 리다이렉트되고 그 code가
+ * 핸들러를 호출해, 응답이 `oneulsogaemobile://auth?code=<code>`로 리다이렉트되고 그 code가
  * [MobileAuthCodeStore]에서 실제 발급된 토큰으로 소비됨을 검증한다.
  */
 class OAuth2SuccessHandlerMobileTest(
@@ -52,7 +52,7 @@ class OAuth2SuccessHandlerMobileTest(
 
 			val redirectedUrl: String? = response.redirectedUrl
 			redirectedUrl.shouldNotBeNull()
-			redirectedUrl.shouldStartWith("meeplemobile://auth?code=")
+			redirectedUrl.shouldStartWith("oneulsogaemobile://auth?code=")
 			// 출처 쿠키(loginOrigin) 만료 처리는 모든 분기 공통이지만, 모바일 분기는 accessToken/refreshToken 쿠키를 심지 않는다.
 			response.cookies.none { cookie ->
 				cookie.name == TokenCookieFactory.ACCESS_TOKEN || cookie.name == TokenCookieFactory.REFRESH_TOKEN
