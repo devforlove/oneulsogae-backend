@@ -52,8 +52,9 @@ class VerifyCompanyEmailService(
 		// 인증번호를 사용(검증) 처리해 재사용을 막는다.
 		saveCompanyEmailVerificationPort.save(verification.verify(now))
 
-		// 회사 이메일 도메인으로 회사명을 조회한다. (요청 시점에 등록 도메인만 발급되므로 통상 존재하나, 요청~확정 사이 매핑 삭제 엣지에서 null일 수 있다)
-		val companyName: String? = getUserCompanyUseCase.findCompanyNameByEmail(verification.companyEmail)
+		// 회사 이메일 도메인으로 회사명을 조회한다. (요청 시점에 등록 도메인만 발급되므로 통상 존재하나, 요청~확정 사이 매핑 삭제 엣지에서는 못 찾을 수 있어 인증 자체를 실패 처리한다)
+		val companyName: String = getUserCompanyUseCase.findCompanyNameByEmail(verification.companyEmail)
+			?: throw BusinessException(UserErrorCode.COMPANY_NOT_FOUND)
 		confirmCompanyOnProfile(verification.userId, verification.companyEmail, companyName)
 
 		// 회사명은 같은 회사 소개 차단 판정에 쓰이므로, 변경된 프로필로 매칭 읽기 모델(match_user)을 동기화한다.
@@ -62,8 +63,8 @@ class VerifyCompanyEmailService(
 		return VerifyCompanyEmailResult(companyName)
 	}
 
-	// 검증을 마친 회사 이메일과 (조회한) 회사명을 프로필에 확정 반영한다. (회사명을 못 찾았으면 null)
-	private fun confirmCompanyOnProfile(userId: Long, companyEmail: String, companyName: String?) {
+	// 검증을 마친 회사 이메일과 (조회한) 회사명을 프로필에 확정 반영한다.
+	private fun confirmCompanyOnProfile(userId: Long, companyEmail: String, companyName: String) {
 		val detail: UserDetail = getUserDetailPort.findByUserId(userId)
 			?: throw BusinessException(UserErrorCode.USER_DETAIL_NOT_FOUND, "사용자 프로필을 찾을 수 없습니다: $userId")
 		saveUserDetailPort.save(detail.copy(companyEmail = companyEmail, companyName = companyName))

@@ -10,7 +10,6 @@ import com.org.oneulsogae.infra.fixture.UserCompanyEntityFixture
 import com.org.oneulsogae.infra.fixture.UserDetailEntityFixture
 import com.org.oneulsogae.infra.fixture.UserEntityFixture
 import io.kotest.matchers.shouldBe
-import org.hamcrest.Matchers.nullValue
 
 /**
  * `POST /users/v1/onboarding/company-email/verifications/confirm` E2E 테스트.
@@ -59,7 +58,7 @@ class ConfirmCompanyEmailVerificationE2ETest : AbstractIntegrationSupport({
 		}
 
 		context("인증번호는 맞지만 회사 도메인 매핑이 없으면") {
-			it("회사명 없이 확정되고 가입 상태는 그대로다 (200, isCompanyResolved=false)") {
+			it("USER-034로 인증이 실패하고 프로필에 아무것도 반영되지 않는다 (400)") {
 				val userId: Long = IntegrationUtil.persist(
 					UserEntityFixture.create(status = UserStatus.ACTIVE),
 				).id!!
@@ -76,14 +75,14 @@ class ConfirmCompanyEmailVerificationE2ETest : AbstractIntegrationSupport({
 					bearer(accessTokenFor(userId))
 					jsonBody("""{"code": "123456"}""")
 				} expect {
-					status(200)
-					body("success", true)
-					body("data.isCompanyResolved", false)
-					body("data.companyName", nullValue())
+					status(400)
+					body("success", false)
+					body("error.code", "USER-034")
 				}
 
-				// 회사 이메일은 확정되지만 회사명은 비어 있고, 가입 상태는 어떤 값으로도 전환되지 않는다.
-				userDetailOf(userId).companyEmail shouldBe "user@unknown-corp.com"
+				// 회사명 매핑을 찾지 못하면 인증 전체가 롤백되어 회사 이메일·회사명이 확정되지 않고, 가입 상태도 그대로다.
+				userDetailOf(userId).companyEmail shouldBe null
+				userDetailOf(userId).companyName shouldBe null
 				userStatusOf(userId) shouldBe UserStatus.ACTIVE
 			}
 		}
