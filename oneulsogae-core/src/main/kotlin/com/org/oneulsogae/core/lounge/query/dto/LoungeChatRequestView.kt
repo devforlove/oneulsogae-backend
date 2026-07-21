@@ -7,38 +7,42 @@ import java.time.LocalDate
 import java.time.LocalDateTime
 
 /**
- * 받은 대화 신청 한 건(read model).
- * 신청자의 닉네임·성별·생년월일은 프로필(user_details)에서 조인해 온 표시용 값이다.
+ * 대화 신청 한 건(read model). 받은 목록·보낸 목록이 같은 모양을 공유한다.
+ * 프로필 항목([partnerNickname]·[partnerGender]·[partnerAge])은 **이 신청에서 나의 상대방**을 가리킨다.
+ * 받은 목록에서는 신청자, 보낸 목록에서는 글 작성자다. (조회 방향은 dao가 정한다)
  * [chatRoomId]는 수락으로 생성된 채팅방이며, 아직 수락 전(PENDING)이면 null이다.
- * dao는 [birthday]까지 채우고, 서비스가 [age](만 나이)를 채운다.
+ * dao는 [partnerBirthday]까지 채우고, 서비스가 [partnerAge](만 나이)를 채운다.
  */
 data class LoungeChatRequestView(
 	val requestId: Long,
-	/** 신청자 사용자 id. */
-	val userId: Long,
-	val nickname: String?,
-	val gender: Gender?,
-	/** 신청자 생년월일. 응답에는 노출하지 않고 [age] 계산에만 쓴다. */
-	val birthday: LocalDate?,
+	/** 이 신청이 달린 셀소 글의 id. (목록에서 글 상세로 이동하는 키) */
+	val postId: Long,
+	/** 상대방 사용자 id. */
+	val partnerUserId: Long,
+	val partnerNickname: String?,
+	val partnerGender: Gender?,
+	/** 상대방 생년월일. 응답에는 노출하지 않고 [partnerAge] 계산에만 쓴다. */
+	val partnerBirthday: LocalDate?,
 	val status: LoungeChatRequestStatus,
 	val chatRoomId: Long?,
 	val requestedAt: LocalDateTime,
-	/** 신청자 만 나이. 서비스가 [birthday]와 기준일로 채운다. (생년월일이 없으면 null) */
-	val age: Int? = null,
+	/** 상대방 만 나이. 서비스가 [partnerBirthday]와 기준일로 채운다. (생년월일이 없으면 null) */
+	val partnerAge: Int? = null,
 ) {
 	/** dao 투영용 생성자. 나이는 서비스가 채운다. */
 	constructor(
 		requestId: Long,
-		userId: Long,
-		nickname: String?,
-		gender: Gender?,
-		birthday: LocalDate?,
+		postId: Long,
+		partnerUserId: Long,
+		partnerNickname: String?,
+		partnerGender: Gender?,
+		partnerBirthday: LocalDate?,
 		status: LoungeChatRequestStatus,
 		chatRoomId: Long?,
 		requestedAt: LocalDateTime,
-	) : this(requestId, userId, nickname, gender, birthday, status, chatRoomId, requestedAt, null)
+	) : this(requestId, postId, partnerUserId, partnerNickname, partnerGender, partnerBirthday, status, chatRoomId, requestedAt, null)
 
-	/** 기준일([today])로 만 나이를 채운 신청을 만든다. */
+	/** 기준일([today])로 상대방 만 나이를 채운 신청을 만든다. */
 	fun withAge(today: LocalDate): LoungeChatRequestView =
-		copy(age = birthday?.ageAt(today))
+		copy(partnerAge = partnerBirthday?.ageAt(today))
 }

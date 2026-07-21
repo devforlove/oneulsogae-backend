@@ -3,6 +3,7 @@ package com.org.oneulsogae.api.lounge
 import com.org.oneulsogae.api.lounge.response.AcceptLoungeChatResponse
 import com.org.oneulsogae.api.lounge.response.LoungeChatRequestPageResponse
 import com.org.oneulsogae.api.lounge.response.LoungeChatRequestResponse
+import com.org.oneulsogae.api.lounge.response.SentLoungeChatRequestPageResponse
 import com.org.oneulsogae.auth.AuthUser
 import com.org.oneulsogae.auth.LoginUser
 import com.org.oneulsogae.core.common.response.ApiResponse
@@ -21,7 +22,8 @@ import org.springframework.web.bind.annotation.RestController
 /**
  * 라운지 셀소 대화 신청 엔드포인트. (인증 필요)
  * - POST /lounge/v1/self-intro-posts/{postId}/chat-requests: 셀소 작성자에게 대화를 신청한다. (코인 차감)
- * - GET /lounge/v1/self-intro-posts/{postId}/chat-requests: 내 셀소에 온 대화 신청 목록을 최신순으로 조회한다.
+ * - GET /lounge/v1/chat-requests/received: 내가 받은 대화 신청 목록을 최신순으로 조회한다. (내가 쓴 모든 셀소 합산)
+ * - GET /lounge/v1/chat-requests/sent: 내가 보낸 대화 신청 목록을 최신순으로 조회한다.
  * - POST /lounge/v1/chat-requests/{requestId}/accept: 받은 대화 신청을 수락해 채팅방을 연다. (코인 차감)
  */
 @RestController
@@ -45,20 +47,29 @@ class LoungeChatRequestController(
 	): ApiResponse<LoungeChatRequestResponse> =
 		ApiResponse.success(LoungeChatRequestResponse.of(requestLoungeChatUseCase.request(user.id, postId)))
 
-	/** 내 셀소에 온 대화 신청 목록을 최신순 한 페이지 조회한다. */
+	/** 내가 받은 대화 신청 목록을 최신순 한 페이지 조회한다. */
 	@Operation(
 		summary = "받은 대화 신청 목록 조회",
-		description = "내가 쓴 셀소에 온 대화 신청을 최신순으로 20개씩 내려준다. 각 항목은 신청 식별자(requestId)·신청자(userId·닉네임·성별·만 나이)·상태(PENDING/ACCEPTED)·수락으로 생긴 채팅방 id(수락 전이면 null)·신청 시각을 담는다. 수락 버튼의 비용 안내에 쓸 acceptCoinAmount(수락 시 차감되는 코인 수)는 신청마다 다르지 않으므로 항목이 아니라 응답 루트에 한 번만 담는다. 다음 페이지는 응답의 nextCursor를 cursor 파라미터로 그대로 넘겨 조회한다(hasNext=false면 마지막 페이지). 내 글이 아니면 403(LOUNGE-011), 글이 없으면 404(LOUNGE-008)를 반환한다.",
+		description = "내가 쓴 셀소에 온 대화 신청을 최신순으로 20개씩 내려준다. 내가 쓴 모든 셀소를 합산한다. 각 항목은 신청 식별자(requestId)·글 식별자(postId)·상대방(partnerUserId·partnerNickname·partnerGender·partnerAge — 받은 목록에서는 신청자)·상태(PENDING/ACCEPTED)·수락으로 생긴 채팅방 id(수락 전이면 null)·신청 시각을 담는다. 수락 버튼의 비용 안내에 쓸 acceptCoinAmount(수락 시 차감되는 코인 수)는 신청마다 다르지 않으므로 항목이 아니라 응답 루트에 한 번만 담는다. 다음 페이지는 응답의 nextCursor를 cursor 파라미터로 그대로 넘겨 조회한다(hasNext=false면 마지막 페이지).",
 	)
-	@GetMapping("/self-intro-posts/{postId}/chat-requests")
-	fun getChatRequests(
+	@GetMapping("/chat-requests/received")
+	fun getReceivedChatRequests(
 		@LoginUser user: AuthUser,
-		@PathVariable("postId") postId: Long,
 		@RequestParam("cursor", required = false) cursor: Long?,
 	): ApiResponse<LoungeChatRequestPageResponse> =
-		ApiResponse.success(
-			LoungeChatRequestPageResponse.of(getLoungeChatRequestsUseCase.getRequests(user.id, postId, cursor)),
-		)
+		ApiResponse.success(LoungeChatRequestPageResponse.of(getLoungeChatRequestsUseCase.getReceived(user.id, cursor)))
+
+	/** 내가 보낸 대화 신청 목록을 최신순 한 페이지 조회한다. */
+	@Operation(
+		summary = "보낸 대화 신청 목록 조회",
+		description = "내가 남의 셀소에 보낸 대화 신청을 최신순으로 20개씩 내려준다. 각 항목은 신청 식별자(requestId)·글 식별자(postId)·상대방(partnerUserId·partnerNickname·partnerGender·partnerAge — 보낸 목록에서는 글 작성자)·상태(PENDING/ACCEPTED)·수락으로 생긴 채팅방 id(아직 수락 전이면 null)·신청 시각을 담는다. 보낸 신청은 내가 수락하는 것이 아니라 수락 비용을 싣지 않는다. 다음 페이지는 응답의 nextCursor를 cursor 파라미터로 그대로 넘겨 조회한다(hasNext=false면 마지막 페이지).",
+	)
+	@GetMapping("/chat-requests/sent")
+	fun getSentChatRequests(
+		@LoginUser user: AuthUser,
+		@RequestParam("cursor", required = false) cursor: Long?,
+	): ApiResponse<SentLoungeChatRequestPageResponse> =
+		ApiResponse.success(SentLoungeChatRequestPageResponse.of(getLoungeChatRequestsUseCase.getSent(user.id, cursor)))
 
 	/** 내 셀소에 온 대화 신청을 수락해 채팅방을 연다. 수락 코인(32)이 차감된다. */
 	@Operation(

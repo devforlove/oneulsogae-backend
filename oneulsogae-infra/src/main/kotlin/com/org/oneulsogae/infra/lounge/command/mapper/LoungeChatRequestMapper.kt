@@ -9,6 +9,7 @@ fun LoungeChatRequestEntity.toDomain(): LoungeChatRequest =
 		id = id ?: 0,
 		postId = postId,
 		requesterUserId = requesterUserId,
+		receiverUserId = receiverUserId,
 		status = status,
 		createdAt = createdAt,
 	)
@@ -21,5 +22,6 @@ fun LoungeChatRequest.toEntity(): LoungeChatRequestEntity =
 	LoungeChatRequestEntity(
 		postId = postId,
 		requesterUserId = requesterUserId,
+		receiverUserId = receiverUserId,
 		status = status,
 	).also { if (id != 0L) it.id = id }

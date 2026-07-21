@@ -16,10 +16,8 @@ import com.org.oneulsogae.core.lounge.LoungeErrorCode
 import com.org.oneulsogae.core.lounge.command.application.port.`in`.AcceptLoungeChatUseCase
 import com.org.oneulsogae.core.lounge.command.application.port.`in`.result.AcceptLoungeChatResult
 import com.org.oneulsogae.core.lounge.command.application.port.out.GetLoungeChatRequestPort
-import com.org.oneulsogae.core.lounge.command.application.port.out.GetLoungePostPort
 import com.org.oneulsogae.core.lounge.command.application.port.out.SaveLoungeChatRequestPort
 import com.org.oneulsogae.core.lounge.command.domain.LoungeChatRequest
-import com.org.oneulsogae.core.lounge.command.domain.LoungePost
 import com.org.oneulsogae.core.lounge.command.domain.event.LoungeChatRequestAccepted
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
@@ -40,7 +38,6 @@ import org.springframework.transaction.annotation.Transactional
 class AcceptLoungeChatService(
 	private val getLoungeChatRequestPort: GetLoungeChatRequestPort,
 	private val saveLoungeChatRequestPort: SaveLoungeChatRequestPort,
-	private val getLoungePostPort: GetLoungePostPort,
 	private val spendCoinUseCase: SpendCoinUseCase,
 	private val saveChatRoomUseCase: SaveChatRoomUseCase,
 	private val domainEventPublisher: DomainEventPublisher,
@@ -51,11 +48,8 @@ class AcceptLoungeChatService(
 	override fun accept(userId: Long, requestId: Long): AcceptLoungeChatResult {
 		val request: LoungeChatRequest = getLoungeChatRequestPort.findById(requestId)
 			?: throw BusinessException(LoungeErrorCode.LOUNGE_CHAT_REQUEST_NOT_FOUND)
-		val post: LoungePost = getLoungePostPort.findById(request.postId)
-			?: throw BusinessException(LoungeErrorCode.SELF_INTRO_POST_NOT_FOUND, "셀소를 찾을 수 없습니다: ${request.postId}")
-
-		// 소유권(내 글인가)·중복 수락 판정은 도메인이 한다.
-		saveLoungeChatRequestPort.save(request.acceptBy(postAuthorUserId = post.userId, actorUserId = userId))
+		// 소유권(내 글에 온 신청인가)·중복 수락 판정은 도메인이 한다. (신청 행이 수신자를 알고 있어 글을 다시 읽지 않는다)
+		saveLoungeChatRequestPort.save(request.acceptBy(actorUserId = userId))
 		spendCoinUseCase.spend(userId, SpendCoinCommand(amount = USAGE_TYPE.coinAmount, coinUsageType = USAGE_TYPE))
 
 		// 채팅방 생성은 수락의 필수 산출물이라 같은 트랜잭션에서 동기로 처리한다. (실패 시 함께 롤백)
@@ -64,7 +58,7 @@ class AcceptLoungeChatService(
 				matchType = ChatRoomMatchType.LOUNGE,
 				matchId = request.id,
 				participants = listOf(
-					SaveChatRoomParticipant(userId = post.userId, teamId = null),
+					SaveChatRoomParticipant(userId = request.receiverUserId, teamId = null),
 					SaveChatRoomParticipant(userId = request.requesterUserId, teamId = null),
 				),
 			),
@@ -75,7 +69,7 @@ class AcceptLoungeChatService(
 			LoungeChatRequestAccepted(
 				requestId = request.id,
 				requesterUserId = request.requesterUserId,
-				postAuthorUserId = post.userId,
+				postAuthorUserId = request.receiverUserId,
 				chatRoomId = chatRoom.id,
 			),
 		)

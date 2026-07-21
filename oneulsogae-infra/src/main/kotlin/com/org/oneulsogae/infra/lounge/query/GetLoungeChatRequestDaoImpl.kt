@@ -5,60 +5,87 @@ import com.org.oneulsogae.core.lounge.query.dao.GetLoungeChatRequestDao
 import com.org.oneulsogae.core.lounge.query.dto.LoungeChatRequestView
 import com.org.oneulsogae.infra.chat.command.entity.QChatRoomEntity
 import com.org.oneulsogae.infra.lounge.command.entity.QLoungeChatRequestEntity
-import com.org.oneulsogae.infra.lounge.command.entity.QLoungePostEntity
 import com.org.oneulsogae.infra.user.command.entity.QUserDetailEntity
 import com.querydsl.core.types.Projections
+import com.querydsl.core.types.dsl.BooleanExpression
+import com.querydsl.core.types.dsl.NumberPath
 import com.querydsl.jpa.impl.JPAQueryFactory
 import org.springframework.stereotype.Component
 
 /**
  * [GetLoungeChatRequestDao]의 QueryDSL 구현. (조회 전용)
- * 엔티티를 거치지 않고 [LoungeChatRequestView] read model로 바로 투영한다. 만 나이는 서비스가 birthday로 채운다.
- * 신청자 프로필(user_details)은 프로필이 없어도 신청은 보여야 하므로 left join한다.
+ * 엔티티를 거치지 않고 [LoungeChatRequestView] read model로 바로 투영한다. 만 나이는 서비스가 생년월일로 채운다.
+ * 받은 목록과 보낸 목록은 **기준 컬럼(receiver/requester)과 상대방 프로필 조인 대상만 다르고 나머지가 같아** 한 쿼리로 묶었다.
+ * 상대방 프로필(user_details)은 프로필이 없어도 신청은 보여야 하므로 left join한다.
  * 채팅방은 수락 전에는 없으므로 left join하며, `(match_type, match_id)` 유니크 인덱스로 seek한다.
- * post_id 동등 + id 내림차순 keyset(`id < :beforeId`)이 `idx_post_id_id`로 받쳐져 뒤 페이지에서도 seek로 끝난다(offset 스캔 없음).
+ * 기준 사용자 동등 + id 내림차순 keyset(`id < :beforeId`)이 각각 `idx_receiver_user_id_id`·`idx_requester_user_id_id`로
+ * 받쳐져 뒤 페이지에서도 seek로 끝난다(offset 스캔·filesort 없음).
  */
 @Component
 class GetLoungeChatRequestDaoImpl(
 	private val queryFactory: JPAQueryFactory,
 ) : GetLoungeChatRequestDao {
 
-	override fun findAuthorUserIdByPostId(postId: Long): Long? {
-		val post: QLoungePostEntity = QLoungePostEntity.loungePostEntity
-		return queryFactory
-			.select(post.userId)
-			.from(post)
-			.where(post.id.eq(postId))
-			.fetchFirst()
+	override fun findReceivedPage(receiverUserId: Long, beforeId: Long?, limit: Int): List<LoungeChatRequestView> {
+		val request: QLoungeChatRequestEntity = QLoungeChatRequestEntity.loungeChatRequestEntity
+		// 받은 신청이므로 상대방은 신청자다.
+		return findPage(
+			ownerColumn = request.receiverUserId,
+			ownerUserId = receiverUserId,
+			partnerColumn = request.requesterUserId,
+			beforeId = beforeId,
+			limit = limit,
+		)
 	}
 
-	override fun findPageByPostId(postId: Long, beforeId: Long?, limit: Int): List<LoungeChatRequestView> {
+	override fun findSentPage(requesterUserId: Long, beforeId: Long?, limit: Int): List<LoungeChatRequestView> {
 		val request: QLoungeChatRequestEntity = QLoungeChatRequestEntity.loungeChatRequestEntity
-		val userDetail: QUserDetailEntity = QUserDetailEntity.userDetailEntity
+		// 보낸 신청이므로 상대방은 글 작성자(수신자)다.
+		return findPage(
+			ownerColumn = request.requesterUserId,
+			ownerUserId = requesterUserId,
+			partnerColumn = request.receiverUserId,
+			beforeId = beforeId,
+			limit = limit,
+		)
+	}
+
+	/**
+	 * 신청 목록 한 페이지를 투영한다.
+	 * [ownerColumn]은 조회 기준(내가 수신자냐 신청자냐), [partnerColumn]은 프로필을 붙일 상대방 컬럼이다.
+	 */
+	private fun findPage(
+		ownerColumn: NumberPath<Long>,
+		ownerUserId: Long,
+		partnerColumn: NumberPath<Long>,
+		beforeId: Long?,
+		limit: Int,
+	): List<LoungeChatRequestView> {
+		val request: QLoungeChatRequestEntity = QLoungeChatRequestEntity.loungeChatRequestEntity
+		val partnerDetail: QUserDetailEntity = QUserDetailEntity.userDetailEntity
 		val chatRoom: QChatRoomEntity = QChatRoomEntity.chatRoomEntity
+		val beforeCursor: BooleanExpression? = beforeId?.let { cursor: Long -> request.id.lt(cursor) }
 		return queryFactory
 			.select(
 				Projections.constructor(
 					LoungeChatRequestView::class.java,
 					request.id,
-					request.requesterUserId,
-					userDetail.nickname,
-					userDetail.gender,
-					userDetail.birthday,
+					request.postId,
+					partnerColumn,
+					partnerDetail.nickname,
+					partnerDetail.gender,
+					partnerDetail.birthday,
 					request.status,
 					chatRoom.id,
 					request.createdAt,
 				),
 			)
 			.from(request)
-			.leftJoin(userDetail).on(userDetail.userId.eq(request.requesterUserId))
+			.leftJoin(partnerDetail).on(partnerDetail.userId.eq(partnerColumn))
 			.leftJoin(chatRoom).on(
 				chatRoom.matchType.eq(ChatRoomMatchType.LOUNGE).and(chatRoom.matchId.eq(request.id)),
 			)
-			.where(
-				request.postId.eq(postId),
-				beforeId?.let { cursor: Long -> request.id.lt(cursor) },
-			)
+			.where(ownerColumn.eq(ownerUserId), beforeCursor)
 			.orderBy(request.id.desc())
 			.limit(limit.toLong())
 			.fetch()

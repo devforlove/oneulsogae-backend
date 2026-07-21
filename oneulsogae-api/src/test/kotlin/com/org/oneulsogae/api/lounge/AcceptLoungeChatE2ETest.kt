@@ -43,7 +43,7 @@ class AcceptLoungeChatE2ETest : AbstractIntegrationSupport({
 				IntegrationUtil.persist(CoinBalanceEntityFixture.create(userId = authorId, balance = 100))
 				val post: LoungePostEntity = IntegrationUtil.persist(LoungePostEntityFixture.create(userId = authorId))
 				val request: LoungeChatRequestEntity = IntegrationUtil.persist(
-					LoungeChatRequestEntityFixture.create(postId = post.id!!, requesterUserId = requesterId),
+					LoungeChatRequestEntityFixture.create(postId = post.id!!, requesterUserId = requesterId, receiverUserId = authorId),
 				)
 
 				RestAssured.given()
@@ -93,10 +93,10 @@ class AcceptLoungeChatE2ETest : AbstractIntegrationSupport({
 				IntegrationUtil.persist(CoinBalanceEntityFixture.create(userId = authorId, balance = 100))
 				val post: LoungePostEntity = IntegrationUtil.persist(LoungePostEntityFixture.create(userId = authorId))
 				val firstRequest: LoungeChatRequestEntity = IntegrationUtil.persist(
-					LoungeChatRequestEntityFixture.create(postId = post.id!!, requesterUserId = firstRequesterId),
+					LoungeChatRequestEntityFixture.create(postId = post.id!!, requesterUserId = firstRequesterId, receiverUserId = authorId),
 				)
 				val secondRequest: LoungeChatRequestEntity = IntegrationUtil.persist(
-					LoungeChatRequestEntityFixture.create(postId = post.id!!, requesterUserId = secondRequesterId),
+					LoungeChatRequestEntityFixture.create(postId = post.id!!, requesterUserId = secondRequesterId, receiverUserId = authorId),
 				)
 
 				RestAssured.given()
@@ -134,7 +134,7 @@ class AcceptLoungeChatE2ETest : AbstractIntegrationSupport({
 				IntegrationUtil.persist(CoinBalanceEntityFixture.create(userId = authorId, balance = 100))
 				val post: LoungePostEntity = IntegrationUtil.persist(LoungePostEntityFixture.create(userId = authorId))
 				val request: LoungeChatRequestEntity = IntegrationUtil.persist(
-					LoungeChatRequestEntityFixture.create(postId = post.id!!, requesterUserId = requesterId),
+					LoungeChatRequestEntityFixture.create(postId = post.id!!, requesterUserId = requesterId, receiverUserId = authorId),
 				)
 
 				RestAssured.given()
@@ -166,7 +166,7 @@ class AcceptLoungeChatE2ETest : AbstractIntegrationSupport({
 				IntegrationUtil.persist(CoinBalanceEntityFixture.create(userId = requesterId, balance = 100))
 				val post: LoungePostEntity = IntegrationUtil.persist(LoungePostEntityFixture.create(userId = authorId))
 				val request: LoungeChatRequestEntity = IntegrationUtil.persist(
-					LoungeChatRequestEntityFixture.create(postId = post.id!!, requesterUserId = requesterId),
+					LoungeChatRequestEntityFixture.create(postId = post.id!!, requesterUserId = requesterId, receiverUserId = authorId),
 				)
 
 				RestAssured.given()
@@ -185,7 +185,7 @@ class AcceptLoungeChatE2ETest : AbstractIntegrationSupport({
 				IntegrationUtil.persist(CoinBalanceEntityFixture.create(userId = authorId, balance = 5))
 				val post: LoungePostEntity = IntegrationUtil.persist(LoungePostEntityFixture.create(userId = authorId))
 				val request: LoungeChatRequestEntity = IntegrationUtil.persist(
-					LoungeChatRequestEntityFixture.create(postId = post.id!!, requesterUserId = requesterId),
+					LoungeChatRequestEntityFixture.create(postId = post.id!!, requesterUserId = requesterId, receiverUserId = authorId),
 				)
 
 				RestAssured.given()

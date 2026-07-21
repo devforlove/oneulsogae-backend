@@ -120,7 +120,7 @@ class GetSelfIntroPostDetailE2ETest : AbstractIntegrationSupport({
 				val post: LoungePostEntity = IntegrationUtil.persist(LoungePostEntityFixture.create(userId = authorId))
 				IntegrationUtil.persist(SelfIntroPostEntityFixture.create(postId = post.id!!))
 				IntegrationUtil.persist(
-					LoungeChatRequestEntityFixture.create(postId = post.id!!, requesterUserId = requesterId),
+					LoungeChatRequestEntityFixture.create(postId = post.id!!, requesterUserId = requesterId, receiverUserId = authorId),
 				)
 
 				RestAssured.given()

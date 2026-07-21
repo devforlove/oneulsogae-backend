@@ -13,9 +13,13 @@ import org.hibernate.annotations.SQLRestriction
 
 /**
  * 라운지 셀소 대화 신청 영속성 엔티티.
- * 글 작성자(수신자)는 [LoungePostEntity]의 user_id가 단일 진실원천이라 여기에 복사 저장하지 않는다.
- * 수락으로 생성된 채팅방도 컬럼으로 두지 않는다 — chat_rooms(match_type=LOUNGE, match_id=이 행의 id)로 역참조한다.
+ * 수락으로 생성된 채팅방은 컬럼으로 두지 않는다 — chat_rooms(match_type=LOUNGE, match_id=이 행의 id)로 역참조한다.
  * 삭제는 soft delete(deleted_at)로 처리한다.
+ *
+ * [receiverUserId]는 글 작성자([LoungePostEntity]의 user_id)를 비정규화한 값이다.
+ * 받은/보낸 신청 목록이 모두 "한 사용자의 신청을 글과 무관하게 최신순으로" 훑는 조회라,
+ * 조인 없이 (사용자, id desc)를 인덱스 하나로 seek + 정렬하려면 신청 행이 수신자를 알아야 한다.
+ * 글 작성자는 바뀌지 않으므로 복사 저장해도 원본과 어긋나지 않는다.
  */
 @Entity
 @SQLRestriction("deleted_at is null")
@@ -26,8 +30,10 @@ import org.hibernate.annotations.SQLRestriction
 		UniqueConstraint(name = "ux_post_requester", columnNames = ["post_id", "requester_user_id"]),
 	],
 	indexes = [
-		// 글별 신청 목록(최신순) 조회용. 동등 조건(post_id)과 정렬 컬럼(id desc)을 한 인덱스로 받친다.
-		Index(name = "idx_post_id_id", columnList = "post_id, id"),
+		// 내가 받은 신청 목록(최신순). 동등 조건(receiver_user_id)과 정렬 컬럼(id desc)을 한 인덱스로 받친다.
+		Index(name = "idx_receiver_user_id_id", columnList = "receiver_user_id, id"),
+		// 내가 보낸 신청 목록(최신순). ux_post_requester는 선두가 post_id라 requester_user_id로 seek할 수 없어 따로 둔다.
+		Index(name = "idx_requester_user_id_id", columnList = "requester_user_id, id"),
 	],
 )
 class LoungeChatRequestEntity(
@@ -38,6 +44,10 @@ class LoungeChatRequestEntity(
 	/** 대화를 신청한 사용자. */
 	@Column(name = "requester_user_id", nullable = false)
 	val requesterUserId: Long,
+
+	/** 신청을 받은 사용자(글 작성자). lounge_posts.user_id를 비정규화한 값이다. */
+	@Column(name = "receiver_user_id", nullable = false)
+	val receiverUserId: Long,
 
 	/** 신청 상태. 수락되면 ACCEPTED로 바뀐다. */
 	@Enumerated(EnumType.STRING)

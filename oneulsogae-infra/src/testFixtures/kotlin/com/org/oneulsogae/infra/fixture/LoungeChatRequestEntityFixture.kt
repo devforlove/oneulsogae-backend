@@ -9,11 +9,13 @@ object LoungeChatRequestEntityFixture {
 	fun create(
 		postId: Long = 1L,
 		requesterUserId: Long = 1L,
+		receiverUserId: Long = 2L,
 		status: LoungeChatRequestStatus = LoungeChatRequestStatus.PENDING,
 	): LoungeChatRequestEntity =
 		LoungeChatRequestEntity(
 			postId = postId,
 			requesterUserId = requesterUserId,
+			receiverUserId = receiverUserId,
 			status = status,
 		)
 }

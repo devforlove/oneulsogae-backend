@@ -112,13 +112,13 @@ class GetSelfIntroPostsE2ETest : AbstractIntegrationSupport({
 					IntegrationUtil.persist(UserEntityFixture.create(providerId = "lounge-list-badge-req-$index")).id!!
 				}
 				IntegrationUtil.persist(
-					LoungeChatRequestEntityFixture.create(postId = firstPost.id!!, requesterUserId = requesterIds[0]),
+					LoungeChatRequestEntityFixture.create(postId = firstPost.id!!, requesterUserId = requesterIds[0], receiverUserId = authorId),
 				)
 				IntegrationUtil.persist(
-					LoungeChatRequestEntityFixture.create(postId = firstPost.id!!, requesterUserId = requesterIds[1]),
+					LoungeChatRequestEntityFixture.create(postId = firstPost.id!!, requesterUserId = requesterIds[1], receiverUserId = authorId),
 				)
 				IntegrationUtil.persist(
-					LoungeChatRequestEntityFixture.create(postId = secondPost.id!!, requesterUserId = requesterIds[2]),
+					LoungeChatRequestEntityFixture.create(postId = secondPost.id!!, requesterUserId = requesterIds[2], receiverUserId = authorId),
 				)
 				// 이미 수락한 신청은 배지에서 빠진다.
 				val acceptedRequesterId: Long =
@@ -127,12 +127,13 @@ class GetSelfIntroPostsE2ETest : AbstractIntegrationSupport({
 					LoungeChatRequestEntityFixture.create(
 						postId = secondPost.id!!,
 						requesterUserId = acceptedRequesterId,
+						receiverUserId = authorId,
 						status = LoungeChatRequestStatus.ACCEPTED,
 					),
 				)
 				// 남의 글에 온 신청은 내 배지와 무관하다.
 				IntegrationUtil.persist(
-					LoungeChatRequestEntityFixture.create(postId = otherPost.id!!, requesterUserId = requesterIds[0]),
+					LoungeChatRequestEntityFixture.create(postId = otherPost.id!!, requesterUserId = requesterIds[0], receiverUserId = otherAuthorId),
 				)
 
 				RestAssured.given()

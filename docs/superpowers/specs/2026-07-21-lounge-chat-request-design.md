@@ -49,6 +49,7 @@
 | `id` | bigint PK AUTO_INCREMENT | |
 | `post_id` | bigint NOT NULL | 대상 셀소 글 (`lounge_posts.id`) |
 | `requester_user_id` | bigint NOT NULL | 신청자 |
+| `receiver_user_id` | bigint NOT NULL | 신청을 받은 사용자(글 작성자). `lounge_posts.user_id` 비정규화 |
 | `status` | varchar(20) NOT NULL | `PENDING` / `ACCEPTED` |
 | `created_at` | datetime NOT NULL | BaseEntity |
 | `updated_at` | datetime NOT NULL | BaseEntity |
@@ -56,10 +57,14 @@
 
 인덱스:
 - `UNIQUE ux_post_requester (post_id, requester_user_id)` — 같은 글에 중복 신청 차단 (DB 레벨 최종 방어선)
-- `INDEX idx_post_id_id (post_id, id)` — 글별 신청 목록을 최신순(id desc)으로 seek. 동등 조건(post_id) → 정렬 컬럼(id) 순서
+- `INDEX idx_receiver_user_id_id (receiver_user_id, id)` — 내가 받은 신청 목록을 최신순(id desc)으로 seek
+- `INDEX idx_requester_user_id_id (requester_user_id, id)` — 내가 보낸 신청 목록을 최신순으로 seek. `ux_post_requester`는 선두가 `post_id`라 `requester_user_id`로 seek할 수 없어 따로 둔다
+
+**수신자를 비정규화하는 이유**: 받은/보낸 목록이 모두 글과 무관하게 "한 사용자의 신청을 최신순으로" 훑는 조회다.
+수신자 컬럼이 없으면 `lounge_posts`를 조인해 내 글을 모은 뒤 `id desc`로 정렬해야 해서 filesort가 된다.
+글 작성자는 생성 후 바뀌지 않으므로 복사 저장해도 원본과 어긋나지 않는다.
 
 두지 않는 컬럼과 이유:
-- **수신자(작성자) id**: `lounge_posts.user_id`가 단일 진실원천이다. 목록 조회는 `postId` 기준이라 수신자 컬럼 없이 인덱스가 받쳐진다.
 - **chat_room_id**: `chat_rooms(match_type='LOUNGE', match_id=request_id)` 복합 유니크로 역참조한다. 방 id가 필요한 목록 조회는 이 유니크 인덱스로 조인한다.
 
 ### 마이그레이션
@@ -124,25 +129,32 @@ POST /lounge/v1/self-intro-posts/{postId}/chat-requests
 | 코인 부족 | 400 (기존 `COIN-*` INSUFFICIENT_COIN_BALANCE) |
 | 동시 요청 겹침 | 409 (기존 락 에러) |
 
-### 2. 내 셀소에 온 신청 목록
+### 2. 대화 신청 목록 (받은 / 보낸)
+
+받은 신청과 보낸 신청은 성격이 다른 별개 목록이라 **엔드포인트를 나누고 각자 커서를 갖는다.**
+(한 응답에 두 리스트를 담으면 `cursor`/`hasNext`/`nextCursor` 하나가 두 리스트를 동시에 가리킬 수 없다)
 
 ```
-GET /lounge/v1/self-intro-posts/{postId}/chat-requests?cursor={requestId}
+GET /lounge/v1/chat-requests/received?cursor={requestId}   # 내가 쓴 모든 셀소에 온 신청
+GET /lounge/v1/chat-requests/sent?cursor={requestId}       # 내가 남의 셀소에 보낸 신청
 ```
 
-작성자 본인만 조회할 수 있다. 최신순(requestId 내림차순) 커서 페이징.
+둘 다 요청한 사용자 본인의 신청만 돌려주므로 별도 소유권 검증이 없다(기준 컬럼이 곧 본인).
+최신순(requestId 내림차순) 커서 페이징, 페이지 크기 20.
 
-응답 항목:
+항목의 `partner*`는 **이 신청에서 나의 상대방**이다. 받은 목록에서는 신청자, 보낸 목록에서는 글 작성자다.
+
 ```json
 {
   "data": {
     "items": [
       {
         "requestId": 12,
-        "userId": 7,
-        "nickname": "홍길동",
-        "gender": "MALE",
-        "age": 29,
+        "postId": 5,
+        "partnerUserId": 7,
+        "partnerNickname": "홍길동",
+        "partnerGender": "MALE",
+        "partnerAge": 29,
         "status": "ACCEPTED",
         "chatRoomId": 3,
         "requestedAt": "2026-07-21T10:00:00"
@@ -150,19 +162,14 @@ GET /lounge/v1/self-intro-posts/{postId}/chat-requests?cursor={requestId}
     ],
     "acceptCoinAmount": 32,
     "hasNext": false,
-    "nextCursor": 12
+    "nextCursor": null
   }
 }
 ```
 
 `chatRoomId`는 `status`가 `PENDING`이면 null이다.
-`acceptCoinAmount`는 신청을 수락할 때 드는 코인 수다. 신청마다 다르지 않은 전역 정책값이라 항목이 아니라 응답 루트에 한 번만 싣는다.
-
-에러:
-| 상황 | 코드 |
-|---|---|
-| 글이 없거나 삭제됨 | 404 `LOUNGE-008` |
-| 내 글이 아님 | 403 `LOUNGE-011` (LOUNGE_POST_NOT_OWNED) |
+`acceptCoinAmount`(수락 시 드는 코인)는 **받은 목록에만** 싣는다. 보낸 신청은 내가 수락하는 것이 아니다.
+신청마다 다르지 않은 전역 정책값이라 항목이 아니라 응답 루트에 한 번만 담는다.
 
 ### 3. 신청 수락
 
@@ -195,6 +202,7 @@ data class LoungeChatRequest(
     val id: Long = 0,
     val postId: Long,
     val requesterUserId: Long,
+    val receiverUserId: Long,
     val status: LoungeChatRequestStatus = LoungeChatRequestStatus.PENDING,
     val createdAt: LocalDateTime? = null,
 )
@@ -203,10 +211,10 @@ data class LoungeChatRequest(
 `LoungeChatRequestStatus` enum(`PENDING`, `ACCEPTED`)은 common/lounge에 둔다. (infra 엔티티와 core가 함께 쓴다)
 
 도메인이 캡슐화하는 규칙 (서비스에 `if…throw` 나열 금지):
-- `create(postId, requesterUserId, authorUserId)` — 본인 글 신청을 막고(`LOUNGE_CHAT_REQUEST_SELF`) PENDING 신청을 만든다
-- `acceptBy(postAuthorUserId: Long, actorUserId: Long): LoungeChatRequest` — 수락자가 글 작성자가 아니면 `LOUNGE_POST_NOT_OWNED`, 이미 ACCEPTED면 `LOUNGE_CHAT_REQUEST_ALREADY_ACCEPTED`, 통과하면 상태를 ACCEPTED로 전이한 새 모델을 반환한다
+- `create(postId, requesterUserId, postAuthorUserId)` — 본인 글 신청을 막고(`LOUNGE_CHAT_REQUEST_SELF`) 작성자를 `receiverUserId`로 확정한 PENDING 신청을 만든다
+- `acceptBy(actorUserId: Long): LoungeChatRequest` — 수락자가 `receiverUserId`가 아니면 `LOUNGE_POST_NOT_OWNED`, 이미 ACCEPTED면 `LOUNGE_CHAT_REQUEST_ALREADY_ACCEPTED`, 통과하면 상태를 ACCEPTED로 전이한 새 모델을 반환한다
 
-소유권 판정에 필요한 글 작성자 id는 서비스가 `GetLoungePostPort`로 읽어 파라미터로 넘긴다. (도메인은 인프라를 모른다)
+신청 행이 수신자를 알고 있으므로 수락 경로는 글을 다시 읽지 않는다. (`GetLoungePostPort`는 신청 경로에서만 쓴다)
 
 ## 레이어 배치
 
@@ -355,9 +363,9 @@ lounge/response/AcceptLoungeChatResponse.kt
    비용은 **상세 조회 응답의 `data.chatRequestCoinAmount`를 그대로 표시**한다(하드코딩 금지 — 정책이 바뀌면 서버 값만 바뀐다). 글마다 다르지 않은 전역 정책값이라 목록 응답에는 싣지 않는다.
    버튼 상태는 **상세 조회 응답의 `data.chatRequestedByMe`로 정한다.** true면 "신청함"으로 바꾸고 다시 누를 수 없게 한다(누르면 409 LOUNGE-010). 상태(PENDING/ACCEPTED)는 구분하지 않는다 — 어느 쪽이든 재신청이 불가능하다.
 2. **라운지 목록 화면**: `GET /lounge/v1/self-intro-posts` 응답 루트의 `data.receivedPendingChatRequestCount`로 "받은 신청" 배지를 표시한다. 내가 쓴 **모든** 셀소에 온 신청 중 **아직 수락하지 않은(PENDING)** 건수이며, 수락하면 줄어든다. 0이면 배지를 숨긴다.
-3. **내 셀소 신청자 목록 화면**: `GET /lounge/v1/self-intro-posts/{postId}/chat-requests` — 신청자 카드(닉네임·성별·나이)와 상태별 액션(PENDING → "수락", ACCEPTED → "채팅방 이동"). 커서 페이징(`nextCursor`/`hasNext`).
+3. **대화 신청 화면(탭 2개)**: 받은 신청 `GET /lounge/v1/chat-requests/received`, 보낸 신청 `GET /lounge/v1/chat-requests/sent`. 탭마다 **자기 커서**로 페이징한다(`nextCursor`/`hasNext`). 카드에는 `partnerNickname`·`partnerGender`·`partnerAge`를 쓰고, `postId`로 글 상세에 이동한다. 받은 탭은 상태별 액션(PENDING → "수락", ACCEPTED → "채팅방 이동"), 보낸 탭은 상태 표시만(PENDING → "대기 중", ACCEPTED → "채팅방 이동")이면 된다.
 4. **수락 액션**: `POST /lounge/v1/chat-requests/{requestId}/accept` → 응답 `chatRoomId`로 채팅방 이동.
-   수락 비용은 **목록 응답 루트의 `data.acceptCoinAmount`를 그대로 표시**한다(하드코딩 금지). 신청마다 다르지 않아 항목이 아니라 루트에 한 번만 온다.
+   수락 비용은 **받은 목록 응답 루트의 `data.acceptCoinAmount`를 그대로 표시**한다(하드코딩 금지). 신청마다 다르지 않아 항목이 아니라 루트에 한 번만 오며, 보낸 목록에는 없다.
 5. **알람 목록**: `AlarmType`에 `LOUNGE_CHAT_REQUEST_RECEIVED`, `LOUNGE_CHAT_ACCEPTED` 문구/아이콘 추가. 알림 설정 토글은 기존 "1:1 소개" 항목이 그대로 관장하므로 마이탭 변경은 없다.
 6. **채팅방 목록/상세**: 채팅방 `type`에 `LOUNGE`가 추가된다. `SOLO`와 동일하게 1:1 사용자 방으로 렌더링하면 된다.
 7. **코인 사용 내역 화면**: 코인 사용 내역 조회 응답이 `coinUsageType` enum 원문을 그대로 내려주므로, `LOUNGE_CHAT_INIT`(라운지 대화 신청) / `LOUNGE_CHAT_ACCEPT`(라운지 대화 수락) 라벨 매핑을 추가해야 한다.

@@ -30,6 +30,8 @@ class LoungeChatRequestTest : DescribeSpec({
 
 				request.postId shouldBe postId
 				request.requesterUserId shouldBe requesterUserId
+				// 글 작성자를 수신자로 확정해 둔다. (수락 판정·목록 조회가 이 값을 쓴다)
+				request.receiverUserId shouldBe authorUserId
 				request.status shouldBe LoungeChatRequestStatus.PENDING
 			}
 		}
@@ -53,12 +55,14 @@ class LoungeChatRequestTest : DescribeSpec({
 
 		context("글 작성자가 PENDING 신청을 수락하면") {
 			it("상태가 ACCEPTED로 전이된 새 모델을 반환한다") {
-				val request = LoungeChatRequest(id = 100L, postId = postId, requesterUserId = requesterUserId)
-
-				val accepted: LoungeChatRequest = request.acceptBy(
-					postAuthorUserId = authorUserId,
-					actorUserId = authorUserId,
+				val request = LoungeChatRequest(
+					id = 100L,
+					postId = postId,
+					requesterUserId = requesterUserId,
+					receiverUserId = authorUserId,
 				)
+
+				val accepted: LoungeChatRequest = request.acceptBy(actorUserId = authorUserId)
 
 				accepted.status shouldBe LoungeChatRequestStatus.ACCEPTED
 				accepted.id shouldBe 100L
@@ -69,10 +73,15 @@ class LoungeChatRequestTest : DescribeSpec({
 
 		context("글 작성자가 아닌 사람이 수락하면") {
 			it("LOUNGE_POST_NOT_OWNED 예외를 던진다") {
-				val request = LoungeChatRequest(id = 100L, postId = postId, requesterUserId = requesterUserId)
+				val request = LoungeChatRequest(
+					id = 100L,
+					postId = postId,
+					requesterUserId = requesterUserId,
+					receiverUserId = authorUserId,
+				)
 
 				val exception: BusinessException = shouldThrow<BusinessException> {
-					request.acceptBy(postAuthorUserId = authorUserId, actorUserId = requesterUserId)
+					request.acceptBy(actorUserId = requesterUserId)
 				}
 
 				exception.errorCode shouldBe LoungeErrorCode.LOUNGE_POST_NOT_OWNED
@@ -85,11 +94,12 @@ class LoungeChatRequestTest : DescribeSpec({
 					id = 100L,
 					postId = postId,
 					requesterUserId = requesterUserId,
+					receiverUserId = authorUserId,
 					status = LoungeChatRequestStatus.ACCEPTED,
 				)
 
 				val exception: BusinessException = shouldThrow<BusinessException> {
-					request.acceptBy(postAuthorUserId = authorUserId, actorUserId = authorUserId)
+					request.acceptBy(actorUserId = authorUserId)
 				}
 
 				exception.errorCode shouldBe LoungeErrorCode.LOUNGE_CHAT_REQUEST_ALREADY_ACCEPTED

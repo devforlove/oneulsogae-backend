@@ -7,7 +7,7 @@ import com.org.oneulsogae.core.lounge.query.dto.LoungeChatRequestView
 import java.time.LocalDateTime
 
 /**
- * 받은 대화 신청 목록(커서 페이지) 응답.
+ * 내가 받은 대화 신청 목록(커서 페이지) 응답.
  * [nextCursor]를 다음 요청의 `cursor`로 그대로 넘기면 이어지는 페이지를 받는다. (다음 페이지가 없으면 null)
  */
 data class LoungeChatRequestPageResponse(
@@ -29,13 +29,39 @@ data class LoungeChatRequestPageResponse(
 	}
 }
 
-/** 신청자 카드 한 장. [chatRoomId]는 아직 수락 전(PENDING)이면 null이다. */
+/**
+ * 내가 보낸 대화 신청 목록(커서 페이지) 응답.
+ * 보낸 신청은 내가 수락하는 것이 아니므로 수락 비용을 싣지 않는다.
+ */
+data class SentLoungeChatRequestPageResponse(
+	val items: List<LoungeChatRequestItemResponse>,
+	val hasNext: Boolean,
+	val nextCursor: Long?,
+) {
+	companion object {
+
+		fun of(page: LoungeChatRequestPage): SentLoungeChatRequestPageResponse =
+			SentLoungeChatRequestPageResponse(
+				items = page.values.map { view: LoungeChatRequestView -> LoungeChatRequestItemResponse.of(view) },
+				hasNext = page.hasNext,
+				nextCursor = page.nextCursor,
+			)
+	}
+}
+
+/**
+ * 신청 한 건. 받은 목록·보낸 목록이 같은 모양을 공유한다.
+ * `partner*`는 **이 신청에서 나의 상대방**이다. 받은 목록에서는 신청자, 보낸 목록에서는 글 작성자다.
+ * [chatRoomId]는 아직 수락 전(PENDING)이면 null이다.
+ */
 data class LoungeChatRequestItemResponse(
 	val requestId: Long,
-	val userId: Long,
-	val nickname: String?,
-	val gender: Gender?,
-	val age: Int?,
+	/** 이 신청이 달린 셀소 글의 id. (글 상세로 이동하는 키) */
+	val postId: Long,
+	val partnerUserId: Long,
+	val partnerNickname: String?,
+	val partnerGender: Gender?,
+	val partnerAge: Int?,
 	val status: LoungeChatRequestStatus,
 	val chatRoomId: Long?,
 	val requestedAt: LocalDateTime,
@@ -45,10 +71,11 @@ data class LoungeChatRequestItemResponse(
 		fun of(view: LoungeChatRequestView): LoungeChatRequestItemResponse =
 			LoungeChatRequestItemResponse(
 				requestId = view.requestId,
-				userId = view.userId,
-				nickname = view.nickname,
-				gender = view.gender,
-				age = view.age,
+				postId = view.postId,
+				partnerUserId = view.partnerUserId,
+				partnerNickname = view.partnerNickname,
+				partnerGender = view.partnerGender,
+				partnerAge = view.partnerAge,
 				status = view.status,
 				chatRoomId = view.chatRoomId,
 				requestedAt = view.requestedAt,
