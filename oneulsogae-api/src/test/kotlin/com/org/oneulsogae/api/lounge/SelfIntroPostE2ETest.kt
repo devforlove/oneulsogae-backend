@@ -3,6 +3,7 @@ package com.org.oneulsogae.api.lounge
 import com.org.oneulsogae.common.integration.AbstractIntegrationSupport
 import com.org.oneulsogae.common.lounge.LoungePostType
 import com.org.oneulsogae.infra.fixture.IntegrationUtil
+import com.org.oneulsogae.infra.fixture.UserDetailEntityFixture
 import com.org.oneulsogae.infra.fixture.UserEntityFixture
 import com.org.oneulsogae.infra.lounge.command.entity.LoungePostEntity
 import com.org.oneulsogae.infra.lounge.command.entity.LoungePostImageEntity
@@ -10,6 +11,7 @@ import com.org.oneulsogae.infra.lounge.command.entity.QLoungePostEntity
 import com.org.oneulsogae.infra.lounge.command.entity.QLoungePostImageEntity
 import com.org.oneulsogae.infra.lounge.command.entity.QSelfIntroPostEntity
 import com.org.oneulsogae.infra.lounge.command.entity.SelfIntroPostEntity
+import com.org.oneulsogae.infra.user.command.entity.QUserDetailEntity
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.string.shouldStartWith
 import io.restassured.RestAssured
@@ -19,13 +21,22 @@ import org.hamcrest.Matchers
 /**
  * `POST /lounge/v1/self-intro-posts` E2E 테스트. (멀티파트 업로드)
  * 사진과 본문을 등록하면 lounge_posts·self_intro_posts·lounge_post_images에 저장되는지,
- * 사진 누락·잘못된 형식·본문 누락이 막히는지, 최근 24시간 1건 제한이 동작하는지 검증한다.
+ * 사진 누락·잘못된 형식·본문 누락이 막히는지, 최근 24시간 1건 제한이 동작하는지,
+ * 회사 인증을 마치지 않은 사용자가 막히는지 검증한다.
  * (실제 S3 업로드는 [com.org.oneulsogae.common.config.TestFileStorageConfig]의 페이크로 대체)
  */
 class SelfIntroPostE2ETest : AbstractIntegrationSupport({
 
-	fun persistUser(providerId: String): Long =
-		IntegrationUtil.persist(UserEntityFixture.create(providerId = providerId)).id!!
+	afterTest {
+		IntegrationUtil.deleteAll(QUserDetailEntity.userDetailEntity)
+	}
+
+	// companyName이 null이 아니면 회사 인증을 마친 사용자로 시딩한다. (게이트를 통과시켜야 나머지 케이스에 도달한다)
+	fun persistUser(providerId: String, companyName: String? = "오늘소개"): Long {
+		val userId: Long = IntegrationUtil.persist(UserEntityFixture.create(providerId = providerId)).id!!
+		IntegrationUtil.persist(UserDetailEntityFixture.create(userId = userId, companyName = companyName))
+		return userId
+	}
 
 	fun latestPostOf(userId: Long): LoungePostEntity? {
 		val post: QLoungePostEntity = QLoungePostEntity.loungePostEntity
@@ -162,6 +173,21 @@ class SelfIntroPostE2ETest : AbstractIntegrationSupport({
 					.body("error.code", Matchers.equalTo("LOUNGE-007"))
 
 				latestPostOf(userId)!!.id shouldBe firstPostId
+			}
+		}
+
+		context("작성자가 회사 인증을 마치지 않았으면") {
+			it("403(USER-035)을 반환하고 셀소가 저장되지 않는다") {
+				val userId: Long = persistUser("self-intro-6", companyName = null)
+
+				requestWithContent(userId)
+					.multiPart("photos", "first.jpg", "fake-first-bytes".toByteArray(), "image/jpeg")
+					.post("/lounge/v1/self-intro-posts")
+					.then()
+					.statusCode(403)
+					.body("error.code", Matchers.equalTo("USER-035"))
+
+				latestPostOf(userId) shouldBe null
 			}
 		}
 	}

@@ -12,6 +12,7 @@ import com.org.oneulsogae.core.lounge.command.application.port.out.SaveSelfIntro
 import com.org.oneulsogae.core.lounge.command.domain.LoungePost
 import com.org.oneulsogae.core.lounge.command.domain.LoungePostImages
 import com.org.oneulsogae.core.lounge.command.domain.SelfIntroPost
+import com.org.oneulsogae.core.user.query.service.port.`in`.CheckCompanyVerifiedUseCase
 import com.org.oneulsogae.core.user.query.service.port.`in`.GetUserByIdUseCase
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
@@ -23,6 +24,7 @@ import java.util.UUID
  * 본문·사진과 등록 빈도를 모두 검증한 뒤 사진을 S3에 비공개로 올리고([FileStoragePort]),
  * 라운지 글(공통 골격) → 셀소 본문 → 사진 순으로 저장한다.
  * 유저 존재 확인은 user 도메인 in-port([GetUserByIdUseCase])로 위임한다(없으면 그쪽이 USER_NOT_FOUND).
+ * 회사 인증 여부도 user 도메인 in-port([CheckCompanyVerifiedUseCase])로 검증한다. (미인증 사용자의 셀소가 라운지에 노출되지 않도록 막는다)
  */
 @Service
 class RegisterSelfIntroPostService(
@@ -33,10 +35,14 @@ class RegisterSelfIntroPostService(
 	private val saveSelfIntroPostPort: SaveSelfIntroPostPort,
 	private val saveLoungePostImagePort: SaveLoungePostImagePort,
 	private val timeGenerator: TimeGenerator,
+	private val checkCompanyVerifiedUseCase: CheckCompanyVerifiedUseCase,
 ) : RegisterSelfIntroPostUseCase {
 
 	@Transactional
 	override fun register(userId: Long, command: RegisterSelfIntroPostCommand): RegisterSelfIntroPostResult {
+		// 회사 인증을 마친 사용자만 셀소를 등록할 수 있다. 미인증 사용자의 셀소가 라운지에 노출되지 않도록 막는다.
+		checkCompanyVerifiedUseCase.validateCompanyVerified(userId)
+
 		getUserByIdUseCase.getById(userId) // 존재 검증 (없으면 USER_NOT_FOUND)
 
 		// 잘못된 입력이 S3에 올라가지 않도록 업로드 전에 본문·사진·등록 빈도를 모두 검증한다. (롤백돼도 S3 고아 객체가 남지 않게)
