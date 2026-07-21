@@ -1,6 +1,7 @@
 package com.org.oneulsogae.domain.lounge
 
 import com.org.oneulsogae.common.lounge.LoungeChatRequestStatus
+import com.org.oneulsogae.common.user.Gender
 import com.org.oneulsogae.core.common.error.BusinessException
 import com.org.oneulsogae.core.lounge.LoungeErrorCode
 import com.org.oneulsogae.core.lounge.command.domain.LoungeChatRequest
@@ -26,6 +27,8 @@ class LoungeChatRequestTest : DescribeSpec({
 					postId = postId,
 					requesterUserId = requesterUserId,
 					postAuthorUserId = authorUserId,
+					requesterGender = Gender.MALE,
+					postAuthorGender = Gender.FEMALE,
 				)
 
 				request.postId shouldBe postId
@@ -43,6 +46,56 @@ class LoungeChatRequestTest : DescribeSpec({
 						postId = postId,
 						requesterUserId = authorUserId,
 						postAuthorUserId = authorUserId,
+						requesterGender = Gender.MALE,
+						postAuthorGender = Gender.MALE,
+					)
+				}
+
+				exception.errorCode shouldBe LoungeErrorCode.LOUNGE_CHAT_REQUEST_SELF
+			}
+		}
+
+		context("성별이 같은 상대의 글에 신청하면") {
+			it("LOUNGE_CHAT_REQUEST_SAME_GENDER 예외를 던진다") {
+				val exception: BusinessException = shouldThrow<BusinessException> {
+					LoungeChatRequest.create(
+						postId = postId,
+						requesterUserId = requesterUserId,
+						postAuthorUserId = authorUserId,
+						requesterGender = Gender.FEMALE,
+						postAuthorGender = Gender.FEMALE,
+					)
+				}
+
+				exception.errorCode shouldBe LoungeErrorCode.LOUNGE_CHAT_REQUEST_SAME_GENDER
+			}
+		}
+
+		context("한쪽 성별을 확인할 수 없으면") {
+			it("이성임을 보장할 수 없으므로 LOUNGE_CHAT_REQUEST_SAME_GENDER 예외를 던진다") {
+				val exception: BusinessException = shouldThrow<BusinessException> {
+					LoungeChatRequest.create(
+						postId = postId,
+						requesterUserId = requesterUserId,
+						postAuthorUserId = authorUserId,
+						requesterGender = Gender.MALE,
+						postAuthorGender = null,
+					)
+				}
+
+				exception.errorCode shouldBe LoungeErrorCode.LOUNGE_CHAT_REQUEST_SAME_GENDER
+			}
+		}
+
+		context("본인 글이면서 성별도 같으면") {
+			it("성별 사유가 아니라 LOUNGE_CHAT_REQUEST_SELF 예외를 던진다") {
+				val exception: BusinessException = shouldThrow<BusinessException> {
+					LoungeChatRequest.create(
+						postId = postId,
+						requesterUserId = authorUserId,
+						postAuthorUserId = authorUserId,
+						requesterGender = Gender.MALE,
+						postAuthorGender = Gender.MALE,
 					)
 				}
 

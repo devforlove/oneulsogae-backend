@@ -2,6 +2,7 @@ package com.org.oneulsogae.api.lounge
 
 import com.org.oneulsogae.common.coin.CoinUsageType
 import com.org.oneulsogae.common.integration.AbstractIntegrationSupport
+import com.org.oneulsogae.common.user.Gender
 import com.org.oneulsogae.common.lounge.LoungeChatRequestStatus
 import com.org.oneulsogae.infra.coin.command.entity.CoinHistoryEntity
 import com.org.oneulsogae.infra.coin.command.entity.QCoinBalanceEntity
@@ -9,11 +10,13 @@ import com.org.oneulsogae.infra.coin.command.entity.QCoinHistoryEntity
 import com.org.oneulsogae.infra.fixture.CoinBalanceEntityFixture
 import com.org.oneulsogae.infra.fixture.IntegrationUtil
 import com.org.oneulsogae.infra.fixture.LoungePostEntityFixture
+import com.org.oneulsogae.infra.fixture.UserDetailEntityFixture
 import com.org.oneulsogae.infra.fixture.UserEntityFixture
 import com.org.oneulsogae.infra.lounge.command.entity.LoungeChatRequestEntity
 import com.org.oneulsogae.infra.lounge.command.entity.LoungePostEntity
 import com.org.oneulsogae.infra.lounge.command.entity.QLoungeChatRequestEntity
 import com.org.oneulsogae.infra.lounge.command.entity.QLoungePostEntity
+import com.org.oneulsogae.infra.user.command.entity.QUserDetailEntity
 import io.kotest.matchers.shouldBe
 import io.restassured.RestAssured
 import org.hamcrest.Matchers
@@ -37,6 +40,9 @@ class RequestLoungeChatE2ETest : AbstractIntegrationSupport({
 			it("PENDING 신청이 생성되고 코인 32가 차감된다") {
 				val authorId: Long = IntegrationUtil.persist(UserEntityFixture.create(providerId = "lounge-req-author-1")).id!!
 				val requesterId: Long = IntegrationUtil.persist(UserEntityFixture.create(providerId = "lounge-req-user-1")).id!!
+				// 이성에게만 신청할 수 있으므로 두 사람의 성별을 서로 다르게 둔다.
+				IntegrationUtil.persist(UserDetailEntityFixture.create(userId = authorId, gender = Gender.FEMALE))
+				IntegrationUtil.persist(UserDetailEntityFixture.create(userId = requesterId, gender = Gender.MALE))
 				IntegrationUtil.persist(CoinBalanceEntityFixture.create(userId = requesterId, balance = 100))
 				val post: LoungePostEntity = IntegrationUtil.persist(LoungePostEntityFixture.create(userId = authorId))
 
@@ -91,6 +97,9 @@ class RequestLoungeChatE2ETest : AbstractIntegrationSupport({
 			it("두 번째는 409(LOUNGE-010)이고 코인은 한 번만 차감된다") {
 				val authorId: Long = IntegrationUtil.persist(UserEntityFixture.create(providerId = "lounge-req-author-3")).id!!
 				val requesterId: Long = IntegrationUtil.persist(UserEntityFixture.create(providerId = "lounge-req-user-3")).id!!
+				// 이성에게만 신청할 수 있으므로 두 사람의 성별을 서로 다르게 둔다.
+				IntegrationUtil.persist(UserDetailEntityFixture.create(userId = authorId, gender = Gender.FEMALE))
+				IntegrationUtil.persist(UserDetailEntityFixture.create(userId = requesterId, gender = Gender.MALE))
 				IntegrationUtil.persist(CoinBalanceEntityFixture.create(userId = requesterId, balance = 100))
 				val post: LoungePostEntity = IntegrationUtil.persist(LoungePostEntityFixture.create(userId = authorId))
 
@@ -120,6 +129,9 @@ class RequestLoungeChatE2ETest : AbstractIntegrationSupport({
 			it("신청 행이 남지 않고 실패한다") {
 				val authorId: Long = IntegrationUtil.persist(UserEntityFixture.create(providerId = "lounge-req-author-4")).id!!
 				val requesterId: Long = IntegrationUtil.persist(UserEntityFixture.create(providerId = "lounge-req-user-4")).id!!
+				// 이성에게만 신청할 수 있으므로 두 사람의 성별을 서로 다르게 둔다.
+				IntegrationUtil.persist(UserDetailEntityFixture.create(userId = authorId, gender = Gender.FEMALE))
+				IntegrationUtil.persist(UserDetailEntityFixture.create(userId = requesterId, gender = Gender.MALE))
 				IntegrationUtil.persist(CoinBalanceEntityFixture.create(userId = requesterId, balance = 5))
 				val post: LoungePostEntity = IntegrationUtil.persist(LoungePostEntityFixture.create(userId = authorId))
 
@@ -137,6 +149,49 @@ class RequestLoungeChatE2ETest : AbstractIntegrationSupport({
 					.size
 					.toLong()
 				count shouldBe 0L
+			}
+		}
+
+		context("성별이 같은 상대의 셀소에 신청하면") {
+			it("400(LOUNGE-014)이고 코인이 차감되지 않는다") {
+				val authorId: Long = IntegrationUtil.persist(UserEntityFixture.create(providerId = "lounge-req-author-6")).id!!
+				val requesterId: Long = IntegrationUtil.persist(UserEntityFixture.create(providerId = "lounge-req-user-6")).id!!
+				IntegrationUtil.persist(UserDetailEntityFixture.create(userId = authorId, gender = Gender.MALE))
+				IntegrationUtil.persist(UserDetailEntityFixture.create(userId = requesterId, gender = Gender.MALE))
+				IntegrationUtil.persist(CoinBalanceEntityFixture.create(userId = requesterId, balance = 100))
+				val post: LoungePostEntity = IntegrationUtil.persist(LoungePostEntityFixture.create(userId = authorId))
+
+				RestAssured.given()
+					.header("Authorization", "Bearer ${accessTokenFor(requesterId)}")
+					.post("/lounge/v1/self-intro-posts/${post.id}/chat-requests")
+					.then()
+					.statusCode(400)
+					.body("error.code", Matchers.equalTo("LOUNGE-014"))
+
+				val balance: Int = IntegrationUtil.getQuery()
+					.select(QCoinBalanceEntity.coinBalanceEntity.balance)
+					.from(QCoinBalanceEntity.coinBalanceEntity)
+					.where(QCoinBalanceEntity.coinBalanceEntity.userId.eq(requesterId))
+					.fetchFirst()!!
+				balance shouldBe 100
+			}
+		}
+
+		context("프로필이 없어 성별을 확인할 수 없으면") {
+			it("400(LOUNGE-014)으로 막는다") {
+				val authorId: Long = IntegrationUtil.persist(UserEntityFixture.create(providerId = "lounge-req-author-7")).id!!
+				val requesterId: Long = IntegrationUtil.persist(UserEntityFixture.create(providerId = "lounge-req-user-7")).id!!
+				IntegrationUtil.persist(UserDetailEntityFixture.create(userId = requesterId, gender = Gender.MALE))
+				IntegrationUtil.persist(CoinBalanceEntityFixture.create(userId = requesterId, balance = 100))
+				// 작성자 프로필(성별)이 없다.
+				val post: LoungePostEntity = IntegrationUtil.persist(LoungePostEntityFixture.create(userId = authorId))
+
+				RestAssured.given()
+					.header("Authorization", "Bearer ${accessTokenFor(requesterId)}")
+					.post("/lounge/v1/self-intro-posts/${post.id}/chat-requests")
+					.then()
+					.statusCode(400)
+					.body("error.code", Matchers.equalTo("LOUNGE-014"))
 			}
 		}
 

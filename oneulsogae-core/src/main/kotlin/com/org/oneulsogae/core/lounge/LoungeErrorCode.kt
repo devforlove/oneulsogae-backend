@@ -54,4 +54,7 @@ enum class LoungeErrorCode(
 
 	/** 이미 수락한 대화 신청. */
 	LOUNGE_CHAT_REQUEST_ALREADY_ACCEPTED("LOUNGE-013", "이미 수락한 대화 신청입니다.", HttpStatus.CONFLICT),
+
+	/** 신청자와 글 작성자의 성별이 같거나, 둘 중 하나의 성별을 확인할 수 없음. */
+	LOUNGE_CHAT_REQUEST_SAME_GENDER("LOUNGE-014", "이성에게만 대화를 신청할 수 있습니다.", HttpStatus.BAD_REQUEST),
 }

@@ -2,6 +2,7 @@ package com.org.oneulsogae.api.lounge
 
 import com.org.oneulsogae.common.alarm.AlarmType
 import com.org.oneulsogae.common.integration.AbstractIntegrationSupport
+import com.org.oneulsogae.common.user.Gender
 import com.org.oneulsogae.infra.alarm.command.entity.AlarmEntity
 import com.org.oneulsogae.infra.alarm.command.entity.QAlarmEntity
 import com.org.oneulsogae.infra.chat.command.entity.QChatRoomEntity
@@ -42,8 +43,8 @@ class LoungeChatRequestAlarmE2ETest : AbstractIntegrationSupport({
 			it("작성자에게 신청 알람이, 신청자에게 수락 알람이 쌓인다") {
 				val authorId: Long = IntegrationUtil.persist(UserEntityFixture.create(providerId = "lounge-alarm-author")).id!!
 				val requesterId: Long = IntegrationUtil.persist(UserEntityFixture.create(providerId = "lounge-alarm-user")).id!!
-				IntegrationUtil.persist(UserDetailEntityFixture.create(userId = authorId, nickname = "글쓴이"))
-				IntegrationUtil.persist(UserDetailEntityFixture.create(userId = requesterId, nickname = "신청자"))
+				IntegrationUtil.persist(UserDetailEntityFixture.create(userId = authorId, nickname = "글쓴이", gender = Gender.FEMALE))
+				IntegrationUtil.persist(UserDetailEntityFixture.create(userId = requesterId, nickname = "신청자", gender = Gender.MALE))
 				IntegrationUtil.persist(CoinBalanceEntityFixture.create(userId = authorId, balance = 100))
 				IntegrationUtil.persist(CoinBalanceEntityFixture.create(userId = requesterId, balance = 100))
 				val post: LoungePostEntity = IntegrationUtil.persist(LoungePostEntityFixture.create(userId = authorId))

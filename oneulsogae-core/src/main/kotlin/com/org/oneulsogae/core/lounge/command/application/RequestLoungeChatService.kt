@@ -15,6 +15,8 @@ import com.org.oneulsogae.core.lounge.command.application.port.out.GetLoungePost
 import com.org.oneulsogae.core.lounge.command.application.port.out.SaveLoungeChatRequestPort
 import com.org.oneulsogae.core.lounge.command.domain.LoungeChatRequest
 import com.org.oneulsogae.core.lounge.command.domain.LoungePost
+import com.org.oneulsogae.core.user.query.dto.UserDetailView
+import com.org.oneulsogae.core.user.query.service.port.`in`.GetUserDetailUseCase
 import com.org.oneulsogae.core.lounge.command.domain.event.LoungeChatRequested
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
@@ -22,7 +24,8 @@ import org.springframework.transaction.annotation.Transactional
 /**
  * [RequestLoungeChatUseCase] 구현.
  * 글 존재·중복 신청을 확인한 뒤 신청을 저장하고 신청 비용을 차감한다.
- * 본인 글 신청 차단은 도메인([LoungeChatRequest.create])이 판정한다.
+ * 본인 글 신청 차단과 이성 여부 판정은 도메인([LoungeChatRequest.create])이 한다.
+ * 성별은 user 도메인 in-port([GetUserDetailUseCase])로 조회해 파라미터로 넘긴다. (도메인은 인프라를 모른다)
  * 차감액은 [CoinUsageType.LOUNGE_CHAT_INIT]의 정책값이라 클라이언트가 금액을 정하지 않는다.
  * 코인 도메인은 자기 out-port가 아니라 in-port([SpendCoinUseCase])로 참조한다.
  * 신청 저장과 코인 차감은 같은 트랜잭션이라 한 단계라도 실패하면 함께 롤백된다.
@@ -38,6 +41,7 @@ class RequestLoungeChatService(
 	private val getLoungeChatRequestPort: GetLoungeChatRequestPort,
 	private val saveLoungeChatRequestPort: SaveLoungeChatRequestPort,
 	private val spendCoinUseCase: SpendCoinUseCase,
+	private val getUserDetailUseCase: GetUserDetailUseCase,
 	private val domainEventPublisher: DomainEventPublisher,
 ) : RequestLoungeChatUseCase {
 
@@ -51,8 +55,18 @@ class RequestLoungeChatService(
 			throw BusinessException(LoungeErrorCode.LOUNGE_CHAT_REQUEST_DUPLICATED)
 		}
 
+		// 이성 여부 판정에 쓸 성별은 user 도메인 in-port로 얻는다. (프로필이 없으면 성별을 확인할 수 없어 도메인이 막는다)
+		val requesterDetail: UserDetailView? = getUserDetailUseCase.findByUserId(userId)
+		val postAuthorDetail: UserDetailView? = getUserDetailUseCase.findByUserId(post.userId)
+
 		val saved: LoungeChatRequest = saveLoungeChatRequestPort.save(
-			LoungeChatRequest.create(postId = postId, requesterUserId = userId, postAuthorUserId = post.userId),
+			LoungeChatRequest.create(
+				postId = postId,
+				requesterUserId = userId,
+				postAuthorUserId = post.userId,
+				requesterGender = requesterDetail?.gender,
+				postAuthorGender = postAuthorDetail?.gender,
+			),
 		)
 		spendCoinUseCase.spend(userId, SpendCoinCommand(amount = USAGE_TYPE.coinAmount, coinUsageType = USAGE_TYPE))
 
