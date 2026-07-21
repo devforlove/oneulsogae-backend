@@ -1,0 +1,62 @@
+package com.org.oneulsogae.core.lounge.command.application
+
+import com.org.oneulsogae.common.coin.CoinUsageType
+import com.org.oneulsogae.core.coin.command.application.port.`in`.SpendCoinUseCase
+import com.org.oneulsogae.core.coin.command.application.port.`in`.command.SpendCoinCommand
+import com.org.oneulsogae.core.common.error.BusinessException
+import com.org.oneulsogae.core.common.lock.DistributedLock
+import com.org.oneulsogae.core.common.lock.LockKeyConstraints
+import com.org.oneulsogae.core.lounge.LoungeErrorCode
+import com.org.oneulsogae.core.lounge.command.application.port.`in`.RequestLoungeChatUseCase
+import com.org.oneulsogae.core.lounge.command.application.port.`in`.result.RequestLoungeChatResult
+import com.org.oneulsogae.core.lounge.command.application.port.out.GetLoungeChatRequestPort
+import com.org.oneulsogae.core.lounge.command.application.port.out.GetLoungePostPort
+import com.org.oneulsogae.core.lounge.command.application.port.out.SaveLoungeChatRequestPort
+import com.org.oneulsogae.core.lounge.command.domain.LoungeChatRequest
+import com.org.oneulsogae.core.lounge.command.domain.LoungePost
+import org.springframework.stereotype.Service
+import org.springframework.transaction.annotation.Transactional
+
+/**
+ * [RequestLoungeChatUseCase] 구현.
+ * 글 존재·중복 신청을 확인한 뒤 신청을 저장하고 신청 비용을 차감한다.
+ * 본인 글 신청 차단은 도메인([LoungeChatRequest.create])이 판정한다.
+ * 차감액은 [CoinUsageType.LOUNGE_CHAT_INIT]의 정책값이라 클라이언트가 금액을 정하지 않는다.
+ * 코인 도메인은 자기 out-port가 아니라 in-port([SpendCoinUseCase])로 참조한다.
+ * 신청 저장과 코인 차감은 같은 트랜잭션이라 한 단계라도 실패하면 함께 롤백된다.
+ *
+ * (postId, userId) 분산 락([DistributedLock])으로 보호한다. 경합 대상이 "이 사용자가 이 글에 신청했는가"라는
+ * 유니크 조건이므로 글 단위가 아니라 글+사용자로 잠근다. (글로 잠그면 서로 다른 신청자끼리 불필요하게 직렬화된다)
+ * waitTime=0이라 겹친 요청은 즉시 실패(409)한다. (더블클릭 이중 과금 fail-fast)
+ */
+@Service
+class RequestLoungeChatService(
+	private val getLoungePostPort: GetLoungePostPort,
+	private val getLoungeChatRequestPort: GetLoungeChatRequestPort,
+	private val saveLoungeChatRequestPort: SaveLoungeChatRequestPort,
+	private val spendCoinUseCase: SpendCoinUseCase,
+) : RequestLoungeChatUseCase {
+
+	@DistributedLock(prefix = LockKeyConstraints.LOUNGE_CHAT_REQUEST, keys = ["#postId", "#userId"], waitTime = 0)
+	@Transactional
+	override fun request(userId: Long, postId: Long): RequestLoungeChatResult {
+		val post: LoungePost = getLoungePostPort.findById(postId)
+			?: throw BusinessException(LoungeErrorCode.SELF_INTRO_POST_NOT_FOUND, "셀소를 찾을 수 없습니다: $postId")
+
+		if (getLoungeChatRequestPort.existsByPostIdAndRequesterUserId(postId, userId)) {
+			throw BusinessException(LoungeErrorCode.LOUNGE_CHAT_REQUEST_DUPLICATED)
+		}
+
+		val saved: LoungeChatRequest = saveLoungeChatRequestPort.save(
+			LoungeChatRequest.create(postId = postId, requesterUserId = userId, postAuthorUserId = post.userId),
+		)
+		spendCoinUseCase.spend(userId, SpendCoinCommand(amount = USAGE_TYPE.coinAmount, coinUsageType = USAGE_TYPE))
+
+		return RequestLoungeChatResult(saved.id)
+	}
+
+	companion object {
+		/** 대화 신청 차감 유형. 금액은 이 유형의 정책값(coinAmount)을 그대로 쓴다. */
+		private val USAGE_TYPE: CoinUsageType = CoinUsageType.LOUNGE_CHAT_INIT
+	}
+}
