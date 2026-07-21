@@ -45,7 +45,9 @@ class UserCompanyEmailVerificationController(
 
 	/**
 	 * 사용자가 입력한 인증번호를 검증한다. 성공하면 회사 이메일/회사명을 프로필에 확정한다.
-	 * 회사명 매핑 성공 여부(isCompanyResolved)를 응답으로 내려준다.
+	 * 회사명 매핑 성공 여부(isCompanyResolved)를 응답으로 내려주지만, 매핑을 못 찾으면 이 자리에서 400 `USER-034`로
+	 * 인증 자체가 실패하므로 응답이 내려가는 한 isCompanyResolved는 항상 true다. 프론트엔드 호환을 위해 남겨둔
+	 * 필드이며, 협의 후 제거 예정이다.
 	 */
 	@Operation(summary = "회사 이메일 인증번호 확인", description = "사용자가 입력한 인증번호를 검증하고, 성공하면 회사 이메일/회사명을 프로필에 확정한다.")
 	@PostMapping("/company-email/verifications/confirm")

@@ -9,7 +9,11 @@ data class VerifyCompanyEmailResult(
 	val companyName: String?,
 ) {
 
-	/** 도메인 매핑으로 회사명을 찾았으면 true. (못 찾으면 false) */
+	/**
+	 * 도메인 매핑으로 회사명을 찾았으면 true.
+	 * 매핑을 못 찾으면 `VerifyCompanyEmailService.verify`가 그 자리에서 `COMPANY_NOT_FOUND`(USER-034)로 인증 자체를
+	 * 실패시키므로, 이 결과가 만들어지는 시점엔 항상 true다. 프론트엔드 호환을 위해 남겨둔 필드이며 협의 후 제거 예정이다.
+	 */
 	val isCompanyResolved: Boolean
 		get() = companyName != null
 }
