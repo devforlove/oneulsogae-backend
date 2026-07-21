@@ -49,6 +49,8 @@ class GetSelfIntroPostDetailE2ETest : AbstractIntegrationSupport({
 						birthday = birthday,
 						height = 165,
 						job = "디자이너",
+						companyName = "오늘소개",
+						universityName = "한국대학교",
 						regionId = region.id,
 					),
 				)
@@ -86,6 +88,8 @@ class GetSelfIntroPostDetailE2ETest : AbstractIntegrationSupport({
 					.body("data.height", Matchers.equalTo(165))
 					.body("data.activityArea", Matchers.equalTo("서울특별시 마포구"))
 					.body("data.job", Matchers.equalTo("디자이너"))
+					.body("data.companyName", Matchers.equalTo("오늘소개"))
+					.body("data.universityName", Matchers.equalTo("한국대학교"))
 					.body("data.mbti", Matchers.equalTo("ENFP"))
 					.body("data.freeWord", Matchers.equalTo("편하게 연락 주세요"))
 					// 대화 신청 버튼의 비용 안내값. 글마다 다르지 않은 전역 정책값(LOUNGE_CHAT_INIT)이다.

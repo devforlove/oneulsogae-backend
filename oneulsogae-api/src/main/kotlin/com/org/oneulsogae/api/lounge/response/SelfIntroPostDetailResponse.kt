@@ -5,7 +5,7 @@ import com.org.oneulsogae.core.lounge.query.dto.SelfIntroPostDetailView
 
 /**
  * 라운지 셀소 상세 응답.
- * 성별·나이·키·지역·직업은 작성자 프로필에서 온 표시용 값이다. (생년월일은 노출하지 않고 만 나이만 내려준다)
+ * 성별·나이·키·지역·직업·회사명·학교명은 작성자 프로필에서 온 표시용 값이다. (생년월일은 노출하지 않고 만 나이만 내려준다)
  * 사진은 비공개 저장이라 열람용 presigned URL 목록으로 내려준다(노출 순서).
  */
 data class SelfIntroPostDetailResponse(
@@ -17,6 +17,10 @@ data class SelfIntroPostDetailResponse(
 	val height: Int?,
 	val activityArea: String?,
 	val job: String?,
+	/** 회사명. 회사 인증을 하지 않았으면 null. */
+	val companyName: String?,
+	/** 학교명. 학교 인증을 하지 않았으면 null. */
+	val universityName: String?,
 	val longDistance: String,
 	val desiredAge: String,
 	val mbti: String,
@@ -42,6 +46,8 @@ data class SelfIntroPostDetailResponse(
 				height = view.height,
 				activityArea = view.activityArea,
 				job = view.job,
+				companyName = view.companyName,
+				universityName = view.universityName,
 				longDistance = view.longDistance,
 				desiredAge = view.desiredAge,
 				mbti = view.mbti,

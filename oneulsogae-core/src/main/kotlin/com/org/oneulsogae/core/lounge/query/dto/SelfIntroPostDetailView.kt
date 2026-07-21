@@ -7,7 +7,7 @@ import java.time.LocalDate
 
 /**
  * 라운지 셀소 상세(read model).
- * 성별·생년월일·키·지역·직업은 작성자 프로필(user_details·regions)에서 조인해 온 표시용 값이다.
+ * 성별·생년월일·키·지역·직업·회사명·학교명은 작성자 프로필(user_details·regions)에서 조인해 온 표시용 값이다.
  * dao는 [birthday]와 [imageKeys]까지 채우고, 서비스가 [age](만 나이)와 [imageUrls](presigned)를 채운다.
  */
 data class SelfIntroPostDetailView(
@@ -21,6 +21,10 @@ data class SelfIntroPostDetailView(
 	/** 활동지역 표시 문자열(시/도 시/군/구). */
 	val activityArea: String?,
 	val job: String?,
+	/** 회사명. 회사 인증을 하지 않았으면 null. */
+	val companyName: String?,
+	/** 학교명. 학교 인증을 하지 않았으면 null. */
+	val universityName: String?,
 	val longDistance: String,
 	val desiredAge: String,
 	val mbti: String,
@@ -56,6 +60,8 @@ data class SelfIntroPostDetailView(
 		height: Int?,
 		activityArea: String?,
 		job: String?,
+		companyName: String?,
+		universityName: String?,
 		longDistance: String,
 		desiredAge: String,
 		mbti: String,
@@ -64,7 +70,7 @@ data class SelfIntroPostDetailView(
 		charmPoint: String,
 		freeWord: String,
 	) : this(
-		postId, authorNickname, likeCount, gender, birthday, height, activityArea, job,
+		postId, authorNickname, likeCount, gender, birthday, height, activityArea, job, companyName, universityName,
 		longDistance, desiredAge, mbti, marriageThought, preferredPartner, charmPoint, freeWord,
 		null, emptyList(), emptyList(),
 	)
