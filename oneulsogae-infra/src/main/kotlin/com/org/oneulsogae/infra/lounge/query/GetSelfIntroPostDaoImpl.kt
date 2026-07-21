@@ -19,8 +19,8 @@ import org.springframework.stereotype.Component
 /**
  * [GetSelfIntroPostDao]의 QueryDSL 구현. (조회 전용)
  * 엔티티를 거치지 않고 [SelfIntroPostView] read model로 바로 투영한다. imageKey까지만 담고 imageUrl은 서비스가 presign으로 채운다.
- * 표시용 작성자 닉네임은 user_details를, 대표 사진은 노출 순서 0번 사진을 각각 left join으로 붙인다.
- * (프로필이나 사진이 없어도 글은 보여야 하므로 inner join하지 않는다)
+ * 표시용 작성자 프로필은 user_details를(활동지역은 regions까지), 대표 사진은 노출 순서 0번 사진을 각각 left join으로 붙인다.
+ * (프로필·지역이나 사진이 없어도 글은 보여야 하므로 inner join하지 않는다)
  * type 동등 + id 내림차순 keyset(`id < :beforeId`)이 `idx_type_id`로 받쳐져 뒤 페이지에서도 seek로 끝난다(offset 스캔 없음).
  * 상세는 PK 동등 조건으로 단건 투영하며 본문(self_intro_posts)을 inner join한다(없으면 null → 서비스가 404).
  * 사진은 상세와 분리해 노출 순서대로 따로 읽는다(한 글에 여러 장이라 조인하면 상세 행이 사진 수만큼 곱해진다).
@@ -34,6 +34,7 @@ class GetSelfIntroPostDaoImpl(
 		val post: QLoungePostEntity = QLoungePostEntity.loungePostEntity
 		val userDetail: QUserDetailEntity = QUserDetailEntity.userDetailEntity
 		val image: QLoungePostImageEntity = QLoungePostImageEntity.loungePostImageEntity
+		val region: QRegionEntity = QRegionEntity.regionEntity
 		return queryFactory
 			.select(
 				Projections.constructor(
@@ -47,11 +48,14 @@ class GetSelfIntroPostDaoImpl(
 					userDetail.profileImageCode,
 					userDetail.job,
 					userDetail.companyName,
+					// 표시용 활동지역은 regions를 join해 "시/도 시/군/구"로 만든다. (지역 미설정이면 null)
+					region.sido.concat(" ").concat(region.sigungu),
 				),
 			)
 			.from(post)
 			.leftJoin(userDetail).on(userDetail.userId.eq(post.userId))
 			.leftJoin(image).on(image.postId.eq(post.id).and(image.displayOrder.eq(FIRST_PHOTO_ORDER)))
+			.leftJoin(region).on(region.id.eq(userDetail.regionId))
 			.where(
 				post.type.eq(LoungePostType.SELF_INTRO),
 				beforeId?.let { cursor: Long -> post.id.lt(cursor) },

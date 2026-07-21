@@ -7,12 +7,16 @@ import com.org.oneulsogae.infra.fixture.IntegrationUtil
 import com.org.oneulsogae.infra.fixture.LoungeChatRequestEntityFixture
 import com.org.oneulsogae.infra.fixture.LoungePostEntityFixture
 import com.org.oneulsogae.infra.fixture.LoungePostImageEntityFixture
+import com.org.oneulsogae.infra.fixture.RegionEntityFixture
 import com.org.oneulsogae.infra.fixture.UserDetailEntityFixture
 import com.org.oneulsogae.infra.fixture.UserEntityFixture
 import com.org.oneulsogae.infra.lounge.command.entity.LoungePostEntity
 import com.org.oneulsogae.infra.lounge.command.entity.QLoungeChatRequestEntity
 import com.org.oneulsogae.infra.lounge.command.entity.QLoungePostEntity
 import com.org.oneulsogae.infra.lounge.command.entity.QLoungePostImageEntity
+import com.org.oneulsogae.infra.region.entity.QRegionEntity
+import com.org.oneulsogae.infra.region.entity.RegionEntity
+import com.org.oneulsogae.infra.user.command.entity.QUserDetailEntity
 import io.restassured.RestAssured
 import org.hamcrest.Matchers
 import java.time.LocalDate
@@ -35,6 +39,9 @@ class GetSelfIntroPostsE2ETest : AbstractIntegrationSupport({
 	// 배지 케이스가 만든 신청 행을 정리한다. (같은 글에 두 번 신청할 수 없어 다음 실행에 걸리지 않도록)
 	afterTest {
 		IntegrationUtil.deleteAll(QLoungeChatRequestEntity.loungeChatRequestEntity)
+		// 프로필이 참조하는 지역까지 정리한다. (regions는 (sido, sigungu) 유니크라 남겨두면 다른 스펙의 같은 지역 생성이 깨진다)
+		IntegrationUtil.deleteAll(QUserDetailEntity.userDetailEntity)
+		IntegrationUtil.deleteAll(QRegionEntity.regionEntity)
 	}
 
 	describe("GET /lounge/v1/self-intro-posts") {
@@ -43,10 +50,14 @@ class GetSelfIntroPostsE2ETest : AbstractIntegrationSupport({
 			it("최신순 24건과 다음 커서를 내려주고, 커서로 나머지 2건을 잇는다") {
 				val userId: Long = IntegrationUtil.persist(UserEntityFixture.create(providerId = "lounge-list-1")).id!!
 				val birthday: LocalDate = LocalDate.of(1994, 2, 2)
+				val region: RegionEntity = IntegrationUtil.persist(
+					RegionEntityFixture.create(sido = "인천광역시", sigungu = "연수구"),
+				)
 				IntegrationUtil.persist(
 					UserDetailEntityFixture.create(
 						userId = userId,
 						nickname = "라운지주민",
+						regionId = region.id,
 						gender = Gender.FEMALE,
 						birthday = birthday,
 						profileImageCode = "PROFILE_03",
@@ -88,6 +99,7 @@ class GetSelfIntroPostsE2ETest : AbstractIntegrationSupport({
 					.body("data.items[0].authorProfileImageCode", Matchers.equalTo("PROFILE_03"))
 					.body("data.items[0].authorJob", Matchers.equalTo("기획자"))
 					.body("data.items[0].authorCompanyName", Matchers.equalTo("오늘소개"))
+					.body("data.items[0].authorActivityArea", Matchers.equalTo("인천광역시 연수구"))
 
 				RestAssured.given()
 					.header("Authorization", "Bearer ${accessTokenFor(userId)}")
@@ -120,6 +132,7 @@ class GetSelfIntroPostsE2ETest : AbstractIntegrationSupport({
 					.body("data.items[0].authorJob", Matchers.nullValue())
 					.body("data.items[0].authorCompanyName", Matchers.nullValue())
 					.body("data.items[0].authorProfileImageCode", Matchers.nullValue())
+					.body("data.items[0].authorActivityArea", Matchers.nullValue())
 			}
 		}
 

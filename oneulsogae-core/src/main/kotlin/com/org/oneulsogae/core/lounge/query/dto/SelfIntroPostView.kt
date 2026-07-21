@@ -21,6 +21,8 @@ data class SelfIntroPostView(
 	val authorProfileImageCode: String?,
 	val authorJob: String?,
 	val authorCompanyName: String?,
+	/** 작성자 활동지역 표시 문자열(시/도 시/군/구). 지역 미설정이면 null. */
+	val authorActivityArea: String?,
 	val imageUrl: String? = null,
 	/** 작성자 만 나이. 서비스가 [authorBirthday]와 기준일로 채운다. (생년월일이 없으면 null) */
 	val authorAge: Int? = null,
@@ -36,9 +38,10 @@ data class SelfIntroPostView(
 		authorProfileImageCode: String?,
 		authorJob: String?,
 		authorCompanyName: String?,
+		authorActivityArea: String?,
 	) : this(
 		postId, authorNickname, likeCount, imageKey,
-		authorGender, authorBirthday, authorProfileImageCode, authorJob, authorCompanyName, null, null,
+		authorGender, authorBirthday, authorProfileImageCode, authorJob, authorCompanyName, authorActivityArea, null, null,
 	)
 
 	/** 기준일([today])로 작성자 만 나이를 채운 항목을 만든다. */

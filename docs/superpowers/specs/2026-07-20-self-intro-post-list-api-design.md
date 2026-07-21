@@ -13,7 +13,8 @@
   { "success": true, "data": {
       "items": [{ "postId": 26, "authorNickname": "라운지주민", "likeCount": 12, "imageUrl": "https://...",
                   "authorGender": "FEMALE", "authorAge": 30, "authorProfileImageCode": "PROFILE_03",
-                  "authorJob": "기획자", "authorCompanyName": "오늘소개" }],
+                  "authorJob": "기획자", "authorCompanyName": "오늘소개",
+                  "authorActivityArea": "인천광역시 연수구" }],
       "receivedPendingChatRequestCount": 0, "sentPendingChatRequestCount": 0,
       "hasNext": true, "nextCursor": 3 } }
   ```
@@ -24,8 +25,9 @@
 - `lounge_posts`에서 `type=SELF_INTRO`, `id` 내림차순(최신순). 커서는 `id < :cursor` keyset —
   복합 인덱스 `idx_type_id (type, id)`가 동등 조건 + 정렬을 받쳐 뒤 페이지도 seek로 끝난다(offset 스캔 없음).
 - 페이지 크기 + 1건을 읽어 COUNT 없이 다음 페이지 존재를 판정한다. (`SelfIntroPostPage.of`)
-- 작성자 프로필(닉네임·성별·생년월일·프로필 이미지 코드·직업·회사명)은 `user_details`, 대표 사진은 `lounge_post_images`의
-  `display_order = 0` 행을 **left join**으로 붙인다. 프로필이나 사진이 없어도 글은 목록에서 빠지지 않는다(각각 null).
+- 작성자 프로필(닉네임·성별·생년월일·프로필 이미지 코드·직업·회사명)은 `user_details`, 표시용 활동지역은 거기서 `regions`까지,
+  대표 사진은 `lounge_post_images`의 `display_order = 0` 행을 **left join**으로 붙인다.
+  프로필·지역이나 사진이 없어도 글은 목록에서 빠지지 않는다(각각 null).
   만 나이는 dao가 `birthday`까지만 담고 서비스가 `TimeGenerator`의 오늘 날짜로 계산한다(`SelfIntroPostPage.withAuthorAges`).
 - 응답 루트의 `receivedPendingChatRequestCount`·`sentPendingChatRequestCount`는 요청한 사용자의 미수락 대화 신청 건수다.
   ([대화 신청 설계](2026-07-21-lounge-chat-request-design.md) 참고)

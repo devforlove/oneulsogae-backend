@@ -22,6 +22,7 @@ class SelfIntroPostPageTest : DescribeSpec({
 			authorProfileImageCode = null,
 			authorJob = null,
 			authorCompanyName = null,
+			authorActivityArea = null,
 		)
 
 	describe("of") {

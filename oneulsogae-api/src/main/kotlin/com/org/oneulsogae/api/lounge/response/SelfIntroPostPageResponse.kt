@@ -48,6 +48,8 @@ data class SelfIntroPostItemResponse(
 	val authorProfileImageCode: String?,
 	val authorJob: String?,
 	val authorCompanyName: String?,
+	/** 작성자 활동지역 표시 문자열(시/도 시/군/구). 지역 미설정이면 null. */
+	val authorActivityArea: String?,
 ) {
 	companion object {
 
@@ -62,6 +64,7 @@ data class SelfIntroPostItemResponse(
 				authorProfileImageCode = view.authorProfileImageCode,
 				authorJob = view.authorJob,
 				authorCompanyName = view.authorCompanyName,
+				authorActivityArea = view.authorActivityArea,
 			)
 	}
 }
