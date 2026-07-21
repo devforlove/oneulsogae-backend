@@ -9,6 +9,11 @@ import com.org.oneulsogae.core.lounge.query.dto.SelfIntroPostView
  */
 data class SelfIntroPostPageResponse(
 	val items: List<SelfIntroPostItemResponse>,
+	/**
+	 * 요청한 사용자가 자기 셀소로 받은 신청 중 아직 수락하지 않은(PENDING) 건수. (내가 쓴 모든 셀소 합산)
+	 * "받은 신청" 배지에 쓴다. 수락하면 줄어든다.
+	 */
+	val receivedPendingChatRequestCount: Int,
 	val hasNext: Boolean,
 	val nextCursor: Long?,
 ) {
@@ -17,6 +22,7 @@ data class SelfIntroPostPageResponse(
 		fun of(page: SelfIntroPostPage): SelfIntroPostPageResponse =
 			SelfIntroPostPageResponse(
 				items = page.values.map { view: SelfIntroPostView -> SelfIntroPostItemResponse.of(view) },
+				receivedPendingChatRequestCount = page.receivedPendingChatRequestCount,
 				hasNext = page.hasNext,
 				nextCursor = page.nextCursor,
 			)

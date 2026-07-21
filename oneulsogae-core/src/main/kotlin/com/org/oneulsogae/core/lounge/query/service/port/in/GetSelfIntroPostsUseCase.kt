@@ -9,8 +9,11 @@ import com.org.oneulsogae.core.lounge.query.dto.SelfIntroPostPage
  */
 interface GetSelfIntroPostsUseCase {
 
-	/** 셀소 목록 한 페이지를 최신순으로 조회한다. [cursor]를 주면 그보다 과거 구간을 잇는다. */
-	fun getPosts(cursor: Long?): SelfIntroPostPage
+	/**
+	 * 셀소 목록 한 페이지를 최신순으로 조회한다. [cursor]를 주면 그보다 과거 구간을 잇는다.
+	 * [userId]는 조회한 사용자로, 받은 미수락 신청 건수([SelfIntroPostPage.receivedPendingChatRequestCount]) 산출에만 쓴다.
+	 */
+	fun getPosts(userId: Long, cursor: Long?): SelfIntroPostPage
 
 	/**
 	 * 셀소 상세 한 건을 조회한다. 없거나 삭제됐으면 404를 던진다.

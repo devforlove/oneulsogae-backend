@@ -70,13 +70,14 @@ class SelfIntroPostController(
 	/** 라운지 그리드용 셀소 목록을 최신순 한 페이지(24개) 조회한다. */
 	@Operation(
 		summary = "셀소 목록 조회",
-		description = "라운지 그리드용 셀소 목록을 최신순으로 24개씩 내려준다. 각 항목은 글 식별자(postId)·작성자 닉네임·좋아요 수·대표 사진 열람용 URL(presigned)을 담는다. 다음 페이지는 응답의 nextCursor를 cursor 파라미터로 그대로 넘겨 조회한다(hasNext=false면 마지막 페이지).",
+		description = "라운지 그리드용 셀소 목록을 최신순으로 24개씩 내려준다. 각 항목은 글 식별자(postId)·작성자 닉네임·좋아요 수·대표 사진 열람용 URL(presigned)을 담는다. 응답 루트의 receivedPendingChatRequestCount는 요청한 사용자가 자기 셀소로 받은 신청 중 아직 수락하지 않은 건수(내가 쓴 모든 셀소 합산)로, '받은 신청' 배지에 쓴다. 다음 페이지는 응답의 nextCursor를 cursor 파라미터로 그대로 넘겨 조회한다(hasNext=false면 마지막 페이지).",
 	)
 	@GetMapping("/self-intro-posts")
 	fun getSelfIntroPosts(
+		@LoginUser user: AuthUser,
 		@RequestParam("cursor", required = false) cursor: Long?,
 	): ApiResponse<SelfIntroPostPageResponse> =
-		ApiResponse.success(SelfIntroPostPageResponse.of(getSelfIntroPostsUseCase.getPosts(cursor)))
+		ApiResponse.success(SelfIntroPostPageResponse.of(getSelfIntroPostsUseCase.getPosts(user.id, cursor)))
 
 	/** 셀소 상세 한 건을 조회한다. */
 	@Operation(

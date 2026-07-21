@@ -1,12 +1,15 @@
 package com.org.oneulsogae.api.lounge
 
 import com.org.oneulsogae.common.integration.AbstractIntegrationSupport
+import com.org.oneulsogae.common.lounge.LoungeChatRequestStatus
 import com.org.oneulsogae.infra.fixture.IntegrationUtil
+import com.org.oneulsogae.infra.fixture.LoungeChatRequestEntityFixture
 import com.org.oneulsogae.infra.fixture.LoungePostEntityFixture
 import com.org.oneulsogae.infra.fixture.LoungePostImageEntityFixture
 import com.org.oneulsogae.infra.fixture.UserDetailEntityFixture
 import com.org.oneulsogae.infra.fixture.UserEntityFixture
 import com.org.oneulsogae.infra.lounge.command.entity.LoungePostEntity
+import com.org.oneulsogae.infra.lounge.command.entity.QLoungeChatRequestEntity
 import com.org.oneulsogae.infra.lounge.command.entity.QLoungePostEntity
 import com.org.oneulsogae.infra.lounge.command.entity.QLoungePostImageEntity
 import io.restassured.RestAssured
@@ -21,8 +24,14 @@ import org.hamcrest.Matchers
 class GetSelfIntroPostsE2ETest : AbstractIntegrationSupport({
 
 	beforeSpec {
+		IntegrationUtil.deleteAll(QLoungeChatRequestEntity.loungeChatRequestEntity)
 		IntegrationUtil.deleteAll(QLoungePostImageEntity.loungePostImageEntity)
 		IntegrationUtil.deleteAll(QLoungePostEntity.loungePostEntity)
+	}
+
+	// 배지 케이스가 만든 신청 행을 정리한다. (같은 글에 두 번 신청할 수 없어 다음 실행에 걸리지 않도록)
+	afterTest {
+		IntegrationUtil.deleteAll(QLoungeChatRequestEntity.loungeChatRequestEntity)
 	}
 
 	describe("GET /lounge/v1/self-intro-posts") {
@@ -87,6 +96,59 @@ class GetSelfIntroPostsE2ETest : AbstractIntegrationSupport({
 					.body("data.items[0].postId", Matchers.equalTo(post.id!!.toInt()))
 					.body("data.items[0].authorNickname", Matchers.equalTo("사진없음"))
 					.body("data.items[0].imageUrl", Matchers.nullValue())
+			}
+		}
+
+		context("내 셀소 두 건에 미수락 신청 3건과 수락된 신청 1건이 있으면") {
+			it("받은 신청 배지는 미수락 3건만 세고, 남의 글에 온 신청은 세지 않는다") {
+				val authorId: Long = IntegrationUtil.persist(UserEntityFixture.create(providerId = "lounge-list-badge-1")).id!!
+				val otherAuthorId: Long = IntegrationUtil.persist(UserEntityFixture.create(providerId = "lounge-list-badge-2")).id!!
+				val firstPost: LoungePostEntity = IntegrationUtil.persist(LoungePostEntityFixture.create(userId = authorId))
+				val secondPost: LoungePostEntity = IntegrationUtil.persist(LoungePostEntityFixture.create(userId = authorId))
+				val otherPost: LoungePostEntity = IntegrationUtil.persist(LoungePostEntityFixture.create(userId = otherAuthorId))
+
+				// 내 글 두 건에 걸쳐 미수락 3건. (합산되는지 확인)
+				val requesterIds: List<Long> = (1..3).map { index: Int ->
+					IntegrationUtil.persist(UserEntityFixture.create(providerId = "lounge-list-badge-req-$index")).id!!
+				}
+				IntegrationUtil.persist(
+					LoungeChatRequestEntityFixture.create(postId = firstPost.id!!, requesterUserId = requesterIds[0]),
+				)
+				IntegrationUtil.persist(
+					LoungeChatRequestEntityFixture.create(postId = firstPost.id!!, requesterUserId = requesterIds[1]),
+				)
+				IntegrationUtil.persist(
+					LoungeChatRequestEntityFixture.create(postId = secondPost.id!!, requesterUserId = requesterIds[2]),
+				)
+				// 이미 수락한 신청은 배지에서 빠진다.
+				val acceptedRequesterId: Long =
+					IntegrationUtil.persist(UserEntityFixture.create(providerId = "lounge-list-badge-req-4")).id!!
+				IntegrationUtil.persist(
+					LoungeChatRequestEntityFixture.create(
+						postId = secondPost.id!!,
+						requesterUserId = acceptedRequesterId,
+						status = LoungeChatRequestStatus.ACCEPTED,
+					),
+				)
+				// 남의 글에 온 신청은 내 배지와 무관하다.
+				IntegrationUtil.persist(
+					LoungeChatRequestEntityFixture.create(postId = otherPost.id!!, requesterUserId = requesterIds[0]),
+				)
+
+				RestAssured.given()
+					.header("Authorization", "Bearer ${accessTokenFor(authorId)}")
+					.get("/lounge/v1/self-intro-posts")
+					.then()
+					.statusCode(200)
+					.body("data.receivedPendingChatRequestCount", Matchers.equalTo(3))
+
+				// 신청을 하나도 받지 않은 사용자에게는 0으로 내려간다.
+				RestAssured.given()
+					.header("Authorization", "Bearer ${accessTokenFor(requesterIds[0])}")
+					.get("/lounge/v1/self-intro-posts")
+					.then()
+					.statusCode(200)
+					.body("data.receivedPendingChatRequestCount", Matchers.equalTo(0))
 			}
 		}
 	}

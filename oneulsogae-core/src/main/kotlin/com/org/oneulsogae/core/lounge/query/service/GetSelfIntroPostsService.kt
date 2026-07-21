@@ -25,10 +25,11 @@ class GetSelfIntroPostsService(
 	private val timeGenerator: TimeGenerator,
 ) : GetSelfIntroPostsUseCase {
 
-	override fun getPosts(cursor: Long?): SelfIntroPostPage {
+	override fun getPosts(userId: Long, cursor: Long?): SelfIntroPostPage {
 		val rows: List<SelfIntroPostView> = getSelfIntroPostDao.findPage(cursor, PAGE_SIZE + 1)
 		return SelfIntroPostPage.of(rows, PAGE_SIZE)
 			.withImageUrls { imageKey: String -> loungeImageUrlPort.presignedGetUrl(imageKey) }
+			.withReceivedPendingChatRequestCount(getSelfIntroPostDao.countReceivedPendingChatRequests(userId))
 	}
 
 	override fun getPost(userId: Long, postId: Long): SelfIntroPostDetailView {

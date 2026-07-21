@@ -1,5 +1,6 @@
 package com.org.oneulsogae.infra.lounge.query
 
+import com.org.oneulsogae.common.lounge.LoungeChatRequestStatus
 import com.org.oneulsogae.common.lounge.LoungePostType
 import com.org.oneulsogae.core.lounge.query.dao.GetSelfIntroPostDao
 import com.org.oneulsogae.core.lounge.query.dto.SelfIntroPostDetailView
@@ -108,6 +109,26 @@ class GetSelfIntroPostDaoImpl(
 			.from(request)
 			.where(request.postId.eq(postId), request.requesterUserId.eq(requesterUserId))
 			.fetchFirst() != null
+	}
+
+	/*
+	 * 내가 쓴 셀소(lounge_posts)를 idx_user_id로 seek한 뒤, 글마다 신청을 idx_post_id_id로 이어 세고 status를 필터한다.
+	 * 셀소는 24시간에 한 건만 등록할 수 있어 구동 테이블(내 글)이 작으므로, status 전용 인덱스 없이도 신청 행 스캔 범위가 글 단위로 제한된다.
+	 */
+	override fun countReceivedPendingChatRequests(authorUserId: Long): Int {
+		val post: QLoungePostEntity = QLoungePostEntity.loungePostEntity
+		val request: QLoungeChatRequestEntity = QLoungeChatRequestEntity.loungeChatRequestEntity
+		return queryFactory
+			.select(request.count())
+			.from(post)
+			.join(request).on(request.postId.eq(post.id))
+			.where(
+				post.userId.eq(authorUserId),
+				post.type.eq(LoungePostType.SELF_INTRO),
+				request.status.eq(LoungeChatRequestStatus.PENDING),
+			)
+			.fetchFirst()
+			?.toInt() ?: 0
 	}
 
 	companion object {

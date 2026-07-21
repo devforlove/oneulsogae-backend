@@ -9,6 +9,11 @@ class SelfIntroPostPage private constructor(
 	val values: List<SelfIntroPostView>,
 	/** 다음(더 과거) 페이지가 있는지 여부. */
 	val hasNext: Boolean,
+	/**
+	 * 조회한 사용자가 자기 셀소로 받은 신청 중 **아직 수락하지 않은(PENDING)** 건수. 서비스가 채운다.
+	 * 내가 쓴 모든 셀소를 합산한 값이며, 목록 화면의 "받은 신청" 배지에 쓴다. (수락하면 줄어든다)
+	 */
+	val receivedPendingChatRequestCount: Int = 0,
 ) {
 
 	/** 다음(더 과거) 페이지 조회의 기준 커서. 현재 페이지 마지막(가장 오래된) 글의 postId이며, 다음 페이지가 없으면 null. */
@@ -22,7 +27,12 @@ class SelfIntroPostPage private constructor(
 				view.copy(imageUrl = view.imageKey?.let(presign))
 			},
 			hasNext = hasNext,
+			receivedPendingChatRequestCount = receivedPendingChatRequestCount,
 		)
+
+	/** 조회한 사용자가 받은 미수락 신청 건수를 반영한 페이지를 만든다. */
+	fun withReceivedPendingChatRequestCount(count: Int): SelfIntroPostPage =
+		SelfIntroPostPage(values = values, hasNext = hasNext, receivedPendingChatRequestCount = count)
 
 	companion object {
 

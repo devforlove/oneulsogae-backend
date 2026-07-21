@@ -23,4 +23,10 @@ interface GetSelfIntroPostDao {
 	 * 상태(PENDING/ACCEPTED)는 구분하지 않는다 — 어느 쪽이든 다시 신청할 수 없기 때문이다.
 	 */
 	fun existsChatRequest(postId: Long, requesterUserId: Long): Boolean
+
+	/**
+	 * [authorUserId]가 자기 셀소로 받은 신청 중 아직 수락하지 않은(PENDING) 건수. (목록 화면 배지용)
+	 * 내가 쓴 모든 셀소를 합산한다.
+	 */
+	fun countReceivedPendingChatRequests(authorUserId: Long): Int
 }
