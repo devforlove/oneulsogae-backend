@@ -48,6 +48,11 @@ class CoinCompleteE2ETest : AbstractIntegrationSupport({
 			.fetch().size
 	}
 
+	fun coinPaymentCountOf(userId: Long): Int {
+		val payment: QCoinPaymentEntity = QCoinPaymentEntity.coinPaymentEntity
+		return IntegrationUtil.getQuery().selectFrom(payment).where(payment.userId.eq(userId)).fetch().size
+	}
+
 	describe("POST /payments/v1/coin/complete") {
 
 		context("PG 승인이 성공하면") {
@@ -119,6 +124,123 @@ class CoinCompleteE2ETest : AbstractIntegrationSupport({
 				// 코인 미지급: 잔액 행·적립 이력이 생기지 않는다.
 				balanceOf(userId) shouldBe null
 				purchaseHistoryCountOf(userId) shouldBe 0
+			}
+		}
+
+		context("이미 APPROVED된 paymentKey로 다시 접수하면(성공 URL 새로고침)") {
+			it("코인을 다시 지급하지 않고 기존 결제 결과와 현재 잔액을 200으로 반환한다") {
+				val userId: Long = 8005L
+				val itemId: Long = persistCoinItem()
+				val body: String = """{"itemId": $itemId, "paymentKey": "coin_key_dup", "orderId": "ord_coin_key_dup"}"""
+
+				post("/payments/v1/coin/complete") {
+					bearer(accessTokenFor(userId))
+					jsonBody(body)
+				} expect { status(200) }
+
+				post("/payments/v1/coin/complete") {
+					bearer(accessTokenFor(userId))
+					jsonBody(body)
+				} expect {
+					status(200)
+					body("success", true)
+					body("data.amount", 10000)
+					body("data.coinAmount", 100)
+					body("data.balance", 100)
+				}
+
+				// 이중 기록·이중 지급이 없다.
+				coinPaymentCountOf(userId) shouldBe 1
+				purchaseHistoryCountOf(userId) shouldBe 1
+				balanceOf(userId) shouldBe 100
+			}
+		}
+
+		context("FAILED로 남은 paymentKey로 다시 접수하면") {
+			it("PG를 다시 호출하지 않고 402 PAYMENTS-004를 반환한다") {
+				val userId: Long = 8006L
+				val itemId: Long = persistCoinItem()
+				val body: String = """{"itemId": $itemId, "paymentKey": "coin_key_refail", "orderId": "ord_coin_key_refail"}"""
+				FakePaymentGateway.result = FakePaymentGateway.REJECTED
+
+				post("/payments/v1/coin/complete") {
+					bearer(accessTokenFor(userId))
+					jsonBody(body)
+				} expect { status(402) }
+
+				// PG가 승인으로 바뀌어도 이미 실패로 확정된 인증키는 재승인하지 않는다.
+				FakePaymentGateway.result = FakePaymentGateway.APPROVED
+
+				post("/payments/v1/coin/complete") {
+					bearer(accessTokenFor(userId))
+					jsonBody(body)
+				} expect {
+					status(402)
+					body("error.code", "PAYMENTS-004")
+				}
+
+				coinPaymentCountOf(userId) shouldBe 1
+				balanceOf(userId) shouldBe null
+				purchaseHistoryCountOf(userId) shouldBe 0
+			}
+		}
+
+		context("PENDING으로 남은 paymentKey로 접수하면") {
+			it("409 PAYMENTS-005를 반환하고 코인을 지급하지 않는다") {
+				val userId: Long = 8007L
+				val itemId: Long = persistCoinItem()
+				IntegrationUtil.persist(
+					CoinPaymentEntity(
+						userId = userId,
+						itemId = itemId,
+						coinAmount = 100,
+						paymentKey = "coin_key_pending",
+						orderId = "ord_coin_key_pending",
+						amount = 10000,
+						status = PaymentStatus.PENDING,
+					),
+				)
+
+				post("/payments/v1/coin/complete") {
+					bearer(accessTokenFor(userId))
+					jsonBody("""{"itemId": $itemId, "paymentKey": "coin_key_pending", "orderId": "ord_coin_key_pending"}""")
+				} expect {
+					status(409)
+					body("error.code", "PAYMENTS-005")
+				}
+
+				coinPaymentCountOf(userId) shouldBe 1
+				balanceOf(userId) shouldBe null
+			}
+		}
+
+		context("다른 사용자의 paymentKey로 접수하면") {
+			it("409 PAYMENTS-005를 반환하고 남의 결제 결과를 재생하지 않는다") {
+				val ownerId: Long = 8008L
+				val otherId: Long = 8009L
+				val itemId: Long = persistCoinItem()
+				IntegrationUtil.persist(
+					CoinPaymentEntity(
+						userId = ownerId,
+						itemId = itemId,
+						coinAmount = 100,
+						paymentKey = "coin_key_owner",
+						orderId = "ord_coin_key_owner",
+						amount = 10000,
+						status = PaymentStatus.APPROVED,
+					),
+				)
+
+				post("/payments/v1/coin/complete") {
+					bearer(accessTokenFor(otherId))
+					jsonBody("""{"itemId": $itemId, "paymentKey": "coin_key_owner", "orderId": "ord_coin_key_owner"}""")
+				} expect {
+					status(409)
+					body("error.code", "PAYMENTS-005")
+				}
+
+				coinPaymentCountOf(otherId) shouldBe 0
+				balanceOf(otherId) shouldBe null
 			}
 		}
 

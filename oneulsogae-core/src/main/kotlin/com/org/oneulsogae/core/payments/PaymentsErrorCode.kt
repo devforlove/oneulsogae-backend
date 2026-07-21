@@ -24,4 +24,7 @@ enum class PaymentsErrorCode(
 
 	/** PG 최종 승인(confirm) 실패. 좌석은 복원되고 청구되지 않는다. */
 	PAYMENT_CONFIRM_FAILED("PAYMENTS-004", "결제 승인에 실패했습니다. 다시 시도해주세요.", HttpStatus.PAYMENT_REQUIRED),
+
+	/** 같은 paymentKey가 이미 접수돼 승인 대기(PENDING) 중이거나 다른 사용자의 결제다. 재생하지 않는다. */
+	PAYMENT_ALREADY_RECEIVED("PAYMENTS-005", "이미 접수된 결제입니다. 잠시 후 다시 확인해주세요.", HttpStatus.CONFLICT),
 }

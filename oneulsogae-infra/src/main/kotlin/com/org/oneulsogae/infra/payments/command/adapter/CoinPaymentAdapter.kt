@@ -1,5 +1,6 @@
 package com.org.oneulsogae.infra.payments.command.adapter
 
+import com.org.oneulsogae.core.payments.command.application.port.out.GetCoinPaymentPort
 import com.org.oneulsogae.core.payments.command.application.port.out.SaveCoinPaymentPort
 import com.org.oneulsogae.core.payments.command.application.port.out.UpdateCoinPaymentStatusPort
 import com.org.oneulsogae.core.payments.command.domain.CoinPayment
@@ -11,12 +12,12 @@ import org.springframework.transaction.annotation.Transactional
 
 /**
  * [CoinPaymentEntity]의 command 영속성 어댑터. (엔티티당 어댑터 하나)
- * 코인 구매 결제 기록 저장([SaveCoinPaymentPort])·상태 전이([UpdateCoinPaymentStatusPort]) out-port를 구현한다.
+ * 코인 구매 결제 기록 저장([SaveCoinPaymentPort])·상태 전이([UpdateCoinPaymentStatusPort])·조회([GetCoinPaymentPort]) out-port를 구현한다.
  */
 @Component
 class CoinPaymentAdapter(
 	private val coinPaymentJpaRepository: CoinPaymentJpaRepository,
-) : SaveCoinPaymentPort, UpdateCoinPaymentStatusPort {
+) : SaveCoinPaymentPort, UpdateCoinPaymentStatusPort, GetCoinPaymentPort {
 
 	override fun save(coinPayment: CoinPayment): CoinPayment {
 		val saved: CoinPaymentEntity = coinPaymentJpaRepository.save(
@@ -30,17 +31,12 @@ class CoinPaymentAdapter(
 				status = coinPayment.status,
 			),
 		)
-		return CoinPayment(
-			id = saved.id,
-			userId = saved.userId,
-			itemId = saved.itemId,
-			coinAmount = saved.coinAmount,
-			amount = saved.amount,
-			paymentKey = saved.paymentKey,
-			orderId = saved.orderId,
-			status = saved.status,
-		)
+		return saved.toDomain()
 	}
+
+	@Transactional(readOnly = true)
+	override fun findByPaymentKey(paymentKey: String): CoinPayment? =
+		coinPaymentJpaRepository.findByPaymentKey(paymentKey)?.toDomain()
 
 	@Transactional
 	override fun updateStatus(coinPaymentId: Long, status: PaymentStatus, failReason: String?) {
@@ -52,4 +48,16 @@ class CoinPaymentAdapter(
 			entity.failReason = failReason.take(CoinPaymentEntity.FAIL_REASON_MAX_LENGTH)
 		}
 	}
+
+	private fun CoinPaymentEntity.toDomain(): CoinPayment =
+		CoinPayment(
+			id = id,
+			userId = userId,
+			itemId = itemId,
+			coinAmount = coinAmount,
+			amount = amount,
+			paymentKey = paymentKey,
+			orderId = orderId,
+			status = status,
+		)
 }

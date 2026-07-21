@@ -15,4 +15,14 @@ class CoinPayment(
 	val paymentKey: String,
 	val orderId: String,
 	val status: PaymentStatus,
-)
+) {
+
+	/** 이 기록의 주인이 [userId]인지. 같은 paymentKey 재접수의 재생 가부를 가른다. */
+	fun isOwnedBy(userId: Long): Boolean = this.userId == userId
+
+	/** PG 승인·코인 지급까지 끝난 기록인지. (APPROVED 전이는 적립 이후에만 일어난다) */
+	fun isApproved(): Boolean = status == PaymentStatus.APPROVED
+
+	/** PG 승인이 실패로 확정된 기록인지. 같은 인증키는 재승인되지 않는다. */
+	fun isFailed(): Boolean = status == PaymentStatus.FAILED
+}

@@ -94,7 +94,8 @@ class PaymentsController(
 		summary = "코인 결제완료 접수",
 		description = "코인 구매 결제 완료를 접수해 PG 최종 승인(confirm)을 받고, 성공 시 구매한 코인을 즉시 잔액에 적립한다. " +
 			"상품은 itemId로 지정한다(코인 체크아웃의 item.id). 실결제가는 서버가 상품 할인가로 확정한다. " +
-			"코인 상품 없음 404(COIN-004), 결제 승인 실패 402(PAYMENTS-004).",
+			"paymentKey 기준 멱등: 이미 승인된 키의 재접수(성공 URL 새로고침 등)는 재지급 없이 기존 결제 내역과 현재 잔액을 200으로 반환한다. " +
+			"코인 상품 없음 404(COIN-004), 결제 승인 실패 402(PAYMENTS-004), 이미 접수돼 승인 대기 중이거나 타인의 paymentKey 409(PAYMENTS-005).",
 	)
 	@PostMapping("/coin/complete")
 	fun completeCoinPurchase(
