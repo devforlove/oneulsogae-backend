@@ -8,12 +8,15 @@ import com.org.oneulsogae.common.user.Gender
  * - [recommendedTeams]: 팀 카드 목록(최신순, 없으면 빈 리스트). 결성 팀이 없으면 추천된 결성(ACTIVE) 팀, 결성 팀이 있으면 그 팀과 진행 중으로 매칭된 상대 팀.
  * - [receivedInvitationCount]: 내가 INVITED 구성원인 INVITING 팀 개수.
  * - [myTeam]: 내 가장 최근 팀(결성(ACTIVE) 또는 내가 만든 초대중(INVITING)). 없으면 null.
+ * - [companyVerified]: 조회한 사용자의 회사 인증 완료 여부.
  * query 전용 view이며 command 도메인을 참조하지 않는다.
  */
 data class MeetingTab(
 	val recommendedTeams: List<RecommendedTeam>,
 	val receivedInvitationCount: Long,
 	val myTeam: MyTeam?,
+	/** 조회한 사용자가 회사 인증을 마쳤는지 여부. 프론트엔드가 미인증 사용자 화면을 분기하는 데 쓴다. */
+	val companyVerified: Boolean,
 )
 
 /**

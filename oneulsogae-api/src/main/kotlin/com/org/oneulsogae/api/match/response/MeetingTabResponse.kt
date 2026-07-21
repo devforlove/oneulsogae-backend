@@ -16,6 +16,8 @@ data class MeetingTabResponse(
 	val recommendedTeams: List<RecommendedTeamResponse>,
 	val receivedInvitationCount: Long,
 	val myTeam: MyTeamResponse?,
+	/** 요청한 사용자가 회사 인증을 마쳤는지 여부. 미인증이면 프론트엔드가 이용 제한 화면으로 분기한다. */
+	val companyVerified: Boolean,
 ) {
 
 	/** 내 팀(결성(ACTIVE)·초대중(INVITING)·해체중(DISBANDED))의 표시 데이터. 팀 상태·성별과 내/상대(친구 또는 초대 대상) 프로필 이미지 코드. */
@@ -43,6 +45,7 @@ data class MeetingTabResponse(
 						partnerProfileImageCode = team.partnerProfileImageCode,
 					)
 				},
+				companyVerified = meetingTab.companyVerified,
 			)
 	}
 }

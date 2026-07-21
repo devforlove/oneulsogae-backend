@@ -10,6 +10,7 @@ import com.org.oneulsogae.core.teammatch.query.dto.MeetingTab
 import com.org.oneulsogae.core.teammatch.query.dto.MyTeam
 import com.org.oneulsogae.core.teammatch.query.dto.RecommendedTeam
 import com.org.oneulsogae.core.teammatch.query.service.port.`in`.GetMeetingTabUseCase
+import com.org.oneulsogae.core.user.query.service.port.`in`.CheckCompanyVerifiedUseCase
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 
@@ -27,6 +28,7 @@ class GetMeetingTabService(
 	private val getReceivedInvitationsDao: GetReceivedInvitationsDao,
 	private val getMyTeamDao: GetMyTeamDao,
 	private val timeGenerator: TimeGenerator,
+	private val checkCompanyVerifiedUseCase: CheckCompanyVerifiedUseCase,
 ) : GetMeetingTabUseCase {
 
 	override fun get(userId: Long): MeetingTab {
@@ -36,6 +38,8 @@ class GetMeetingTabService(
 			recommendedTeams = teamCardsFor(userId, myTeam),
 			receivedInvitationCount = getReceivedInvitationsDao.countInvited(userId),
 			myTeam = myTeam,
+			// 회사 인증 여부는 user 도메인 in-port로 읽는다. (미인증 사용자 화면 분기용 플래그)
+			companyVerified = checkCompanyVerifiedUseCase.isCompanyVerified(userId),
 		)
 	}
 

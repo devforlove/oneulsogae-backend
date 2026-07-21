@@ -356,6 +356,38 @@ class GetMeetingTabE2ETest : AbstractIntegrationSupport({
 				}
 			}
 		}
+
+		context("요청자 프로필에 회사명이 있으면") {
+			it("companyVerified=true를 내려준다") {
+				val userId = 9101L
+				IntegrationUtil.persist(
+					UserDetailEntityFixture.create(userId = userId, gender = Gender.MALE, companyName = "오늘소개"),
+				)
+
+				get("/team-matches/v1/meeting-tab") {
+					bearer(accessTokenFor(userId))
+				} expect {
+					status(200)
+					body("data.companyVerified", true)
+				}
+			}
+		}
+
+		context("요청자 프로필에 회사명이 없으면") {
+			it("companyVerified=false를 내려준다") {
+				val userId = 9102L
+				IntegrationUtil.persist(
+					UserDetailEntityFixture.create(userId = userId, gender = Gender.MALE),
+				)
+
+				get("/team-matches/v1/meeting-tab") {
+					bearer(accessTokenFor(userId))
+				} expect {
+					status(200)
+					body("data.companyVerified", false)
+				}
+			}
+		}
 	}
 
 	afterTest {
