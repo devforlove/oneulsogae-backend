@@ -9,6 +9,8 @@ import com.org.oneulsogae.core.solomatch.query.dao.GetMatchWithPartnerDao
 import com.org.oneulsogae.core.user.query.service.port.`in`.GetUserWithDetailUseCase
 import com.org.oneulsogae.core.solomatch.query.dto.MatchWithPartner
 import com.org.oneulsogae.core.solomatch.query.dto.MatchesWithPartner
+import com.org.oneulsogae.core.solomatch.query.dto.MyMatches
+import com.org.oneulsogae.core.user.query.service.port.`in`.CheckCompanyVerifiedUseCase
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import java.time.LocalDateTime
@@ -27,10 +29,11 @@ class GetMatchesService(
 	private val getMatchWithPartnerDao: GetMatchWithPartnerDao,
 	private val timeGenerator: TimeGenerator,
 	private val domainEventPublisher: DomainEventPublisher,
+	private val checkCompanyVerifiedUseCase: CheckCompanyVerifiedUseCase,
 ) : GetMatchesUseCase {
 
 	@Transactional(readOnly = true)
-	override fun getMatches(userId: Long): List<MatchWithPartner> {
+	override fun getMatches(userId: Long): MyMatches {
 		// 상대 프로필 표시 조인에 필요한 요청자 성별은 user 도메인 in-port로 읽는다. (표시 경로는 user_details에 의존)
 		val gender: Gender = getUserWithDetailUseCase.getByUserId(userId).getGender()
 		val now: LocalDateTime = timeGenerator.now()
@@ -45,6 +48,10 @@ class GetMatchesService(
 			}
 
 		// 노출 순서 규칙(상태 우선순위 → 최신순)은 일급 컬렉션이 캡슐화한다.
-		return MatchesWithPartner(matches).sortedForDisplay()
+		// 회사 인증 여부는 user 도메인 in-port로 읽어 화면 분기용 플래그로 함께 내려준다.
+		return MyMatches(
+			companyVerified = checkCompanyVerifiedUseCase.isCompanyVerified(userId),
+			matches = MatchesWithPartner(matches).sortedForDisplay(),
+		)
 	}
 }

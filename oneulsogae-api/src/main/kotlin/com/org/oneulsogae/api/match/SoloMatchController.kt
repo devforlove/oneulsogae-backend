@@ -2,7 +2,7 @@ package com.org.oneulsogae.api.match
 
 import com.org.oneulsogae.api.match.response.ExtraIntroCandidatesResponse
 import com.org.oneulsogae.api.match.response.ExtraIntroResponse
-import com.org.oneulsogae.api.match.response.MatchResponse
+import com.org.oneulsogae.api.match.response.MatchListResponse
 import com.org.oneulsogae.api.match.response.MatchStatusResponse
 import com.org.oneulsogae.auth.AuthUser
 import com.org.oneulsogae.auth.LoginUser
@@ -44,12 +44,12 @@ class SoloMatchController(
 	 * 내 매칭 목록을 조회한다. (부수효과 없는 순수 조회)
 	 * 온보딩 직후 첫 매칭 자동 소개는 더 이상 이 조회가 아니라 회사 이메일 인증 완료 시점에 생성된다.
 	 */
-	@Operation(summary = "내 매칭 목록 조회", description = "내 매칭 목록을 반환한다.")
+	@Operation(summary = "내 매칭 목록 조회", description = "내 매칭 목록과 요청자의 회사 인증 여부를 반환한다.")
 	@GetMapping
 	fun myMatches(
 		@LoginUser user: AuthUser,
-	): ApiResponse<List<MatchResponse>> =
-		ApiResponse.success(MatchResponse.listOf(getMatchesUseCase.getMatches(user.id), timeGenerator.today()))
+	): ApiResponse<MatchListResponse> =
+		ApiResponse.success(MatchListResponse.of(getMatchesUseCase.getMatches(user.id), timeGenerator.today()))
 
 	/**
 	 * 소개받은 매칭에 관심을 보낸다. (신청/수락 통합)

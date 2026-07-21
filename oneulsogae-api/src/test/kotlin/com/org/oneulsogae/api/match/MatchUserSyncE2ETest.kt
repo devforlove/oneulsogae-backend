@@ -151,9 +151,9 @@ class MatchUserSyncE2ETest(
 				} expect {
 					status(200)
 					body("success", true)
-					body("data.size()", 1)
-					body("data[0].partner.userId", candidateUserId.toInt())
-					body("data[0].partner.nickname", "영희")
+					body("data.matches.size()", 1)
+					body("data.matches[0].partner.userId", candidateUserId.toInt())
+					body("data.matches[0].partner.nickname", "영희")
 				}
 			}
 		}

@@ -93,9 +93,9 @@ class ExtraIntroIntegrationTest : AbstractIntegrationSupport({
 					bearer(accessTokenFor(requesterId))
 				} expect {
 					status(200)
-					body("data.size()", 1)
-					body("data[0].matchId", matchId)
-					body("data[0].partner.userId", partnerUserId)
+					body("data.matches.size()", 1)
+					body("data.matches[0].matchId", matchId)
+					body("data.matches[0].partner.userId", partnerUserId)
 				}
 			}
 		}

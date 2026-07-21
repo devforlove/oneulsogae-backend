@@ -4,8 +4,28 @@ import com.org.oneulsogae.common.match.MatchStatus
 import com.org.oneulsogae.common.user.Gender
 import com.org.oneulsogae.core.common.time.ageAt
 import com.org.oneulsogae.core.solomatch.query.dto.MatchWithPartner
+import com.org.oneulsogae.core.solomatch.query.dto.MyMatches
 import java.time.LocalDate
 import java.time.LocalDateTime
+
+/**
+ * 내 매칭 목록 응답. 목록과 함께 요청한 사용자의 회사 인증 여부를 담는다.
+ * 회사 인증을 마친 사용자만 소개 기능을 쓸 수 있어, 미인증이면 프론트엔드가 이용 제한 화면으로 분기한다.
+ */
+data class MatchListResponse(
+	/** 요청한 사용자가 회사 인증을 마쳤는지 여부. */
+	val companyVerified: Boolean,
+	val matches: List<MatchResponse>,
+) {
+	companion object {
+
+		fun of(myMatches: MyMatches, today: LocalDate): MatchListResponse =
+			MatchListResponse(
+				companyVerified = myMatches.companyVerified,
+				matches = MatchResponse.listOf(myMatches.matches, today),
+			)
+	}
+}
 
 /**
  * 매칭 응답/목록 조회 결과. 매칭 상태는 최상위에, 상대방 프로필은 [PartnerResponse]로 중첩해 담는다.

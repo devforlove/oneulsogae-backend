@@ -81,15 +81,15 @@ class GetMatchesE2ETest : AbstractIntegrationSupport({
 				} expect {
 					status(200)
 					body("success", true)
-					body("data.size()", 1)
-					body("data[0].matchId", matchId.toInt())
-					body("data[0].hasUserInterest", false)
-					body("data[0].hasPartnerInterest", true)
-					body("data[0].partner.userId", partnerUserId.toInt())
-					body("data[0].partner.nickname", "영희")
-					body("data[0].partner.traits", contains("요가", "등산"))
-					body("data[0].partner.interests", contains("재즈", "미술"))
-					body("data[0].partner.lastLoginAt", notNullValue())
+					body("data.matches.size()", 1)
+					body("data.matches[0].matchId", matchId.toInt())
+					body("data.matches[0].hasUserInterest", false)
+					body("data.matches[0].hasPartnerInterest", true)
+					body("data.matches[0].partner.userId", partnerUserId.toInt())
+					body("data.matches[0].partner.nickname", "영희")
+					body("data.matches[0].partner.traits", contains("요가", "등산"))
+					body("data.matches[0].partner.interests", contains("재즈", "미술"))
+					body("data.matches[0].partner.lastLoginAt", notNullValue())
 				}
 			}
 		}
@@ -135,9 +135,58 @@ class GetMatchesE2ETest : AbstractIntegrationSupport({
 					bearer(accessTokenFor(meUserId))
 				} expect {
 					status(200)
-					body("data.size()", 3)
-					body("data.status", contains("MATCHED", "PARTIALLY_ACCEPTED", "PROPOSED"))
-					body("data.matchId", contains(matchedId.toInt(), partiallyAcceptedId.toInt(), proposedId.toInt()))
+					body("data.matches.size()", 3)
+					body("data.matches.status", contains("MATCHED", "PARTIALLY_ACCEPTED", "PROPOSED"))
+					body("data.matches.matchId", contains(matchedId.toInt(), partiallyAcceptedId.toInt(), proposedId.toInt()))
+				}
+			}
+		}
+
+		context("요청자 프로필에 회사명이 있으면") {
+			it("companyVerified=true를 내려준다") {
+				val meUserId: Long = IntegrationUtil.persist(
+					UserEntityFixture.create(providerId = "matches-verified", status = UserStatus.ACTIVE),
+				).id!!
+				IntegrationUtil.persist(
+					UserDetailEntity(
+						userId = meUserId,
+						nickname = "인증회원",
+						gender = Gender.MALE,
+						birthday = LocalDate.of(1996, 1, 1),
+						companyName = "오늘소개",
+					),
+				)
+
+				get("/matches/v1") {
+					bearer(accessTokenFor(meUserId))
+				} expect {
+					status(200)
+					body("data.companyVerified", true)
+					body("data.matches.size()", 0)
+				}
+			}
+		}
+
+		context("요청자 프로필에 회사명이 없으면") {
+			it("companyVerified=false를 내려준다") {
+				val meUserId: Long = IntegrationUtil.persist(
+					UserEntityFixture.create(providerId = "matches-unverified", status = UserStatus.ACTIVE),
+				).id!!
+				IntegrationUtil.persist(
+					UserDetailEntity(
+						userId = meUserId,
+						nickname = "미인증회원",
+						gender = Gender.MALE,
+						birthday = LocalDate.of(1996, 1, 1),
+					),
+				)
+
+				get("/matches/v1") {
+					bearer(accessTokenFor(meUserId))
+				} expect {
+					status(200)
+					body("data.companyVerified", false)
+					body("data.matches.size()", 0)
 				}
 			}
 		}
