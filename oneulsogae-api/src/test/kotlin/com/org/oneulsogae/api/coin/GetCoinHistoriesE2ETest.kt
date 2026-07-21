@@ -50,10 +50,12 @@ class GetCoinHistoriesE2ETest : AbstractIntegrationSupport({
 					body("data.content[0].amount", -32)
 					body("data.content[0].coinUsageType", CoinUsageType.DATING_INIT.name)
 					body("data.content[0].coinGetType", nullValue())
+					body("data.content[0].typeDescription", CoinUsageType.DATING_INIT.description)
 					body("data.content[0].occurredAt", notNullValue())
 					body("data.content[1].amount", 10)
 					body("data.content[1].coinGetType", CoinGetType.DAILY.name)
 					body("data.content[1].coinUsageType", nullValue())
+					body("data.content[1].typeDescription", CoinGetType.DAILY.description)
 					body("data.hasNext", true)
 					body("data.nextCursor", fiftiethId.toInt())
 				}

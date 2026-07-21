@@ -38,6 +38,8 @@ data class CoinHistoryItemResponse(
 	val coinGetType: CoinGetType?,
 	/** 차감(사용) 유형. 적립 내역이면 null. */
 	val coinUsageType: CoinUsageType?,
+	/** 채워진 유형의 표시 문구. 적립이면 [CoinGetType.description], 차감이면 [CoinUsageType.description]. */
+	val typeDescription: String?,
 	/** 거래가 발생한 시각. */
 	val occurredAt: LocalDateTime,
 ) {
@@ -48,6 +50,7 @@ data class CoinHistoryItemResponse(
 				amount = history.amount,
 				coinGetType = history.coinGetType,
 				coinUsageType = history.coinUsageType,
+				typeDescription = history.coinGetType?.description ?: history.coinUsageType?.description,
 				occurredAt = history.occurredAt,
 			)
 	}
