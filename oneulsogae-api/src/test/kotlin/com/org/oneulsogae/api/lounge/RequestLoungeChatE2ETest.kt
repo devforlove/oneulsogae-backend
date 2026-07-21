@@ -32,6 +32,7 @@ class RequestLoungeChatE2ETest : AbstractIntegrationSupport({
 		IntegrationUtil.deleteAll(QLoungePostEntity.loungePostEntity)
 		IntegrationUtil.deleteAll(QCoinBalanceEntity.coinBalanceEntity)
 		IntegrationUtil.deleteAll(QCoinHistoryEntity.coinHistoryEntity)
+		IntegrationUtil.deleteAll(QUserDetailEntity.userDetailEntity)
 	}
 
 	describe("POST /lounge/v1/self-intro-posts/{postId}/chat-requests") {
@@ -42,7 +43,7 @@ class RequestLoungeChatE2ETest : AbstractIntegrationSupport({
 				val requesterId: Long = IntegrationUtil.persist(UserEntityFixture.create(providerId = "lounge-req-user-1")).id!!
 				// 이성에게만 신청할 수 있으므로 두 사람의 성별을 서로 다르게 둔다.
 				IntegrationUtil.persist(UserDetailEntityFixture.create(userId = authorId, gender = Gender.FEMALE))
-				IntegrationUtil.persist(UserDetailEntityFixture.create(userId = requesterId, gender = Gender.MALE))
+				IntegrationUtil.persist(UserDetailEntityFixture.create(userId = requesterId, gender = Gender.MALE, companyName = "오늘소개"))
 				IntegrationUtil.persist(CoinBalanceEntityFixture.create(userId = requesterId, balance = 100))
 				val post: LoungePostEntity = IntegrationUtil.persist(LoungePostEntityFixture.create(userId = authorId))
 
@@ -81,6 +82,8 @@ class RequestLoungeChatE2ETest : AbstractIntegrationSupport({
 		context("본인이 쓴 셀소에 신청하면") {
 			it("400(LOUNGE-009)을 반환한다") {
 				val authorId: Long = IntegrationUtil.persist(UserEntityFixture.create(providerId = "lounge-req-author-2")).id!!
+				// 회사 인증을 마쳐야 본인 글 차단(LOUNGE-009)까지 도달한다.
+				IntegrationUtil.persist(UserDetailEntityFixture.create(userId = authorId, gender = Gender.MALE, companyName = "오늘소개"))
 				IntegrationUtil.persist(CoinBalanceEntityFixture.create(userId = authorId, balance = 100))
 				val post: LoungePostEntity = IntegrationUtil.persist(LoungePostEntityFixture.create(userId = authorId))
 
@@ -99,7 +102,7 @@ class RequestLoungeChatE2ETest : AbstractIntegrationSupport({
 				val requesterId: Long = IntegrationUtil.persist(UserEntityFixture.create(providerId = "lounge-req-user-3")).id!!
 				// 이성에게만 신청할 수 있으므로 두 사람의 성별을 서로 다르게 둔다.
 				IntegrationUtil.persist(UserDetailEntityFixture.create(userId = authorId, gender = Gender.FEMALE))
-				IntegrationUtil.persist(UserDetailEntityFixture.create(userId = requesterId, gender = Gender.MALE))
+				IntegrationUtil.persist(UserDetailEntityFixture.create(userId = requesterId, gender = Gender.MALE, companyName = "오늘소개"))
 				IntegrationUtil.persist(CoinBalanceEntityFixture.create(userId = requesterId, balance = 100))
 				val post: LoungePostEntity = IntegrationUtil.persist(LoungePostEntityFixture.create(userId = authorId))
 
@@ -131,7 +134,7 @@ class RequestLoungeChatE2ETest : AbstractIntegrationSupport({
 				val requesterId: Long = IntegrationUtil.persist(UserEntityFixture.create(providerId = "lounge-req-user-4")).id!!
 				// 이성에게만 신청할 수 있으므로 두 사람의 성별을 서로 다르게 둔다.
 				IntegrationUtil.persist(UserDetailEntityFixture.create(userId = authorId, gender = Gender.FEMALE))
-				IntegrationUtil.persist(UserDetailEntityFixture.create(userId = requesterId, gender = Gender.MALE))
+				IntegrationUtil.persist(UserDetailEntityFixture.create(userId = requesterId, gender = Gender.MALE, companyName = "오늘소개"))
 				IntegrationUtil.persist(CoinBalanceEntityFixture.create(userId = requesterId, balance = 5))
 				val post: LoungePostEntity = IntegrationUtil.persist(LoungePostEntityFixture.create(userId = authorId))
 
@@ -157,7 +160,7 @@ class RequestLoungeChatE2ETest : AbstractIntegrationSupport({
 				val authorId: Long = IntegrationUtil.persist(UserEntityFixture.create(providerId = "lounge-req-author-6")).id!!
 				val requesterId: Long = IntegrationUtil.persist(UserEntityFixture.create(providerId = "lounge-req-user-6")).id!!
 				IntegrationUtil.persist(UserDetailEntityFixture.create(userId = authorId, gender = Gender.MALE))
-				IntegrationUtil.persist(UserDetailEntityFixture.create(userId = requesterId, gender = Gender.MALE))
+				IntegrationUtil.persist(UserDetailEntityFixture.create(userId = requesterId, gender = Gender.MALE, companyName = "오늘소개"))
 				IntegrationUtil.persist(CoinBalanceEntityFixture.create(userId = requesterId, balance = 100))
 				val post: LoungePostEntity = IntegrationUtil.persist(LoungePostEntityFixture.create(userId = authorId))
 
@@ -181,7 +184,7 @@ class RequestLoungeChatE2ETest : AbstractIntegrationSupport({
 			it("400(LOUNGE-014)으로 막는다") {
 				val authorId: Long = IntegrationUtil.persist(UserEntityFixture.create(providerId = "lounge-req-author-7")).id!!
 				val requesterId: Long = IntegrationUtil.persist(UserEntityFixture.create(providerId = "lounge-req-user-7")).id!!
-				IntegrationUtil.persist(UserDetailEntityFixture.create(userId = requesterId, gender = Gender.MALE))
+				IntegrationUtil.persist(UserDetailEntityFixture.create(userId = requesterId, gender = Gender.MALE, companyName = "오늘소개"))
 				IntegrationUtil.persist(CoinBalanceEntityFixture.create(userId = requesterId, balance = 100))
 				// 작성자 프로필(성별)이 없다.
 				val post: LoungePostEntity = IntegrationUtil.persist(LoungePostEntityFixture.create(userId = authorId))
@@ -198,6 +201,8 @@ class RequestLoungeChatE2ETest : AbstractIntegrationSupport({
 		context("없는 글에 신청하면") {
 			it("404(LOUNGE-008)를 반환한다") {
 				val requesterId: Long = IntegrationUtil.persist(UserEntityFixture.create(providerId = "lounge-req-user-5")).id!!
+				// 회사 인증을 마쳐야 글 존재 확인(LOUNGE-008)까지 도달한다.
+				IntegrationUtil.persist(UserDetailEntityFixture.create(userId = requesterId, gender = Gender.MALE, companyName = "오늘소개"))
 				IntegrationUtil.persist(CoinBalanceEntityFixture.create(userId = requesterId, balance = 100))
 
 				RestAssured.given()
@@ -206,6 +211,33 @@ class RequestLoungeChatE2ETest : AbstractIntegrationSupport({
 					.then()
 					.statusCode(404)
 					.body("error.code", Matchers.equalTo("LOUNGE-008"))
+			}
+		}
+
+		context("신청자가 회사 인증을 마치지 않았으면") {
+			it("403(USER-035)을 반환하고 코인이 차감되지 않는다") {
+				val authorId: Long = IntegrationUtil.persist(UserEntityFixture.create(providerId = "lounge-req-author-8")).id!!
+				val requesterId: Long = IntegrationUtil.persist(UserEntityFixture.create(providerId = "lounge-req-user-8")).id!!
+				IntegrationUtil.persist(UserDetailEntityFixture.create(userId = authorId, gender = Gender.FEMALE))
+				// 회사명이 없는 프로필 = 회사 인증 미완료
+				IntegrationUtil.persist(UserDetailEntityFixture.create(userId = requesterId, gender = Gender.MALE))
+				IntegrationUtil.persist(CoinBalanceEntityFixture.create(userId = requesterId, balance = 100))
+				val post: LoungePostEntity = IntegrationUtil.persist(LoungePostEntityFixture.create(userId = authorId))
+
+				RestAssured.given()
+					.header("Authorization", "Bearer ${accessTokenFor(requesterId)}")
+					.post("/lounge/v1/self-intro-posts/${post.id}/chat-requests")
+					.then()
+					.statusCode(403)
+					.body("error.code", Matchers.equalTo("USER-035"))
+
+				// 차단이 코인 차감보다 앞이라 잔액이 그대로다.
+				val balance: Int = IntegrationUtil.getQuery()
+					.select(QCoinBalanceEntity.coinBalanceEntity.balance)
+					.from(QCoinBalanceEntity.coinBalanceEntity)
+					.where(QCoinBalanceEntity.coinBalanceEntity.userId.eq(requesterId))
+					.fetchFirst()!!
+				balance shouldBe 100
 			}
 		}
 	}
