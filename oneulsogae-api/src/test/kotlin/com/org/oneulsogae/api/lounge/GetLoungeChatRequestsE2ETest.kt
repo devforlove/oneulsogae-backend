@@ -1,13 +1,9 @@
 package com.org.oneulsogae.api.lounge
 
-import com.org.oneulsogae.common.chat.ChatRoomMatchType
 import com.org.oneulsogae.common.coin.CoinUsageType
 import com.org.oneulsogae.common.integration.AbstractIntegrationSupport
 import com.org.oneulsogae.common.lounge.LoungeChatRequestStatus
 import com.org.oneulsogae.common.user.Gender
-import com.org.oneulsogae.infra.chat.command.entity.ChatRoomEntity
-import com.org.oneulsogae.infra.chat.command.entity.QChatRoomEntity
-import com.org.oneulsogae.infra.fixture.ChatRoomEntityFixture
 import com.org.oneulsogae.infra.fixture.IntegrationUtil
 import com.org.oneulsogae.infra.fixture.LoungeChatRequestEntityFixture
 import com.org.oneulsogae.infra.fixture.LoungePostEntityFixture
@@ -34,7 +30,6 @@ import java.time.Period
 class GetLoungeChatRequestsE2ETest : AbstractIntegrationSupport({
 
 	afterTest {
-		IntegrationUtil.deleteAll(QChatRoomEntity.chatRoomEntity)
 		IntegrationUtil.deleteAll(QLoungeChatRequestEntity.loungeChatRequestEntity)
 		IntegrationUtil.deleteAll(QLoungePostEntity.loungePostEntity)
 		// 프로필이 참조하는 지역까지 정리한다. (regions는 (sido, sigungu) 유니크라 남겨두면 다른 스펙의 같은 지역 생성이 깨진다)
@@ -75,7 +70,7 @@ class GetLoungeChatRequestsE2ETest : AbstractIntegrationSupport({
 				val firstPost: LoungePostEntity = IntegrationUtil.persist(LoungePostEntityFixture.create(userId = authorId))
 				val secondPost: LoungePostEntity = IntegrationUtil.persist(LoungePostEntityFixture.create(userId = authorId))
 
-				val olderRequest: LoungeChatRequestEntity = IntegrationUtil.persist(
+				IntegrationUtil.persist(
 					LoungeChatRequestEntityFixture.create(
 						postId = firstPost.id!!,
 						requesterUserId = olderRequesterId,
@@ -89,9 +84,6 @@ class GetLoungeChatRequestsE2ETest : AbstractIntegrationSupport({
 						requesterUserId = newerRequesterId,
 						receiverUserId = authorId,
 					),
-				)
-				val chatRoom: ChatRoomEntity = IntegrationUtil.persist(
-					ChatRoomEntityFixture.create(matchType = ChatRoomMatchType.LOUNGE, matchId = olderRequest.id!!),
 				)
 				val expectedAge: Int = Period.between(birthday, LocalDate.now()).years
 
@@ -107,7 +99,6 @@ class GetLoungeChatRequestsE2ETest : AbstractIntegrationSupport({
 					.body("data.items[0].partnerUserId", Matchers.equalTo(newerRequesterId.toInt()))
 					.body("data.items[0].postId", Matchers.equalTo(secondPost.id!!.toInt()))
 					.body("data.items[0].status", Matchers.equalTo("PENDING"))
-					.body("data.items[0].chatRoomId", Matchers.nullValue())
 					.body("data.items[0].partnerAge", Matchers.equalTo(expectedAge))
 					.body("data.items[0].partnerGender", Matchers.equalTo("MALE"))
 					.body("data.items[0].partnerProfileImageCode", Matchers.equalTo("PROFILE_07"))
@@ -118,7 +109,6 @@ class GetLoungeChatRequestsE2ETest : AbstractIntegrationSupport({
 					.body("data.items[1].partnerNickname", Matchers.equalTo("먼저신청"))
 					.body("data.items[1].postId", Matchers.equalTo(firstPost.id!!.toInt()))
 					.body("data.items[1].status", Matchers.equalTo("ACCEPTED"))
-					.body("data.items[1].chatRoomId", Matchers.equalTo(chatRoom.id!!.toInt()))
 					// 수락 버튼의 비용 안내값. 신청마다 다르지 않은 전역 정책값(LOUNGE_CHAT_ACCEPT)이라 응답 루트에 한 번만 실린다.
 					.body("data.acceptCoinAmount", Matchers.equalTo(CoinUsageType.LOUNGE_CHAT_ACCEPT.coinAmount))
 					.body("data.hasNext", Matchers.equalTo(false))
@@ -243,7 +233,6 @@ class GetLoungeChatRequestsE2ETest : AbstractIntegrationSupport({
 					.body("data.items[0].partnerProfileImageCode", Matchers.equalTo("PROFILE_02"))
 					.body("data.items[0].partnerActivityArea", Matchers.equalTo("경기도 성남시"))
 					.body("data.items[0].status", Matchers.equalTo("PENDING"))
-					.body("data.items[0].chatRoomId", Matchers.nullValue())
 					// 보낸 신청은 내가 수락하는 것이 아니라 수락 비용을 싣지 않는다.
 					.body("data.acceptCoinAmount", Matchers.nullValue())
 					.body("data.hasNext", Matchers.equalTo(false))

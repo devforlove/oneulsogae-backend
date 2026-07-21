@@ -10,7 +10,6 @@ import java.time.LocalDateTime
  * 대화 신청 한 건(read model). 받은 목록·보낸 목록이 같은 모양을 공유한다.
  * 프로필 항목(`partner*`)은 **이 신청에서 나의 상대방**을 가리킨다.
  * 받은 목록에서는 신청자, 보낸 목록에서는 글 작성자다. (조회 방향은 dao가 정한다)
- * [chatRoomId]는 수락으로 생성된 채팅방이며, 아직 수락 전(PENDING)이면 null이다.
  * dao는 [partnerBirthday]까지 채우고, 서비스가 [partnerAge](만 나이)를 채운다.
  */
 data class LoungeChatRequestView(
@@ -28,7 +27,6 @@ data class LoungeChatRequestView(
 	/** 상대방 활동지역 표시 문자열(시/도 시/군/구). 지역 미설정이면 null. */
 	val partnerActivityArea: String?,
 	val status: LoungeChatRequestStatus,
-	val chatRoomId: Long?,
 	val requestedAt: LocalDateTime,
 	/** 상대방 만 나이. 서비스가 [partnerBirthday]와 기준일로 채운다. (생년월일이 없으면 null) */
 	val partnerAge: Int? = null,
@@ -44,11 +42,10 @@ data class LoungeChatRequestView(
 		partnerProfileImageCode: String?,
 		partnerActivityArea: String?,
 		status: LoungeChatRequestStatus,
-		chatRoomId: Long?,
 		requestedAt: LocalDateTime,
 	) : this(
 		requestId, postId, partnerUserId, partnerNickname, partnerGender, partnerBirthday,
-		partnerProfileImageCode, partnerActivityArea, status, chatRoomId, requestedAt, null,
+		partnerProfileImageCode, partnerActivityArea, status, requestedAt, null,
 	)
 
 	/** 기준일([today])로 상대방 만 나이를 채운 신청을 만든다. */

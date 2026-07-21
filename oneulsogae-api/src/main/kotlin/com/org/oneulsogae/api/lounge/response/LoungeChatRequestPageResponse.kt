@@ -52,7 +52,6 @@ data class SentLoungeChatRequestPageResponse(
 /**
  * 신청 한 건. 받은 목록·보낸 목록이 같은 모양을 공유한다.
  * `partner*`는 **이 신청에서 나의 상대방**이다. 받은 목록에서는 신청자, 보낸 목록에서는 글 작성자다.
- * [chatRoomId]는 아직 수락 전(PENDING)이면 null이다.
  */
 data class LoungeChatRequestItemResponse(
 	val requestId: Long,
@@ -67,7 +66,6 @@ data class LoungeChatRequestItemResponse(
 	/** 상대방 활동지역 표시 문자열(시/도 시/군/구). 지역 미설정이면 null. */
 	val partnerActivityArea: String?,
 	val status: LoungeChatRequestStatus,
-	val chatRoomId: Long?,
 	val requestedAt: LocalDateTime,
 ) {
 	companion object {
@@ -83,7 +81,6 @@ data class LoungeChatRequestItemResponse(
 				partnerProfileImageCode = view.partnerProfileImageCode,
 				partnerActivityArea = view.partnerActivityArea,
 				status = view.status,
-				chatRoomId = view.chatRoomId,
 				requestedAt = view.requestedAt,
 			)
 	}

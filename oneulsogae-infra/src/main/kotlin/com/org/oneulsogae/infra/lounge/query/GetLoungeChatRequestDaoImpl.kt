@@ -1,9 +1,7 @@
 package com.org.oneulsogae.infra.lounge.query
 
-import com.org.oneulsogae.common.chat.ChatRoomMatchType
 import com.org.oneulsogae.core.lounge.query.dao.GetLoungeChatRequestDao
 import com.org.oneulsogae.core.lounge.query.dto.LoungeChatRequestView
-import com.org.oneulsogae.infra.chat.command.entity.QChatRoomEntity
 import com.org.oneulsogae.infra.lounge.command.entity.QLoungeChatRequestEntity
 import com.org.oneulsogae.infra.region.entity.QRegionEntity
 import com.org.oneulsogae.infra.user.command.entity.QUserDetailEntity
@@ -18,7 +16,6 @@ import org.springframework.stereotype.Component
  * 엔티티를 거치지 않고 [LoungeChatRequestView] read model로 바로 투영한다. 만 나이는 서비스가 생년월일로 채운다.
  * 받은 목록과 보낸 목록은 **기준 컬럼(receiver/requester)과 상대방 프로필 조인 대상만 다르고 나머지가 같아** 한 쿼리로 묶었다.
  * 상대방 프로필(user_details)과 활동지역(regions)은 없어도 신청은 보여야 하므로 left join한다.
- * 채팅방은 수락 전에는 없으므로 left join하며, `(match_type, match_id)` 유니크 인덱스로 seek한다.
  * 기준 사용자 동등 + id 내림차순 keyset(`id < :beforeId`)이 각각 `idx_receiver_user_id_id`·`idx_requester_user_id_id`로
  * 받쳐져 뒤 페이지에서도 seek로 끝난다(offset 스캔·filesort 없음).
  */
@@ -65,7 +62,6 @@ class GetLoungeChatRequestDaoImpl(
 		val request: QLoungeChatRequestEntity = QLoungeChatRequestEntity.loungeChatRequestEntity
 		val partnerDetail: QUserDetailEntity = QUserDetailEntity.userDetailEntity
 		val partnerRegion: QRegionEntity = QRegionEntity.regionEntity
-		val chatRoom: QChatRoomEntity = QChatRoomEntity.chatRoomEntity
 		val beforeCursor: BooleanExpression? = beforeId?.let { cursor: Long -> request.id.lt(cursor) }
 		return queryFactory
 			.select(
@@ -81,16 +77,12 @@ class GetLoungeChatRequestDaoImpl(
 					// 표시용 활동지역은 regions를 join해 "시/도 시/군/구"로 만든다. (지역 미설정이면 null)
 					partnerRegion.sido.concat(" ").concat(partnerRegion.sigungu),
 					request.status,
-					chatRoom.id,
 					request.createdAt,
 				),
 			)
 			.from(request)
 			.leftJoin(partnerDetail).on(partnerDetail.userId.eq(partnerColumn))
 			.leftJoin(partnerRegion).on(partnerRegion.id.eq(partnerDetail.regionId))
-			.leftJoin(chatRoom).on(
-				chatRoom.matchType.eq(ChatRoomMatchType.LOUNGE).and(chatRoom.matchId.eq(request.id)),
-			)
 			.where(ownerColumn.eq(ownerUserId), beforeCursor)
 			.orderBy(request.id.desc())
 			.limit(limit.toLong())
