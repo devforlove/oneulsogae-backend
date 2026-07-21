@@ -200,5 +200,49 @@ class GetSelfIntroPostsE2ETest : AbstractIntegrationSupport({
 					.body("data.sentPendingChatRequestCount", Matchers.equalTo(0))
 			}
 		}
+
+		context("요청자 프로필에 회사명이 있으면") {
+			it("companyVerified=true를 내려준다") {
+				val userId: Long = IntegrationUtil.persist(UserEntityFixture.create(providerId = "lounge-verified")).id!!
+				IntegrationUtil.persist(
+					UserDetailEntityFixture.create(
+						userId = userId,
+						nickname = "인증회원",
+						gender = Gender.FEMALE,
+						birthday = LocalDate.of(1995, 5, 5),
+						companyName = "오늘소개",
+					),
+				)
+
+				RestAssured.given()
+					.header("Authorization", "Bearer ${accessTokenFor(userId)}")
+					.get("/lounge/v1/self-intro-posts")
+					.then()
+					.statusCode(200)
+					.body("data.companyVerified", Matchers.equalTo(true))
+			}
+		}
+
+		context("요청자 프로필에 회사명이 없으면") {
+			it("companyVerified=false를 내려준다") {
+				val userId: Long = IntegrationUtil.persist(UserEntityFixture.create(providerId = "lounge-unverified")).id!!
+				IntegrationUtil.persist(
+					UserDetailEntityFixture.create(
+						userId = userId,
+						nickname = "미인증회원",
+						gender = Gender.FEMALE,
+						birthday = LocalDate.of(1995, 5, 5),
+						companyName = null,
+					),
+				)
+
+				RestAssured.given()
+					.header("Authorization", "Bearer ${accessTokenFor(userId)}")
+					.get("/lounge/v1/self-intro-posts")
+					.then()
+					.statusCode(200)
+					.body("data.companyVerified", Matchers.equalTo(false))
+			}
+		}
 	}
 })

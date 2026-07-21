@@ -22,6 +22,8 @@ data class SelfIntroPostPageResponse(
 	val sentPendingChatRequestCount: Int,
 	val hasNext: Boolean,
 	val nextCursor: Long?,
+	/** 요청한 사용자가 회사 인증을 마쳤는지 여부. 미인증이면 프론트엔드가 이용 제한 화면으로 분기한다. */
+	val companyVerified: Boolean,
 ) {
 	companion object {
 
@@ -32,6 +34,7 @@ data class SelfIntroPostPageResponse(
 				sentPendingChatRequestCount = page.sentPendingChatRequestCount,
 				hasNext = page.hasNext,
 				nextCursor = page.nextCursor,
+				companyVerified = page.companyVerified,
 			)
 	}
 }

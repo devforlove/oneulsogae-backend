@@ -21,6 +21,8 @@ class SelfIntroPostPage private constructor(
 	 * 상대의 응답을 기다리는 신청 수이며, 목록 화면의 "보낸 신청" 배지에 쓴다. (수락되면 줄어든다)
 	 */
 	val sentPendingChatRequestCount: Int = 0,
+	/** 조회한 사용자가 회사 인증을 마쳤는지 여부. 서비스가 채운다. 프론트엔드가 미인증 사용자 화면을 분기하는 데 쓴다. */
+	val companyVerified: Boolean = false,
 ) {
 
 	/** 다음(더 과거) 페이지 조회의 기준 커서. 현재 페이지 마지막(가장 오래된) 글의 postId이며, 다음 페이지가 없으면 null. */
@@ -36,6 +38,7 @@ class SelfIntroPostPage private constructor(
 			hasNext = hasNext,
 			receivedPendingChatRequestCount = receivedPendingChatRequestCount,
 			sentPendingChatRequestCount = sentPendingChatRequestCount,
+			companyVerified = companyVerified,
 		)
 
 	/** 각 항목의 작성자 만 나이를 기준일([today])로 채운 페이지를 만든다. */
@@ -45,6 +48,7 @@ class SelfIntroPostPage private constructor(
 			hasNext = hasNext,
 			receivedPendingChatRequestCount = receivedPendingChatRequestCount,
 			sentPendingChatRequestCount = sentPendingChatRequestCount,
+			companyVerified = companyVerified,
 		)
 
 	/** 조회한 사용자의 미수락 신청 건수(받은·보낸)를 반영한 페이지를 만든다. */
@@ -54,6 +58,17 @@ class SelfIntroPostPage private constructor(
 			hasNext = hasNext,
 			receivedPendingChatRequestCount = received,
 			sentPendingChatRequestCount = sent,
+			companyVerified = companyVerified,
+		)
+
+	/** 조회한 사용자의 회사 인증 여부를 반영한 페이지를 만든다. */
+	fun withCompanyVerified(companyVerified: Boolean): SelfIntroPostPage =
+		SelfIntroPostPage(
+			values = values,
+			hasNext = hasNext,
+			receivedPendingChatRequestCount = receivedPendingChatRequestCount,
+			sentPendingChatRequestCount = sentPendingChatRequestCount,
+			companyVerified = companyVerified,
 		)
 
 	companion object {
