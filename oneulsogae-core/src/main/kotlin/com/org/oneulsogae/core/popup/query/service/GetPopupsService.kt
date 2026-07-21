@@ -19,6 +19,9 @@ import java.time.LocalDateTime
  * [GetPopupsUseCase] 구현.
  * 현재 시각([TimeGenerator]) 기준 노출 대상인 팝업을 전역(public)·개인(private) dao로 각각 조회해 합친다.
  * 개인 팝업을 전역 팝업보다 앞에 두고(우선순위 높음), 각 그룹 내부는 display_order 오름차순으로 정렬한다.
+ * 합친 결과에서 유형당 한 건만 노출하는 유형([com.org.oneulsogae.common.popup.PopupType.singlePerUser])이
+ * 중복되면 우선순위가 높은 한 건만 남겨 팝업이 한꺼번에 쏟아지지 않게 한다.
+ * (남은 환불 팝업은 이번 응답에서 빠지므로 제거되지 않고 다음 조회에서 이어 노출된다)
  *
  * 노출 목록에 일일 보상(DAILY_REWARD) 팝업이 있으면, 사용자가 그 팝업을 "받은 것"으로 보고
  * 출석 코인을 하루 1회 적립한다([AcquireCoinUseCase]). 출석 코인은 "팝업을 본 시점"에 지급해야 하므로
@@ -41,8 +44,10 @@ class GetPopupsService(
 	override fun getVisiblePopups(userId: Long, isNewUser: Boolean): PopupViews {
 		val now: LocalDateTime = timeGenerator.now()
 		// 개인 팝업을 전역 팝업보다 앞에 두고, 각 그룹은 display_order(동순위 id) 순으로 정렬해 합친다.
+		// 합친 뒤 유형당 한 건만 노출하는 유형(일반 공지 외 전부)의 중복은 앞선 한 건만 남긴다.
 		val merged: PopupViews = getPrivatePopupDao.findVisible(now, userId)
 			.mergeBefore(getPublicPopupDao.findVisible(now))
+			.distinctSinglePerUserTypes()
 
 		// 신규 유저 팝업은 isNewUser=true인 요청에만 노출한다. (아니면 제외)
 		val withoutNewUser: PopupViews = if (isNewUser) merged else merged.withoutNewUser()

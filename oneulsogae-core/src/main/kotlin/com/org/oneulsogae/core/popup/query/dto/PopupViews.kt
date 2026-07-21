@@ -44,6 +44,21 @@ data class PopupViews(
 	fun mergeBefore(lower: PopupViews): PopupViews =
 		PopupViews(sortedValues() + lower.sortedValues())
 
+	/**
+	 * 유형당 한 건만 노출하는 유형([PopupType.singlePerUser])이 여러 건이면 앞선 한 건만 남긴 새 목록을 반환한다.
+	 * 한 번에 팝업이 쏟아지는 것을 막기 위한 것이며, 우선순위가 높은(먼저 오는 — 개인 > 전역, display_order 오름차순) 쪽을 남긴다.
+	 * 여러 건 동시 노출이 정상인 일반 공지(NORMAL)는 그대로 둔다.
+	 * 남은 환불 팝업은 이 응답에 실리지 않아 [idsToRemoveAfterView]에서도 빠지므로, 제거되지 않고 다음 조회에서 이어 노출된다.
+	 */
+	fun distinctSinglePerUserTypes(): PopupViews {
+		val seenTypes: MutableSet<PopupType> = mutableSetOf()
+		return PopupViews(
+			values.filter { view: PopupView ->
+				!view.popUpType.singlePerUser || seenTypes.add(view.popUpType)
+			},
+		)
+	}
+
 	/** values를 display_order(동순위는 id) 오름차순으로 정렬한다. */
 	private fun sortedValues(): List<PopupView> =
 		values.sortedWith(compareBy({ view: PopupView -> view.displayOrder }, { view: PopupView -> view.id }))
