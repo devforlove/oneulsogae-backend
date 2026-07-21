@@ -79,14 +79,17 @@ interface CheckCompanyVerifiedUseCase {
 
 ### 4) 관심요청 API 검증
 
-각 서비스에서 존재 확인 직후, 도메인 검증 직전에 `checkCompanyVerifiedUseCase.validateCompanyVerified(userId)`를 호출한다.
-코인 차감보다 앞이라 미인증 요청은 과금 없이 fail-fast 한다.
+각 서비스의 메서드 최상단(분산 락 획득 직후, 매칭/글 조회보다도 먼저)에서
+`checkCompanyVerifiedUseCase.validateCompanyVerified(userId)`를 호출한다.
+세 서비스가 일관된 위치를 갖고, 코인 차감보다 앞이라 미인증 요청은 과금 없이 fail-fast 한다.
 
 | API | 서비스 | 삽입 위치 |
 |---|---|---|
-| `POST /matches/v1/{matchId}/interest` | `SendInterestService` | `match.validateRespondable(userId)` 직전 |
-| `POST /team-matches/v1/{teamMatchId}/interest` | `SendTeamInterestService` | `teamMatch.validateRespondable(actorTeam.id)` 직전 |
-| `POST /lounge/v1/self-intro-posts/{postId}/chat-requests` | `RequestLoungeChatService` | 중복 신청 확인 직후 |
+| `POST /matches/v1/{matchId}/interest` | `SendInterestService` | 메서드 최상단 |
+| `POST /team-matches/v1/{teamMatchId}/interest` | `SendTeamInterestService` | 메서드 최상단 |
+| `POST /lounge/v1/self-intro-posts/{postId}/chat-requests` | `RequestLoungeChatService` | 메서드 최상단 |
+
+이 배치 때문에 존재하지 않는 매칭·글에 대한 요청이라도 사용자가 미인증이면 404가 아니라 403을 받는다.
 
 ## 테스트
 
