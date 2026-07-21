@@ -79,6 +79,7 @@ data class ChatRoom(
 		/**
 		 * 신규 채팅방을 생성한다. (status ACTIVE)
 		 * 어느 매칭에서 생성됐는지 [matchType](solo/team)+[matchId]로 보관하고, 만료 시각(expiredAt)은 [now] + [EXPIRATION]으로 설정한다.
+		 * 아직 주고받은 메세지가 없어도 [lastMessageAt]을 개설 시각([now])으로 채운다. 목록이 lastMessageAt 내림차순이라, 비워두면 새 방이 맨 아래로 밀린다.
 		 * 참가자는 방이 아니라 [ChatRoomMember]로 따로 생성한다. (방은 참가자 식별 컬럼을 들지 않는다)
 		 */
 		fun open(matchType: ChatRoomMatchType, matchId: Long, now: LocalDateTime): ChatRoom =
@@ -87,6 +88,7 @@ data class ChatRoom(
 				matchId = matchId,
 				status = ChatRoomStatus.ACTIVE,
 				expiredAt = now.plus(EXPIRATION),
+				lastMessageAt = now,
 			)
 	}
 }

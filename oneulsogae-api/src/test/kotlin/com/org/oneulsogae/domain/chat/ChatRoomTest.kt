@@ -33,11 +33,11 @@ class ChatRoomTest : DescribeSpec({
 			room.isClosed shouldBe false
 		}
 
-		it("마지막 메세지는 null로 시작한다") {
+		it("마지막 메세지 내용은 null이지만 수신 시각은 개설 시각으로 채운다 (목록 정렬 기준)") {
 			val room: ChatRoom = ChatRoom.open(ChatRoomMatchType.SOLO, matchId, now)
 
 			room.lastMessage shouldBe null
-			room.lastMessageAt shouldBe null
+			room.lastMessageAt shouldBe now
 		}
 	}
 
