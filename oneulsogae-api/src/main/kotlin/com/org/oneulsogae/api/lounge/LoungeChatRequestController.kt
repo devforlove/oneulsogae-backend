@@ -36,7 +36,7 @@ class LoungeChatRequestController(
 	/** 셀소 작성자에게 대화를 신청한다. 신청 코인(32)이 차감된다. */
 	@Operation(
 		summary = "대화 신청",
-		description = "라운지 셀소 상세에서 작성자에게 대화를 신청한다. 신청 코인 32가 차감되고 신청은 PENDING 상태로 저장된다. 본인 글이면 400(LOUNGE-009), 이미 신청한 글이면 409(LOUNGE-010), 글이 없으면 404(LOUNGE-008)를 반환한다.",
+		description = "라운지 셀소 상세에서 작성자에게 대화를 신청한다. 신청 코인 32가 차감되고 신청은 PENDING 상태로 저장된다. 본인 글이면 400(LOUNGE-009), 이미 신청한 글이면 409(LOUNGE-010), 글이 없으면 404(LOUNGE-008)를 반환한다. 동시 요청이 겹치면 409(LOCK-001)를 반환한다.",
 	)
 	@PostMapping("/self-intro-posts/{postId}/chat-requests")
 	fun requestChat(
@@ -63,7 +63,7 @@ class LoungeChatRequestController(
 	/** 내 셀소에 온 대화 신청을 수락해 채팅방을 연다. 수락 코인(32)이 차감된다. */
 	@Operation(
 		summary = "대화 신청 수락",
-		description = "내가 쓴 셀소에 온 대화 신청을 수락한다. 수락 코인 32가 차감되고 신청자와의 채팅방이 생성되며 응답의 chatRoomId로 바로 진입할 수 있다. 같은 글의 신청을 여러 건 수락할 수 있다. 내 글에 온 신청이 아니면 403(LOUNGE-011), 이미 수락했으면 409(LOUNGE-013), 신청이 없으면 404(LOUNGE-012)를 반환한다.",
+		description = "내가 쓴 셀소에 온 대화 신청을 수락한다. 수락 코인 32가 차감되고 신청자와의 채팅방이 생성되며 응답의 chatRoomId로 바로 진입할 수 있다. 같은 글의 신청을 여러 건 수락할 수 있다. 내 글에 온 신청이 아니면 403(LOUNGE-011), 이미 수락했으면 409(LOUNGE-013), 신청이 없으면 404(LOUNGE-012)를 반환한다. 동시 요청이 겹치면 409(LOCK-001)를 반환한다.",
 	)
 	@PostMapping("/chat-requests/{requestId}/accept")
 	fun acceptChatRequest(
