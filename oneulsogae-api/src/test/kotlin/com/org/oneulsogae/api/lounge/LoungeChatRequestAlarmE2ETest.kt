@@ -64,6 +64,7 @@ class LoungeChatRequestAlarmE2ETest : AbstractIntegrationSupport({
 				requestAlarm.type shouldBe AlarmType.LOUNGE_CHAT_REQUEST_RECEIVED
 				requestAlarm.fromUserId shouldBe requesterId
 				requestAlarm.description shouldBe "신청자님이 회원님에게 대화를 신청했어요."
+				requestAlarm.link shouldBe "/"
 
 				val acceptBody: String = RestAssured.given()
 					.header("Authorization", "Bearer ${accessTokenFor(authorId)}")

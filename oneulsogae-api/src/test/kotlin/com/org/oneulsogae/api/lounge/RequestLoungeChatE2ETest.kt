@@ -1,8 +1,11 @@
 package com.org.oneulsogae.api.lounge
 
+import com.org.oneulsogae.common.coin.CoinUsageType
 import com.org.oneulsogae.common.integration.AbstractIntegrationSupport
 import com.org.oneulsogae.common.lounge.LoungeChatRequestStatus
+import com.org.oneulsogae.infra.coin.command.entity.CoinHistoryEntity
 import com.org.oneulsogae.infra.coin.command.entity.QCoinBalanceEntity
+import com.org.oneulsogae.infra.coin.command.entity.QCoinHistoryEntity
 import com.org.oneulsogae.infra.fixture.CoinBalanceEntityFixture
 import com.org.oneulsogae.infra.fixture.IntegrationUtil
 import com.org.oneulsogae.infra.fixture.LoungePostEntityFixture
@@ -25,6 +28,7 @@ class RequestLoungeChatE2ETest : AbstractIntegrationSupport({
 		IntegrationUtil.deleteAll(QLoungeChatRequestEntity.loungeChatRequestEntity)
 		IntegrationUtil.deleteAll(QLoungePostEntity.loungePostEntity)
 		IntegrationUtil.deleteAll(QCoinBalanceEntity.coinBalanceEntity)
+		IntegrationUtil.deleteAll(QCoinHistoryEntity.coinHistoryEntity)
 	}
 
 	describe("POST /lounge/v1/self-intro-posts/{postId}/chat-requests") {
@@ -57,6 +61,14 @@ class RequestLoungeChatE2ETest : AbstractIntegrationSupport({
 					.where(QCoinBalanceEntity.coinBalanceEntity.userId.eq(requesterId))
 					.fetchFirst()!!
 				balance shouldBe 68
+
+				val histories: List<CoinHistoryEntity> = IntegrationUtil.getQuery()
+					.selectFrom(QCoinHistoryEntity.coinHistoryEntity)
+					.where(QCoinHistoryEntity.coinHistoryEntity.userId.eq(requesterId))
+					.fetch()
+				histories.size shouldBe 1
+				histories[0].amount shouldBe -32
+				histories[0].coinUsageType shouldBe CoinUsageType.LOUNGE_CHAT_INIT
 			}
 		}
 
