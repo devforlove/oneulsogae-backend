@@ -53,8 +53,9 @@ class GetSentInvitationE2ETest : AbstractIntegrationSupport({
 		}.extract().path<Int>("data.teamId").toLong()
 
 	// 기본 프로필을 저장한 뒤 초대한다. (프로필 값 검증이 필요 없는 케이스용)
+	// owner는 초대자(inviter)라 회사 인증(companyName)이 필요하다.
 	fun setUpInvite(ownerId: Long, invitedUserId: Long): Long {
-		persistProfile(ownerId, "초대자$ownerId", "1", null, null)
+		persistProfile(ownerId, "초대자$ownerId", "1", null, "오늘소개")
 		persistProfile(invitedUserId, "초대대상$invitedUserId", "1", null, null)
 		return invite(ownerId, invitedUserId)
 	}
@@ -135,7 +136,8 @@ class GetSentInvitationE2ETest : AbstractIntegrationSupport({
 			it("해당 필드를 null로 담아 반환한다 (200)") {
 				val ownerId = 3008L
 				val invitedUserId = 3009L
-				persistProfile(ownerId, "널잡", "1", null, null)
+				// ownerId는 초대자(inviter)라 회사 인증이 필요하다. invitedUserId는 이 테스트의 검증 대상(companyName null 노출)이라 그대로 둔다.
+				persistProfile(ownerId, "널잡", "1", null, "오늘소개")
 				persistProfile(invitedUserId, "널회사", "1", null, null)
 				invite(ownerId, invitedUserId)
 

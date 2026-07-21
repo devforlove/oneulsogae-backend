@@ -36,6 +36,13 @@ class InviteTeamE2ETest : AbstractIntegrationSupport({
 		)
 	}
 
+	// 회사 인증을 마친(회사명이 채워진) 프로필. 팀 초대는 회사 인증을 마친 사용자(초대자)만 할 수 있다.
+	fun persistVerifiedOwner(ownerId: Long) {
+		IntegrationUtil.persist(
+			UserDetailEntityFixture.create(userId = ownerId, gender = Gender.MALE, companyName = "오늘소개"),
+		)
+	}
+
 	// 유효한 팀 소개. (10자 이상 500자 이하)
 	val validIntroduction = "함께 즐겁게 활동할 팀이에요"
 
@@ -47,6 +54,7 @@ class InviteTeamE2ETest : AbstractIntegrationSupport({
 				val invitedUserId = 1002L
 				persistMatchUser(ownerId, Gender.MALE)
 				persistMatchUser(invitedUserId, Gender.MALE)
+				persistVerifiedOwner(ownerId)
 
 				post("/teams/v1/invitation") {
 					bearer(accessTokenFor(ownerId))
@@ -81,9 +89,9 @@ class InviteTeamE2ETest : AbstractIntegrationSupport({
 				val invitedUserId = 1002L
 				persistMatchUser(ownerId, Gender.MALE)
 				persistMatchUser(invitedUserId, Gender.MALE)
-				// 초대자 프로필 — 알람 문구에 닉네임이 들어간다.
+				// 초대자 프로필 — 알람 문구에 닉네임이 들어간다. 회사명도 채워 초대자 회사 인증 게이트를 통과시킨다.
 				IntegrationUtil.persist(
-					UserDetailEntityFixture.create(userId = ownerId, gender = Gender.MALE, nickname = "철수"),
+					UserDetailEntityFixture.create(userId = ownerId, gender = Gender.MALE, nickname = "철수", companyName = "오늘소개"),
 				)
 
 				val teamId: Long = post("/teams/v1/invitation") {
@@ -110,6 +118,7 @@ class InviteTeamE2ETest : AbstractIntegrationSupport({
 			it("400(TEAM-001)을 반환하고 팀이 만들어지지 않는다") {
 				val ownerId = 1001L
 				persistMatchUser(ownerId, Gender.MALE)
+				persistVerifiedOwner(ownerId)
 
 				post("/teams/v1/invitation") {
 					bearer(accessTokenFor(ownerId))
@@ -130,6 +139,7 @@ class InviteTeamE2ETest : AbstractIntegrationSupport({
 				val invitedUserId = 1002L
 				persistMatchUser(ownerId, Gender.MALE)
 				persistMatchUser(invitedUserId, Gender.FEMALE)
+				persistVerifiedOwner(ownerId)
 
 				post("/teams/v1/invitation") {
 					bearer(accessTokenFor(ownerId))
@@ -149,6 +159,7 @@ class InviteTeamE2ETest : AbstractIntegrationSupport({
 				val ownerId = 1001L
 				val invitedUserId = 9999L // match_user 행 없음
 				persistMatchUser(ownerId, Gender.MALE)
+				persistVerifiedOwner(ownerId)
 
 				post("/teams/v1/invitation") {
 					bearer(accessTokenFor(ownerId))
@@ -219,6 +230,7 @@ class InviteTeamE2ETest : AbstractIntegrationSupport({
 				persistMatchUser(ownerId, Gender.MALE)
 				persistMatchUser(invited1, Gender.MALE)
 				persistMatchUser(invited2, Gender.MALE)
+				persistVerifiedOwner(ownerId)
 
 				// 첫 팀 결성(owner는 활성 구성원이 됨)
 				post("/teams/v1/invitation") {
@@ -245,6 +257,9 @@ class InviteTeamE2ETest : AbstractIntegrationSupport({
 				persistMatchUser(owner1, Gender.MALE)
 				persistMatchUser(owner2, Gender.MALE)
 				persistMatchUser(invitedUserId, Gender.MALE)
+				persistVerifiedOwner(owner1)
+				persistVerifiedOwner(owner2)
+				persistVerifiedOwner(invitedUserId)
 
 				// invitedUserId가 owner1 팀에 초대된 뒤 수락해 활성(ACTIVE) 구성원이 됨
 				val teamId: Long = post("/teams/v1/invitation") {
@@ -272,6 +287,8 @@ class InviteTeamE2ETest : AbstractIntegrationSupport({
 				persistMatchUser(owner1, Gender.MALE)
 				persistMatchUser(owner2, Gender.MALE)
 				persistMatchUser(invitedUserId, Gender.MALE)
+				persistVerifiedOwner(owner1)
+				persistVerifiedOwner(owner2)
 
 				// invitedUserId가 owner1 팀에 초대중(INVITED) 상태로만 담김 (수락 안 함)
 				post("/teams/v1/invitation") {
@@ -287,6 +304,27 @@ class InviteTeamE2ETest : AbstractIntegrationSupport({
 					status(200)
 					body("success", true)
 				}
+			}
+		}
+
+		context("초대자가 회사 인증을 마치지 않았으면") {
+			it("403(USER-035)을 반환하고 팀이 생성되지 않는다") {
+				val ownerId = 1005L
+				val invitedUserId = 1006L
+				persistMatchUser(ownerId, Gender.MALE)
+				persistMatchUser(invitedUserId, Gender.MALE)
+				// persistVerifiedOwner를 호출하지 않아 회사명이 없는(미인증) 상태다.
+
+				post("/teams/v1/invitation") {
+					bearer(accessTokenFor(ownerId))
+					jsonBody("""{"invitedUserId": $invitedUserId, "regionId": 1, "name": "우리팀", "introduction": "$validIntroduction"}""")
+				} expect {
+					status(403)
+					body("success", false)
+					body("error.code", "USER-035")
+				}
+
+				allTeams().size shouldBe 0
 			}
 		}
 	}

@@ -29,10 +29,16 @@ class AcceptTeamInvitationE2ETest : AbstractIntegrationSupport({
 		IntegrationUtil.persist(MatchUserEntityFixture.create(userId = userId, gender = gender))
 	}
 
-	// 팀을 결성(초대)하고 teamId를 돌려준다.
+	// 회사 인증을 마친(회사명이 채워진) 프로필. 팀 초대·수락은 회사 인증을 마친 사용자만 할 수 있다.
+	fun persistVerifiedDetail(userId: Long) {
+		IntegrationUtil.persist(UserDetailEntityFixture.create(userId = userId, gender = Gender.MALE, companyName = "오늘소개"))
+	}
+
+	// 팀을 결성(초대)하고 teamId를 돌려준다. 초대자는 회사 인증이 필요하다.
 	fun inviteTeam(ownerId: Long, invitedUserId: Long): Long {
 		persistMatchUser(ownerId, Gender.MALE)
 		persistMatchUser(invitedUserId, Gender.MALE)
+		persistVerifiedDetail(ownerId)
 		return post("/teams/v1/invitation") {
 			bearer(accessTokenFor(ownerId))
 			jsonBody("""{"invitedUserId": $invitedUserId, "regionId": 1, "name": "우리팀", "introduction": "함께 즐겁게 활동할 팀이에요"}""")
@@ -53,6 +59,7 @@ class AcceptTeamInvitationE2ETest : AbstractIntegrationSupport({
 				val ownerId = 2001L
 				val invitedUserId = 2002L
 				val teamId: Long = inviteTeam(ownerId, invitedUserId)
+				persistVerifiedDetail(invitedUserId)
 
 				post("/teams/v1/$teamId/acceptance") {
 					bearer(accessTokenFor(invitedUserId))
@@ -74,9 +81,9 @@ class AcceptTeamInvitationE2ETest : AbstractIntegrationSupport({
 				val teamId: Long = inviteTeam(ownerId, invitedUserId)
 				// 초대 단계에서 생긴 '초대 받음' 알람은 이 테스트의 관심사가 아니므로 초기화한다.
 				IntegrationUtil.deleteAll(QAlarmEntity.alarmEntity)
-				// 수락 알람 문구엔 수락한 사람(초대받은 사람) 닉네임이 들어간다.
+				// 수락 알람 문구엔 수락한 사람(초대받은 사람) 닉네임이 들어간다. 회사명도 채워 수락자 회사 인증 게이트를 통과시킨다.
 				IntegrationUtil.persist(
-					UserDetailEntityFixture.create(userId = invitedUserId, gender = Gender.MALE, nickname = "영희"),
+					UserDetailEntityFixture.create(userId = invitedUserId, gender = Gender.MALE, nickname = "영희", companyName = "오늘소개"),
 				)
 
 				post("/teams/v1/$teamId/acceptance") {
@@ -108,6 +115,9 @@ class AcceptTeamInvitationE2ETest : AbstractIntegrationSupport({
 				persistMatchUser(invitedUserId, Gender.MALE)
 				persistMatchUser(owner1, Gender.MALE)
 				persistMatchUser(owner2, Gender.MALE)
+				persistVerifiedDetail(invitedUserId)
+				persistVerifiedDetail(owner1)
+				persistVerifiedDetail(owner2)
 				val acceptedTeamId: Long = invite(owner1, invitedUserId)
 				val otherTeamId: Long = invite(owner2, invitedUserId)
 
@@ -134,6 +144,9 @@ class AcceptTeamInvitationE2ETest : AbstractIntegrationSupport({
 				persistMatchUser(userX, Gender.MALE)
 				persistMatchUser(userY, Gender.MALE)
 				persistMatchUser(userZ, Gender.MALE)
+				// userX는 T1의 owner(초대자)이자 T2의 수락자, userZ는 T2의 owner(초대자)라 둘 다 회사 인증이 필요하다.
+				persistVerifiedDetail(userX)
+				persistVerifiedDetail(userZ)
 
 				// userZ가 userX를 초대(T2, userX=INVITED). userX가 ACTIVE 소속이 되기 전에 초대해 둔다.
 				val acceptedTeamId: Long = invite(userZ, userX)
@@ -175,6 +188,7 @@ class AcceptTeamInvitationE2ETest : AbstractIntegrationSupport({
 			it("404(TEAM-005)를 반환한다") {
 				val userId = 2005L
 				persistMatchUser(userId, Gender.MALE)
+				persistVerifiedDetail(userId)
 
 				post("/teams/v1/999999/acceptance") {
 					bearer(accessTokenFor(userId))
@@ -182,6 +196,27 @@ class AcceptTeamInvitationE2ETest : AbstractIntegrationSupport({
 					status(404)
 					body("error.code", "TEAM-005")
 				}
+			}
+		}
+
+		context("수락자가 회사 인증을 마치지 않았으면") {
+			it("403(USER-035)을 반환하고 팀 상태가 그대로다") {
+				val ownerId = 2014L
+				val invitedUserId = 2015L
+				// inviteTeam이 ownerId(초대자)만 인증하므로, invitedUserId는 회사명이 없는(미인증) 상태로 남는다.
+				val teamId: Long = inviteTeam(ownerId, invitedUserId)
+
+				post("/teams/v1/$teamId/acceptance") {
+					bearer(accessTokenFor(invitedUserId))
+				} expect {
+					status(403)
+					body("success", false)
+					body("error.code", "USER-035")
+				}
+
+				// 부수효과 없음: 팀은 여전히 INVITING이고, 초대받은 사람도 여전히 INVITED다.
+				teamStatusOf(teamId) shouldBe TeamStatus.INVITING
+				teamMembersOf(teamId).first { it.userId == invitedUserId }.status shouldBe TeamMemberStatus.INVITED
 			}
 		}
 	}
@@ -198,6 +233,12 @@ class AcceptTeamInvitationE2ETest : AbstractIntegrationSupport({
 private fun teamMembersOf(teamId: Long): List<TeamMemberEntity> {
 	val member: QTeamMemberEntity = QTeamMemberEntity.teamMemberEntity
 	return IntegrationUtil.getQuery().selectFrom(member).where(member.teamId.eq(teamId)).fetch()
+}
+
+// 소프트 삭제되지 않은(활성) 팀의 상태.
+private fun teamStatusOf(teamId: Long): TeamStatus? {
+	val team: QTeamEntity = QTeamEntity.teamEntity
+	return IntegrationUtil.getQuery().select(team.status).from(team).where(team.id.eq(teamId)).fetchOne()
 }
 
 // 한 사용자에게 저장된 알람 전체.

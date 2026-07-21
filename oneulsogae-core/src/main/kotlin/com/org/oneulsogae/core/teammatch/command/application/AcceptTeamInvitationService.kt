@@ -19,6 +19,7 @@ import com.org.oneulsogae.core.teammatch.command.domain.TeamMatch
 import com.org.oneulsogae.core.teammatch.command.domain.event.TeamInvitationAccepted
 import com.org.oneulsogae.core.teammatch.command.domain.event.TeamInvitationCanceled
 import com.org.oneulsogae.core.teammatch.command.domain.event.TeamInvitationDeclined
+import com.org.oneulsogae.core.user.query.service.port.`in`.CheckCompanyVerifiedUseCase
 import java.time.LocalDateTime
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
@@ -29,6 +30,7 @@ import org.springframework.transaction.annotation.Transactional
  * 수락과 동시에 그 사용자가 받은 다른 초대들은 모두 비활성화한다. (한 초대 수락 = 나머지 초대 자동 거절)
  * "한 사용자는 활성 팀 하나" 불변식은 사용자 단위라 userId 분산 락으로 직렬화한다. (서로 다른 두 팀 동시 수락·초대와 수락 동시 요청 차단, waitTime=0)
  * 같은 팀에 대한 수락↔철회(owner) 경합은 락 키가 달라(userId vs teamId) 배제되지 않으므로, teams 행의 낙관적 락([Team.version])으로 막는다.
+ * 회사 인증 여부는 user 도메인 in-port([CheckCompanyVerifiedUseCase])로 검증한다. (수락자가 미인증이면 팀 결성을 막는다)
  */
 @Service
 class AcceptTeamInvitationService(
@@ -39,11 +41,15 @@ class AcceptTeamInvitationService(
 	private val saveTeamMatchPort: SaveTeamMatchPort,
 	private val timeGenerator: TimeGenerator,
 	private val domainEventPublisher: DomainEventPublisher,
+	private val checkCompanyVerifiedUseCase: CheckCompanyVerifiedUseCase,
 ) : AcceptTeamInvitationUseCase {
 
 	@DistributedLock(prefix = LockKeyConstraints.TEAM_MEMBERSHIP, keys = ["#userId"], waitTime = 0)
 	@Transactional
 	override fun accept(userId: Long, teamId: Long): Team {
+		// 회사 인증을 마친 사용자만 팀 초대를 수락할 수 있다.
+		checkCompanyVerifiedUseCase.validateCompanyVerified(userId)
+
 		val team: Team = getTeamPort.findById(teamId)
 			?: throw BusinessException(TeamErrorCode.TEAM_NOT_FOUND)
 		val accepted: Team = saveTeamPort.save(team.acceptInvitation(userId))

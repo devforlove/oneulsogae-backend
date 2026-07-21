@@ -7,9 +7,11 @@ import com.org.oneulsogae.common.integration.put
 import com.org.oneulsogae.common.user.Gender
 import com.org.oneulsogae.infra.fixture.IntegrationUtil
 import com.org.oneulsogae.infra.fixture.MatchUserEntityFixture
+import com.org.oneulsogae.infra.fixture.UserDetailEntityFixture
 import com.org.oneulsogae.infra.matchuser.command.entity.QMatchUserEntity
 import com.org.oneulsogae.infra.teammatch.command.entity.QTeamEntity
 import com.org.oneulsogae.infra.teammatch.command.entity.QTeamMemberEntity
+import com.org.oneulsogae.infra.user.command.entity.QUserDetailEntity
 
 /**
  * `PUT /teams/v1/{teamId}` E2E 테스트. (팀 이름·소개·활동지역 수정)
@@ -21,19 +23,21 @@ class UpdateTeamE2ETest : AbstractIntegrationSupport({
 		IntegrationUtil.persist(MatchUserEntityFixture.create(userId = userId, gender = gender))
 	}
 
-	// 초대중(INVITING) 팀을 만들고 teamId를 돌려준다.
+	// 초대중(INVITING) 팀을 만들고 teamId를 돌려준다. 초대자는 회사 인증이 필요하다.
 	fun invitingTeam(ownerId: Long, invitedUserId: Long): Long {
 		persistMatchUser(ownerId, Gender.MALE)
 		persistMatchUser(invitedUserId, Gender.MALE)
+		IntegrationUtil.persist(UserDetailEntityFixture.create(userId = ownerId, gender = Gender.MALE, companyName = "오늘소개"))
 		return post("/teams/v1/invitation") {
 			bearer(accessTokenFor(ownerId))
 			jsonBody("""{"invitedUserId": $invitedUserId, "regionId": 1, "name": "우리팀", "introduction": "함께 즐겁게 활동할 팀이에요"}""")
 		}.extract().path<Int>("data.teamId").toLong()
 	}
 
-	// 결성(ACTIVE)까지 진행한 팀의 teamId를 돌려준다. (초대 → 수락)
+	// 결성(ACTIVE)까지 진행한 팀의 teamId를 돌려준다. (초대 → 수락) 수락자도 회사 인증이 필요하다.
 	fun formedTeam(ownerId: Long, invitedUserId: Long): Long {
 		val teamId: Long = invitingTeam(ownerId, invitedUserId)
+		IntegrationUtil.persist(UserDetailEntityFixture.create(userId = invitedUserId, gender = Gender.MALE, companyName = "오늘소개"))
 		post("/teams/v1/$teamId/acceptance") { bearer(accessTokenFor(invitedUserId)) }
 		return teamId
 	}
@@ -117,5 +121,6 @@ class UpdateTeamE2ETest : AbstractIntegrationSupport({
 		IntegrationUtil.deleteAll(QTeamMemberEntity.teamMemberEntity)
 		IntegrationUtil.deleteAll(QTeamEntity.teamEntity)
 		IntegrationUtil.deleteAll(QMatchUserEntity.matchUserEntity)
+		IntegrationUtil.deleteAll(QUserDetailEntity.userDetailEntity)
 	}
 })

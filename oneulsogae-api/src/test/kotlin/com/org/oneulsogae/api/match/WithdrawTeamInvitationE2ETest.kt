@@ -28,9 +28,13 @@ class WithdrawTeamInvitationE2ETest : AbstractIntegrationSupport({
 		IntegrationUtil.persist(MatchUserEntityFixture.create(userId = userId, gender = gender))
 	}
 
-	fun inviteTeam(ownerId: Long, invitedUserId: Long): Long {
+	// 초대자는 회사 인증이 필요하다. (닉네임은 알람 문구 검증용으로 호출부에서 지정 가능)
+	fun inviteTeam(ownerId: Long, invitedUserId: Long, ownerNickname: String? = null): Long {
 		persistMatchUser(ownerId, Gender.MALE)
 		persistMatchUser(invitedUserId, Gender.MALE)
+		IntegrationUtil.persist(
+			UserDetailEntityFixture.create(userId = ownerId, gender = Gender.MALE, companyName = "오늘소개", nickname = ownerNickname ?: "테스트유저"),
+		)
 		return post("/teams/v1/invitation") {
 			bearer(accessTokenFor(ownerId))
 			jsonBody("""{"invitedUserId": $invitedUserId, "regionId": 1, "name": "우리팀", "introduction": "함께 즐겁게 활동할 팀이에요"}""")
@@ -77,13 +81,10 @@ class WithdrawTeamInvitationE2ETest : AbstractIntegrationSupport({
 			it("팀이 비활성화되고, 초대받았던 사람에게 '초대 취소됨' 알람이 저장된다 (200)") {
 				val ownerId = 3003L
 				val invitedUserId = 3004L
-				val teamId: Long = inviteTeam(ownerId, invitedUserId)
+				// 취소 알람 문구엔 취소한 초대자 닉네임이 들어간다.
+				val teamId: Long = inviteTeam(ownerId, invitedUserId, ownerNickname = "철수")
 				// 초대 단계에서 생긴 '초대 받음' 알람은 이 테스트의 관심사가 아니므로 초기화한다.
 				IntegrationUtil.deleteAll(QAlarmEntity.alarmEntity)
-				// 취소 알람 문구엔 취소한 초대자 닉네임이 들어간다.
-				IntegrationUtil.persist(
-					UserDetailEntityFixture.create(userId = ownerId, gender = Gender.MALE, nickname = "철수"),
-				)
 
 				delete("/teams/v1/$teamId/invitation") {
 					bearer(accessTokenFor(ownerId))

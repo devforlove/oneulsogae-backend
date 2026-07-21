@@ -12,6 +12,7 @@ import com.org.oneulsogae.infra.alarm.command.entity.QAlarmEntity
 import com.org.oneulsogae.infra.fixture.IntegrationUtil
 import com.org.oneulsogae.infra.fixture.MatchUserEntityFixture
 import com.org.oneulsogae.infra.fixture.RecommendedTeamEntityFixture
+import com.org.oneulsogae.infra.fixture.UserDetailEntityFixture
 import com.org.oneulsogae.infra.teammatch.command.entity.MatchedTeamEntity
 import com.org.oneulsogae.infra.matchuser.command.entity.QMatchUserEntity
 import com.org.oneulsogae.infra.teammatch.command.entity.QMatchedTeamEntity
@@ -21,6 +22,7 @@ import com.org.oneulsogae.infra.teammatch.command.entity.QTeamMatchEntity
 import com.org.oneulsogae.infra.teammatch.command.entity.QTeamMemberEntity
 import com.org.oneulsogae.infra.teammatch.command.entity.TeamEntity
 import com.org.oneulsogae.infra.teammatch.command.entity.TeamMatchEntity
+import com.org.oneulsogae.infra.user.command.entity.QUserDetailEntity
 import io.kotest.matchers.shouldBe
 import java.time.LocalDate
 import java.time.LocalDateTime
@@ -47,11 +49,15 @@ class TeamMatchPromotionOnAcceptE2ETest : AbstractIntegrationSupport({
 	}
 
 	// 같은 성별 두 솔로 유저로 팀을 결성(초대→수락)하고 teamId를 돌려준다. 추천 시드 후 호출해야 수락 시 승격이 일어난다.
-	fun inviteTeam(ownerId: Long, invitedUserId: Long): Long =
-		post("/teams/v1/invitation") {
+	// 초대·수락 모두 회사 인증이 필요하므로 owner·invited 모두 인증된 프로필을 미리 채운다.
+	fun inviteTeam(ownerId: Long, invitedUserId: Long): Long {
+		IntegrationUtil.persist(UserDetailEntityFixture.create(userId = ownerId, gender = Gender.MALE, companyName = "오늘소개"))
+		IntegrationUtil.persist(UserDetailEntityFixture.create(userId = invitedUserId, gender = Gender.MALE, companyName = "오늘소개"))
+		return post("/teams/v1/invitation") {
 			bearer(accessTokenFor(ownerId))
 			jsonBody("""{"invitedUserId": $invitedUserId, "regionId": 1, "name": "우리팀", "introduction": "함께 즐겁게 활동할 팀이에요"}""")
 		}.extract().path<Int>("data.teamId").toLong()
+	}
 
 	fun acceptTeam(invitedUserId: Long, teamId: Long) {
 		post("/teams/v1/$teamId/acceptance") {
@@ -194,6 +200,7 @@ class TeamMatchPromotionOnAcceptE2ETest : AbstractIntegrationSupport({
 		IntegrationUtil.deleteAll(QTeamEntity.teamEntity)
 		IntegrationUtil.deleteAll(QMatchUserEntity.matchUserEntity)
 		IntegrationUtil.deleteAll(QAlarmEntity.alarmEntity)
+		IntegrationUtil.deleteAll(QUserDetailEntity.userDetailEntity)
 	}
 })
 

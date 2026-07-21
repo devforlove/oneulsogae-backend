@@ -14,6 +14,7 @@ import com.org.oneulsogae.core.teammatch.command.application.port.out.GetTeamPor
 import com.org.oneulsogae.core.teammatch.command.application.port.out.SaveTeamPort
 import com.org.oneulsogae.core.teammatch.command.domain.Team
 import com.org.oneulsogae.core.teammatch.command.domain.event.TeamInvitationSent
+import com.org.oneulsogae.core.user.query.service.port.`in`.CheckCompanyVerifiedUseCase
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 
@@ -23,6 +24,7 @@ import org.springframework.transaction.annotation.Transactional
  * (match_user 행이 없으면 매칭 불가이므로 PROFILE_INCOMPLETE를 던진다)
  * 이름·소개·자기 초대·동일 성별 검증은 [Team.invite] 도메인 팩토리가 담당한다.
  * 한 사용자는 활성 팀(INVITING/ACTIVE)에 하나만 속할 수 있다. 오케스트레이션 검증은 이 서비스가 담당한다.
+ * 회사 인증 여부는 user 도메인 in-port([CheckCompanyVerifiedUseCase])로 검증한다. (초대자만 검증 — 초대 대상은 수락 시점 게이트가 막는다)
  */
 @Service
 class InviteTeamService(
@@ -30,12 +32,16 @@ class InviteTeamService(
 	private val getTeamPort: GetTeamPort,
 	private val saveTeamPort: SaveTeamPort,
 	private val domainEventPublisher: DomainEventPublisher,
+	private val checkCompanyVerifiedUseCase: CheckCompanyVerifiedUseCase,
 ) : InviteTeamUseCase {
 
 	// ownerId로 잠가 같은 사용자의 동시 초대(더블탭 등)를 직렬화한다. 검사→생성 사이 경합으로 owner가 두 활성 팀을 갖는 것을 막는다. (waitTime=0)
 	@DistributedLock(prefix = LockKeyConstraints.TEAM_MEMBERSHIP, keys = ["#ownerId"], waitTime = 0)
 	@Transactional
 	override fun invite(ownerId: Long, command: InviteTeamCommand): Team {
+		// 회사 인증을 마친 사용자만 팀 초대를 보낼 수 있다.
+		checkCompanyVerifiedUseCase.validateCompanyVerified(ownerId)
+
 		// 한 사용자는 활성 팀(INVITING/ACTIVE)에 하나만 속할 수 있다. owner·초대대상 모두 검증.
 		validateNotInActiveTeam(ownerId)
 		validateNotInActiveTeam(command.invitedUserId)

@@ -120,8 +120,9 @@ class GetReceivedInvitationsE2ETest : AbstractIntegrationSupport({
 				val me = 4501L
 				val ownerX = 4502L
 				val z = 4503L
-				persistProfile(me, "나", "1", null, null)
-				persistProfile(ownerX, "초대자X", "1", null, null)
+				// ownerX·me는 각각 아래에서 초대자(inviter) 역할을 하므로 회사 인증(companyName)이 필요하다.
+				persistProfile(me, "나", "1", null, "오늘소개")
+				persistProfile(ownerX, "초대자X", "1", null, "오늘소개")
 				persistProfile(z, "지", "1", null, null)
 
 				// teamX: ownerX가 나를 초대 → 나는 INVITED. (먼저 해야 아래 teamY 결성 후엔 ALREADY_IN_TEAM으로 막힘)
@@ -144,7 +145,8 @@ class GetReceivedInvitationsE2ETest : AbstractIntegrationSupport({
 			it("자신은 INVITED가 아니므로 빈 배열이다 (200)") {
 				val owner = 4101L
 				val invited = 4102L
-				persistProfile(owner, "오너", "1", null, null)
+				// owner는 초대자(inviter)라 회사 인증(companyName)이 필요하다.
+				persistProfile(owner, "오너", "1", null, "오늘소개")
 				persistProfile(invited, "초대대상", "1", null, null)
 				invite(owner, invited)
 
@@ -161,8 +163,9 @@ class GetReceivedInvitationsE2ETest : AbstractIntegrationSupport({
 			it("더 이상 INVITED가 아니므로 빈 배열이다 (200)") {
 				val owner = 4201L
 				val invited = 4202L
-				persistProfile(owner, "오너", "1", null, null)
-				persistProfile(invited, "초대대상", "1", null, null)
+				// owner는 초대자(inviter), invited는 수락자(acceptor)라 둘 다 회사 인증(companyName)이 필요하다.
+				persistProfile(owner, "오너", "1", null, "오늘소개")
+				persistProfile(invited, "초대대상", "1", null, "오늘소개")
 				val teamId: Long = invite(owner, invited)
 
 				post("/teams/v1/$teamId/acceptance") {

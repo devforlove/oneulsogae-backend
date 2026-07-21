@@ -43,23 +43,34 @@ class SendTeamInterestE2ETest : AbstractIntegrationSupport({
 		IntegrationUtil.persist(MatchUserEntityFixture.create(userId = userId, gender = gender))
 	}
 
-	// 회사 인증을 마친(회사명이 채워진) 프로필. 관심 보내기는 회사 인증을 마친 사용자만 할 수 있다.
+	// 회사 인증을 마친(회사명이 채워진) 프로필. 팀 초대·수락·관심 보내기는 모두 회사 인증을 마친 사용자만 할 수 있다.
 	fun persistVerifiedDetail(userId: Long) {
 		IntegrationUtil.persist(
 			UserDetailEntityFixture.create(userId = userId, gender = Gender.MALE, companyName = "오늘소개"),
 		)
 	}
 
-	// 결성(ACTIVE)까지 진행한 팀의 teamId를 돌려준다. (초대 → 수락)
+	// 결성(ACTIVE)까지 진행한 팀의 teamId를 돌려준다. (초대 → 수락) 초대자·수락자 모두 회사 인증이 필요하다.
 	fun formedTeam(ownerId: Long, invitedUserId: Long): Long {
 		persistMatchUser(ownerId, Gender.MALE)
 		persistMatchUser(invitedUserId, Gender.MALE)
+		persistVerifiedDetail(ownerId)
+		persistVerifiedDetail(invitedUserId)
 		val teamId: Long = post("/teams/v1/invitation") {
 			bearer(accessTokenFor(ownerId))
 			jsonBody("""{"invitedUserId": $invitedUserId, "regionId": 1, "name": "우리팀", "introduction": "함께 즐겁게 활동할 팀이에요"}""")
 		}.extract().path<Int>("data.teamId").toLong()
 		post("/teams/v1/$teamId/acceptance") { bearer(accessTokenFor(invitedUserId)) }
 		return teamId
+	}
+
+	// 팀 결성 뒤 회사 인증이 취소된 상태를 재현한다. (formedTeam은 결성에 필요한 인증을 미리 채우므로,
+	// 관심 보내기 자체의 게이트만 독립적으로 검증하려면 결성 후에 인증을 해제해야 한다)
+	fun revokeCompanyVerification(userId: Long) {
+		IntegrationUtil.update { queryFactory ->
+			val detail = QUserDetailEntity.userDetailEntity
+			queryFactory.update(detail).setNull(detail.companyName).where(detail.userId.eq(userId)).execute()
+		}
 	}
 
 	// 두 팀을 참가 팀으로 하는 팀 매칭을 만들고 teamMatchId를 돌려준다. (각 팀 상태·헤더 상태 지정 가능)
@@ -100,7 +111,6 @@ class SendTeamInterestE2ETest : AbstractIntegrationSupport({
 				val teamMatchId: Long = persistTeamMatch(myTeamId, opponentTeamId)
 				IntegrationUtil.persist(CoinBalanceEntityFixture.create(userId = myOwner, balance = 100))
 
-				persistVerifiedDetail(myOwner)
 				post("/team-matches/v1/$teamMatchId/interest") {
 					bearer(accessTokenFor(myOwner))
 				} expect {
@@ -140,7 +150,6 @@ class SendTeamInterestE2ETest : AbstractIntegrationSupport({
 				)
 				IntegrationUtil.persist(CoinBalanceEntityFixture.create(userId = myOwner, balance = 100))
 
-				persistVerifiedDetail(myOwner)
 				post("/team-matches/v1/$teamMatchId/interest") {
 					bearer(accessTokenFor(myOwner))
 				} expect {
@@ -180,7 +189,6 @@ class SendTeamInterestE2ETest : AbstractIntegrationSupport({
 				val teamMatchId: Long = persistTeamMatch(myTeamId, opponentTeamId)
 				IntegrationUtil.persist(CoinBalanceEntityFixture.create(userId = myOwner, balance = 10)) // 40보다 적음
 
-				persistVerifiedDetail(myOwner)
 				post("/team-matches/v1/$teamMatchId/interest") {
 					bearer(accessTokenFor(myOwner))
 				} expect {
@@ -228,10 +236,9 @@ class SendTeamInterestE2ETest : AbstractIntegrationSupport({
 				val myTeamId: Long = formedTeam(myOwner, myInvited)
 				val opponentTeamId: Long = formedTeam(oppOwner, oppInvited)
 				val teamMatchId: Long = persistTeamMatch(myTeamId, opponentTeamId)
-				// 회사명이 없는 프로필 = 회사 인증 미완료
-				IntegrationUtil.persist(
-					UserDetailEntityFixture.create(userId = myOwner, gender = Gender.MALE),
-				)
+				// 팀 결성에는 회사 인증이 필요해 formedTeam이 인증 프로필을 채운다. 이후 인증이 취소된 상태를 재현해
+				// 관심 보내기 자체의 게이트(요청자 검증)만 독립적으로 검증한다.
+				revokeCompanyVerification(myOwner)
 				IntegrationUtil.persist(CoinBalanceEntityFixture.create(userId = myOwner, balance = 100))
 
 				post("/team-matches/v1/$teamMatchId/interest") {

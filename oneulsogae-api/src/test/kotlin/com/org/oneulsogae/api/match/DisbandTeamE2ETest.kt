@@ -30,9 +30,19 @@ class DisbandTeamE2ETest : AbstractIntegrationSupport({
 	}
 
 	// 결성(ACTIVE)까지 진행한 팀의 teamId를 돌려준다. (초대 → 수락)
-	fun formedTeam(ownerId: Long, invitedUserId: Long): Long {
+	// 초대·수락 모두 회사 인증이 필요하므로 owner·invited 모두 인증된 프로필을 미리 채운다. (닉네임은 알람 문구 검증용으로 호출부에서 지정 가능)
+	fun formedTeam(ownerId: Long, invitedUserId: Long, invitedNickname: String? = null): Long {
 		persistMatchUser(ownerId, Gender.MALE)
 		persistMatchUser(invitedUserId, Gender.MALE)
+		IntegrationUtil.persist(UserDetailEntityFixture.create(userId = ownerId, gender = Gender.MALE, companyName = "오늘소개"))
+		IntegrationUtil.persist(
+			UserDetailEntityFixture.create(
+				userId = invitedUserId,
+				gender = Gender.MALE,
+				companyName = "오늘소개",
+				nickname = invitedNickname ?: "테스트유저",
+			),
+		)
 		val teamId: Long = post("/teams/v1/invitation") {
 			bearer(accessTokenFor(ownerId))
 			jsonBody("""{"invitedUserId": $invitedUserId, "regionId": 1, "name": "우리팀", "introduction": "함께 즐겁게 활동할 팀이에요"}""")
@@ -47,9 +57,8 @@ class DisbandTeamE2ETest : AbstractIntegrationSupport({
 			it("팀이 DISBANDED로 남고(활성 조회 유지), 남은 팀원에게 '팀 해체' 알람이 간다 (200)") {
 				val ownerId = 4001L
 				val invitedUserId = 4002L
-				val teamId: Long = formedTeam(ownerId, invitedUserId)
-				// 알람 문구에 들어갈 탈퇴 구성원(invited)의 닉네임을 위해 UserDetail을 채운다.
-				IntegrationUtil.persist(UserDetailEntityFixture.create(userId = invitedUserId, nickname = "철수"))
+				// 알람 문구에 들어갈 탈퇴 구성원(invited)의 닉네임을 위해 formedTeam에 닉네임을 지정한다.
+				val teamId: Long = formedTeam(ownerId, invitedUserId, invitedNickname = "철수")
 				// 결성 과정(초대 받음/수락)에서 생긴 알람은 이 테스트의 관심사가 아니므로 초기화한다.
 				IntegrationUtil.deleteAll(QAlarmEntity.alarmEntity)
 
@@ -101,6 +110,7 @@ class DisbandTeamE2ETest : AbstractIntegrationSupport({
 				val invitedUserId = 4004L
 				persistMatchUser(ownerId, Gender.MALE)
 				persistMatchUser(invitedUserId, Gender.MALE)
+				IntegrationUtil.persist(UserDetailEntityFixture.create(userId = ownerId, gender = Gender.MALE, companyName = "오늘소개"))
 				val teamId: Long = post("/teams/v1/invitation") {
 					bearer(accessTokenFor(ownerId))
 					jsonBody("""{"invitedUserId": $invitedUserId, "regionId": 1, "name": "우리팀", "introduction": "함께 즐겁게 활동할 팀이에요"}""")
