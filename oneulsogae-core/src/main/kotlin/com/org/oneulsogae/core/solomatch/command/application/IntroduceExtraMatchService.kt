@@ -19,6 +19,7 @@ import com.org.oneulsogae.core.solomatch.command.application.port.out.SaveMatchP
 import com.org.oneulsogae.core.solomatch.command.domain.Match
 import com.org.oneulsogae.common.match.selection.MatchScoringProfile
 import com.org.oneulsogae.common.match.selection.MatchSelector
+import com.org.oneulsogae.core.user.query.service.port.`in`.CheckCompanyVerifiedUseCase
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import java.time.LocalDate
@@ -32,6 +33,7 @@ import kotlin.random.Random
  *
  * 코인 차감·매칭 저장은 같은 트랜잭션이라 저장 실패(유니크 위반 등) 시 차감도 롤백된다.
  * 요청자별 분산 락([LockKeyConstraints.EXTRA_INTRO])으로 더블클릭 이중 과금을 fail-fast(waitTime=0)로 막는다.
+ * 회사 인증 여부는 user 도메인 in-port([CheckCompanyVerifiedUseCase])로 검증한다. (미인증이면 코인 차감 전에 403으로 막는다)
  */
 @Service
 class IntroduceExtraMatchService(
@@ -41,12 +43,16 @@ class IntroduceExtraMatchService(
 	private val spendCoinUseCase: SpendCoinUseCase,
 	private val saveMatchPort: SaveMatchPort,
 	private val timeGenerator: TimeGenerator,
+	private val checkCompanyVerifiedUseCase: CheckCompanyVerifiedUseCase,
 	private val random: Random = Random.Default,
 ) : IntroduceExtraMatchUseCase {
 
 	@DistributedLock(prefix = LockKeyConstraints.EXTRA_INTRO, keys = ["#userId"], waitTime = 0)
 	@Transactional
 	override fun introduce(userId: Long): Match {
+		// 회사 인증을 마친 사용자만 추가 소개 기능을 쓸 수 있다. 코인 차감 전에 막아 미인증 요청에 과금이 생기지 않게 한다.
+		checkCompanyVerifiedUseCase.validateCompanyVerified(userId)
+
 		val requester: MatchUser = getMatchUserUseCase.findByUserId(userId)
 			?: throw BusinessException(MatchErrorCode.MATCH_USER_NOT_MATCHABLE)
 

@@ -70,7 +70,7 @@ class ExtraIntroIntegrationTest : AbstractIntegrationSupport({
 			it("코인 30을 차감하고 자격 후보 1명과 EXTRA 매칭을 만들며, 그 매칭이 목록에 노출된다 (200)") {
 				// 목록 조회(GET /matches/v1)는 요청자 user+user_details 조인이 필요하다. match_user.userId는 이 id와 맞춘다.
 				val requesterId: Long = IntegrationUtil.persist(UserEntityFixture.create(status = UserStatus.ACTIVE)).id!!
-				IntegrationUtil.persist(UserDetailEntityFixture.create(userId = requesterId, gender = Gender.MALE))
+				IntegrationUtil.persist(UserDetailEntityFixture.create(userId = requesterId, gender = Gender.MALE, companyName = "오늘소개"))
 				persistRequester(requesterId, balance = 100)
 				val candidateIds: List<Long> = listOf(persistCandidate(1001L), persistCandidate(1002L), persistCandidate(1003L))
 
@@ -103,6 +103,7 @@ class ExtraIntroIntegrationTest : AbstractIntegrationSupport({
 		context("자격 후보가 없으면") {
 			it("EXTRA_INTRO_NO_CANDIDATE로 실패하고 코인이 그대로다 (404)") {
 				val requesterId = 1L
+				IntegrationUtil.persist(UserDetailEntityFixture.create(userId = requesterId, gender = Gender.MALE, companyName = "오늘소개"))
 				persistRequester(requesterId, balance = 100)
 				// 반대 성별 후보 없음 (자격 후보 0)
 
@@ -122,6 +123,7 @@ class ExtraIntroIntegrationTest : AbstractIntegrationSupport({
 		context("자격 후보가 이미 소개된 1명뿐이면") {
 			it("재소개 제외로 후보 없음 처리되어 실패하고 코인이 그대로다 (404)") {
 				val requesterId = 1L
+				IntegrationUtil.persist(UserDetailEntityFixture.create(userId = requesterId, gender = Gender.MALE, companyName = "오늘소개"))
 				persistRequester(requesterId, balance = 100)
 				val introducedId: Long = persistCandidate(1001L)
 				persistIntroduced(requesterId, introducedId)
@@ -140,6 +142,7 @@ class ExtraIntroIntegrationTest : AbstractIntegrationSupport({
 		context("코인이 부족하면") {
 			it("실패하고 코인·매칭이 그대로다 (400, COIN-001)") {
 				val requesterId = 1L
+				IntegrationUtil.persist(UserDetailEntityFixture.create(userId = requesterId, gender = Gender.MALE, companyName = "오늘소개"))
 				persistRequester(requesterId, balance = 10) // 30보다 적음
 				persistCandidate(1001L)
 
@@ -153,6 +156,28 @@ class ExtraIntroIntegrationTest : AbstractIntegrationSupport({
 
 				// 차감 실패로 트랜잭션이 롤백되어 잔액 유지 + 매칭 미생성
 				coinBalanceOf(requesterId) shouldBe 10
+				matchCountInvolving(requesterId) shouldBe 0
+			}
+		}
+
+		context("요청자가 회사 인증을 마치지 않았으면") {
+			it("403(USER-035)을 반환하고 코인이 차감되지 않는다") {
+				val requesterId = 1L
+				persistRequester(requesterId, balance = 100)
+				// 회사명이 없는 프로필 = 회사 인증 미완료
+				IntegrationUtil.persist(UserDetailEntityFixture.create(userId = requesterId, gender = Gender.MALE))
+				persistCandidate(1001L)
+
+				post("/matches/v1/extra") {
+					bearer(accessTokenFor(requesterId))
+				} expect {
+					status(403)
+					body("success", false)
+					body("error.code", "USER-035")
+				}
+
+				// 차단이 코인 차감보다 앞이라 잔액이 그대로다.
+				coinBalanceOf(requesterId) shouldBe 100
 				matchCountInvolving(requesterId) shouldBe 0
 			}
 		}
