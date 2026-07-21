@@ -26,6 +26,10 @@ data class LoungeChatRequestView(
 	val partnerProfileImageCode: String?,
 	/** 상대방 활동지역 표시 문자열(시/도 시/군/구). 지역 미설정이면 null. */
 	val partnerActivityArea: String?,
+	/** 상대방 직업. (미설정이면 null) */
+	val partnerJob: String?,
+	/** 상대방 회사명. (미설정이면 null) */
+	val partnerCompanyName: String?,
 	val status: LoungeChatRequestStatus,
 	val requestedAt: LocalDateTime,
 	/** 상대방 만 나이. 서비스가 [partnerBirthday]와 기준일로 채운다. (생년월일이 없으면 null) */
@@ -41,11 +45,13 @@ data class LoungeChatRequestView(
 		partnerBirthday: LocalDate?,
 		partnerProfileImageCode: String?,
 		partnerActivityArea: String?,
+		partnerJob: String?,
+		partnerCompanyName: String?,
 		status: LoungeChatRequestStatus,
 		requestedAt: LocalDateTime,
 	) : this(
 		requestId, postId, partnerUserId, partnerNickname, partnerGender, partnerBirthday,
-		partnerProfileImageCode, partnerActivityArea, status, requestedAt, null,
+		partnerProfileImageCode, partnerActivityArea, partnerJob, partnerCompanyName, status, requestedAt, null,
 	)
 
 	/** 기준일([today])로 상대방 만 나이를 채운 신청을 만든다. */

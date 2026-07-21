@@ -64,6 +64,8 @@ class GetLoungeChatRequestsE2ETest : AbstractIntegrationSupport({
 						birthday = birthday,
 						profileImageCode = "PROFILE_07",
 						regionId = requesterRegion.id,
+						job = "개발자",
+						companyName = "오늘소개",
 					),
 				)
 				// 서로 다른 두 글에 온 신청이 한 목록으로 합산되는지 확인한다.
@@ -103,9 +105,13 @@ class GetLoungeChatRequestsE2ETest : AbstractIntegrationSupport({
 					.body("data.items[0].partnerGender", Matchers.equalTo("MALE"))
 					.body("data.items[0].partnerProfileImageCode", Matchers.equalTo("PROFILE_07"))
 					.body("data.items[0].partnerActivityArea", Matchers.equalTo("서울특별시 마포구"))
-					// 지역·프로필 이미지가 없는 상대는 두 필드가 null로 내려간다. (신청 자체는 빠지지 않는다)
+					.body("data.items[0].partnerJob", Matchers.equalTo("개발자"))
+					.body("data.items[0].partnerCompanyName", Matchers.equalTo("오늘소개"))
+					// 프로필 항목이 비어 있는 상대는 해당 필드가 null로 내려간다. (신청 자체는 빠지지 않는다)
 					.body("data.items[1].partnerProfileImageCode", Matchers.nullValue())
 					.body("data.items[1].partnerActivityArea", Matchers.nullValue())
+					.body("data.items[1].partnerJob", Matchers.nullValue())
+					.body("data.items[1].partnerCompanyName", Matchers.nullValue())
 					.body("data.items[1].partnerNickname", Matchers.equalTo("먼저신청"))
 					.body("data.items[1].postId", Matchers.equalTo(firstPost.id!!.toInt()))
 					.body("data.items[1].status", Matchers.equalTo("ACCEPTED"))
@@ -205,6 +211,8 @@ class GetLoungeChatRequestsE2ETest : AbstractIntegrationSupport({
 						birthday = birthday,
 						profileImageCode = "PROFILE_02",
 						regionId = authorRegion.id,
+						job = "디자이너",
+						companyName = "미플",
 					),
 				)
 				val post: LoungePostEntity = IntegrationUtil.persist(LoungePostEntityFixture.create(userId = authorId))
@@ -232,6 +240,8 @@ class GetLoungeChatRequestsE2ETest : AbstractIntegrationSupport({
 					.body("data.items[0].partnerAge", Matchers.equalTo(expectedAge))
 					.body("data.items[0].partnerProfileImageCode", Matchers.equalTo("PROFILE_02"))
 					.body("data.items[0].partnerActivityArea", Matchers.equalTo("경기도 성남시"))
+					.body("data.items[0].partnerJob", Matchers.equalTo("디자이너"))
+					.body("data.items[0].partnerCompanyName", Matchers.equalTo("미플"))
 					.body("data.items[0].status", Matchers.equalTo("PENDING"))
 					// 보낸 신청은 내가 수락하는 것이 아니라 수락 비용을 싣지 않는다.
 					.body("data.acceptCoinAmount", Matchers.nullValue())

@@ -76,6 +76,8 @@ class GetLoungeChatRequestDaoImpl(
 					partnerDetail.profileImageCode,
 					// 표시용 활동지역은 regions를 join해 "시/도 시/군/구"로 만든다. (지역 미설정이면 null)
 					partnerRegion.sido.concat(" ").concat(partnerRegion.sigungu),
+					partnerDetail.job,
+					partnerDetail.companyName,
 					request.status,
 					request.createdAt,
 				),
