@@ -672,7 +672,8 @@ class RequestLoungeChatE2ETest : AbstractIntegrationSupport({
 					.header("Authorization", "Bearer ${accessTokenFor(requesterId)}")
 					.post("/lounge/v1/self-intro-posts/${post.id}/chat-requests")
 					.then()
-					.body("success", Matchers.equalTo(false))
+					.statusCode(400)
+					.body("error.code", Matchers.equalTo("COIN-001"))
 
 				val count: Long = IntegrationUtil.getQuery()
 					.selectFrom(QLoungeChatRequestEntity.loungeChatRequestEntity)
@@ -1893,7 +1894,8 @@ class AcceptLoungeChatE2ETest : AbstractIntegrationSupport({
 					.header("Authorization", "Bearer ${accessTokenFor(authorId)}")
 					.post("/lounge/v1/chat-requests/${request.id}/accept")
 					.then()
-					.body("success", Matchers.equalTo(false))
+					.statusCode(400)
+					.body("error.code", Matchers.equalTo("COIN-001"))
 
 				val roomCount: Int = IntegrationUtil.getQuery()
 					.selectFrom(QChatRoomEntity.chatRoomEntity)
@@ -2148,6 +2150,7 @@ package com.org.oneulsogae.api.lounge
 
 import com.org.oneulsogae.common.alarm.AlarmType
 import com.org.oneulsogae.common.integration.AbstractIntegrationSupport
+import com.org.oneulsogae.infra.alarm.command.entity.AlarmEntity
 import com.org.oneulsogae.infra.alarm.command.entity.QAlarmEntity
 import com.org.oneulsogae.infra.chat.command.entity.QChatRoomEntity
 import com.org.oneulsogae.infra.chat.command.entity.QChatRoomMemberEntity
@@ -2161,14 +2164,14 @@ import com.org.oneulsogae.infra.lounge.command.entity.LoungePostEntity
 import com.org.oneulsogae.infra.lounge.command.entity.QLoungeChatRequestEntity
 import com.org.oneulsogae.infra.lounge.command.entity.QLoungePostEntity
 import io.kotest.matchers.shouldBe
-import io.kotest.matchers.shouldNotBe
 import io.restassured.RestAssured
 import io.restassured.path.json.JsonPath
 
 /**
  * 라운지 대화 신청·수락 알람 E2E 테스트.
  * 신청하면 작성자에게 "대화 신청 받음", 수락하면 신청자에게 "대화 신청 수락됨" 알람이 쌓이는지 검증한다.
- * 알람은 커밋 후 별도 트랜잭션에서 저장되므로 저장될 때까지 잠깐 기다린다.
+ * 알람은 AFTER_COMMIT 리스너가 같은 요청 스레드에서 동기로 저장하므로(응답 전 저장 완료),
+ * 기존 매칭 알람 E2E([com.org.oneulsogae.api.match.SendInterestE2ETest])와 같이 대기 없이 바로 단언한다.
  */
 class LoungeChatRequestAlarmE2ETest : AbstractIntegrationSupport({
 
@@ -2193,53 +2196,62 @@ class LoungeChatRequestAlarmE2ETest : AbstractIntegrationSupport({
 				IntegrationUtil.persist(CoinBalanceEntityFixture.create(userId = requesterId, balance = 100))
 				val post: LoungePostEntity = IntegrationUtil.persist(LoungePostEntityFixture.create(userId = authorId))
 
-				val requestId: Int = RestAssured.given()
+				val requestBody: String = RestAssured.given()
 					.header("Authorization", "Bearer ${accessTokenFor(requesterId)}")
 					.post("/lounge/v1/self-intro-posts/${post.id}/chat-requests")
 					.then()
 					.statusCode(200)
 					.extract()
-					.let { response -> JsonPath(response.asString()).getInt("data.requestId") }
+					.asString()
+				val requestId: Int = JsonPath(requestBody).getInt("data.requestId")
 
-				val requestAlarm: Array<Any?>? = awaitAlarm(authorId, AlarmType.LOUNGE_CHAT_REQUEST_RECEIVED)
-				requestAlarm shouldNotBe null
+				// 글 작성자에게 "대화 신청 받음" 알람.
+				val requestAlarms: List<AlarmEntity> = alarmsOf(authorId)
+				requestAlarms.size shouldBe 1
+				val requestAlarm: AlarmEntity = requestAlarms[0]
+				requestAlarm.type shouldBe AlarmType.LOUNGE_CHAT_REQUEST_RECEIVED
+				requestAlarm.fromUserId shouldBe requesterId
+				requestAlarm.description shouldBe "신청자님이 회원님에게 대화를 신청했어요."
 
-				RestAssured.given()
+				val acceptBody: String = RestAssured.given()
 					.header("Authorization", "Bearer ${accessTokenFor(authorId)}")
 					.post("/lounge/v1/chat-requests/$requestId/accept")
 					.then()
 					.statusCode(200)
+					.extract()
+					.asString()
+				val chatRoomId: Int = JsonPath(acceptBody).getInt("data.chatRoomId")
 
-				val acceptAlarm: Array<Any?>? = awaitAlarm(requesterId, AlarmType.LOUNGE_CHAT_ACCEPTED)
-				acceptAlarm shouldNotBe null
+				// 신청자에게 "대화 신청 수락됨" 알람. 누르면 생성된 채팅방으로 이동한다.
+				val acceptAlarms: List<AlarmEntity> = alarmsOf(requesterId)
+				acceptAlarms.size shouldBe 1
+				val acceptAlarm: AlarmEntity = acceptAlarms[0]
+				acceptAlarm.type shouldBe AlarmType.LOUNGE_CHAT_ACCEPTED
+				acceptAlarm.fromUserId shouldBe authorId
+				acceptAlarm.description shouldBe "글쓴이님이 대화 신청을 수락했어요."
+				acceptAlarm.link shouldBe "/chat/$chatRoomId"
 			}
 		}
 	}
-}) {
-	companion object {
+})
 
-		/** 커밋 후 비동기로 저장되는 알람이 보일 때까지 최대 5초 폴링한다. */
-		private fun awaitAlarm(userId: Long, type: AlarmType): Array<Any?>? {
-			repeat(50) {
-				val row: Array<Any?>? = IntegrationUtil.nativeQuerySingleOrNull(
-					"select id from alarms where user_id = $userId and type = '${type.name}' limit 1",
-				)
-				if (row != null) return row
-				Thread.sleep(100)
-			}
-			return null
-		}
-	}
+// 해당 사용자의 알람 목록. (알람 저장 확인용 — SendInterestE2ETest와 같은 형태)
+private fun alarmsOf(userId: Long): List<AlarmEntity> {
+	val alarm: QAlarmEntity = QAlarmEntity.alarmEntity
+	return IntegrationUtil.getQuery()
+		.selectFrom(alarm)
+		.where(alarm.userId.eq(userId))
+		.fetch()
 }
 ```
 
-> `awaitAlarm`이 companion에서 안 잡히면(Kotest 생성자 람다 스코프 문제) 람다 바깥의 최상위 `private fun`으로 옮긴다.
-> `QAlarmEntity`의 실제 패키지는 `oneulsogae-infra`에서 `AlarmEntity`를 찾아 확인한다.
+> `AlarmEntity`의 프로퍼티 이름(`type`·`fromUserId`·`description`·`link`)은
+> `oneulsogae-infra/.../alarm/command/entity/AlarmEntity.kt`를 읽어 확인한다.
 
 - [ ] **Step 2: 테스트를 실행해 실패를 확인한다**
 
 Run: `./gradlew :oneulsogae-api:test --tests "com.org.oneulsogae.api.lounge.LoungeChatRequestAlarmE2ETest"`
-Expected: FAIL — `requestAlarm shouldNotBe null`에서 실패 (알람이 저장되지 않음)
+Expected: FAIL — `requestAlarms.size shouldBe 1`에서 실패 (알람이 저장되지 않아 0건)
 
 - [ ] **Step 3: 도메인 이벤트 2종을 만든다**
 
