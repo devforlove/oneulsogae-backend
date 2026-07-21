@@ -25,6 +25,8 @@ data class SelfIntroPostDetailResponse(
 	val charmPoint: String,
 	val freeWord: String,
 	val imageUrls: List<String>,
+	/** 이 작성자에게 대화를 신청할 때 드는 코인 수. 글마다 다르지 않은 전역 정책값이며, 신청 전 비용 안내에 쓴다. */
+	val chatRequestCoinAmount: Int,
 ) {
 	companion object {
 
@@ -46,6 +48,7 @@ data class SelfIntroPostDetailResponse(
 				charmPoint = view.charmPoint,
 				freeWord = view.freeWord,
 				imageUrls = view.imageUrls,
+				chatRequestCoinAmount = view.chatRequestCoinAmount,
 			)
 	}
 }

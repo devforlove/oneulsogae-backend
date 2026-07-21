@@ -81,7 +81,7 @@ class SelfIntroPostController(
 	/** 셀소 상세 한 건을 조회한다. */
 	@Operation(
 		summary = "셀소 상세 조회",
-		description = "셀소 한 건의 작성자 프로필(닉네임·성별·만 나이·키·활동지역·직업)·본문 7개 항목·사진 전체(열람용 presigned URL, 노출 순서)·좋아요 수를 조회한다. 글이 없거나 삭제됐으면 404(LOUNGE-008)를 반환한다.",
+		description = "셀소 한 건의 작성자 프로필(닉네임·성별·만 나이·키·활동지역·직업)·본문 7개 항목·사진 전체(열람용 presigned URL, 노출 순서)·좋아요 수를 조회한다. 대화 신청 버튼의 비용 안내에 쓸 chatRequestCoinAmount(신청 시 차감되는 코인 수)도 함께 내려준다. 글이 없거나 삭제됐으면 404(LOUNGE-008)를 반환한다.",
 	)
 	@GetMapping("/self-intro-posts/{postId}")
 	fun getSelfIntroPost(

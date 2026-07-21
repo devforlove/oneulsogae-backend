@@ -1,5 +1,6 @@
 package com.org.oneulsogae.core.lounge.query.dto
 
+import com.org.oneulsogae.common.coin.CoinUsageType
 import com.org.oneulsogae.common.user.Gender
 import com.org.oneulsogae.core.common.time.ageAt
 import java.time.LocalDate
@@ -33,6 +34,12 @@ data class SelfIntroPostDetailView(
 	val imageUrls: List<String> = emptyList(),
 	/** 사진의 S3 오브젝트 키 목록(노출 순서). */
 	val imageKeys: List<String> = emptyList(),
+	/**
+	 * 이 글의 작성자에게 대화를 신청할 때 드는 코인 수.
+	 * 글마다 다르지 않은 전역 정책값([CoinUsageType.LOUNGE_CHAT_INIT])이며, 클라이언트가 신청 전에 비용을 안내할 수 있도록 상세에 함께 내려준다.
+	 * (실제 차감도 서버가 같은 유형의 정책값으로 산출한다 — [com.org.oneulsogae.core.lounge.command.application.RequestLoungeChatService])
+	 */
+	val chatRequestCoinAmount: Int = CoinUsageType.LOUNGE_CHAT_INIT.coinAmount,
 ) {
 	/** dao 투영용 생성자. 나이·사진은 서비스가 채운다. */
 	constructor(

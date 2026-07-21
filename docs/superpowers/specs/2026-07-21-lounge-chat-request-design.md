@@ -349,7 +349,8 @@ lounge/response/AcceptLoungeChatResponse.kt
 
 이 백엔드 변경에 맞춰 `meeple-frontend`에서 다음이 필요하다:
 
-1. **셀소 상세 화면**: "대화 신청" 버튼 → `POST /lounge/v1/self-intro-posts/{postId}/chat-requests`. 응답 `requestId`. 코인 32 소모 안내와 잔액 부족·중복 신청(409) 처리.
+1. **셀소 상세 화면**: "대화 신청" 버튼 → `POST /lounge/v1/self-intro-posts/{postId}/chat-requests`. 응답 `requestId`. 잔액 부족·중복 신청(409) 처리.
+   비용은 **상세 조회 응답의 `data.chatRequestCoinAmount`를 그대로 표시**한다(하드코딩 금지 — 정책이 바뀌면 서버 값만 바뀐다). 글마다 다르지 않은 전역 정책값이라 목록 응답에는 싣지 않는다.
 2. **내 셀소 신청자 목록 화면**: `GET /lounge/v1/self-intro-posts/{postId}/chat-requests` — 신청자 카드(닉네임·성별·나이)와 상태별 액션(PENDING → "수락", ACCEPTED → "채팅방 이동"). 커서 페이징(`nextCursor`/`hasNext`).
 3. **수락 액션**: `POST /lounge/v1/chat-requests/{requestId}/accept` → 응답 `chatRoomId`로 채팅방 이동.
 4. **알람 목록**: `AlarmType`에 `LOUNGE_CHAT_REQUEST_RECEIVED`, `LOUNGE_CHAT_ACCEPTED` 문구/아이콘 추가. 알림 설정 토글은 기존 "1:1 소개" 항목이 그대로 관장하므로 마이탭 변경은 없다.

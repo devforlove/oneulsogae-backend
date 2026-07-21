@@ -1,5 +1,6 @@
 package com.org.oneulsogae.api.lounge
 
+import com.org.oneulsogae.common.coin.CoinUsageType
 import com.org.oneulsogae.common.integration.AbstractIntegrationSupport
 import com.org.oneulsogae.common.user.Gender
 import com.org.oneulsogae.infra.fixture.IntegrationUtil
@@ -80,6 +81,8 @@ class GetSelfIntroPostDetailE2ETest : AbstractIntegrationSupport({
 					.body("data.job", Matchers.equalTo("디자이너"))
 					.body("data.mbti", Matchers.equalTo("ENFP"))
 					.body("data.freeWord", Matchers.equalTo("편하게 연락 주세요"))
+					// 대화 신청 버튼의 비용 안내값. 글마다 다르지 않은 전역 정책값(LOUNGE_CHAT_INIT)이다.
+					.body("data.chatRequestCoinAmount", Matchers.equalTo(CoinUsageType.LOUNGE_CHAT_INIT.coinAmount))
 					.body("data.imageUrls", Matchers.hasSize<Any>(2))
 					.body("data.imageUrls[0]", Matchers.equalTo("https://presigned.test/lounge-posts/$userId/first.jpg"))
 					.body("data.imageUrls[1]", Matchers.equalTo("https://presigned.test/lounge-posts/$userId/second.png"))
