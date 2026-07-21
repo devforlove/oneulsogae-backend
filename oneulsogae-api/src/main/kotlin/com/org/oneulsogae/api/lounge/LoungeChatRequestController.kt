@@ -1,10 +1,12 @@
 package com.org.oneulsogae.api.lounge
 
+import com.org.oneulsogae.api.lounge.response.AcceptLoungeChatResponse
 import com.org.oneulsogae.api.lounge.response.LoungeChatRequestPageResponse
 import com.org.oneulsogae.api.lounge.response.LoungeChatRequestResponse
 import com.org.oneulsogae.auth.AuthUser
 import com.org.oneulsogae.auth.LoginUser
 import com.org.oneulsogae.core.common.response.ApiResponse
+import com.org.oneulsogae.core.lounge.command.application.port.`in`.AcceptLoungeChatUseCase
 import com.org.oneulsogae.core.lounge.command.application.port.`in`.RequestLoungeChatUseCase
 import com.org.oneulsogae.core.lounge.query.service.port.`in`.GetLoungeChatRequestsUseCase
 import io.swagger.v3.oas.annotations.Operation
@@ -20,6 +22,7 @@ import org.springframework.web.bind.annotation.RestController
  * 라운지 셀소 대화 신청 엔드포인트. (인증 필요)
  * - POST /lounge/v1/self-intro-posts/{postId}/chat-requests: 셀소 작성자에게 대화를 신청한다. (코인 차감)
  * - GET /lounge/v1/self-intro-posts/{postId}/chat-requests: 내 셀소에 온 대화 신청 목록을 최신순으로 조회한다.
+ * - POST /lounge/v1/chat-requests/{requestId}/accept: 받은 대화 신청을 수락해 채팅방을 연다. (코인 차감)
  */
 @RestController
 @RequestMapping("/lounge/v1")
@@ -27,6 +30,7 @@ import org.springframework.web.bind.annotation.RestController
 class LoungeChatRequestController(
 	private val requestLoungeChatUseCase: RequestLoungeChatUseCase,
 	private val getLoungeChatRequestsUseCase: GetLoungeChatRequestsUseCase,
+	private val acceptLoungeChatUseCase: AcceptLoungeChatUseCase,
 ) {
 
 	/** 셀소 작성자에게 대화를 신청한다. 신청 코인(32)이 차감된다. */
@@ -55,4 +59,16 @@ class LoungeChatRequestController(
 		ApiResponse.success(
 			LoungeChatRequestPageResponse.of(getLoungeChatRequestsUseCase.getRequests(user.id, postId, cursor)),
 		)
+
+	/** 내 셀소에 온 대화 신청을 수락해 채팅방을 연다. 수락 코인(32)이 차감된다. */
+	@Operation(
+		summary = "대화 신청 수락",
+		description = "내가 쓴 셀소에 온 대화 신청을 수락한다. 수락 코인 32가 차감되고 신청자와의 채팅방이 생성되며 응답의 chatRoomId로 바로 진입할 수 있다. 같은 글의 신청을 여러 건 수락할 수 있다. 내 글에 온 신청이 아니면 403(LOUNGE-011), 이미 수락했으면 409(LOUNGE-013), 신청이 없으면 404(LOUNGE-012)를 반환한다.",
+	)
+	@PostMapping("/chat-requests/{requestId}/accept")
+	fun acceptChatRequest(
+		@LoginUser user: AuthUser,
+		@PathVariable("requestId") requestId: Long,
+	): ApiResponse<AcceptLoungeChatResponse> =
+		ApiResponse.success(AcceptLoungeChatResponse.of(acceptLoungeChatUseCase.accept(user.id, requestId)))
 }
