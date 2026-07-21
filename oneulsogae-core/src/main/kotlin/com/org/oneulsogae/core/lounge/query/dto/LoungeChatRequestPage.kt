@@ -1,5 +1,6 @@
 package com.org.oneulsogae.core.lounge.query.dto
 
+import com.org.oneulsogae.common.coin.CoinUsageType
 import java.time.LocalDate
 
 /**
@@ -16,6 +17,14 @@ class LoungeChatRequestPage private constructor(
 	/** 다음(더 과거) 페이지 조회의 기준 커서. 현재 페이지 마지막(가장 오래된) 신청의 requestId이며, 다음 페이지가 없으면 null. */
 	val nextCursor: Long?
 		get() = if (hasNext) values.lastOrNull()?.requestId else null
+
+	/**
+	 * 신청 한 건을 수락할 때 드는 코인 수.
+	 * 신청마다 다르지 않은 전역 정책값([CoinUsageType.LOUNGE_CHAT_ACCEPT])이라 항목이 아니라 페이지에 한 번만 싣는다.
+	 * (실제 차감도 서버가 같은 유형의 정책값으로 산출한다 — [com.org.oneulsogae.core.lounge.command.application.AcceptLoungeChatService])
+	 */
+	val acceptCoinAmount: Int
+		get() = CoinUsageType.LOUNGE_CHAT_ACCEPT.coinAmount
 
 	/** 각 항목의 만 나이를 기준일([today])로 채운 페이지를 만든다. */
 	fun withAges(today: LocalDate): LoungeChatRequestPage =

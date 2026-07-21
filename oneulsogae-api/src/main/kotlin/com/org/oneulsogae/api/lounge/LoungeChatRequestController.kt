@@ -48,7 +48,7 @@ class LoungeChatRequestController(
 	/** 내 셀소에 온 대화 신청 목록을 최신순 한 페이지 조회한다. */
 	@Operation(
 		summary = "받은 대화 신청 목록 조회",
-		description = "내가 쓴 셀소에 온 대화 신청을 최신순으로 20개씩 내려준다. 각 항목은 신청 식별자(requestId)·신청자(userId·닉네임·성별·만 나이)·상태(PENDING/ACCEPTED)·수락으로 생긴 채팅방 id(수락 전이면 null)·신청 시각을 담는다. 다음 페이지는 응답의 nextCursor를 cursor 파라미터로 그대로 넘겨 조회한다(hasNext=false면 마지막 페이지). 내 글이 아니면 403(LOUNGE-011), 글이 없으면 404(LOUNGE-008)를 반환한다.",
+		description = "내가 쓴 셀소에 온 대화 신청을 최신순으로 20개씩 내려준다. 각 항목은 신청 식별자(requestId)·신청자(userId·닉네임·성별·만 나이)·상태(PENDING/ACCEPTED)·수락으로 생긴 채팅방 id(수락 전이면 null)·신청 시각을 담는다. 수락 버튼의 비용 안내에 쓸 acceptCoinAmount(수락 시 차감되는 코인 수)는 신청마다 다르지 않으므로 항목이 아니라 응답 루트에 한 번만 담는다. 다음 페이지는 응답의 nextCursor를 cursor 파라미터로 그대로 넘겨 조회한다(hasNext=false면 마지막 페이지). 내 글이 아니면 403(LOUNGE-011), 글이 없으면 404(LOUNGE-008)를 반환한다.",
 	)
 	@GetMapping("/self-intro-posts/{postId}/chat-requests")
 	fun getChatRequests(

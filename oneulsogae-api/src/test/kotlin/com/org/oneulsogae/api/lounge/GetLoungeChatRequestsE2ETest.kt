@@ -1,6 +1,7 @@
 package com.org.oneulsogae.api.lounge
 
 import com.org.oneulsogae.common.chat.ChatRoomMatchType
+import com.org.oneulsogae.common.coin.CoinUsageType
 import com.org.oneulsogae.common.integration.AbstractIntegrationSupport
 import com.org.oneulsogae.common.lounge.LoungeChatRequestStatus
 import com.org.oneulsogae.common.user.Gender
@@ -94,6 +95,8 @@ class GetLoungeChatRequestsE2ETest : AbstractIntegrationSupport({
 					.body("data.items[1].nickname", Matchers.equalTo("먼저신청"))
 					.body("data.items[1].status", Matchers.equalTo("ACCEPTED"))
 					.body("data.items[1].chatRoomId", Matchers.equalTo(chatRoom.id!!.toInt()))
+					// 수락 버튼의 비용 안내값. 신청마다 다르지 않은 전역 정책값(LOUNGE_CHAT_ACCEPT)이라 응답 루트에 한 번만 실린다.
+					.body("data.acceptCoinAmount", Matchers.equalTo(CoinUsageType.LOUNGE_CHAT_ACCEPT.coinAmount))
 					.body("data.hasNext", Matchers.equalTo(false))
 					.body("data.nextCursor", Matchers.nullValue())
 			}

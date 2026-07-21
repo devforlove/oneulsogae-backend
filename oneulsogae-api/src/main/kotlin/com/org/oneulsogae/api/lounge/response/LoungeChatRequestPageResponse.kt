@@ -12,6 +12,8 @@ import java.time.LocalDateTime
  */
 data class LoungeChatRequestPageResponse(
 	val items: List<LoungeChatRequestItemResponse>,
+	/** 신청 한 건을 수락할 때 드는 코인 수. 신청마다 다르지 않은 전역 정책값이라 항목이 아니라 페이지에 한 번만 싣는다. */
+	val acceptCoinAmount: Int,
 	val hasNext: Boolean,
 	val nextCursor: Long?,
 ) {
@@ -20,6 +22,7 @@ data class LoungeChatRequestPageResponse(
 		fun of(page: LoungeChatRequestPage): LoungeChatRequestPageResponse =
 			LoungeChatRequestPageResponse(
 				items = page.values.map { view: LoungeChatRequestView -> LoungeChatRequestItemResponse.of(view) },
+				acceptCoinAmount = page.acceptCoinAmount,
 				hasNext = page.hasNext,
 				nextCursor = page.nextCursor,
 			)
