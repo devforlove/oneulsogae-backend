@@ -51,7 +51,7 @@ class DailyCoinAlarmE2ETest : AbstractIntegrationSupport({
 				val alarm: AlarmEntity = alarms[0]
 				alarm.type shouldBe AlarmType.COIN_DAILY_ACQUIRED
 				alarm.description shouldBe "출석 코인 1개가 적립되었어요."
-				alarm.link shouldBe "/coin"
+				alarm.link shouldBe "/"
 				alarm.fromUserId shouldBe null
 			}
 		}

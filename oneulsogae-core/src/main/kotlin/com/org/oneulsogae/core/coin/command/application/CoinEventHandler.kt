@@ -35,8 +35,8 @@ class CoinEventHandler(
 				type = AlarmType.COIN_DAILY_ACQUIRED,
 				title = "코인 적립",
 				description = "출석 코인 ${event.amount}개가 적립되었어요.",
-				// 알람을 누르면 코인 페이지로 이동한다. (프론트 라우팅에 맞춘 경로)
-				link = "/coin",
+				// 알람을 누르면 홈으로 이동한다. (프론트에 코인 전용 페이지 경로가 없다)
+				link = "/",
 			),
 		)
 	}
