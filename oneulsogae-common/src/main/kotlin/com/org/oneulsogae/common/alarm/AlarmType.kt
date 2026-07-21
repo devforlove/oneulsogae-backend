@@ -49,12 +49,20 @@ enum class AlarmType(val description: String) {
 
 	/** [코인] 출석(DAILY) 코인이 적립됨. (본인에게, 인앱 전용 — 알림톡 push 없음) */
 	COIN_DAILY_ACQUIRED("코인 적립"),
+
+	/** [라운지] 내 셀소에 대화 신청이 들어옴. (글 작성자에게) */
+	LOUNGE_CHAT_REQUEST_RECEIVED("대화 신청 받음"),
+
+	/** [라운지] 내가 보낸 대화 신청이 수락됨. (신청자에게) */
+	LOUNGE_CHAT_ACCEPTED("대화 신청 수락됨"),
 	;
 
 	/** 이 알람 유형이 속한 알림 설정 카테고리. (알림톡 전송 게이트가 이 값으로 사용자 설정을 평가) */
 	fun category(): NotificationCategory =
 		when (this) {
-			ONE_TO_ONE_INTEREST_RECEIVED, ONE_TO_ONE_MATCH_CHECKED, ONE_TO_ONE_MATCHED, ONE_TO_ONE_MATCH_ENDED, ONE_TO_ONE_NO_MATCH_TODAY ->
+			ONE_TO_ONE_INTEREST_RECEIVED, ONE_TO_ONE_MATCH_CHECKED, ONE_TO_ONE_MATCHED, ONE_TO_ONE_MATCH_ENDED, ONE_TO_ONE_NO_MATCH_TODAY,
+			// 라운지 대화 신청도 1:1 소개 성격이라 별도 카테고리를 두지 않고 ONE_TO_ONE 토글이 관장한다.
+			LOUNGE_CHAT_REQUEST_RECEIVED, LOUNGE_CHAT_ACCEPTED ->
 				NotificationCategory.ONE_TO_ONE
 			MANY_TO_MANY_INTEREST_RECEIVED, MANY_TO_MANY_MATCHED, MANY_TO_MANY_MATCH_ENDED, MANY_TO_MANY_NO_MATCH_TODAY ->
 				NotificationCategory.MEETING

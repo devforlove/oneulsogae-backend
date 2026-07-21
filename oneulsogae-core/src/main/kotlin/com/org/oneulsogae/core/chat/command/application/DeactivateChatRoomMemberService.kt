@@ -62,10 +62,11 @@ class DeactivateChatRoomMemberService(
 	}
 
 	// 채팅방 종류에 맞는 나감 안내 문구를 고른다. (팀 해체 vs 1:1 매칭 종료)
+	// 라운지 대화 방은 1:1 사용자 방이므로 SOLO와 같은 문구를 쓴다.
 	private fun leftMessageOf(matchType: ChatRoomMatchType): String =
 		when (matchType) {
 			ChatRoomMatchType.TEAM -> TEAM_LEFT_MESSAGE
-			ChatRoomMatchType.SOLO -> SOLO_LEFT_MESSAGE
+			ChatRoomMatchType.SOLO, ChatRoomMatchType.LOUNGE -> SOLO_LEFT_MESSAGE
 		}
 
 	companion object {

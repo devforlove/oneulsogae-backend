@@ -25,8 +25,9 @@ class CreateReportService(
 	@Transactional
 	override fun create(reporterId: Long, command: CreateReportCommand): Report {
 		val chatRoomMatch: ChatRoomMatch = getChatRoomMatchUseCase.getMatch(command.chatRoomId)
+		// 라운지 대화 방은 1:1 사용자 방이므로 신고 대상도 상대 유저다.
 		val targetType: ReportTargetType = when (chatRoomMatch.matchType) {
-			ChatRoomMatchType.SOLO -> ReportTargetType.USER
+			ChatRoomMatchType.SOLO, ChatRoomMatchType.LOUNGE -> ReportTargetType.USER
 			ChatRoomMatchType.TEAM -> ReportTargetType.TEAM
 		}
 		val report: Report = Report.create(

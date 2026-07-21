@@ -13,4 +13,7 @@ enum class ChatRoomMatchType {
 
 	/** 2:2(팀) 매칭에서 생성된 채팅방. (team_matches.id) */
 	TEAM,
+
+	/** 라운지 셀소 대화 신청 수락으로 생성된 채팅방. (lounge_chat_requests.id) */
+	LOUNGE,
 }

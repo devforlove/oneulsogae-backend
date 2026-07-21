@@ -38,4 +38,20 @@ enum class LoungeErrorCode(
 	// 셀프 소개팅 조회
 	/** 셀소를 id로 찾지 못함(없거나 삭제됨). */
 	SELF_INTRO_POST_NOT_FOUND("LOUNGE-008", "셀소를 찾을 수 없습니다.", HttpStatus.NOT_FOUND),
+
+	// 라운지 대화 신청
+	/** 본인이 작성한 셀소에 대화를 신청함. */
+	LOUNGE_CHAT_REQUEST_SELF("LOUNGE-009", "본인이 작성한 글에는 대화를 신청할 수 없습니다.", HttpStatus.BAD_REQUEST),
+
+	/** 같은 글에 이미 대화를 신청함. */
+	LOUNGE_CHAT_REQUEST_DUPLICATED("LOUNGE-010", "이미 대화를 신청한 글입니다.", HttpStatus.CONFLICT),
+
+	/** 본인이 작성한 글이 아님. (신청 목록 조회·수락) */
+	LOUNGE_POST_NOT_OWNED("LOUNGE-011", "본인이 작성한 글이 아닙니다.", HttpStatus.FORBIDDEN),
+
+	/** 대화 신청을 id로 찾지 못함(없거나 삭제됨). */
+	LOUNGE_CHAT_REQUEST_NOT_FOUND("LOUNGE-012", "대화 신청을 찾을 수 없습니다.", HttpStatus.NOT_FOUND),
+
+	/** 이미 수락한 대화 신청. */
+	LOUNGE_CHAT_REQUEST_ALREADY_ACCEPTED("LOUNGE-013", "이미 수락한 대화 신청입니다.", HttpStatus.CONFLICT),
 }

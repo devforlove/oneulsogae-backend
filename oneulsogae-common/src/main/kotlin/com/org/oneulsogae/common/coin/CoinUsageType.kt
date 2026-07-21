@@ -21,4 +21,10 @@ enum class CoinUsageType(val description: String, val coinAmount: Int) {
 
 	/** 추가 소개(오늘의 추천 외 1명 더 소개받기). */
 	EXTRA_INTRO("추가 소개", 30),
+
+	/** 라운지 셀소 대화 신청. */
+	LOUNGE_CHAT_INIT("라운지 대화 신청", 32),
+
+	/** 라운지 셀소 대화 수락. */
+	LOUNGE_CHAT_ACCEPT("라운지 대화 수락", 32),
 }

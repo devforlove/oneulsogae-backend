@@ -46,4 +46,18 @@ object LockKeyConstraints {
 	 * 동시 요청·더블클릭으로 인한 코인 이중 차감을 막는다.
 	 */
 	const val EXTRA_INTRO: String = "EXTRA_INTRO"
+
+	/**
+	 * 라운지 셀소 대화 신청 처리 락. (postId, userId)로 잠가 같은 사용자의 같은 글 신청을 직렬화한다.
+	 * 경합 대상이 "이 사용자가 이 글에 신청했는가"라는 유니크 조건이므로 글 단위가 아니라 글+사용자로 잠근다.
+	 * (글 단위로 잠그면 서로 다른 신청자끼리 불필요하게 직렬화된다)
+	 * 동시 요청·더블클릭으로 인한 코인 이중 차감을 막는다. (waitTime=0이면 겹친 요청은 즉시 실패)
+	 */
+	const val LOUNGE_CHAT_REQUEST: String = "LOUNGE_CHAT_REQUEST"
+
+	/**
+	 * 라운지 셀소 대화 신청 수락 처리 락. requestId로 잠가 신청 한 건의 상태 전이를 직렬화한다.
+	 * 동시 요청·더블클릭으로 인한 코인 이중 차감과 중복 채팅방 생성을 막는다.
+	 */
+	const val LOUNGE_CHAT_ACCEPT: String = "LOUNGE_CHAT_ACCEPT"
 }
