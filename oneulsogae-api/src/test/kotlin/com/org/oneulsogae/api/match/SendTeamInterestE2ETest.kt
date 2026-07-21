@@ -7,6 +7,8 @@ import com.org.oneulsogae.common.integration.post
 import com.org.oneulsogae.common.match.MatchStatus
 import com.org.oneulsogae.common.match.MatchedTeamStatus
 import com.org.oneulsogae.common.match.TeamMatchType
+import com.org.oneulsogae.common.match.TeamMemberStatus
+import com.org.oneulsogae.common.match.TeamStatus
 import com.org.oneulsogae.common.user.Gender
 import com.org.oneulsogae.infra.alarm.command.entity.AlarmEntity
 import com.org.oneulsogae.infra.alarm.command.entity.QAlarmEntity
@@ -26,7 +28,9 @@ import com.org.oneulsogae.infra.teammatch.command.entity.QMatchedTeamEntity
 import com.org.oneulsogae.infra.teammatch.command.entity.QTeamEntity
 import com.org.oneulsogae.infra.teammatch.command.entity.QTeamMatchEntity
 import com.org.oneulsogae.infra.teammatch.command.entity.QTeamMemberEntity
+import com.org.oneulsogae.infra.teammatch.command.entity.TeamEntity
 import com.org.oneulsogae.infra.teammatch.command.entity.TeamMatchEntity
+import com.org.oneulsogae.infra.teammatch.command.entity.TeamMemberEntity
 import com.org.oneulsogae.infra.user.command.entity.QUserDetailEntity
 import io.kotest.matchers.shouldBe
 import java.time.LocalDate
@@ -64,13 +68,17 @@ class SendTeamInterestE2ETest : AbstractIntegrationSupport({
 		return teamId
 	}
 
-	// 팀 결성 뒤 회사 인증이 취소된 상태를 재현한다. (formedTeam은 결성에 필요한 인증을 미리 채우므로,
-	// 관심 보내기 자체의 게이트만 독립적으로 검증하려면 결성 후에 인증을 해제해야 한다)
-	fun revokeCompanyVerification(userId: Long) {
-		IntegrationUtil.update { queryFactory ->
-			val detail = QUserDetailEntity.userDetailEntity
-			queryFactory.update(detail).setNull(detail.companyName).where(detail.userId.eq(userId)).execute()
-		}
+	// 결성(ACTIVE)된 팀을 HTTP 없이 엔티티로 직접 시딩하고 teamId를 돌려준다.
+	// (초대·수락 API를 거치지 않으므로 회사 인증 게이트와 무관하게 팀만 준비할 때 쓴다)
+	fun persistActiveTeam(ownerId: Long, memberId: Long): Long {
+		persistMatchUser(ownerId, Gender.MALE)
+		persistMatchUser(memberId, Gender.MALE)
+		val teamId: Long = IntegrationUtil.persist(
+			TeamEntity(name = "우리팀", gender = Gender.MALE, regionId = 1L, introduction = "함께 즐겁게 활동할 팀이에요", status = TeamStatus.ACTIVE),
+		).id!!
+		IntegrationUtil.persist(TeamMemberEntity(teamId = teamId, userId = ownerId, status = TeamMemberStatus.ACTIVE))
+		IntegrationUtil.persist(TeamMemberEntity(teamId = teamId, userId = memberId, status = TeamMemberStatus.ACTIVE))
+		return teamId
 	}
 
 	// 두 팀을 참가 팀으로 하는 팀 매칭을 만들고 teamMatchId를 돌려준다. (각 팀 상태·헤더 상태 지정 가능)
@@ -233,12 +241,12 @@ class SendTeamInterestE2ETest : AbstractIntegrationSupport({
 				val myInvited = 6302L
 				val oppOwner = 6303L
 				val oppInvited = 6304L
-				val myTeamId: Long = formedTeam(myOwner, myInvited)
+				// 팀은 엔티티로 직접 시딩해 결성 자체에는 회사 인증이 필요 없게 하고,
+				// 요청자(myOwner)에게는 회사명 없는 프로필만 채워 관심 보내기 자체의 게이트(요청자 검증)만 독립적으로 검증한다.
+				val myTeamId: Long = persistActiveTeam(myOwner, myInvited)
+				IntegrationUtil.persist(UserDetailEntityFixture.create(userId = myOwner, gender = Gender.MALE))
 				val opponentTeamId: Long = formedTeam(oppOwner, oppInvited)
 				val teamMatchId: Long = persistTeamMatch(myTeamId, opponentTeamId)
-				// 팀 결성에는 회사 인증이 필요해 formedTeam이 인증 프로필을 채운다. 이후 인증이 취소된 상태를 재현해
-				// 관심 보내기 자체의 게이트(요청자 검증)만 독립적으로 검증한다.
-				revokeCompanyVerification(myOwner)
 				IntegrationUtil.persist(CoinBalanceEntityFixture.create(userId = myOwner, balance = 100))
 
 				post("/team-matches/v1/$teamMatchId/interest") {

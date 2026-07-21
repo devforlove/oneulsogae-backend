@@ -29,11 +29,11 @@ class WithdrawTeamInvitationE2ETest : AbstractIntegrationSupport({
 	}
 
 	// 초대자는 회사 인증이 필요하다. (닉네임은 알람 문구 검증용으로 호출부에서 지정 가능)
-	fun inviteTeam(ownerId: Long, invitedUserId: Long, ownerNickname: String? = null): Long {
+	fun inviteTeam(ownerId: Long, invitedUserId: Long, ownerNickname: String = "테스트유저"): Long {
 		persistMatchUser(ownerId, Gender.MALE)
 		persistMatchUser(invitedUserId, Gender.MALE)
 		IntegrationUtil.persist(
-			UserDetailEntityFixture.create(userId = ownerId, gender = Gender.MALE, companyName = "오늘소개", nickname = ownerNickname ?: "테스트유저"),
+			UserDetailEntityFixture.create(userId = ownerId, gender = Gender.MALE, companyName = "오늘소개", nickname = ownerNickname),
 		)
 		return post("/teams/v1/invitation") {
 			bearer(accessTokenFor(ownerId))

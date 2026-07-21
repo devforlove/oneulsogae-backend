@@ -31,7 +31,7 @@ class DisbandTeamE2ETest : AbstractIntegrationSupport({
 
 	// 결성(ACTIVE)까지 진행한 팀의 teamId를 돌려준다. (초대 → 수락)
 	// 초대·수락 모두 회사 인증이 필요하므로 owner·invited 모두 인증된 프로필을 미리 채운다. (닉네임은 알람 문구 검증용으로 호출부에서 지정 가능)
-	fun formedTeam(ownerId: Long, invitedUserId: Long, invitedNickname: String? = null): Long {
+	fun formedTeam(ownerId: Long, invitedUserId: Long, invitedNickname: String = "테스트유저"): Long {
 		persistMatchUser(ownerId, Gender.MALE)
 		persistMatchUser(invitedUserId, Gender.MALE)
 		IntegrationUtil.persist(UserDetailEntityFixture.create(userId = ownerId, gender = Gender.MALE, companyName = "오늘소개"))
@@ -40,7 +40,7 @@ class DisbandTeamE2ETest : AbstractIntegrationSupport({
 				userId = invitedUserId,
 				gender = Gender.MALE,
 				companyName = "오늘소개",
-				nickname = invitedNickname ?: "테스트유저",
+				nickname = invitedNickname,
 			),
 		)
 		val teamId: Long = post("/teams/v1/invitation") {
