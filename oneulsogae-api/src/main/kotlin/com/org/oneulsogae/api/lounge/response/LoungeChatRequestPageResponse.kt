@@ -62,6 +62,10 @@ data class LoungeChatRequestItemResponse(
 	val partnerNickname: String?,
 	val partnerGender: Gender?,
 	val partnerAge: Int?,
+	/** 상대방 프로필 이미지 코드. (미설정이면 null) */
+	val partnerProfileImageCode: String?,
+	/** 상대방 활동지역 표시 문자열(시/도 시/군/구). 지역 미설정이면 null. */
+	val partnerActivityArea: String?,
 	val status: LoungeChatRequestStatus,
 	val chatRoomId: Long?,
 	val requestedAt: LocalDateTime,
@@ -76,6 +80,8 @@ data class LoungeChatRequestItemResponse(
 				partnerNickname = view.partnerNickname,
 				partnerGender = view.partnerGender,
 				partnerAge = view.partnerAge,
+				partnerProfileImageCode = view.partnerProfileImageCode,
+				partnerActivityArea = view.partnerActivityArea,
 				status = view.status,
 				chatRoomId = view.chatRoomId,
 				requestedAt = view.requestedAt,

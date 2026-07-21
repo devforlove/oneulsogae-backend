@@ -11,12 +11,16 @@ import com.org.oneulsogae.infra.fixture.ChatRoomEntityFixture
 import com.org.oneulsogae.infra.fixture.IntegrationUtil
 import com.org.oneulsogae.infra.fixture.LoungeChatRequestEntityFixture
 import com.org.oneulsogae.infra.fixture.LoungePostEntityFixture
+import com.org.oneulsogae.infra.fixture.RegionEntityFixture
 import com.org.oneulsogae.infra.fixture.UserDetailEntityFixture
 import com.org.oneulsogae.infra.fixture.UserEntityFixture
 import com.org.oneulsogae.infra.lounge.command.entity.LoungeChatRequestEntity
 import com.org.oneulsogae.infra.lounge.command.entity.LoungePostEntity
 import com.org.oneulsogae.infra.lounge.command.entity.QLoungeChatRequestEntity
 import com.org.oneulsogae.infra.lounge.command.entity.QLoungePostEntity
+import com.org.oneulsogae.infra.user.command.entity.QUserDetailEntity
+import com.org.oneulsogae.infra.region.entity.QRegionEntity
+import com.org.oneulsogae.infra.region.entity.RegionEntity
 import io.restassured.RestAssured
 import org.hamcrest.Matchers
 import java.time.LocalDate
@@ -33,6 +37,9 @@ class GetLoungeChatRequestsE2ETest : AbstractIntegrationSupport({
 		IntegrationUtil.deleteAll(QChatRoomEntity.chatRoomEntity)
 		IntegrationUtil.deleteAll(QLoungeChatRequestEntity.loungeChatRequestEntity)
 		IntegrationUtil.deleteAll(QLoungePostEntity.loungePostEntity)
+		// 프로필이 참조하는 지역까지 정리한다. (regions는 (sido, sigungu) 유니크라 남겨두면 다른 스펙의 같은 지역 생성이 깨진다)
+		IntegrationUtil.deleteAll(QUserDetailEntity.userDetailEntity)
+		IntegrationUtil.deleteAll(QRegionEntity.regionEntity)
 	}
 
 	describe("GET /lounge/v1/chat-requests/received") {
@@ -51,12 +58,17 @@ class GetLoungeChatRequestsE2ETest : AbstractIntegrationSupport({
 						birthday = birthday,
 					),
 				)
+				val requesterRegion: RegionEntity = IntegrationUtil.persist(
+					RegionEntityFixture.create(sido = "서울특별시", sigungu = "마포구"),
+				)
 				IntegrationUtil.persist(
 					UserDetailEntityFixture.create(
 						userId = newerRequesterId,
 						nickname = "나중신청",
 						gender = Gender.MALE,
 						birthday = birthday,
+						profileImageCode = "PROFILE_07",
+						regionId = requesterRegion.id,
 					),
 				)
 				// 서로 다른 두 글에 온 신청이 한 목록으로 합산되는지 확인한다.
@@ -98,6 +110,11 @@ class GetLoungeChatRequestsE2ETest : AbstractIntegrationSupport({
 					.body("data.items[0].chatRoomId", Matchers.nullValue())
 					.body("data.items[0].partnerAge", Matchers.equalTo(expectedAge))
 					.body("data.items[0].partnerGender", Matchers.equalTo("MALE"))
+					.body("data.items[0].partnerProfileImageCode", Matchers.equalTo("PROFILE_07"))
+					.body("data.items[0].partnerActivityArea", Matchers.equalTo("서울특별시 마포구"))
+					// 지역·프로필 이미지가 없는 상대는 두 필드가 null로 내려간다. (신청 자체는 빠지지 않는다)
+					.body("data.items[1].partnerProfileImageCode", Matchers.nullValue())
+					.body("data.items[1].partnerActivityArea", Matchers.nullValue())
 					.body("data.items[1].partnerNickname", Matchers.equalTo("먼저신청"))
 					.body("data.items[1].postId", Matchers.equalTo(firstPost.id!!.toInt()))
 					.body("data.items[1].status", Matchers.equalTo("ACCEPTED"))
@@ -187,12 +204,17 @@ class GetLoungeChatRequestsE2ETest : AbstractIntegrationSupport({
 				val meId: Long = IntegrationUtil.persist(UserEntityFixture.create(providerId = "lounge-sent-user-1")).id!!
 				val authorId: Long = IntegrationUtil.persist(UserEntityFixture.create(providerId = "lounge-sent-author-1")).id!!
 				val birthday: LocalDate = LocalDate.of(1993, 5, 5)
+				val authorRegion: RegionEntity = IntegrationUtil.persist(
+					RegionEntityFixture.create(sido = "경기도", sigungu = "성남시"),
+				)
 				IntegrationUtil.persist(
 					UserDetailEntityFixture.create(
 						userId = authorId,
 						nickname = "글쓴이",
 						gender = Gender.FEMALE,
 						birthday = birthday,
+						profileImageCode = "PROFILE_02",
+						regionId = authorRegion.id,
 					),
 				)
 				val post: LoungePostEntity = IntegrationUtil.persist(LoungePostEntityFixture.create(userId = authorId))
@@ -218,6 +240,8 @@ class GetLoungeChatRequestsE2ETest : AbstractIntegrationSupport({
 					.body("data.items[0].partnerNickname", Matchers.equalTo("글쓴이"))
 					.body("data.items[0].partnerGender", Matchers.equalTo("FEMALE"))
 					.body("data.items[0].partnerAge", Matchers.equalTo(expectedAge))
+					.body("data.items[0].partnerProfileImageCode", Matchers.equalTo("PROFILE_02"))
+					.body("data.items[0].partnerActivityArea", Matchers.equalTo("경기도 성남시"))
 					.body("data.items[0].status", Matchers.equalTo("PENDING"))
 					.body("data.items[0].chatRoomId", Matchers.nullValue())
 					// 보낸 신청은 내가 수락하는 것이 아니라 수락 비용을 싣지 않는다.
