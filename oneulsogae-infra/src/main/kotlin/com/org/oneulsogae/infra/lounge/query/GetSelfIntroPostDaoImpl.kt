@@ -12,6 +12,7 @@ import com.org.oneulsogae.infra.lounge.command.entity.QSelfIntroPostEntity
 import com.org.oneulsogae.infra.region.entity.QRegionEntity
 import com.org.oneulsogae.infra.user.command.entity.QUserDetailEntity
 import com.querydsl.core.types.Projections
+import com.querydsl.core.types.dsl.NumberPath
 import com.querydsl.jpa.impl.JPAQueryFactory
 import org.springframework.stereotype.Component
 
@@ -112,19 +113,24 @@ class GetSelfIntroPostDaoImpl(
 	}
 
 	/*
-	 * 내가 쓴 셀소(lounge_posts)를 idx_user_id로 seek한 뒤, 글마다 신청을 idx_post_id_id로 이어 세고 status를 필터한다.
-	 * 셀소는 24시간에 한 건만 등록할 수 있어 구동 테이블(내 글)이 작으므로, status 전용 인덱스 없이도 신청 행 스캔 범위가 글 단위로 제한된다.
+	 * 신청 행이 수신자(receiver_user_id)를 알고 있어 글을 조인하지 않는다.
+	 * (receiver_user_id 동등 조건이 idx_receiver_user_id_id를 그대로 타고, status는 좁혀진 행에만 적용된다)
 	 */
-	override fun countReceivedPendingChatRequests(authorUserId: Long): Int {
-		val post: QLoungePostEntity = QLoungePostEntity.loungePostEntity
+	override fun countReceivedPendingChatRequests(authorUserId: Long): Int =
+		countPendingBy(QLoungeChatRequestEntity.loungeChatRequestEntity.receiverUserId, authorUserId)
+
+	// requester_user_id 동등 조건이 idx_requester_user_id_id를 탄다.
+	override fun countSentPendingChatRequests(requesterUserId: Long): Int =
+		countPendingBy(QLoungeChatRequestEntity.loungeChatRequestEntity.requesterUserId, requesterUserId)
+
+	/** [ownerColumn]이 [ownerUserId]인 PENDING 신청 건수. (받은/보낸 배지가 기준 컬럼만 다르고 나머지가 같다) */
+	private fun countPendingBy(ownerColumn: NumberPath<Long>, ownerUserId: Long): Int {
 		val request: QLoungeChatRequestEntity = QLoungeChatRequestEntity.loungeChatRequestEntity
 		return queryFactory
 			.select(request.count())
-			.from(post)
-			.join(request).on(request.postId.eq(post.id))
+			.from(request)
 			.where(
-				post.userId.eq(authorUserId),
-				post.type.eq(LoungePostType.SELF_INTRO),
+				ownerColumn.eq(ownerUserId),
 				request.status.eq(LoungeChatRequestStatus.PENDING),
 			)
 			.fetchFirst()

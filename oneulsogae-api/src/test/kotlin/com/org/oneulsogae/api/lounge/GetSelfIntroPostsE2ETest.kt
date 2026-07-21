@@ -100,7 +100,7 @@ class GetSelfIntroPostsE2ETest : AbstractIntegrationSupport({
 		}
 
 		context("내 셀소 두 건에 미수락 신청 3건과 수락된 신청 1건이 있으면") {
-			it("받은 신청 배지는 미수락 3건만 세고, 남의 글에 온 신청은 세지 않는다") {
+			it("받은 배지는 미수락 3건만 세고, 남의 글에 온 신청은 세지 않으며, 보낸 배지와 서로 섞이지 않는다") {
 				val authorId: Long = IntegrationUtil.persist(UserEntityFixture.create(providerId = "lounge-list-badge-1")).id!!
 				val otherAuthorId: Long = IntegrationUtil.persist(UserEntityFixture.create(providerId = "lounge-list-badge-2")).id!!
 				val firstPost: LoungePostEntity = IntegrationUtil.persist(LoungePostEntityFixture.create(userId = authorId))
@@ -142,14 +142,25 @@ class GetSelfIntroPostsE2ETest : AbstractIntegrationSupport({
 					.then()
 					.statusCode(200)
 					.body("data.receivedPendingChatRequestCount", Matchers.equalTo(3))
+					// 작성자는 아무 데도 신청하지 않았으므로 보낸 배지는 0이다.
+					.body("data.sentPendingChatRequestCount", Matchers.equalTo(0))
 
-				// 신청을 하나도 받지 않은 사용자에게는 0으로 내려간다.
+				// 신청자 관점: 받은 건 없고, 보낸 건 두 건(내 글 하나 + 남의 글 하나)이다.
 				RestAssured.given()
 					.header("Authorization", "Bearer ${accessTokenFor(requesterIds[0])}")
 					.get("/lounge/v1/self-intro-posts")
 					.then()
 					.statusCode(200)
 					.body("data.receivedPendingChatRequestCount", Matchers.equalTo(0))
+					.body("data.sentPendingChatRequestCount", Matchers.equalTo(2))
+
+				// 수락된 신청을 보낸 사람은 더 이상 대기 중이 아니므로 보낸 배지가 0이다.
+				RestAssured.given()
+					.header("Authorization", "Bearer ${accessTokenFor(acceptedRequesterId)}")
+					.get("/lounge/v1/self-intro-posts")
+					.then()
+					.statusCode(200)
+					.body("data.sentPendingChatRequestCount", Matchers.equalTo(0))
 			}
 		}
 	}

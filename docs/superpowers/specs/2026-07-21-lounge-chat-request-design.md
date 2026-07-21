@@ -367,7 +367,9 @@ lounge/response/AcceptLoungeChatResponse.kt
 1. **셀소 상세 화면**: "대화 신청" 버튼 → `POST /lounge/v1/self-intro-posts/{postId}/chat-requests`. 응답 `requestId`. 잔액 부족·중복 신청(409) 처리.
    비용은 **상세 조회 응답의 `data.chatRequestCoinAmount`를 그대로 표시**한다(하드코딩 금지 — 정책이 바뀌면 서버 값만 바뀐다). 글마다 다르지 않은 전역 정책값이라 목록 응답에는 싣지 않는다.
    버튼 상태는 **상세 조회 응답의 `data.chatRequestedByMe`로 정한다.** true면 "신청함"으로 바꾸고 다시 누를 수 없게 한다(누르면 409 LOUNGE-010). 상태(PENDING/ACCEPTED)는 구분하지 않는다 — 어느 쪽이든 재신청이 불가능하다.
-2. **라운지 목록 화면**: `GET /lounge/v1/self-intro-posts` 응답 루트의 `data.receivedPendingChatRequestCount`로 "받은 신청" 배지를 표시한다. 내가 쓴 **모든** 셀소에 온 신청 중 **아직 수락하지 않은(PENDING)** 건수이며, 수락하면 줄어든다. 0이면 배지를 숨긴다.
+2. **라운지 목록 화면**: `GET /lounge/v1/self-intro-posts` 응답 루트의 배지 두 개를 표시한다. 0이면 숨긴다.
+   - `data.receivedPendingChatRequestCount` — "받은 신청". 내가 쓴 **모든** 셀소에 온 신청 중 **아직 수락하지 않은(PENDING)** 건수. 내가 수락하면 줄어든다.
+   - `data.sentPendingChatRequestCount` — "보낸 신청". 내가 남의 셀소에 보낸 신청 중 **아직 수락되지 않은(PENDING)** 건수(= 상대의 응답을 기다리는 수). 상대가 수락하면 줄어든다.
 3. **대화 신청 화면(탭 2개)**: 받은 신청 `GET /lounge/v1/chat-requests/received`, 보낸 신청 `GET /lounge/v1/chat-requests/sent`. 탭마다 **자기 커서**로 페이징한다(`nextCursor`/`hasNext`). 카드에는 `partnerNickname`·`partnerGender`·`partnerAge`·`partnerProfileImageCode`·`partnerActivityArea`를 쓰고, `postId`로 글 상세에 이동한다. 받은 탭은 상태별 액션(PENDING → "수락"), 보낸 탭은 상태 표시만(PENDING → "대기 중")이면 된다. **목록 응답에 채팅방 id가 없으므로** ACCEPTED 항목에서 바로 채팅방으로 보낼 수 없다 — 수락 직후에는 수락 API 응답의 `chatRoomId`로 이동하고, 그 뒤에는 채팅방 탭에서 이어간다.
 4. **수락 액션**: `POST /lounge/v1/chat-requests/{requestId}/accept` → 응답 `chatRoomId`로 채팅방 이동.
    수락 비용은 **받은 목록 응답 루트의 `data.acceptCoinAmount`를 그대로 표시**한다(하드코딩 금지). 신청마다 다르지 않아 항목이 아니라 루트에 한 번만 오며, 보낸 목록에는 없다.

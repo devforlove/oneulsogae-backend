@@ -14,6 +14,11 @@ data class SelfIntroPostPageResponse(
 	 * "받은 신청" 배지에 쓴다. 수락하면 줄어든다.
 	 */
 	val receivedPendingChatRequestCount: Int,
+	/**
+	 * 요청한 사용자가 남의 셀소에 보낸 신청 중 아직 수락되지 않은(PENDING) 건수.
+	 * "보낸 신청" 배지에 쓴다. 상대가 수락하면 줄어든다.
+	 */
+	val sentPendingChatRequestCount: Int,
 	val hasNext: Boolean,
 	val nextCursor: Long?,
 ) {
@@ -23,6 +28,7 @@ data class SelfIntroPostPageResponse(
 			SelfIntroPostPageResponse(
 				items = page.values.map { view: SelfIntroPostView -> SelfIntroPostItemResponse.of(view) },
 				receivedPendingChatRequestCount = page.receivedPendingChatRequestCount,
+				sentPendingChatRequestCount = page.sentPendingChatRequestCount,
 				hasNext = page.hasNext,
 				nextCursor = page.nextCursor,
 			)

@@ -29,4 +29,10 @@ interface GetSelfIntroPostDao {
 	 * 내가 쓴 모든 셀소를 합산한다.
 	 */
 	fun countReceivedPendingChatRequests(authorUserId: Long): Int
+
+	/**
+	 * [requesterUserId]가 남의 셀소에 보낸 신청 중 아직 수락되지 않은(PENDING) 건수. (목록 화면 배지용)
+	 * 상대의 응답을 기다리는 신청 수를 뜻한다.
+	 */
+	fun countSentPendingChatRequests(requesterUserId: Long): Int
 }

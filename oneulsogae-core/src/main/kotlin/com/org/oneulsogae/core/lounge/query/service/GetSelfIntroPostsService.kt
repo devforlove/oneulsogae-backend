@@ -29,7 +29,10 @@ class GetSelfIntroPostsService(
 		val rows: List<SelfIntroPostView> = getSelfIntroPostDao.findPage(cursor, PAGE_SIZE + 1)
 		return SelfIntroPostPage.of(rows, PAGE_SIZE)
 			.withImageUrls { imageKey: String -> loungeImageUrlPort.presignedGetUrl(imageKey) }
-			.withReceivedPendingChatRequestCount(getSelfIntroPostDao.countReceivedPendingChatRequests(userId))
+			.withPendingChatRequestCounts(
+				received = getSelfIntroPostDao.countReceivedPendingChatRequests(userId),
+				sent = getSelfIntroPostDao.countSentPendingChatRequests(userId),
+			)
 	}
 
 	override fun getPost(userId: Long, postId: Long): SelfIntroPostDetailView {
