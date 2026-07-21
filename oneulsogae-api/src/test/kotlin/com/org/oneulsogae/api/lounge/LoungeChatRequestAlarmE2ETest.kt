@@ -16,6 +16,7 @@ import com.org.oneulsogae.infra.fixture.UserEntityFixture
 import com.org.oneulsogae.infra.lounge.command.entity.LoungePostEntity
 import com.org.oneulsogae.infra.lounge.command.entity.QLoungeChatRequestEntity
 import com.org.oneulsogae.infra.lounge.command.entity.QLoungePostEntity
+import com.org.oneulsogae.infra.user.command.entity.QUserDetailEntity
 import io.kotest.matchers.shouldBe
 import io.restassured.RestAssured
 import io.restassured.path.json.JsonPath
@@ -35,6 +36,7 @@ class LoungeChatRequestAlarmE2ETest : AbstractIntegrationSupport({
 		IntegrationUtil.deleteAll(QLoungeChatRequestEntity.loungeChatRequestEntity)
 		IntegrationUtil.deleteAll(QLoungePostEntity.loungePostEntity)
 		IntegrationUtil.deleteAll(QCoinBalanceEntity.coinBalanceEntity)
+		IntegrationUtil.deleteAll(QUserDetailEntity.userDetailEntity)
 	}
 
 	describe("라운지 대화 신청·수락 알람") {
@@ -43,7 +45,7 @@ class LoungeChatRequestAlarmE2ETest : AbstractIntegrationSupport({
 			it("작성자에게 신청 알람이, 신청자에게 수락 알람이 쌓인다") {
 				val authorId: Long = IntegrationUtil.persist(UserEntityFixture.create(providerId = "lounge-alarm-author")).id!!
 				val requesterId: Long = IntegrationUtil.persist(UserEntityFixture.create(providerId = "lounge-alarm-user")).id!!
-				IntegrationUtil.persist(UserDetailEntityFixture.create(userId = authorId, nickname = "글쓴이", gender = Gender.FEMALE))
+				IntegrationUtil.persist(UserDetailEntityFixture.create(userId = authorId, nickname = "글쓴이", gender = Gender.FEMALE, companyName = "오늘소개"))
 				IntegrationUtil.persist(UserDetailEntityFixture.create(userId = requesterId, nickname = "신청자", gender = Gender.MALE, companyName = "오늘소개"))
 				IntegrationUtil.persist(CoinBalanceEntityFixture.create(userId = authorId, balance = 100))
 				IntegrationUtil.persist(CoinBalanceEntityFixture.create(userId = requesterId, balance = 100))

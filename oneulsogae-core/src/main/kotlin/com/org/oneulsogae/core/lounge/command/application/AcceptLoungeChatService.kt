@@ -19,6 +19,7 @@ import com.org.oneulsogae.core.lounge.command.application.port.out.GetLoungeChat
 import com.org.oneulsogae.core.lounge.command.application.port.out.SaveLoungeChatRequestPort
 import com.org.oneulsogae.core.lounge.command.domain.LoungeChatRequest
 import com.org.oneulsogae.core.lounge.command.domain.event.LoungeChatRequestAccepted
+import com.org.oneulsogae.core.user.query.service.port.`in`.CheckCompanyVerifiedUseCase
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 
@@ -29,6 +30,7 @@ import org.springframework.transaction.annotation.Transactional
  * 채팅방은 chat 도메인 in-port([SaveChatRoomUseCase])에 위임하며, 신청 한 건당 한 방이 되도록
  * `(match_type=LOUNGE, match_id=신청 id)`로 만든다. (chat 쪽이 이 조합으로 멱등 생성한다)
  * 작성자는 같은 글의 신청을 여러 건 수락할 수 있고, 수락할 때마다 코인을 내고 방이 하나씩 생긴다.
+ * 회사 인증 여부도 user 도메인 in-port([CheckCompanyVerifiedUseCase])로 검증한다. (미인증이면 코인 차감 전에 403으로 막는다)
  *
  * 신청별 분산 락([DistributedLock])으로 보호한다. 경합 대상이 신청 한 건의 상태 전이이므로 requestId로 잠근다.
  * waitTime=0이라 겹친 요청은 즉시 실패(409)한다. (더블클릭 이중 과금 fail-fast)
@@ -40,12 +42,16 @@ class AcceptLoungeChatService(
 	private val saveLoungeChatRequestPort: SaveLoungeChatRequestPort,
 	private val spendCoinUseCase: SpendCoinUseCase,
 	private val saveChatRoomUseCase: SaveChatRoomUseCase,
+	private val checkCompanyVerifiedUseCase: CheckCompanyVerifiedUseCase,
 	private val domainEventPublisher: DomainEventPublisher,
 ) : AcceptLoungeChatUseCase {
 
 	@DistributedLock(prefix = LockKeyConstraints.LOUNGE_CHAT_ACCEPT, keys = ["#requestId"], waitTime = 0)
 	@Transactional
 	override fun accept(userId: Long, requestId: Long): AcceptLoungeChatResult {
+		// 회사 인증을 마친 사용자만 라운지 대화신청을 수락할 수 있다. 코인 차감 전에 막아 미인증 요청에 과금이 생기지 않게 한다.
+		checkCompanyVerifiedUseCase.validateCompanyVerified(userId)
+
 		val request: LoungeChatRequest = getLoungeChatRequestPort.findById(requestId)
 			?: throw BusinessException(LoungeErrorCode.LOUNGE_CHAT_REQUEST_NOT_FOUND)
 		// 소유권(내 글에 온 신청인가)·중복 수락 판정은 도메인이 한다. (신청 행이 수신자를 알고 있어 글을 다시 읽지 않는다)

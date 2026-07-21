@@ -11,11 +11,13 @@ import com.org.oneulsogae.infra.fixture.CoinBalanceEntityFixture
 import com.org.oneulsogae.infra.fixture.IntegrationUtil
 import com.org.oneulsogae.infra.fixture.LoungeChatRequestEntityFixture
 import com.org.oneulsogae.infra.fixture.LoungePostEntityFixture
+import com.org.oneulsogae.infra.fixture.UserDetailEntityFixture
 import com.org.oneulsogae.infra.fixture.UserEntityFixture
 import com.org.oneulsogae.infra.lounge.command.entity.LoungeChatRequestEntity
 import com.org.oneulsogae.infra.lounge.command.entity.LoungePostEntity
 import com.org.oneulsogae.infra.lounge.command.entity.QLoungeChatRequestEntity
 import com.org.oneulsogae.infra.lounge.command.entity.QLoungePostEntity
+import com.org.oneulsogae.infra.user.command.entity.QUserDetailEntity
 import io.kotest.matchers.shouldBe
 import io.restassured.RestAssured
 import org.hamcrest.Matchers
@@ -32,6 +34,7 @@ class AcceptLoungeChatE2ETest : AbstractIntegrationSupport({
 		IntegrationUtil.deleteAll(QLoungeChatRequestEntity.loungeChatRequestEntity)
 		IntegrationUtil.deleteAll(QLoungePostEntity.loungePostEntity)
 		IntegrationUtil.deleteAll(QCoinBalanceEntity.coinBalanceEntity)
+		IntegrationUtil.deleteAll(QUserDetailEntity.userDetailEntity)
 	}
 
 	describe("POST /lounge/v1/chat-requests/{requestId}/accept") {
@@ -40,6 +43,8 @@ class AcceptLoungeChatE2ETest : AbstractIntegrationSupport({
 			it("LOUNGE 채팅방과 참가자 2명이 생기고 코인 32가 차감된다") {
 				val authorId: Long = IntegrationUtil.persist(UserEntityFixture.create(providerId = "lounge-acc-author-1")).id!!
 				val requesterId: Long = IntegrationUtil.persist(UserEntityFixture.create(providerId = "lounge-acc-user-1")).id!!
+				// 회사 인증을 마쳐야 수락할 수 있다.
+				IntegrationUtil.persist(UserDetailEntityFixture.create(userId = authorId, companyName = "오늘소개"))
 				IntegrationUtil.persist(CoinBalanceEntityFixture.create(userId = authorId, balance = 100))
 				val post: LoungePostEntity = IntegrationUtil.persist(LoungePostEntityFixture.create(userId = authorId))
 				val request: LoungeChatRequestEntity = IntegrationUtil.persist(
@@ -90,6 +95,8 @@ class AcceptLoungeChatE2ETest : AbstractIntegrationSupport({
 				val authorId: Long = IntegrationUtil.persist(UserEntityFixture.create(providerId = "lounge-acc-author-2")).id!!
 				val firstRequesterId: Long = IntegrationUtil.persist(UserEntityFixture.create(providerId = "lounge-acc-user-2")).id!!
 				val secondRequesterId: Long = IntegrationUtil.persist(UserEntityFixture.create(providerId = "lounge-acc-user-3")).id!!
+				// 회사 인증을 마쳐야 수락할 수 있다.
+				IntegrationUtil.persist(UserDetailEntityFixture.create(userId = authorId, companyName = "오늘소개"))
 				IntegrationUtil.persist(CoinBalanceEntityFixture.create(userId = authorId, balance = 100))
 				val post: LoungePostEntity = IntegrationUtil.persist(LoungePostEntityFixture.create(userId = authorId))
 				val firstRequest: LoungeChatRequestEntity = IntegrationUtil.persist(
@@ -131,6 +138,8 @@ class AcceptLoungeChatE2ETest : AbstractIntegrationSupport({
 			it("409(LOUNGE-013)이고 코인은 한 번만 차감된다") {
 				val authorId: Long = IntegrationUtil.persist(UserEntityFixture.create(providerId = "lounge-acc-author-3")).id!!
 				val requesterId: Long = IntegrationUtil.persist(UserEntityFixture.create(providerId = "lounge-acc-user-4")).id!!
+				// 회사 인증을 마쳐야 수락할 수 있다.
+				IntegrationUtil.persist(UserDetailEntityFixture.create(userId = authorId, companyName = "오늘소개"))
 				IntegrationUtil.persist(CoinBalanceEntityFixture.create(userId = authorId, balance = 100))
 				val post: LoungePostEntity = IntegrationUtil.persist(LoungePostEntityFixture.create(userId = authorId))
 				val request: LoungeChatRequestEntity = IntegrationUtil.persist(
@@ -163,6 +172,8 @@ class AcceptLoungeChatE2ETest : AbstractIntegrationSupport({
 			it("403(LOUNGE-011)을 반환한다") {
 				val authorId: Long = IntegrationUtil.persist(UserEntityFixture.create(providerId = "lounge-acc-author-4")).id!!
 				val requesterId: Long = IntegrationUtil.persist(UserEntityFixture.create(providerId = "lounge-acc-user-5")).id!!
+				// 비작성자인 신청자가 수락을 시도하므로, 회사 인증 게이트를 통과시켜야 LOUNGE-011까지 도달한다.
+				IntegrationUtil.persist(UserDetailEntityFixture.create(userId = requesterId, companyName = "오늘소개"))
 				IntegrationUtil.persist(CoinBalanceEntityFixture.create(userId = requesterId, balance = 100))
 				val post: LoungePostEntity = IntegrationUtil.persist(LoungePostEntityFixture.create(userId = authorId))
 				val request: LoungeChatRequestEntity = IntegrationUtil.persist(
@@ -182,6 +193,8 @@ class AcceptLoungeChatE2ETest : AbstractIntegrationSupport({
 			it("채팅방이 생기지 않고 신청 상태도 그대로다") {
 				val authorId: Long = IntegrationUtil.persist(UserEntityFixture.create(providerId = "lounge-acc-author-5")).id!!
 				val requesterId: Long = IntegrationUtil.persist(UserEntityFixture.create(providerId = "lounge-acc-user-6")).id!!
+				// 회사 인증을 마쳐야 수락할 수 있다.
+				IntegrationUtil.persist(UserDetailEntityFixture.create(userId = authorId, companyName = "오늘소개"))
 				IntegrationUtil.persist(CoinBalanceEntityFixture.create(userId = authorId, balance = 5))
 				val post: LoungePostEntity = IntegrationUtil.persist(LoungePostEntityFixture.create(userId = authorId))
 				val request: LoungeChatRequestEntity = IntegrationUtil.persist(
@@ -214,6 +227,8 @@ class AcceptLoungeChatE2ETest : AbstractIntegrationSupport({
 		context("없는 신청을 수락하면") {
 			it("404(LOUNGE-012)를 반환한다") {
 				val userId: Long = IntegrationUtil.persist(UserEntityFixture.create(providerId = "lounge-acc-user-7")).id!!
+				// 회사 인증을 마쳐야 신청 존재 확인(LOUNGE-012)까지 도달한다.
+				IntegrationUtil.persist(UserDetailEntityFixture.create(userId = userId, companyName = "오늘소개"))
 				IntegrationUtil.persist(CoinBalanceEntityFixture.create(userId = userId, balance = 100))
 
 				RestAssured.given()
@@ -222,6 +237,35 @@ class AcceptLoungeChatE2ETest : AbstractIntegrationSupport({
 					.then()
 					.statusCode(404)
 					.body("error.code", Matchers.equalTo("LOUNGE-012"))
+			}
+		}
+
+		context("수락자가 회사 인증을 마치지 않았으면") {
+			it("403(USER-035)을 반환하고 코인이 차감되지 않는다") {
+				val authorId: Long = IntegrationUtil.persist(UserEntityFixture.create(providerId = "lounge-acc-author-6")).id!!
+				val requesterId: Long = IntegrationUtil.persist(UserEntityFixture.create(providerId = "lounge-acc-user-8")).id!!
+				// 회사명이 없는 프로필 = 회사 인증 미완료
+				IntegrationUtil.persist(UserDetailEntityFixture.create(userId = authorId))
+				IntegrationUtil.persist(CoinBalanceEntityFixture.create(userId = authorId, balance = 100))
+				val post: LoungePostEntity = IntegrationUtil.persist(LoungePostEntityFixture.create(userId = authorId))
+				val request: LoungeChatRequestEntity = IntegrationUtil.persist(
+					LoungeChatRequestEntityFixture.create(postId = post.id!!, requesterUserId = requesterId, receiverUserId = authorId),
+				)
+
+				RestAssured.given()
+					.header("Authorization", "Bearer ${accessTokenFor(authorId)}")
+					.post("/lounge/v1/chat-requests/${request.id}/accept")
+					.then()
+					.statusCode(403)
+					.body("error.code", Matchers.equalTo("USER-035"))
+
+				// 차단이 코인 차감보다 앞이라 잔액이 그대로다.
+				val balance: Int = IntegrationUtil.getQuery()
+					.select(QCoinBalanceEntity.coinBalanceEntity.balance)
+					.from(QCoinBalanceEntity.coinBalanceEntity)
+					.where(QCoinBalanceEntity.coinBalanceEntity.userId.eq(authorId))
+					.fetchFirst()!!
+				balance shouldBe 100
 			}
 		}
 	}
