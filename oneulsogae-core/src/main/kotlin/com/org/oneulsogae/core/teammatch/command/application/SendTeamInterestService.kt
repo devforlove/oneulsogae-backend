@@ -24,6 +24,7 @@ import com.org.oneulsogae.core.teammatch.command.domain.TeamMember
 import com.org.oneulsogae.core.teammatch.command.domain.Teams
 import com.org.oneulsogae.core.teammatch.command.domain.event.TeamMatchAccepted
 import com.org.oneulsogae.core.teammatch.command.domain.event.TeamMatchInterestSent
+import com.org.oneulsogae.core.user.query.service.port.`in`.CheckCompanyVerifiedUseCase
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 
@@ -37,6 +38,7 @@ import org.springframework.transaction.annotation.Transactional
  * 코인 차감·상태 변경·채팅방 생성은 같은 트랜잭션이라 한 단계라도 실패하면 함께 롤백된다. 알림만 커밋 후 best-effort([TeamMatchEventHandler])다.
  * 채팅방은 성사의 필수 산출물이라 같은 트랜잭션에서 동기로 만든다. matchId로는 teamMatch.id를 쓴다. (기존 [DisbandTeamService] 컨벤션과 동일)
  * 다른 도메인(coin/chat)은 자기 out-port가 아니라 in-port로 참조한다.
+ * 회사 인증 여부는 user 도메인 in-port([CheckCompanyVerifiedUseCase])로 검증한다. (미인증이면 코인 차감 전에 403으로 막는다)
  *
  * 팀 매칭별 분산 락([DistributedLock], "TEAM_MATCH_INTEREST::{teamMatchId}")으로 보호한다. 경합 대상이 두 팀이 공유하는
  * "팀 매칭"이므로 teamMatchId로 잠근다. waitTime=0이라 같은 매칭에 동시 요청이 겹치면 한쪽은 즉시 실패(409)한다.
@@ -50,11 +52,15 @@ class SendTeamInterestService(
 	private val spendCoinUseCase: SpendCoinUseCase,
 	private val saveChatRoomUseCase: SaveChatRoomUseCase,
 	private val domainEventPublisher: DomainEventPublisher,
+	private val checkCompanyVerifiedUseCase: CheckCompanyVerifiedUseCase,
 ) : SendTeamInterestUseCase {
 
 	@DistributedLock(prefix = LockKeyConstraints.TEAM_MATCH_INTEREST, keys = ["#teamMatchId"], waitTime = 0)
 	@Transactional
 	override fun sendInterest(userId: Long, teamMatchId: Long): TeamMatch {
+		// 회사 인증을 마친 사용자만 미팅 기능을 쓸 수 있다. 코인 차감 전에 막아 미인증 요청에 과금이 생기지 않게 한다.
+		checkCompanyVerifiedUseCase.validateCompanyVerified(userId)
+
 		val teamMatch: TeamMatch = getTeamMatchPort.findById(teamMatchId)
 			?: throw BusinessException(TeamMatchErrorCode.TEAM_MATCH_NOT_FOUND)
 

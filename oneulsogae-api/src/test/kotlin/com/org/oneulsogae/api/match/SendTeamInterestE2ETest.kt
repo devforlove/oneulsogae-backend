@@ -19,6 +19,7 @@ import com.org.oneulsogae.infra.coin.command.entity.QCoinHistoryEntity
 import com.org.oneulsogae.infra.fixture.CoinBalanceEntityFixture
 import com.org.oneulsogae.infra.fixture.IntegrationUtil
 import com.org.oneulsogae.infra.fixture.MatchUserEntityFixture
+import com.org.oneulsogae.infra.fixture.UserDetailEntityFixture
 import com.org.oneulsogae.infra.teammatch.command.entity.MatchedTeamEntity
 import com.org.oneulsogae.infra.matchuser.command.entity.QMatchUserEntity
 import com.org.oneulsogae.infra.teammatch.command.entity.QMatchedTeamEntity
@@ -26,6 +27,7 @@ import com.org.oneulsogae.infra.teammatch.command.entity.QTeamEntity
 import com.org.oneulsogae.infra.teammatch.command.entity.QTeamMatchEntity
 import com.org.oneulsogae.infra.teammatch.command.entity.QTeamMemberEntity
 import com.org.oneulsogae.infra.teammatch.command.entity.TeamMatchEntity
+import com.org.oneulsogae.infra.user.command.entity.QUserDetailEntity
 import io.kotest.matchers.shouldBe
 import java.time.LocalDate
 import java.time.LocalDateTime
@@ -39,6 +41,13 @@ class SendTeamInterestE2ETest : AbstractIntegrationSupport({
 
 	fun persistMatchUser(userId: Long, gender: Gender) {
 		IntegrationUtil.persist(MatchUserEntityFixture.create(userId = userId, gender = gender))
+	}
+
+	// 회사 인증을 마친(회사명이 채워진) 프로필. 관심 보내기는 회사 인증을 마친 사용자만 할 수 있다.
+	fun persistVerifiedDetail(userId: Long) {
+		IntegrationUtil.persist(
+			UserDetailEntityFixture.create(userId = userId, gender = Gender.MALE, companyName = "오늘소개"),
+		)
 	}
 
 	// 결성(ACTIVE)까지 진행한 팀의 teamId를 돌려준다. (초대 → 수락)
@@ -91,6 +100,7 @@ class SendTeamInterestE2ETest : AbstractIntegrationSupport({
 				val teamMatchId: Long = persistTeamMatch(myTeamId, opponentTeamId)
 				IntegrationUtil.persist(CoinBalanceEntityFixture.create(userId = myOwner, balance = 100))
 
+				persistVerifiedDetail(myOwner)
 				post("/team-matches/v1/$teamMatchId/interest") {
 					bearer(accessTokenFor(myOwner))
 				} expect {
@@ -130,6 +140,7 @@ class SendTeamInterestE2ETest : AbstractIntegrationSupport({
 				)
 				IntegrationUtil.persist(CoinBalanceEntityFixture.create(userId = myOwner, balance = 100))
 
+				persistVerifiedDetail(myOwner)
 				post("/team-matches/v1/$teamMatchId/interest") {
 					bearer(accessTokenFor(myOwner))
 				} expect {
@@ -169,6 +180,7 @@ class SendTeamInterestE2ETest : AbstractIntegrationSupport({
 				val teamMatchId: Long = persistTeamMatch(myTeamId, opponentTeamId)
 				IntegrationUtil.persist(CoinBalanceEntityFixture.create(userId = myOwner, balance = 10)) // 40보다 적음
 
+				persistVerifiedDetail(myOwner)
 				post("/team-matches/v1/$teamMatchId/interest") {
 					bearer(accessTokenFor(myOwner))
 				} expect {
@@ -196,6 +208,7 @@ class SendTeamInterestE2ETest : AbstractIntegrationSupport({
 				persistMatchUser(outsider, Gender.MALE)
 				IntegrationUtil.persist(CoinBalanceEntityFixture.create(userId = outsider, balance = 100))
 
+				persistVerifiedDetail(outsider)
 				post("/team-matches/v1/$teamMatchId/interest") {
 					bearer(accessTokenFor(outsider))
 				} expect {
@@ -203,6 +216,34 @@ class SendTeamInterestE2ETest : AbstractIntegrationSupport({
 					body("success", false)
 					body("error.code", "TEAM-MATCH-002")
 				}
+			}
+		}
+
+		context("요청자가 회사 인증을 마치지 않았으면") {
+			it("403(USER-035)을 반환하고 코인이 차감되지 않는다") {
+				val myOwner = 6301L
+				val myInvited = 6302L
+				val oppOwner = 6303L
+				val oppInvited = 6304L
+				val myTeamId: Long = formedTeam(myOwner, myInvited)
+				val opponentTeamId: Long = formedTeam(oppOwner, oppInvited)
+				val teamMatchId: Long = persistTeamMatch(myTeamId, opponentTeamId)
+				// 회사명이 없는 프로필 = 회사 인증 미완료
+				IntegrationUtil.persist(
+					UserDetailEntityFixture.create(userId = myOwner, gender = Gender.MALE),
+				)
+				IntegrationUtil.persist(CoinBalanceEntityFixture.create(userId = myOwner, balance = 100))
+
+				post("/team-matches/v1/$teamMatchId/interest") {
+					bearer(accessTokenFor(myOwner))
+				} expect {
+					status(403)
+					body("success", false)
+					body("error.code", "USER-035")
+				}
+
+				// 차단이 코인 차감보다 앞이라 잔액이 그대로다.
+				coinBalanceOf(myOwner) shouldBe 100
 			}
 		}
 
@@ -227,6 +268,7 @@ class SendTeamInterestE2ETest : AbstractIntegrationSupport({
 		IntegrationUtil.deleteAll(QTeamMemberEntity.teamMemberEntity)
 		IntegrationUtil.deleteAll(QTeamEntity.teamEntity)
 		IntegrationUtil.deleteAll(QMatchUserEntity.matchUserEntity)
+		IntegrationUtil.deleteAll(QUserDetailEntity.userDetailEntity)
 	}
 })
 
