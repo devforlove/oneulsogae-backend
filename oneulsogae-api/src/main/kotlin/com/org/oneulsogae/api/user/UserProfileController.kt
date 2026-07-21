@@ -3,6 +3,7 @@ package com.org.oneulsogae.api.user
 import com.org.oneulsogae.api.match.request.UpdateProfileRequest
 import com.org.oneulsogae.api.match.response.ProfileOptionsResponse
 import com.org.oneulsogae.api.user.request.UpdateSecondaryEmailRequest
+import com.org.oneulsogae.api.user.response.PublicUserProfileResponse
 import com.org.oneulsogae.api.user.response.UserProfileResponse
 import com.org.oneulsogae.auth.AuthUser
 import com.org.oneulsogae.auth.LoginUser
@@ -15,6 +16,7 @@ import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.tags.Tag
 import jakarta.validation.Valid
 import org.springframework.web.bind.annotation.GetMapping
+import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.PutMapping
 import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RequestMapping
@@ -42,6 +44,20 @@ class UserProfileController(
 		@LoginUser user: AuthUser,
 	): ApiResponse<UserProfileResponse> =
 		ApiResponse.success(UserProfileResponse.of(getUserDetailUseCase.getByUserId(user.id), timeGenerator.today()))
+
+	/** 다른 사용자의 프로필을 공개 항목만 조회한다. */
+	@Operation(
+		summary = "다른 유저 프로필 조회",
+		description = "userId로 다른 사용자의 프로필을 조회한다. 본인 프로필 조회(GET /users/v1/profile)와 달리 휴대폰번호·회사이메일·학교이메일·보조이메일은 내려주지 않고(연락처 비공개), 본인 편집 전용값(regionId·refuseSameCompanyIntro)도 제외한다. 프로필이 없으면 404(USER_DETAIL_NOT_FOUND)를 반환한다.",
+	)
+	@GetMapping("/{userId}")
+	fun getUserProfile(
+		@LoginUser user: AuthUser,
+		@PathVariable("userId") userId: Long,
+	): ApiResponse<PublicUserProfileResponse> =
+		ApiResponse.success(
+			PublicUserProfileResponse.of(getUserDetailUseCase.getByUserId(userId), timeGenerator.today()),
+		)
 
 	/**
 	 * 현재 로그인 사용자의 프로필을 수정한다. (편집 가능 필드 전체 교체)
