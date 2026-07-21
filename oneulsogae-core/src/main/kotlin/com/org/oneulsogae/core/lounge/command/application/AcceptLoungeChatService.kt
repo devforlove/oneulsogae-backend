@@ -9,6 +9,7 @@ import com.org.oneulsogae.core.chat.command.domain.ChatRoom
 import com.org.oneulsogae.core.coin.command.application.port.`in`.SpendCoinUseCase
 import com.org.oneulsogae.core.coin.command.application.port.`in`.command.SpendCoinCommand
 import com.org.oneulsogae.core.common.error.BusinessException
+import com.org.oneulsogae.core.common.event.DomainEventPublisher
 import com.org.oneulsogae.core.common.lock.DistributedLock
 import com.org.oneulsogae.core.common.lock.LockKeyConstraints
 import com.org.oneulsogae.core.lounge.LoungeErrorCode
@@ -19,6 +20,7 @@ import com.org.oneulsogae.core.lounge.command.application.port.out.GetLoungePost
 import com.org.oneulsogae.core.lounge.command.application.port.out.SaveLoungeChatRequestPort
 import com.org.oneulsogae.core.lounge.command.domain.LoungeChatRequest
 import com.org.oneulsogae.core.lounge.command.domain.LoungePost
+import com.org.oneulsogae.core.lounge.command.domain.event.LoungeChatRequestAccepted
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 
@@ -32,6 +34,7 @@ import org.springframework.transaction.annotation.Transactional
  *
  * 신청별 분산 락([DistributedLock])으로 보호한다. 경합 대상이 신청 한 건의 상태 전이이므로 requestId로 잠근다.
  * waitTime=0이라 겹친 요청은 즉시 실패(409)한다. (더블클릭 이중 과금 fail-fast)
+ * 알람만 커밋 후 best-effort([LoungeEventHandler])다.
  */
 @Service
 class AcceptLoungeChatService(
@@ -40,6 +43,7 @@ class AcceptLoungeChatService(
 	private val getLoungePostPort: GetLoungePostPort,
 	private val spendCoinUseCase: SpendCoinUseCase,
 	private val saveChatRoomUseCase: SaveChatRoomUseCase,
+	private val domainEventPublisher: DomainEventPublisher,
 ) : AcceptLoungeChatUseCase {
 
 	@DistributedLock(prefix = LockKeyConstraints.LOUNGE_CHAT_ACCEPT, keys = ["#requestId"], waitTime = 0)
@@ -63,6 +67,16 @@ class AcceptLoungeChatService(
 					SaveChatRoomParticipant(userId = post.userId, teamId = null),
 					SaveChatRoomParticipant(userId = request.requesterUserId, teamId = null),
 				),
+			),
+		)
+
+		// 알람은 부가 효과라 커밋 후 별도 트랜잭션에서 best-effort로 처리한다. ([LoungeEventHandler])
+		domainEventPublisher.publish(
+			LoungeChatRequestAccepted(
+				requestId = request.id,
+				requesterUserId = request.requesterUserId,
+				postAuthorUserId = post.userId,
+				chatRoomId = chatRoom.id,
 			),
 		)
 		return AcceptLoungeChatResult(chatRoom.id)

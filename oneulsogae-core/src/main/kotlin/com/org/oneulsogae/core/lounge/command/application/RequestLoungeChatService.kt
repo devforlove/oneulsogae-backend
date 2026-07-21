@@ -4,6 +4,7 @@ import com.org.oneulsogae.common.coin.CoinUsageType
 import com.org.oneulsogae.core.coin.command.application.port.`in`.SpendCoinUseCase
 import com.org.oneulsogae.core.coin.command.application.port.`in`.command.SpendCoinCommand
 import com.org.oneulsogae.core.common.error.BusinessException
+import com.org.oneulsogae.core.common.event.DomainEventPublisher
 import com.org.oneulsogae.core.common.lock.DistributedLock
 import com.org.oneulsogae.core.common.lock.LockKeyConstraints
 import com.org.oneulsogae.core.lounge.LoungeErrorCode
@@ -14,6 +15,7 @@ import com.org.oneulsogae.core.lounge.command.application.port.out.GetLoungePost
 import com.org.oneulsogae.core.lounge.command.application.port.out.SaveLoungeChatRequestPort
 import com.org.oneulsogae.core.lounge.command.domain.LoungeChatRequest
 import com.org.oneulsogae.core.lounge.command.domain.LoungePost
+import com.org.oneulsogae.core.lounge.command.domain.event.LoungeChatRequested
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 
@@ -24,6 +26,7 @@ import org.springframework.transaction.annotation.Transactional
  * 차감액은 [CoinUsageType.LOUNGE_CHAT_INIT]의 정책값이라 클라이언트가 금액을 정하지 않는다.
  * 코인 도메인은 자기 out-port가 아니라 in-port([SpendCoinUseCase])로 참조한다.
  * 신청 저장과 코인 차감은 같은 트랜잭션이라 한 단계라도 실패하면 함께 롤백된다.
+ * 알람만 커밋 후 best-effort([LoungeEventHandler])다.
  *
  * (postId, userId) 분산 락([DistributedLock])으로 보호한다. 경합 대상이 "이 사용자가 이 글에 신청했는가"라는
  * 유니크 조건이므로 글 단위가 아니라 글+사용자로 잠근다. (글로 잠그면 서로 다른 신청자끼리 불필요하게 직렬화된다)
@@ -35,6 +38,7 @@ class RequestLoungeChatService(
 	private val getLoungeChatRequestPort: GetLoungeChatRequestPort,
 	private val saveLoungeChatRequestPort: SaveLoungeChatRequestPort,
 	private val spendCoinUseCase: SpendCoinUseCase,
+	private val domainEventPublisher: DomainEventPublisher,
 ) : RequestLoungeChatUseCase {
 
 	@DistributedLock(prefix = LockKeyConstraints.LOUNGE_CHAT_REQUEST, keys = ["#postId", "#userId"], waitTime = 0)
@@ -51,6 +55,15 @@ class RequestLoungeChatService(
 			LoungeChatRequest.create(postId = postId, requesterUserId = userId, postAuthorUserId = post.userId),
 		)
 		spendCoinUseCase.spend(userId, SpendCoinCommand(amount = USAGE_TYPE.coinAmount, coinUsageType = USAGE_TYPE))
+
+		// 알람은 부가 효과라 커밋 후 별도 트랜잭션에서 best-effort로 처리한다. ([LoungeEventHandler])
+		domainEventPublisher.publish(
+			LoungeChatRequested(
+				requestId = saved.id,
+				requesterUserId = userId,
+				postAuthorUserId = post.userId,
+			),
+		)
 
 		return RequestLoungeChatResult(saved.id)
 	}
