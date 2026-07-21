@@ -157,5 +157,23 @@ class GetSelfIntroPostDetailE2ETest : AbstractIntegrationSupport({
 					.body("error.code", Matchers.equalTo("LOUNGE-008"))
 			}
 		}
+
+		context("토큰 없이 조회하면") {
+			it("200으로 상세를 내려주고, chatRequestedByMe는 false다") {
+				val userId: Long = IntegrationUtil.persist(UserEntityFixture.create(providerId = "lounge-detail-anon")).id!!
+				IntegrationUtil.persist(UserDetailEntityFixture.create(userId = userId, nickname = "공개상세유저"))
+				val post: LoungePostEntity = IntegrationUtil.persist(LoungePostEntityFixture.create(userId = userId))
+				IntegrationUtil.persist(SelfIntroPostEntityFixture.create(postId = post.id!!))
+
+				RestAssured.given()
+					.get("/lounge/v1/self-intro-posts/${post.id}")
+					.then()
+					.statusCode(200)
+					.body("success", Matchers.equalTo(true))
+					.body("data.postId", Matchers.equalTo(post.id!!.toInt()))
+					.body("data.authorNickname", Matchers.equalTo("공개상세유저"))
+					.body("data.chatRequestedByMe", Matchers.equalTo(false))
+			}
+		}
 	}
 })

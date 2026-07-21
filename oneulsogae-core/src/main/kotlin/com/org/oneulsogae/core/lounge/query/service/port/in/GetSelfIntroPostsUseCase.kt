@@ -19,6 +19,7 @@ interface GetSelfIntroPostsUseCase {
 	/**
 	 * 셀소 상세 한 건을 조회한다. 없거나 삭제됐으면 404를 던진다.
 	 * [userId]는 조회한 사용자로, 이 사용자가 이미 대화를 신청했는지([SelfIntroPostDetailView.chatRequestedByMe]) 판정에만 쓴다.
+	 * 비로그인(null)이면 chatRequestedByMe는 항상 false다. (상세 자체는 공개)
 	 */
-	fun getPost(userId: Long, postId: Long): SelfIntroPostDetailView
+	fun getPost(userId: Long?, postId: Long): SelfIntroPostDetailView
 }
