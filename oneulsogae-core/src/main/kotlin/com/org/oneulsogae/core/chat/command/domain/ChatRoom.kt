@@ -73,8 +73,8 @@ data class ChatRoom(
 
 	companion object {
 
-		/** 채팅방의 유효 기간. 생성 시각으로부터 이 기간이 지나면 만료된 것으로 본다. */
-		val EXPIRATION: Duration = Duration.ofDays(3)
+		/** 채팅방의 유효 기간(3주). 생성 시각으로부터 이 기간이 지나면 만료된 것으로 본다. */
+		val EXPIRATION: Duration = Duration.ofDays(21)
 
 		/**
 		 * 신규 채팅방을 생성한다. (status ACTIVE)
