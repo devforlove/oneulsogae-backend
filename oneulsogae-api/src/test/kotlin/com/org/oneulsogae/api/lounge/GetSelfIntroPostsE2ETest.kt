@@ -63,6 +63,7 @@ class GetSelfIntroPostsE2ETest : AbstractIntegrationSupport({
 						profileImageCode = "PROFILE_03",
 						job = "기획자",
 						companyName = "오늘소개",
+						universityName = "오늘대학교",
 					),
 				)
 				val expectedAge: Int = Period.between(birthday, LocalDate.now()).years
@@ -99,6 +100,7 @@ class GetSelfIntroPostsE2ETest : AbstractIntegrationSupport({
 					.body("data.items[0].authorProfileImageCode", Matchers.equalTo("PROFILE_03"))
 					.body("data.items[0].authorJob", Matchers.equalTo("기획자"))
 					.body("data.items[0].authorCompanyName", Matchers.equalTo("오늘소개"))
+					.body("data.items[0].authorUniversityName", Matchers.equalTo("오늘대학교"))
 					.body("data.items[0].authorActivityArea", Matchers.equalTo("인천광역시 연수구"))
 
 				RestAssured.given()
@@ -128,9 +130,10 @@ class GetSelfIntroPostsE2ETest : AbstractIntegrationSupport({
 					.body("data.items[0].postId", Matchers.equalTo(post.id!!.toInt()))
 					.body("data.items[0].authorNickname", Matchers.equalTo("사진없음"))
 					.body("data.items[0].imageUrl", Matchers.nullValue())
-					// 직업·회사·프로필 이미지를 설정하지 않은 작성자는 해당 필드만 null로 내려간다. (글은 목록에서 빠지지 않는다)
+					// 직업·회사·학교·프로필 이미지를 설정하지 않은 작성자는 해당 필드만 null로 내려간다. (글은 목록에서 빠지지 않는다)
 					.body("data.items[0].authorJob", Matchers.nullValue())
 					.body("data.items[0].authorCompanyName", Matchers.nullValue())
+					.body("data.items[0].authorUniversityName", Matchers.nullValue())
 					.body("data.items[0].authorProfileImageCode", Matchers.nullValue())
 					.body("data.items[0].authorActivityArea", Matchers.nullValue())
 			}

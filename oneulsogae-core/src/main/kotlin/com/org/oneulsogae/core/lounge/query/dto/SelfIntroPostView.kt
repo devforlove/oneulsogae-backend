@@ -20,7 +20,10 @@ data class SelfIntroPostView(
 	val authorBirthday: LocalDate?,
 	val authorProfileImageCode: String?,
 	val authorJob: String?,
+	/** 작성자 회사명. 회사 인증을 하지 않았으면 null. (카드의 회사 인증 뱃지 판단에 쓴다) */
 	val authorCompanyName: String?,
+	/** 작성자 학교명. 학교 인증을 하지 않았으면 null. (카드의 학교 인증 뱃지 판단에 쓴다) */
+	val authorUniversityName: String?,
 	/** 작성자 활동지역 표시 문자열(시/도 시/군/구). 지역 미설정이면 null. */
 	val authorActivityArea: String?,
 	val imageUrl: String? = null,
@@ -38,10 +41,12 @@ data class SelfIntroPostView(
 		authorProfileImageCode: String?,
 		authorJob: String?,
 		authorCompanyName: String?,
+		authorUniversityName: String?,
 		authorActivityArea: String?,
 	) : this(
 		postId, authorNickname, likeCount, imageKey,
-		authorGender, authorBirthday, authorProfileImageCode, authorJob, authorCompanyName, authorActivityArea, null, null,
+		authorGender, authorBirthday, authorProfileImageCode, authorJob,
+		authorCompanyName, authorUniversityName, authorActivityArea, null, null,
 	)
 
 	/** 기준일([today])로 작성자 만 나이를 채운 항목을 만든다. */

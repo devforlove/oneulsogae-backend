@@ -44,7 +44,10 @@ data class SelfIntroPostItemResponse(
 	val authorAge: Int?,
 	val authorProfileImageCode: String?,
 	val authorJob: String?,
+	/** 작성자 회사명. 회사 인증을 하지 않았으면 null. (있으면 카드에 회사 인증 뱃지를 단다) */
 	val authorCompanyName: String?,
+	/** 작성자 학교명. 학교 인증을 하지 않았으면 null. (있으면 카드에 학교 인증 뱃지를 단다) */
+	val authorUniversityName: String?,
 	/** 작성자 활동지역 표시 문자열(시/도 시/군/구). 지역 미설정이면 null. */
 	val authorActivityArea: String?,
 ) {
@@ -61,6 +64,7 @@ data class SelfIntroPostItemResponse(
 				authorProfileImageCode = view.authorProfileImageCode,
 				authorJob = view.authorJob,
 				authorCompanyName = view.authorCompanyName,
+				authorUniversityName = view.authorUniversityName,
 				authorActivityArea = view.authorActivityArea,
 			)
 	}
