@@ -1,12 +1,14 @@
 package com.org.oneulsogae.api.auth
 
 import com.org.oneulsogae.api.auth.response.MeResponse
+import com.org.oneulsogae.api.auth.response.RefreshResponse
 import com.org.oneulsogae.auth.AuthErrorCode
 import com.org.oneulsogae.auth.AuthUser
 import com.org.oneulsogae.auth.LoginUser
 import com.org.oneulsogae.auth.jwt.IssuedTokens
 import com.org.oneulsogae.auth.jwt.RefreshTokenService
 import com.org.oneulsogae.auth.jwt.TokenCookieFactory
+import com.org.oneulsogae.auth.jwt.TokenProvider
 import com.org.oneulsogae.core.common.error.BusinessException
 import com.org.oneulsogae.core.common.error.ErrorResponse
 import com.org.oneulsogae.core.common.response.ApiResponse
@@ -29,6 +31,7 @@ import org.springframework.web.bind.annotation.RestController
 class AuthController(
 	private val refreshTokenService: RefreshTokenService,
 	private val tokenCookieFactory: TokenCookieFactory,
+	private val tokenProvider: TokenProvider,
 	private val getUserByIdUseCase: GetUserByIdUseCase,
 ) {
 
@@ -39,12 +42,12 @@ class AuthController(
 		ApiResponse.success(MeResponse.of(user, getUserByIdUseCase.getById(user.id)))
 
 	/** refresh 쿠키로 access/refresh를 회전 재발급한다. 실패 시 쿠키를 비우고 401. */
-	@Operation(summary = "토큰 갱신", description = "refresh 쿠키로 access/refresh 토큰을 회전 재발급한다. 실패 시 쿠키를 비우고 401을 반환한다.")
+	@Operation(summary = "토큰 갱신", description = "refresh 쿠키로 access/refresh 토큰을 회전 재발급한다. 새 accessToken 유효기간(초)을 함께 반환한다. 실패 시 쿠키를 비우고 401을 반환한다.")
 	@PostMapping("/refresh")
 	fun refresh(
 		@CookieValue(name = TokenCookieFactory.REFRESH_TOKEN, required = false) refreshToken: String?,
 		response: HttpServletResponse,
-	): ResponseEntity<ApiResponse<Unit>> {
+	): ResponseEntity<ApiResponse<RefreshResponse>> {
 		if (refreshToken.isNullOrBlank()) {
 			return unauthorized()
 		}
@@ -53,7 +56,7 @@ class AuthController(
 			val tokens: IssuedTokens = refreshTokenService.rotate(refreshToken)
 			response.addHeader(HttpHeaders.SET_COOKIE, tokenCookieFactory.accessTokenCookie(tokens.accessToken).toString())
 			response.addHeader(HttpHeaders.SET_COOKIE, tokenCookieFactory.refreshTokenCookie(tokens.refreshToken).toString())
-			ResponseEntity.ok(ApiResponse.success())
+			ResponseEntity.ok(ApiResponse.success(RefreshResponse(tokenProvider.accessTokenExpiresInSeconds())))
 		} catch (e: BusinessException) {
 			// 예측 가능한 인증 실패(무효/재사용 토큰, 세션 밀림 등): 죽은 쿠키를 비우고 에러 코드에 맞춰 응답한다.
 			// (쿠키 삭제는 전역 핸들러가 못 하는 부수효과라 여기서 잡고, 상태·코드는 errorCode가 결정한다)
@@ -77,7 +80,7 @@ class AuthController(
 	}
 
 	/** refresh 쿠키 부재 등 토큰 검증 이전 단계의 인증 실패(401) 응답. */
-	private fun unauthorized(): ResponseEntity<ApiResponse<Unit>> =
+	private fun unauthorized(): ResponseEntity<ApiResponse<RefreshResponse>> =
 		ResponseEntity
 			.status(HttpStatus.UNAUTHORIZED)
 			.body(ApiResponse.error(ErrorResponse.of(AuthErrorCode.AUTHENTICATION_REQUIRED)))

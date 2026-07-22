@@ -43,6 +43,9 @@ class TokenProvider(
 	/** refresh token의 jti(tokenId)를 추출한다. */
 	fun getTokenId(token: String): String? = parseClaims(token).id
 
+	/** access token 유효기간(초). 클라이언트가 만료 전 선제 갱신 타이머를 거는 데 사용한다. */
+	fun accessTokenExpiresInSeconds(): Long = expireTime.toLong() / 1000
+
 	/** 토큰 만료 시각을 반환한다. (저장소의 expiresAt 기록용) */
 	fun getExpiration(token: String): LocalDateTime =
 		parseClaims(token).expiration.toInstant()
