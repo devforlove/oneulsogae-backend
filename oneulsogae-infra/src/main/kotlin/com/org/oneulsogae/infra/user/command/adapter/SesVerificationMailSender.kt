@@ -22,7 +22,7 @@ class SesVerificationMailSender(
 	private val properties: SesProperties,
 ) {
 
-	fun send(toEmail: String, subject: String, body: String) {
+	fun send(toEmail: String, subject: String, textBody: String, htmlBody: String) {
 		val request: SendEmailRequest = SendEmailRequest.builder()
 			.fromEmailAddress(properties.fromAddress)
 			.destination(Destination.builder().toAddresses(toEmail).build())
@@ -31,7 +31,12 @@ class SesVerificationMailSender(
 					.simple(
 						Message.builder()
 							.subject(Content.builder().data(subject).charset(CHARSET).build())
-							.body(Body.builder().text(Content.builder().data(body).charset(CHARSET).build()).build())
+							.body(
+								Body.builder()
+									.html(Content.builder().data(htmlBody).charset(CHARSET).build())
+									.text(Content.builder().data(textBody).charset(CHARSET).build())
+									.build(),
+							)
 							.build(),
 					)
 					.build(),
