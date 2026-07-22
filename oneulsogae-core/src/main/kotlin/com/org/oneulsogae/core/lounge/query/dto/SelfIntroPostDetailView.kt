@@ -49,6 +49,11 @@ data class SelfIntroPostDetailView(
 	 * 신청 버튼을 "신청함"으로 바꾸는 데 쓴다. 상태(PENDING/ACCEPTED)는 구분하지 않는다 — 어느 쪽이든 다시 신청할 수 없다.
 	 */
 	val chatRequestedByMe: Boolean = false,
+	/**
+	 * 조회한 사용자가 회사 인증을 마쳤는지 여부. 서비스가 채운다. (비로그인이면 false)
+	 * 대화 신청은 인증 사용자만 가능하므로, 클라이언트가 신청 시도 시점에 인증 안내로 선차단하는 데 쓴다.
+	 */
+	val companyVerified: Boolean = false,
 ) {
 	/** dao 투영용 생성자. 나이·사진은 서비스가 채운다. */
 	constructor(
@@ -86,4 +91,8 @@ data class SelfIntroPostDetailView(
 	/** 조회한 사용자의 기존 신청 여부를 반영한 상세를 만든다. */
 	fun withChatRequested(requested: Boolean): SelfIntroPostDetailView =
 		copy(chatRequestedByMe = requested)
+
+	/** 조회한 사용자의 회사 인증 여부를 반영한 상세를 만든다. */
+	fun withCompanyVerified(companyVerified: Boolean): SelfIntroPostDetailView =
+		copy(companyVerified = companyVerified)
 }

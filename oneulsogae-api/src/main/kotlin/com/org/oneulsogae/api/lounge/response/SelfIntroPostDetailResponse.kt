@@ -33,6 +33,8 @@ data class SelfIntroPostDetailResponse(
 	val chatRequestCoinAmount: Int,
 	/** 조회한 사용자가 이 글에 이미 대화를 신청했는지 여부. true면 신청 버튼을 "신청함"으로 바꾼다. */
 	val chatRequestedByMe: Boolean,
+	/** 조회한 사용자가 회사 인증을 마쳤는지 여부. 비로그인이면 false. false면 신청 시도 시 회사 인증 안내로 분기한다. */
+	val companyVerified: Boolean,
 ) {
 	companion object {
 
@@ -58,6 +60,7 @@ data class SelfIntroPostDetailResponse(
 				imageUrls = view.imageUrls,
 				chatRequestCoinAmount = view.chatRequestCoinAmount,
 				chatRequestedByMe = view.chatRequestedByMe,
+				companyVerified = view.companyVerified,
 			)
 	}
 }

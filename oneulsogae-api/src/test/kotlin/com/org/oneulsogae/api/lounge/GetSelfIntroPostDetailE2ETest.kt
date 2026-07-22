@@ -144,6 +144,44 @@ class GetSelfIntroPostDetailE2ETest : AbstractIntegrationSupport({
 			}
 		}
 
+		context("요청자 프로필에 회사명이 있으면") {
+			it("companyVerified=true를 내려준다") {
+				val authorId: Long = IntegrationUtil.persist(UserEntityFixture.create(providerId = "lounge-detail-verified-author")).id!!
+				val viewerId: Long = IntegrationUtil.persist(UserEntityFixture.create(providerId = "lounge-detail-verified")).id!!
+				IntegrationUtil.persist(
+					UserDetailEntityFixture.create(userId = viewerId, nickname = "인증회원", companyName = "오늘의소개"),
+				)
+				val post: LoungePostEntity = IntegrationUtil.persist(LoungePostEntityFixture.create(userId = authorId))
+				IntegrationUtil.persist(SelfIntroPostEntityFixture.create(postId = post.id!!))
+
+				RestAssured.given()
+					.header("Authorization", "Bearer ${accessTokenFor(viewerId)}")
+					.get("/lounge/v1/self-intro-posts/${post.id}")
+					.then()
+					.statusCode(200)
+					.body("data.companyVerified", Matchers.equalTo(true))
+			}
+		}
+
+		context("요청자 프로필에 회사명이 없으면") {
+			it("companyVerified=false를 내려준다") {
+				val authorId: Long = IntegrationUtil.persist(UserEntityFixture.create(providerId = "lounge-detail-unverified-author")).id!!
+				val viewerId: Long = IntegrationUtil.persist(UserEntityFixture.create(providerId = "lounge-detail-unverified")).id!!
+				IntegrationUtil.persist(
+					UserDetailEntityFixture.create(userId = viewerId, nickname = "미인증회원", companyName = null),
+				)
+				val post: LoungePostEntity = IntegrationUtil.persist(LoungePostEntityFixture.create(userId = authorId))
+				IntegrationUtil.persist(SelfIntroPostEntityFixture.create(postId = post.id!!))
+
+				RestAssured.given()
+					.header("Authorization", "Bearer ${accessTokenFor(viewerId)}")
+					.get("/lounge/v1/self-intro-posts/${post.id}")
+					.then()
+					.statusCode(200)
+					.body("data.companyVerified", Matchers.equalTo(false))
+			}
+		}
+
 		context("없는 글을 조회하면") {
 			it("404(LOUNGE-008)를 반환한다") {
 				val userId: Long = IntegrationUtil.persist(UserEntityFixture.create(providerId = "lounge-detail-2")).id!!
@@ -159,7 +197,7 @@ class GetSelfIntroPostDetailE2ETest : AbstractIntegrationSupport({
 		}
 
 		context("토큰 없이 조회하면") {
-			it("200으로 상세를 내려주고, chatRequestedByMe는 false다") {
+			it("200으로 상세를 내려주고, 개인화 필드는 false다") {
 				val userId: Long = IntegrationUtil.persist(UserEntityFixture.create(providerId = "lounge-detail-anon")).id!!
 				IntegrationUtil.persist(UserDetailEntityFixture.create(userId = userId, nickname = "공개상세유저"))
 				val post: LoungePostEntity = IntegrationUtil.persist(LoungePostEntityFixture.create(userId = userId))
@@ -173,6 +211,7 @@ class GetSelfIntroPostDetailE2ETest : AbstractIntegrationSupport({
 					.body("data.postId", Matchers.equalTo(post.id!!.toInt()))
 					.body("data.authorNickname", Matchers.equalTo("공개상세유저"))
 					.body("data.chatRequestedByMe", Matchers.equalTo(false))
+					.body("data.companyVerified", Matchers.equalTo(false))
 			}
 		}
 	}
