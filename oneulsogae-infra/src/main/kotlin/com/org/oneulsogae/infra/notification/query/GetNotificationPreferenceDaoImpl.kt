@@ -19,6 +19,7 @@ class GetNotificationPreferenceDaoImpl(
 			NotificationPreferenceView(
 				push = entity.push,
 				oneToOne = entity.oneToOne,
+				lounge = entity.lounge,
 				meeting = entity.meeting,
 				team = entity.team,
 				message = entity.message,

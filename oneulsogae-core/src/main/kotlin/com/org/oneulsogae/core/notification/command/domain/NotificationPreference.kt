@@ -12,6 +12,7 @@ data class NotificationPreference(
 	val userId: Long,
 	val push: Boolean = true,
 	val oneToOne: Boolean = true,
+	val lounge: Boolean = true,
 	val meeting: Boolean = true,
 	val team: Boolean = true,
 	val message: Boolean = true,
@@ -22,6 +23,7 @@ data class NotificationPreference(
 	fun allows(category: NotificationCategory): Boolean =
 		push && when (category) {
 			NotificationCategory.ONE_TO_ONE -> oneToOne
+			NotificationCategory.LOUNGE -> lounge
 			NotificationCategory.MEETING -> meeting
 			NotificationCategory.TEAM -> team
 			NotificationCategory.MESSAGE -> message

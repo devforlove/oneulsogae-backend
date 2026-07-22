@@ -13,7 +13,7 @@ class NotificationPreferenceTest : DescribeSpec({
 			it("개별 카테고리가 켜져 있어도 모두 false") {
 				val pref = NotificationPreference(
 					userId = 1L, push = false,
-					oneToOne = true, meeting = true, team = true, message = true, marketing = true,
+					oneToOne = true, lounge = true, meeting = true, team = true, message = true, marketing = true,
 				)
 
 				NotificationCategory.entries.forEach { category ->
@@ -26,10 +26,12 @@ class NotificationPreferenceTest : DescribeSpec({
 			it("해당 카테고리 플래그를 그대로 따른다") {
 				val pref = NotificationPreference(
 					userId = 1L, push = true,
-					oneToOne = true, meeting = false, team = true, message = false, marketing = true,
+					oneToOne = true, lounge = false, meeting = false, team = true, message = false, marketing = true,
 				)
 
 				pref.allows(NotificationCategory.ONE_TO_ONE) shouldBe true
+				// 셀소(라운지)는 소개팅(ONE_TO_ONE)과 분리된 자체 토글을 따른다.
+				pref.allows(NotificationCategory.LOUNGE) shouldBe false
 				pref.allows(NotificationCategory.MEETING) shouldBe false
 				pref.allows(NotificationCategory.TEAM) shouldBe true
 				pref.allows(NotificationCategory.MESSAGE) shouldBe false
@@ -46,6 +48,7 @@ class NotificationPreferenceTest : DescribeSpec({
 			pref.userId shouldBe 7L
 			pref.push shouldBe true
 			pref.oneToOne shouldBe true
+			pref.lounge shouldBe true
 			pref.meeting shouldBe true
 			pref.team shouldBe true
 			pref.message shouldBe true

@@ -28,6 +28,10 @@ class NotificationPreferenceEntity(
 	@Column(name = "one_to_one", nullable = false)
 	var oneToOne: Boolean,
 
+	/** 셀소(라운지) 대화 신청·수락 알림. */
+	@Column(name = "lounge", nullable = false)
+	var lounge: Boolean,
+
 	/** 미팅(다대다) 관심·매칭 알림. */
 	@Column(name = "meeting", nullable = false)
 	var meeting: Boolean,

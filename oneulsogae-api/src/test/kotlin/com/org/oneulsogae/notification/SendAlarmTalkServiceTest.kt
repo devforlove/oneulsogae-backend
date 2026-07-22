@@ -58,6 +58,20 @@ class SendAlarmTalkServiceTest : DescribeSpec({
 			}
 		}
 
+		context("셀소(라운지) 알림이 꺼져 있으면") {
+			it("소개팅(oneToOne) 토글이 켜져 있어도 라운지 알림은 보내지 않는다") {
+				val sender = RecordingSender()
+				val service = SendAlarmTalkService(
+					FixedPrefPort(NotificationPreference(userId = 1L, push = true, oneToOne = true, lounge = false)),
+					sender,
+				)
+
+				service.attempt(command(AlarmType.LOUNGE_CHAT_REQUEST_RECEIVED))
+
+				sender.sent.size shouldBe 0
+			}
+		}
+
 		context("push 마스터가 꺼져 있으면") {
 			it("카테고리가 켜져 있어도 보내지 않는다") {
 				val sender = RecordingSender()

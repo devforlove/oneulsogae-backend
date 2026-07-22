@@ -24,6 +24,7 @@ class NotificationPreferenceE2ETest : AbstractIntegrationSupport() {
 						.statusCode(200)
 						.body("data.push", org.hamcrest.Matchers.equalTo(true))
 						.body("data.oneToOne", org.hamcrest.Matchers.equalTo(true))
+						.body("data.lounge", org.hamcrest.Matchers.equalTo(true))
 						.body("data.meeting", org.hamcrest.Matchers.equalTo(true))
 						.body("data.team", org.hamcrest.Matchers.equalTo(true))
 						.body("data.message", org.hamcrest.Matchers.equalTo(true))
@@ -41,6 +42,7 @@ class NotificationPreferenceE2ETest : AbstractIntegrationSupport() {
 					val body = mapOf(
 						"push" to true,
 						"oneToOne" to false,
+						"lounge" to false,
 						"meeting" to true,
 						"team" to false,
 						"message" to true,
@@ -75,8 +77,66 @@ class NotificationPreferenceE2ETest : AbstractIntegrationSupport() {
 						.then()
 						.statusCode(200)
 						.body("data.oneToOne", org.hamcrest.Matchers.equalTo(false))
+						.body("data.lounge", org.hamcrest.Matchers.equalTo(false))
 						.body("data.team", org.hamcrest.Matchers.equalTo(false))
 						.body("data.marketing", org.hamcrest.Matchers.equalTo(true))
+				}
+			}
+		}
+
+		describe("PUT /notification-preferences/v1 — lounge 생략(구버전 6필드 클라이언트)") {
+
+			context("lounge=false로 저장한 뒤 lounge 없이 다시 저장하면") {
+				it("lounge가 true로 초기화되지 않고 기존 값(false)이 유지된다") {
+					val userId = 71003L
+					val token = accessTokenFor(userId)
+
+					// lounge=false 저장
+					RestAssured.given()
+						.header("Authorization", "Bearer $token")
+						.contentType(ContentType.JSON)
+						.body(
+							mapOf(
+								"push" to true,
+								"oneToOne" to true,
+								"lounge" to false,
+								"meeting" to true,
+								"team" to true,
+								"message" to true,
+								"marketing" to false,
+							),
+						)
+						.`when`()
+						.put("/notification-preferences/v1")
+						.then()
+						.statusCode(200)
+
+					// 구버전처럼 lounge 없이 저장
+					RestAssured.given()
+						.header("Authorization", "Bearer $token")
+						.contentType(ContentType.JSON)
+						.body(
+							mapOf(
+								"push" to true,
+								"oneToOne" to true,
+								"meeting" to true,
+								"team" to true,
+								"message" to true,
+								"marketing" to false,
+							),
+						)
+						.`when`()
+						.put("/notification-preferences/v1")
+						.then()
+						.statusCode(200)
+
+					RestAssured.given()
+						.header("Authorization", "Bearer $token")
+						.`when`()
+						.get("/notification-preferences/v1")
+						.then()
+						.statusCode(200)
+						.body("data.lounge", org.hamcrest.Matchers.equalTo(false))
 				}
 			}
 		}

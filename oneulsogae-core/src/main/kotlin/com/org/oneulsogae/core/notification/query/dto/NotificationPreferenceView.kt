@@ -7,6 +7,7 @@ package com.org.oneulsogae.core.notification.query.dto
 data class NotificationPreferenceView(
 	val push: Boolean,
 	val oneToOne: Boolean,
+	val lounge: Boolean,
 	val meeting: Boolean,
 	val team: Boolean,
 	val message: Boolean,
@@ -20,6 +21,7 @@ data class NotificationPreferenceView(
 			NotificationPreferenceView(
 				push = true,
 				oneToOne = true,
+				lounge = true,
 				meeting = true,
 				team = true,
 				message = true,
