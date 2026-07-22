@@ -7,5 +7,5 @@ import org.springframework.boot.context.properties.ConfigurationProperties
 data class SesProperties(
 	val region: String = "ap-northeast-2",
 	/** 발신 주소. SES에서 검증된 도메인의 주소여야 한다. */
-	val fromAddress: String = "no-reply@meeple.life",
+	val fromAddress: String = "no-reply@oneulsogae.com",
 )
