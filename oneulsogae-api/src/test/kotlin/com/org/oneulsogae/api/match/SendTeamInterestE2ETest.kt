@@ -14,6 +14,7 @@ import com.org.oneulsogae.infra.alarm.command.entity.AlarmEntity
 import com.org.oneulsogae.infra.alarm.command.entity.QAlarmEntity
 import com.org.oneulsogae.infra.teammatch.command.entity.QRecommendedTeamHistoryEntity
 import io.kotest.matchers.collections.shouldContainExactlyInAnyOrder
+import org.hamcrest.Matchers
 import com.org.oneulsogae.infra.chat.command.entity.QChatRoomEntity
 import com.org.oneulsogae.infra.chat.command.entity.QChatRoomMemberEntity
 import com.org.oneulsogae.infra.coin.command.entity.QCoinBalanceEntity
@@ -125,6 +126,8 @@ class SendTeamInterestE2ETest : AbstractIntegrationSupport({
 					status(200)
 					body("success", true)
 					body("data.status", MatchStatus.PARTIALLY_ACCEPTED.name)
+					// 만료 시각이 응답에 실린다. (프론트 만료 표시용)
+					body("data.expiresAt", Matchers.notNullValue())
 				}
 
 				// 신청 비용(MEETING_INIT=40) 차감 → 잔액 60
