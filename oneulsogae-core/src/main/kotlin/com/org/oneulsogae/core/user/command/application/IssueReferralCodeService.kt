@@ -29,7 +29,9 @@ class IssueReferralCodeService(
 			?: throw BusinessException(UserErrorCode.USER_NOT_FOUND, "사용자를 찾을 수 없습니다: $userId")
 		user.referralCode?.let { return it }
 
-		// ponytail: 생성→중복조회→저장. 동시 발급 레이스는 ux_referral_code 유니크 제약이 최종 방어(드물게 실패 시 재요청).
+		// ponytail: 생성→중복조회→저장. ux_referral_code 유니크 제약은 유저 간 코드 충돌을 방어한다.
+		// 동일 유저의 동시 최초 발급은 마지막 저장이 이겨 먼저 반환된 코드가 무효가 될 수 있으나(극저빈도·무효 코드는 조용히 무시됨),
+		// 필요해지면 referral_code IS NULL 조건부 UPDATE로 강화한다.
 		repeat(MAX_GENERATE_ATTEMPTS) {
 			val code: String = ReferralCode.generate(random)
 			if (getUserPort.findByReferralCode(code) == null) {
