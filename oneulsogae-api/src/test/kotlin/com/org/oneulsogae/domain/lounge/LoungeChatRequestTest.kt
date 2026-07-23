@@ -5,7 +5,6 @@ import com.org.oneulsogae.common.user.Gender
 import com.org.oneulsogae.core.common.error.BusinessException
 import com.org.oneulsogae.core.lounge.LoungeErrorCode
 import com.org.oneulsogae.core.lounge.command.domain.LoungeChatRequest
-import com.org.oneulsogae.common.lounge.LoungeChatRequestPolicy
 import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.core.spec.style.DescribeSpec
 import io.kotest.matchers.shouldBe
@@ -13,7 +12,7 @@ import java.time.LocalDateTime
 
 /**
  * [LoungeChatRequest] 도메인 유닛 테스트.
- * 생성(본인 글 차단)과 수락(소유권·중복 수락·만료 차단, 상태 전이) 규칙이 도메인에 캡슐화됐는지 검증한다.
+ * 생성(본인 글 차단, 만료 시각 확정)과 수락(소유권·중복 수락·만료 차단, 상태 전이) 규칙이 도메인에 캡슐화됐는지 검증한다.
  */
 class LoungeChatRequestTest : DescribeSpec({
 
@@ -25,13 +24,14 @@ class LoungeChatRequestTest : DescribeSpec({
 	describe("create") {
 
 		context("다른 사람의 글에 신청하면") {
-			it("PENDING 상태의 신청이 만들어진다") {
+			it("PENDING 상태·만료 시각(신청 시각 + 3일)의 신청이 만들어진다") {
 				val request: LoungeChatRequest = LoungeChatRequest.create(
 					postId = postId,
 					requesterUserId = requesterUserId,
 					postAuthorUserId = authorUserId,
 					requesterGender = Gender.MALE,
 					postAuthorGender = Gender.FEMALE,
+					now = now,
 				)
 
 				request.postId shouldBe postId
@@ -39,6 +39,7 @@ class LoungeChatRequestTest : DescribeSpec({
 				// 글 작성자를 수신자로 확정해 둔다. (수락 판정·목록 조회가 이 값을 쓴다)
 				request.receiverUserId shouldBe authorUserId
 				request.status shouldBe LoungeChatRequestStatus.PENDING
+				request.expiredAt shouldBe now.plus(LoungeChatRequest.EXPIRATION)
 			}
 		}
 
@@ -51,6 +52,7 @@ class LoungeChatRequestTest : DescribeSpec({
 						postAuthorUserId = authorUserId,
 						requesterGender = Gender.MALE,
 						postAuthorGender = Gender.MALE,
+						now = now,
 					)
 				}
 
@@ -67,6 +69,7 @@ class LoungeChatRequestTest : DescribeSpec({
 						postAuthorUserId = authorUserId,
 						requesterGender = Gender.FEMALE,
 						postAuthorGender = Gender.FEMALE,
+						now = now,
 					)
 				}
 
@@ -83,6 +86,7 @@ class LoungeChatRequestTest : DescribeSpec({
 						postAuthorUserId = authorUserId,
 						requesterGender = Gender.MALE,
 						postAuthorGender = null,
+						now = now,
 					)
 				}
 
@@ -99,6 +103,7 @@ class LoungeChatRequestTest : DescribeSpec({
 						postAuthorUserId = authorUserId,
 						requesterGender = Gender.MALE,
 						postAuthorGender = Gender.MALE,
+						now = now,
 					)
 				}
 
@@ -109,13 +114,14 @@ class LoungeChatRequestTest : DescribeSpec({
 
 	describe("acceptBy") {
 
-		context("글 작성자가 PENDING 신청을 수락하면") {
+		context("글 작성자가 만료 전 PENDING 신청을 수락하면") {
 			it("상태가 ACCEPTED로 전이된 새 모델을 반환한다") {
 				val request = LoungeChatRequest(
 					id = 100L,
 					postId = postId,
 					requesterUserId = requesterUserId,
 					receiverUserId = authorUserId,
+					expiredAt = now.plusDays(3),
 				)
 
 				val accepted: LoungeChatRequest = request.acceptBy(actorUserId = authorUserId, now = now)
@@ -134,6 +140,7 @@ class LoungeChatRequestTest : DescribeSpec({
 					postId = postId,
 					requesterUserId = requesterUserId,
 					receiverUserId = authorUserId,
+					expiredAt = now.plusDays(3),
 				)
 
 				val exception: BusinessException = shouldThrow<BusinessException> {
@@ -152,6 +159,7 @@ class LoungeChatRequestTest : DescribeSpec({
 					requesterUserId = requesterUserId,
 					receiverUserId = authorUserId,
 					status = LoungeChatRequestStatus.ACCEPTED,
+					expiredAt = now.plusDays(3),
 				)
 
 				val exception: BusinessException = shouldThrow<BusinessException> {
@@ -162,14 +170,14 @@ class LoungeChatRequestTest : DescribeSpec({
 			}
 		}
 
-		context("신청 후 3일이 지난 PENDING 신청을 수락하면") {
+		context("만료 시각이 지난 PENDING 신청을 수락하면") {
 			it("LOUNGE_CHAT_REQUEST_EXPIRED 예외를 던진다") {
 				val request = LoungeChatRequest(
 					id = 100L,
 					postId = postId,
 					requesterUserId = requesterUserId,
 					receiverUserId = authorUserId,
-					createdAt = now.minus(LoungeChatRequestPolicy.EXPIRATION),
+					expiredAt = now,
 				)
 
 				val exception: BusinessException = shouldThrow<BusinessException> {
@@ -180,14 +188,14 @@ class LoungeChatRequestTest : DescribeSpec({
 			}
 		}
 
-		context("신청 후 3일이 되기 직전의 PENDING 신청을 수락하면") {
+		context("만료 시각 직전의 PENDING 신청을 수락하면") {
 			it("정상적으로 ACCEPTED로 전이된다") {
 				val request = LoungeChatRequest(
 					id = 100L,
 					postId = postId,
 					requesterUserId = requesterUserId,
 					receiverUserId = authorUserId,
-					createdAt = now.minus(LoungeChatRequestPolicy.EXPIRATION).plusSeconds(1),
+					expiredAt = now.plusSeconds(1),
 				)
 
 				val accepted: LoungeChatRequest = request.acceptBy(actorUserId = authorUserId, now = now)
@@ -200,26 +208,14 @@ class LoungeChatRequestTest : DescribeSpec({
 	describe("isExpired") {
 
 		context("이미 수락된 신청은") {
-			it("3일이 지나도 만료로 보지 않는다") {
+			it("만료 시각이 지나도 만료로 보지 않는다") {
 				val request = LoungeChatRequest(
 					id = 100L,
 					postId = postId,
 					requesterUserId = requesterUserId,
 					receiverUserId = authorUserId,
 					status = LoungeChatRequestStatus.ACCEPTED,
-					createdAt = now.minusDays(10),
-				)
-
-				request.isExpired(now) shouldBe false
-			}
-		}
-
-		context("저장 전이라 createdAt이 없는 신청은") {
-			it("방금 만든 것이므로 만료로 보지 않는다") {
-				val request = LoungeChatRequest(
-					postId = postId,
-					requesterUserId = requesterUserId,
-					receiverUserId = authorUserId,
+					expiredAt = now.minusDays(10),
 				)
 
 				request.isExpired(now) shouldBe false

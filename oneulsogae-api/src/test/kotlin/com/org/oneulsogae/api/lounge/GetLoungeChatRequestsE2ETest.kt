@@ -108,6 +108,8 @@ class GetLoungeChatRequestsE2ETest : AbstractIntegrationSupport({
 					.body("data.items[0].partnerActivityArea", Matchers.equalTo("서울특별시 마포구"))
 					.body("data.items[0].partnerJob", Matchers.equalTo("개발자"))
 					.body("data.items[0].partnerCompanyName", Matchers.equalTo("오늘소개"))
+					// 만료 시각(신청 시각 + 3일)이 항목마다 실린다.
+					.body("data.items[0].expiredAt", Matchers.notNullValue())
 					// 프로필 항목이 비어 있는 상대는 해당 필드가 null로 내려간다. (신청 자체는 빠지지 않는다)
 					.body("data.items[1].partnerProfileImageCode", Matchers.nullValue())
 					.body("data.items[1].partnerActivityArea", Matchers.nullValue())
@@ -148,35 +150,29 @@ class GetLoungeChatRequestsE2ETest : AbstractIntegrationSupport({
 			}
 		}
 
-		context("신청 후 3일이 지난 신청은") {
+		context("만료 시각이 지난 신청은") {
 			it("PENDING이면 목록에서 빠지고 ACCEPTED면 남는다") {
 				val authorId: Long = IntegrationUtil.persist(UserEntityFixture.create(providerId = "lounge-recv-author-5")).id!!
 				val expiredRequesterId: Long = IntegrationUtil.persist(UserEntityFixture.create(providerId = "lounge-recv-user-4")).id!!
 				val acceptedRequesterId: Long = IntegrationUtil.persist(UserEntityFixture.create(providerId = "lounge-recv-user-5")).id!!
 				val post: LoungePostEntity = IntegrationUtil.persist(LoungePostEntityFixture.create(userId = authorId))
-				val expiredPendingId: Long = IntegrationUtil.persist(
+				IntegrationUtil.persist(
 					LoungeChatRequestEntityFixture.create(
 						postId = post.id!!,
 						requesterUserId = expiredRequesterId,
 						receiverUserId = authorId,
+						expiredAt = LocalDateTime.now().minusDays(1),
 					),
-				).id!!
+				)
 				val oldAcceptedId: Long = IntegrationUtil.persist(
 					LoungeChatRequestEntityFixture.create(
 						postId = post.id!!,
 						requesterUserId = acceptedRequesterId,
 						receiverUserId = authorId,
 						status = LoungeChatRequestStatus.ACCEPTED,
+						expiredAt = LocalDateTime.now().minusDays(1),
 					),
 				).id!!
-				// created_at은 JPA Auditing이 저장 시 now로 채우므로, 만료 검증을 위해 두 건 모두 4일 전으로 백데이트한다.
-				val loungeChatRequest: QLoungeChatRequestEntity = QLoungeChatRequestEntity.loungeChatRequestEntity
-				IntegrationUtil.update { query ->
-					query.update(loungeChatRequest)
-						.set(loungeChatRequest.createdAt, LocalDateTime.now().minusDays(4))
-						.where(loungeChatRequest.id.`in`(expiredPendingId, oldAcceptedId))
-						.execute()
-				}
 
 				RestAssured.given()
 					.header("Authorization", "Bearer ${accessTokenFor(authorId)}")
@@ -286,32 +282,27 @@ class GetLoungeChatRequestsE2ETest : AbstractIntegrationSupport({
 					.body("data.items[0].partnerJob", Matchers.equalTo("디자이너"))
 					.body("data.items[0].partnerCompanyName", Matchers.equalTo("미플"))
 					.body("data.items[0].status", Matchers.equalTo("PENDING"))
+					// 만료 시각(신청 시각 + 3일)이 항목마다 실린다.
+					.body("data.items[0].expiredAt", Matchers.notNullValue())
 					// 보낸 신청은 내가 수락하는 것이 아니라 수락 비용을 싣지 않는다.
 					.body("data.acceptCoinAmount", Matchers.nullValue())
 					.body("data.hasNext", Matchers.equalTo(false))
 			}
 		}
 
-		context("신청 후 3일이 지난 PENDING 신청은") {
+		context("만료 시각이 지난 PENDING 신청은") {
 			it("보낸 목록에서도 빠진다") {
 				val meId: Long = IntegrationUtil.persist(UserEntityFixture.create(providerId = "lounge-sent-user-4")).id!!
 				val authorId: Long = IntegrationUtil.persist(UserEntityFixture.create(providerId = "lounge-sent-author-2")).id!!
 				val post: LoungePostEntity = IntegrationUtil.persist(LoungePostEntityFixture.create(userId = authorId))
-				val expiredPendingId: Long = IntegrationUtil.persist(
+				IntegrationUtil.persist(
 					LoungeChatRequestEntityFixture.create(
 						postId = post.id!!,
 						requesterUserId = meId,
 						receiverUserId = authorId,
+						expiredAt = LocalDateTime.now().minusDays(1),
 					),
-				).id!!
-				// created_at은 JPA Auditing이 저장 시 now로 채우므로, 만료 검증을 위해 4일 전으로 백데이트한다.
-				val loungeChatRequest: QLoungeChatRequestEntity = QLoungeChatRequestEntity.loungeChatRequestEntity
-				IntegrationUtil.update { query ->
-					query.update(loungeChatRequest)
-						.set(loungeChatRequest.createdAt, LocalDateTime.now().minusDays(4))
-						.where(loungeChatRequest.id.eq(expiredPendingId))
-						.execute()
-				}
+				)
 
 				RestAssured.given()
 					.header("Authorization", "Bearer ${accessTokenFor(meId)}")

@@ -30,7 +30,7 @@ class GetLoungeChatRequestDaoImpl(
 		receiverUserId: Long,
 		beforeId: Long?,
 		limit: Int,
-		pendingAfter: LocalDateTime,
+		now: LocalDateTime,
 	): List<LoungeChatRequestView> {
 		val request: QLoungeChatRequestEntity = QLoungeChatRequestEntity.loungeChatRequestEntity
 		// 받은 신청이므로 상대방은 신청자다.
@@ -40,7 +40,7 @@ class GetLoungeChatRequestDaoImpl(
 			partnerColumn = request.requesterUserId,
 			beforeId = beforeId,
 			limit = limit,
-			pendingAfter = pendingAfter,
+			now = now,
 		)
 	}
 
@@ -48,7 +48,7 @@ class GetLoungeChatRequestDaoImpl(
 		requesterUserId: Long,
 		beforeId: Long?,
 		limit: Int,
-		pendingAfter: LocalDateTime,
+		now: LocalDateTime,
 	): List<LoungeChatRequestView> {
 		val request: QLoungeChatRequestEntity = QLoungeChatRequestEntity.loungeChatRequestEntity
 		// 보낸 신청이므로 상대방은 글 작성자(수신자)다.
@@ -58,14 +58,14 @@ class GetLoungeChatRequestDaoImpl(
 			partnerColumn = request.receiverUserId,
 			beforeId = beforeId,
 			limit = limit,
-			pendingAfter = pendingAfter,
+			now = now,
 		)
 	}
 
 	/**
 	 * 신청 목록 한 페이지를 투영한다.
 	 * [ownerColumn]은 조회 기준(내가 수신자냐 신청자냐), [partnerColumn]은 프로필을 붙일 상대방 컬럼이다.
-	 * PENDING 신청은 [pendingAfter] 이후 생성분만 남긴다(만료 제외). 이 필터는 잔여 조건이라
+	 * PENDING 신청은 만료 시각(expired_at)이 [now] 이후인 것만 남긴다(만료 제외). 이 필터는 잔여 조건이라
 	 * 기존 (기준 사용자, id) 인덱스 seek를 해치지 않는다.
 	 */
 	private fun findPage(
@@ -74,7 +74,7 @@ class GetLoungeChatRequestDaoImpl(
 		partnerColumn: NumberPath<Long>,
 		beforeId: Long?,
 		limit: Int,
-		pendingAfter: LocalDateTime,
+		now: LocalDateTime,
 	): List<LoungeChatRequestView> {
 		val request: QLoungeChatRequestEntity = QLoungeChatRequestEntity.loungeChatRequestEntity
 		val partnerDetail: QUserDetailEntity = QUserDetailEntity.userDetailEntity
@@ -97,6 +97,7 @@ class GetLoungeChatRequestDaoImpl(
 					partnerDetail.companyName,
 					request.status,
 					request.createdAt,
+					request.expiredAt,
 				),
 			)
 			.from(request)
@@ -105,7 +106,7 @@ class GetLoungeChatRequestDaoImpl(
 			.where(
 				ownerColumn.eq(ownerUserId),
 				beforeCursor,
-				request.status.eq(LoungeChatRequestStatus.ACCEPTED).or(request.createdAt.gt(pendingAfter)),
+				request.status.eq(LoungeChatRequestStatus.ACCEPTED).or(request.expiredAt.gt(now)),
 			)
 			.orderBy(request.id.desc())
 			.limit(limit.toLong())

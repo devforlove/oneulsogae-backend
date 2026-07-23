@@ -10,6 +10,7 @@ import jakarta.persistence.Index
 import jakarta.persistence.Table
 import jakarta.persistence.UniqueConstraint
 import org.hibernate.annotations.SQLRestriction
+import java.time.LocalDateTime
 
 /**
  * 라운지 셀소 대화 신청 영속성 엔티티.
@@ -53,4 +54,8 @@ class LoungeChatRequestEntity(
 	@Enumerated(EnumType.STRING)
 	@Column(name = "status", nullable = false, columnDefinition = "varchar(20)")
 	var status: LoungeChatRequestStatus = LoungeChatRequestStatus.PENDING,
+
+	/** 만료 시각(신청 시각 + 3일). 이 시각이 지난 PENDING 신청은 수락 불가·목록 제외로 다룬다. */
+	@Column(name = "expired_at", nullable = false)
+	val expiredAt: LocalDateTime,
 ) : BaseEntity()

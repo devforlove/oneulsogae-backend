@@ -1,16 +1,17 @@
 package com.org.oneulsogae.core.lounge.command.domain
 
-import com.org.oneulsogae.common.lounge.LoungeChatRequestPolicy
 import com.org.oneulsogae.common.lounge.LoungeChatRequestStatus
 import com.org.oneulsogae.common.user.Gender
 import com.org.oneulsogae.core.common.error.BusinessException
 import com.org.oneulsogae.core.lounge.LoungeErrorCode
+import java.time.Duration
 import java.time.LocalDateTime
 
 /**
  * 라운지 셀소 대화 신청 도메인 모델.
  * 신청자([requesterUserId])가 셀소 글([postId])의 작성자([receiverUserId])에게 대화를 신청한 한 건을 나타낸다.
  * 생성된 채팅방은 여기에 두지 않는다(`chat_rooms(match_type=LOUNGE, match_id=이 신청 id)`로 역참조한다).
+ * [expiredAt]은 생성 시각 + [EXPIRATION]으로 확정해 저장한다. (만료 판정·응답 노출 모두 이 값 기준)
  * [createdAt]은 영속성(BaseEntity)이 채우므로 저장 전(신규)에는 null이다.
  */
 data class LoungeChatRequest(
@@ -20,6 +21,8 @@ data class LoungeChatRequest(
 	/** 신청을 받은 사용자(글 작성자). 생성 시점에 확정되며 이후 바뀌지 않는다. */
 	val receiverUserId: Long,
 	val status: LoungeChatRequestStatus = LoungeChatRequestStatus.PENDING,
+	/** 만료 시각. 이 시각이 지난 PENDING 신청은 수락할 수 없고 목록에서도 빠진다. */
+	val expiredAt: LocalDateTime,
 	val createdAt: LocalDateTime? = null,
 ) {
 
@@ -44,18 +47,18 @@ data class LoungeChatRequest(
 
 	/**
 	 * [now] 기준으로 만료된 신청인지 여부.
-	 * 신청([createdAt])으로부터 [LoungeChatRequestPolicy.EXPIRATION](3일)이 지난 PENDING 신청만 만료로 본다.
-	 * (이미 수락된 신청은 만료되지 않고, 저장 전이라 [createdAt]이 null이면 방금 만든 신청이므로 만료가 아니다)
+	 * [expiredAt]이 지난 PENDING 신청만 만료로 본다. (이미 수락된 신청은 만료되지 않는다)
 	 */
 	fun isExpired(now: LocalDateTime): Boolean =
-		status == LoungeChatRequestStatus.PENDING &&
-			createdAt != null &&
-			!now.isBefore(createdAt.plus(LoungeChatRequestPolicy.EXPIRATION))
+		status == LoungeChatRequestStatus.PENDING && !now.isBefore(expiredAt)
 
 	companion object {
 
+		/** 대화 신청의 유효 기간(3일). 신청 시각으로부터 이 기간이 지나면 만료로 본다. */
+		val EXPIRATION: Duration = Duration.ofDays(3)
+
 		/**
-		 * 신규 대화 신청을 만든다. (PENDING 상태로 시작)
+		 * 신규 대화 신청을 만든다. (PENDING 상태로 시작, 만료 시각은 [now] + [EXPIRATION])
 		 * - 본인이 작성한 글([postAuthorUserId]와 [requesterUserId]가 같음): [LoungeErrorCode.LOUNGE_CHAT_REQUEST_SELF]
 		 * - 이성이 아님: [LoungeErrorCode.LOUNGE_CHAT_REQUEST_SAME_GENDER] ([validateOppositeGender])
 		 *
@@ -67,12 +70,18 @@ data class LoungeChatRequest(
 			postAuthorUserId: Long,
 			requesterGender: Gender?,
 			postAuthorGender: Gender?,
+			now: LocalDateTime,
 		): LoungeChatRequest {
 			if (requesterUserId == postAuthorUserId) {
 				throw BusinessException(LoungeErrorCode.LOUNGE_CHAT_REQUEST_SELF)
 			}
 			validateOppositeGender(requesterGender, postAuthorGender)
-			return LoungeChatRequest(postId = postId, requesterUserId = requesterUserId, receiverUserId = postAuthorUserId)
+			return LoungeChatRequest(
+				postId = postId,
+				requesterUserId = requesterUserId,
+				receiverUserId = postAuthorUserId,
+				expiredAt = now.plus(EXPIRATION),
+			)
 		}
 
 		/**

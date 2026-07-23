@@ -32,6 +32,8 @@ data class LoungeChatRequestView(
 	val partnerCompanyName: String?,
 	val status: LoungeChatRequestStatus,
 	val requestedAt: LocalDateTime,
+	/** 만료 시각. 이 시각이 지난 PENDING 신청은 목록에 실리지 않는다. */
+	val expiredAt: LocalDateTime,
 	/** 상대방 만 나이. 서비스가 [partnerBirthday]와 기준일로 채운다. (생년월일이 없으면 null) */
 	val partnerAge: Int? = null,
 ) {
@@ -49,9 +51,10 @@ data class LoungeChatRequestView(
 		partnerCompanyName: String?,
 		status: LoungeChatRequestStatus,
 		requestedAt: LocalDateTime,
+		expiredAt: LocalDateTime,
 	) : this(
 		requestId, postId, partnerUserId, partnerNickname, partnerGender, partnerBirthday,
-		partnerProfileImageCode, partnerActivityArea, partnerJob, partnerCompanyName, status, requestedAt, null,
+		partnerProfileImageCode, partnerActivityArea, partnerJob, partnerCompanyName, status, requestedAt, expiredAt, null,
 	)
 
 	/** 기준일([today])로 상대방 만 나이를 채운 신청을 만든다. */

@@ -241,7 +241,7 @@ class AcceptLoungeChatE2ETest : AbstractIntegrationSupport({
 			}
 		}
 
-		context("신청 후 3일이 지난 신청을 수락하면") {
+		context("만료 시각이 지난 신청을 수락하면") {
 			it("410(LOUNGE-015)이고 코인이 차감되지 않는다") {
 				val authorId: Long = IntegrationUtil.persist(UserEntityFixture.create(providerId = "lounge-acc-author-7")).id!!
 				val requesterId: Long = IntegrationUtil.persist(UserEntityFixture.create(providerId = "lounge-acc-user-9")).id!!
@@ -250,16 +250,13 @@ class AcceptLoungeChatE2ETest : AbstractIntegrationSupport({
 				IntegrationUtil.persist(CoinBalanceEntityFixture.create(userId = authorId, balance = 100))
 				val post: LoungePostEntity = IntegrationUtil.persist(LoungePostEntityFixture.create(userId = authorId))
 				val request: LoungeChatRequestEntity = IntegrationUtil.persist(
-					LoungeChatRequestEntityFixture.create(postId = post.id!!, requesterUserId = requesterId, receiverUserId = authorId),
+					LoungeChatRequestEntityFixture.create(
+						postId = post.id!!,
+						requesterUserId = requesterId,
+						receiverUserId = authorId,
+						expiredAt = LocalDateTime.now().minusDays(1),
+					),
 				)
-				// created_at은 JPA Auditing이 저장 시 now로 채우므로, 만료 검증을 위해 4일 전으로 백데이트한다.
-				val loungeChatRequest: QLoungeChatRequestEntity = QLoungeChatRequestEntity.loungeChatRequestEntity
-				IntegrationUtil.update { query ->
-					query.update(loungeChatRequest)
-						.set(loungeChatRequest.createdAt, LocalDateTime.now().minusDays(4))
-						.where(loungeChatRequest.id.eq(request.id!!))
-						.execute()
-				}
 
 				RestAssured.given()
 					.header("Authorization", "Bearer ${accessTokenFor(authorId)}")

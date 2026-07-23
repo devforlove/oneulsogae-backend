@@ -7,6 +7,7 @@ import com.org.oneulsogae.core.common.error.BusinessException
 import com.org.oneulsogae.core.common.event.DomainEventPublisher
 import com.org.oneulsogae.core.common.lock.DistributedLock
 import com.org.oneulsogae.core.common.lock.LockKeyConstraints
+import com.org.oneulsogae.core.common.time.TimeGenerator
 import com.org.oneulsogae.core.lounge.LoungeErrorCode
 import com.org.oneulsogae.core.lounge.command.application.port.`in`.RequestLoungeChatUseCase
 import com.org.oneulsogae.core.lounge.command.application.port.`in`.result.RequestLoungeChatResult
@@ -46,6 +47,7 @@ class RequestLoungeChatService(
 	private val getUserDetailUseCase: GetUserDetailUseCase,
 	private val checkCompanyVerifiedUseCase: CheckCompanyVerifiedUseCase,
 	private val domainEventPublisher: DomainEventPublisher,
+	private val timeGenerator: TimeGenerator,
 ) : RequestLoungeChatUseCase {
 
 	@DistributedLock(prefix = LockKeyConstraints.LOUNGE_CHAT_REQUEST, keys = ["#postId", "#userId"], waitTime = 0)
@@ -72,6 +74,7 @@ class RequestLoungeChatService(
 				postAuthorUserId = post.userId,
 				requesterGender = requesterDetail?.gender,
 				postAuthorGender = postAuthorDetail?.gender,
+				now = timeGenerator.now(),
 			),
 		)
 		spendCoinUseCase.spend(userId, SpendCoinCommand(amount = USAGE_TYPE.coinAmount, coinUsageType = USAGE_TYPE))
