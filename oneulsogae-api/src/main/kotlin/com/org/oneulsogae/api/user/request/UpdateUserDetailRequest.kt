@@ -70,6 +70,10 @@ data class UpdateUserDetailRequest(
 
 	@field:NotNull(message = "체형은 필수입니다.")
 	val bodyType: BodyType? = null,
+
+	/** 추천 코드(선택). 온보딩 완료 시에만 의미가 있고 프로필 수정에서는 무시된다. */
+	@field:Size(max = 8, message = "추천 코드는 8자 이하여야 합니다.")
+	val referralCode: String? = null,
 ) {
 
 	// @Valid 검증을 통과한 뒤 호출되므로, 필수 필드는 non-null이 보장된다. (command가 non-null 타입이라 여기서 풀어 넘긴다)

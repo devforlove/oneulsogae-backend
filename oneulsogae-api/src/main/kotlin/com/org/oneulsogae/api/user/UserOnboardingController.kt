@@ -31,7 +31,7 @@ class UserOnboardingController(
 		@LoginUser user: AuthUser,
 		@Valid @RequestBody request: UpdateUserDetailRequest,
 	): ApiResponse<Unit> {
-		completeOnboardingUseCase.complete(user.id, request.toCommand())
+		completeOnboardingUseCase.complete(user.id, request.toCommand(), request.referralCode)
 		return ApiResponse.success()
 	}
 }

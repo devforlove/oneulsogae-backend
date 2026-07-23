@@ -68,3 +68,11 @@ internal fun verificationCountOf(userId: Long): Int =
 		.where(QCompanyEmailVerificationEntity.companyEmailVerificationEntity.userId.eq(userId))
 		.fetch()
 		.size
+
+/** 해당 사용자의 추천인(referred_by_user_id) 기록값. */
+internal fun referredByOf(userId: Long): Long? =
+	IntegrationUtil.getQuery()
+		.select(QUserEntity.userEntity.referredByUserId)
+		.from(QUserEntity.userEntity)
+		.where(QUserEntity.userEntity.id.eq(userId))
+		.fetchOne()

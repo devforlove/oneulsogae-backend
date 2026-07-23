@@ -9,5 +9,5 @@ import com.org.oneulsogae.core.user.command.application.port.`in`.command.Update
  */
 interface CompleteOnboardingUseCase {
 
-	fun complete(userId: Long, command: UpdateUserDetailCommand)
+	fun complete(userId: Long, command: UpdateUserDetailCommand, referralCode: String? = null)
 }

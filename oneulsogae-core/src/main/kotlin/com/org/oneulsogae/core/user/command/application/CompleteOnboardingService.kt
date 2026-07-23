@@ -44,7 +44,7 @@ class CompleteOnboardingService(
 ) : CompleteOnboardingUseCase {
 
 	@Transactional
-	override fun complete(userId: Long, command: UpdateUserDetailCommand) {
+	override fun complete(userId: Long, command: UpdateUserDetailCommand, referralCode: String?) {
 		updateUserDetailUseCase.update(userId, command)
 		// 온보딩 단계에서 코인 잔액 행을 미리 준비해, 이후 적립/차감이 항상 기존 행을 갱신하게 한다. (조회 경로는 쓰기를 하지 않음)
 		createCoinBalanceUseCase.createIfAbsent(userId)
@@ -60,6 +60,8 @@ class CompleteOnboardingService(
 				userId,
 				AcquireCoinCommand(CoinPolicy.SIGNUP_REWARD_COIN_AMOUNT, CoinGetType.SIGNUP),
 			)
+			// 추천 코드가 유효하면 추천인·신규 유저 양쪽에 추천 보상 코인을 지급한다. (무효 코드는 조용히 무시)
+			applyReferralIfPresent(userId, referralCode)
 			recommendMatchUseCase.recommend(userId)
 			recommendTeamUseCase.recommend(userId)
 		}
@@ -73,6 +75,29 @@ class CompleteOnboardingService(
 
 		saveUserPort.save(user.completeSignUp())
 		return true
+	}
+
+	/**
+	 * 추천 코드가 있으면 추천인을 찾아 신규 유저에 추천인을 기록하고, 양쪽에 추천 보상 코인을 지급한다.
+	 * 코드가 없거나(빈 값 포함) 무효(미존재·비활성 추천인·본인)면 조용히 무시한다. (온보딩은 정상 진행)
+	 */
+	private fun applyReferralIfPresent(userId: Long, referralCode: String?) {
+		val code: String = referralCode?.trim().takeUnless { it.isNullOrEmpty() } ?: return
+		val referrer: User = getUserPort.findByReferralCode(code) ?: return
+		if (!referrer.canRefer(userId)) return
+
+		val user: User = getUserPort.findById(userId)
+			?: throw BusinessException(UserErrorCode.USER_NOT_FOUND, "사용자를 찾을 수 없습니다: $userId")
+		saveUserPort.save(user.referredBy(referrer.id))
+
+		acquireCoinUseCase.acquire(
+			userId,
+			AcquireCoinCommand(CoinPolicy.REFERRAL_REWARD_COIN_AMOUNT, CoinGetType.REFERRAL),
+		)
+		acquireCoinUseCase.acquire(
+			referrer.id,
+			AcquireCoinCommand(CoinPolicy.REFERRAL_REWARD_COIN_AMOUNT, CoinGetType.REFERRAL),
+		)
 	}
 
 	/** 변경된 프로필/가입 상태로 매칭 가능 스냅샷을 만들어 match 읽기 모델(match_user)을 동기화한다. (매칭 불가 상태면 스냅샷이 null이라 읽기 모델에서 제거된다) */
