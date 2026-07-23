@@ -1,5 +1,6 @@
 package com.org.oneulsogae.core.lounge.query.service
 
+import com.org.oneulsogae.common.lounge.LoungeChatRequestPolicy
 import com.org.oneulsogae.core.common.time.TimeGenerator
 import com.org.oneulsogae.core.lounge.query.dao.GetLoungeChatRequestDao
 import com.org.oneulsogae.core.lounge.query.dto.LoungeChatRequestPage
@@ -7,6 +8,7 @@ import com.org.oneulsogae.core.lounge.query.dto.LoungeChatRequestView
 import com.org.oneulsogae.core.lounge.query.service.port.`in`.GetLoungeChatRequestsUseCase
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
+import java.time.LocalDateTime
 
 /**
  * [GetLoungeChatRequestsUseCase] 구현. (조회 전용 - 쓰기 부수효과 없음)
@@ -14,6 +16,7 @@ import org.springframework.transaction.annotation.Transactional
  * 두 목록 모두 요청한 사용자 본인의 신청만 돌려주므로 별도 소유권 검증이 필요 없다. (기준 컬럼이 곧 본인)
  * 페이지 크기 + 1건을 읽어 다음 페이지 존재 여부를 판정한다. (COUNT 없이 커서 페이징)
  * 상대방 만 나이는 [TimeGenerator]의 오늘 날짜로 계산한다.
+ * 만료된 PENDING 신청(신청 후 [LoungeChatRequestPolicy.EXPIRATION] 경과)은 두 목록 모두에서 제외한다.
  */
 @Service
 @Transactional(readOnly = true)
@@ -23,14 +26,20 @@ class GetLoungeChatRequestsService(
 ) : GetLoungeChatRequestsUseCase {
 
 	override fun getReceived(userId: Long, cursor: Long?): LoungeChatRequestPage {
-		val rows: List<LoungeChatRequestView> = getLoungeChatRequestDao.findReceivedPage(userId, cursor, PAGE_SIZE + 1)
+		val rows: List<LoungeChatRequestView> =
+			getLoungeChatRequestDao.findReceivedPage(userId, cursor, PAGE_SIZE + 1, pendingAfter())
 		return toPage(rows)
 	}
 
 	override fun getSent(userId: Long, cursor: Long?): LoungeChatRequestPage {
-		val rows: List<LoungeChatRequestView> = getLoungeChatRequestDao.findSentPage(userId, cursor, PAGE_SIZE + 1)
+		val rows: List<LoungeChatRequestView> =
+			getLoungeChatRequestDao.findSentPage(userId, cursor, PAGE_SIZE + 1, pendingAfter())
 		return toPage(rows)
 	}
+
+	/** PENDING 신청이 목록에 남으려면 이 시각 이후에 만들어졌어야 한다. (그 이전 생성분은 만료) */
+	private fun pendingAfter(): LocalDateTime =
+		timeGenerator.now().minus(LoungeChatRequestPolicy.EXPIRATION)
 
 	private fun toPage(rows: List<LoungeChatRequestView>): LoungeChatRequestPage =
 		LoungeChatRequestPage.of(rows, PAGE_SIZE).withAges(timeGenerator.today())

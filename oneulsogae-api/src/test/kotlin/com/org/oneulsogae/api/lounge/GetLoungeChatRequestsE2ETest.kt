@@ -20,6 +20,7 @@ import com.org.oneulsogae.infra.region.entity.RegionEntity
 import io.restassured.RestAssured
 import org.hamcrest.Matchers
 import java.time.LocalDate
+import java.time.LocalDateTime
 import java.time.Period
 
 /**
@@ -147,6 +148,48 @@ class GetLoungeChatRequestsE2ETest : AbstractIntegrationSupport({
 			}
 		}
 
+		context("신청 후 3일이 지난 신청은") {
+			it("PENDING이면 목록에서 빠지고 ACCEPTED면 남는다") {
+				val authorId: Long = IntegrationUtil.persist(UserEntityFixture.create(providerId = "lounge-recv-author-5")).id!!
+				val expiredRequesterId: Long = IntegrationUtil.persist(UserEntityFixture.create(providerId = "lounge-recv-user-4")).id!!
+				val acceptedRequesterId: Long = IntegrationUtil.persist(UserEntityFixture.create(providerId = "lounge-recv-user-5")).id!!
+				val post: LoungePostEntity = IntegrationUtil.persist(LoungePostEntityFixture.create(userId = authorId))
+				val expiredPendingId: Long = IntegrationUtil.persist(
+					LoungeChatRequestEntityFixture.create(
+						postId = post.id!!,
+						requesterUserId = expiredRequesterId,
+						receiverUserId = authorId,
+					),
+				).id!!
+				val oldAcceptedId: Long = IntegrationUtil.persist(
+					LoungeChatRequestEntityFixture.create(
+						postId = post.id!!,
+						requesterUserId = acceptedRequesterId,
+						receiverUserId = authorId,
+						status = LoungeChatRequestStatus.ACCEPTED,
+					),
+				).id!!
+				// created_at은 JPA Auditing이 저장 시 now로 채우므로, 만료 검증을 위해 두 건 모두 4일 전으로 백데이트한다.
+				val loungeChatRequest: QLoungeChatRequestEntity = QLoungeChatRequestEntity.loungeChatRequestEntity
+				IntegrationUtil.update { query ->
+					query.update(loungeChatRequest)
+						.set(loungeChatRequest.createdAt, LocalDateTime.now().minusDays(4))
+						.where(loungeChatRequest.id.`in`(expiredPendingId, oldAcceptedId))
+						.execute()
+				}
+
+				RestAssured.given()
+					.header("Authorization", "Bearer ${accessTokenFor(authorId)}")
+					.get("/lounge/v1/chat-requests/received")
+					.then()
+					.statusCode(200)
+					// 만료된 PENDING은 빠지고, 이미 수락된 신청은 오래돼도 남는다.
+					.body("data.items", Matchers.hasSize<Any>(1))
+					.body("data.items[0].requestId", Matchers.equalTo(oldAcceptedId.toInt()))
+					.body("data.items[0].status", Matchers.equalTo("ACCEPTED"))
+			}
+		}
+
 		context("받은 신청이 페이지 크기를 넘으면") {
 			it("첫 페이지 20건과 커서를 내려주고, 커서로 나머지를 잇는다") {
 				val authorId: Long = IntegrationUtil.persist(UserEntityFixture.create(providerId = "lounge-recv-author-4")).id!!
@@ -246,6 +289,36 @@ class GetLoungeChatRequestsE2ETest : AbstractIntegrationSupport({
 					// 보낸 신청은 내가 수락하는 것이 아니라 수락 비용을 싣지 않는다.
 					.body("data.acceptCoinAmount", Matchers.nullValue())
 					.body("data.hasNext", Matchers.equalTo(false))
+			}
+		}
+
+		context("신청 후 3일이 지난 PENDING 신청은") {
+			it("보낸 목록에서도 빠진다") {
+				val meId: Long = IntegrationUtil.persist(UserEntityFixture.create(providerId = "lounge-sent-user-4")).id!!
+				val authorId: Long = IntegrationUtil.persist(UserEntityFixture.create(providerId = "lounge-sent-author-2")).id!!
+				val post: LoungePostEntity = IntegrationUtil.persist(LoungePostEntityFixture.create(userId = authorId))
+				val expiredPendingId: Long = IntegrationUtil.persist(
+					LoungeChatRequestEntityFixture.create(
+						postId = post.id!!,
+						requesterUserId = meId,
+						receiverUserId = authorId,
+					),
+				).id!!
+				// created_at은 JPA Auditing이 저장 시 now로 채우므로, 만료 검증을 위해 4일 전으로 백데이트한다.
+				val loungeChatRequest: QLoungeChatRequestEntity = QLoungeChatRequestEntity.loungeChatRequestEntity
+				IntegrationUtil.update { query ->
+					query.update(loungeChatRequest)
+						.set(loungeChatRequest.createdAt, LocalDateTime.now().minusDays(4))
+						.where(loungeChatRequest.id.eq(expiredPendingId))
+						.execute()
+				}
+
+				RestAssured.given()
+					.header("Authorization", "Bearer ${accessTokenFor(meId)}")
+					.get("/lounge/v1/chat-requests/sent")
+					.then()
+					.statusCode(200)
+					.body("data.items", Matchers.hasSize<Any>(0))
 			}
 		}
 

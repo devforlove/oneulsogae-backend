@@ -57,4 +57,7 @@ enum class LoungeErrorCode(
 
 	/** 신청자와 글 작성자의 성별이 같거나, 둘 중 하나의 성별을 확인할 수 없음. */
 	LOUNGE_CHAT_REQUEST_SAME_GENDER("LOUNGE-014", "이성에게만 대화를 신청할 수 있습니다.", HttpStatus.BAD_REQUEST),
+
+	/** 신청 후 3일이 지나 만료된 대화 신청을 수락함. */
+	LOUNGE_CHAT_REQUEST_EXPIRED("LOUNGE-015", "만료된 대화 신청입니다.", HttpStatus.GONE),
 }

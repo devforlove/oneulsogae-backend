@@ -1,5 +1,6 @@
 package com.org.oneulsogae.infra.lounge.query
 
+import com.org.oneulsogae.common.lounge.LoungeChatRequestStatus
 import com.org.oneulsogae.core.lounge.query.dao.GetLoungeChatRequestDao
 import com.org.oneulsogae.core.lounge.query.dto.LoungeChatRequestView
 import com.org.oneulsogae.infra.lounge.command.entity.QLoungeChatRequestEntity
@@ -10,6 +11,7 @@ import com.querydsl.core.types.dsl.BooleanExpression
 import com.querydsl.core.types.dsl.NumberPath
 import com.querydsl.jpa.impl.JPAQueryFactory
 import org.springframework.stereotype.Component
+import java.time.LocalDateTime
 
 /**
  * [GetLoungeChatRequestDao]의 QueryDSL 구현. (조회 전용)
@@ -24,7 +26,12 @@ class GetLoungeChatRequestDaoImpl(
 	private val queryFactory: JPAQueryFactory,
 ) : GetLoungeChatRequestDao {
 
-	override fun findReceivedPage(receiverUserId: Long, beforeId: Long?, limit: Int): List<LoungeChatRequestView> {
+	override fun findReceivedPage(
+		receiverUserId: Long,
+		beforeId: Long?,
+		limit: Int,
+		pendingAfter: LocalDateTime,
+	): List<LoungeChatRequestView> {
 		val request: QLoungeChatRequestEntity = QLoungeChatRequestEntity.loungeChatRequestEntity
 		// 받은 신청이므로 상대방은 신청자다.
 		return findPage(
@@ -33,10 +40,16 @@ class GetLoungeChatRequestDaoImpl(
 			partnerColumn = request.requesterUserId,
 			beforeId = beforeId,
 			limit = limit,
+			pendingAfter = pendingAfter,
 		)
 	}
 
-	override fun findSentPage(requesterUserId: Long, beforeId: Long?, limit: Int): List<LoungeChatRequestView> {
+	override fun findSentPage(
+		requesterUserId: Long,
+		beforeId: Long?,
+		limit: Int,
+		pendingAfter: LocalDateTime,
+	): List<LoungeChatRequestView> {
 		val request: QLoungeChatRequestEntity = QLoungeChatRequestEntity.loungeChatRequestEntity
 		// 보낸 신청이므로 상대방은 글 작성자(수신자)다.
 		return findPage(
@@ -45,12 +58,15 @@ class GetLoungeChatRequestDaoImpl(
 			partnerColumn = request.receiverUserId,
 			beforeId = beforeId,
 			limit = limit,
+			pendingAfter = pendingAfter,
 		)
 	}
 
 	/**
 	 * 신청 목록 한 페이지를 투영한다.
 	 * [ownerColumn]은 조회 기준(내가 수신자냐 신청자냐), [partnerColumn]은 프로필을 붙일 상대방 컬럼이다.
+	 * PENDING 신청은 [pendingAfter] 이후 생성분만 남긴다(만료 제외). 이 필터는 잔여 조건이라
+	 * 기존 (기준 사용자, id) 인덱스 seek를 해치지 않는다.
 	 */
 	private fun findPage(
 		ownerColumn: NumberPath<Long>,
@@ -58,6 +74,7 @@ class GetLoungeChatRequestDaoImpl(
 		partnerColumn: NumberPath<Long>,
 		beforeId: Long?,
 		limit: Int,
+		pendingAfter: LocalDateTime,
 	): List<LoungeChatRequestView> {
 		val request: QLoungeChatRequestEntity = QLoungeChatRequestEntity.loungeChatRequestEntity
 		val partnerDetail: QUserDetailEntity = QUserDetailEntity.userDetailEntity
@@ -85,7 +102,11 @@ class GetLoungeChatRequestDaoImpl(
 			.from(request)
 			.leftJoin(partnerDetail).on(partnerDetail.userId.eq(partnerColumn))
 			.leftJoin(partnerRegion).on(partnerRegion.id.eq(partnerDetail.regionId))
-			.where(ownerColumn.eq(ownerUserId), beforeCursor)
+			.where(
+				ownerColumn.eq(ownerUserId),
+				beforeCursor,
+				request.status.eq(LoungeChatRequestStatus.ACCEPTED).or(request.createdAt.gt(pendingAfter)),
+			)
 			.orderBy(request.id.desc())
 			.limit(limit.toLong())
 			.fetch()

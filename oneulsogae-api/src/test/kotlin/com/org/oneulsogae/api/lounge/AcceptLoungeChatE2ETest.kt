@@ -21,10 +21,11 @@ import com.org.oneulsogae.infra.user.command.entity.QUserDetailEntity
 import io.kotest.matchers.shouldBe
 import io.restassured.RestAssured
 import org.hamcrest.Matchers
+import java.time.LocalDateTime
 
 /**
  * `POST /lounge/v1/chat-requests/{requestId}/accept` E2E 테스트.
- * 수락으로 LOUNGE 채팅방과 참가자 2명이 생기고 코인 32가 차감되는지, 여러 명 수락·중복 수락·권한·잔액 부족을 검증한다.
+ * 수락으로 LOUNGE 채팅방과 참가자 2명이 생기고 코인 32가 차감되는지, 여러 명 수락·중복 수락·권한·잔액 부족·만료를 검증한다.
  */
 class AcceptLoungeChatE2ETest : AbstractIntegrationSupport({
 
@@ -237,6 +238,43 @@ class AcceptLoungeChatE2ETest : AbstractIntegrationSupport({
 					.then()
 					.statusCode(404)
 					.body("error.code", Matchers.equalTo("LOUNGE-012"))
+			}
+		}
+
+		context("신청 후 3일이 지난 신청을 수락하면") {
+			it("410(LOUNGE-015)이고 코인이 차감되지 않는다") {
+				val authorId: Long = IntegrationUtil.persist(UserEntityFixture.create(providerId = "lounge-acc-author-7")).id!!
+				val requesterId: Long = IntegrationUtil.persist(UserEntityFixture.create(providerId = "lounge-acc-user-9")).id!!
+				// 회사 인증을 마쳐야 수락할 수 있다.
+				IntegrationUtil.persist(UserDetailEntityFixture.create(userId = authorId, companyName = "오늘소개"))
+				IntegrationUtil.persist(CoinBalanceEntityFixture.create(userId = authorId, balance = 100))
+				val post: LoungePostEntity = IntegrationUtil.persist(LoungePostEntityFixture.create(userId = authorId))
+				val request: LoungeChatRequestEntity = IntegrationUtil.persist(
+					LoungeChatRequestEntityFixture.create(postId = post.id!!, requesterUserId = requesterId, receiverUserId = authorId),
+				)
+				// created_at은 JPA Auditing이 저장 시 now로 채우므로, 만료 검증을 위해 4일 전으로 백데이트한다.
+				val loungeChatRequest: QLoungeChatRequestEntity = QLoungeChatRequestEntity.loungeChatRequestEntity
+				IntegrationUtil.update { query ->
+					query.update(loungeChatRequest)
+						.set(loungeChatRequest.createdAt, LocalDateTime.now().minusDays(4))
+						.where(loungeChatRequest.id.eq(request.id!!))
+						.execute()
+				}
+
+				RestAssured.given()
+					.header("Authorization", "Bearer ${accessTokenFor(authorId)}")
+					.post("/lounge/v1/chat-requests/${request.id}/accept")
+					.then()
+					.statusCode(410)
+					.body("error.code", Matchers.equalTo("LOUNGE-015"))
+
+				// 차단이 코인 차감보다 앞이라 잔액이 그대로다.
+				val balance: Int = IntegrationUtil.getQuery()
+					.select(QCoinBalanceEntity.coinBalanceEntity.balance)
+					.from(QCoinBalanceEntity.coinBalanceEntity)
+					.where(QCoinBalanceEntity.coinBalanceEntity.userId.eq(authorId))
+					.fetchFirst()!!
+				balance shouldBe 100
 			}
 		}
 

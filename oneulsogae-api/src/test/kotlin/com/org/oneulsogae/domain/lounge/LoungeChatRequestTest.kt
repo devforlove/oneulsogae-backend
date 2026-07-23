@@ -5,19 +5,22 @@ import com.org.oneulsogae.common.user.Gender
 import com.org.oneulsogae.core.common.error.BusinessException
 import com.org.oneulsogae.core.lounge.LoungeErrorCode
 import com.org.oneulsogae.core.lounge.command.domain.LoungeChatRequest
+import com.org.oneulsogae.common.lounge.LoungeChatRequestPolicy
 import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.core.spec.style.DescribeSpec
 import io.kotest.matchers.shouldBe
+import java.time.LocalDateTime
 
 /**
  * [LoungeChatRequest] 도메인 유닛 테스트.
- * 생성(본인 글 차단)과 수락(소유권·중복 수락 차단, 상태 전이) 규칙이 도메인에 캡슐화됐는지 검증한다.
+ * 생성(본인 글 차단)과 수락(소유권·중복 수락·만료 차단, 상태 전이) 규칙이 도메인에 캡슐화됐는지 검증한다.
  */
 class LoungeChatRequestTest : DescribeSpec({
 
 	val postId = 10L
 	val authorUserId = 1L
 	val requesterUserId = 2L
+	val now: LocalDateTime = LocalDateTime.of(2026, 7, 23, 12, 0)
 
 	describe("create") {
 
@@ -115,7 +118,7 @@ class LoungeChatRequestTest : DescribeSpec({
 					receiverUserId = authorUserId,
 				)
 
-				val accepted: LoungeChatRequest = request.acceptBy(actorUserId = authorUserId)
+				val accepted: LoungeChatRequest = request.acceptBy(actorUserId = authorUserId, now = now)
 
 				accepted.status shouldBe LoungeChatRequestStatus.ACCEPTED
 				accepted.id shouldBe 100L
@@ -134,7 +137,7 @@ class LoungeChatRequestTest : DescribeSpec({
 				)
 
 				val exception: BusinessException = shouldThrow<BusinessException> {
-					request.acceptBy(actorUserId = requesterUserId)
+					request.acceptBy(actorUserId = requesterUserId, now = now)
 				}
 
 				exception.errorCode shouldBe LoungeErrorCode.LOUNGE_POST_NOT_OWNED
@@ -152,10 +155,74 @@ class LoungeChatRequestTest : DescribeSpec({
 				)
 
 				val exception: BusinessException = shouldThrow<BusinessException> {
-					request.acceptBy(actorUserId = authorUserId)
+					request.acceptBy(actorUserId = authorUserId, now = now)
 				}
 
 				exception.errorCode shouldBe LoungeErrorCode.LOUNGE_CHAT_REQUEST_ALREADY_ACCEPTED
+			}
+		}
+
+		context("신청 후 3일이 지난 PENDING 신청을 수락하면") {
+			it("LOUNGE_CHAT_REQUEST_EXPIRED 예외를 던진다") {
+				val request = LoungeChatRequest(
+					id = 100L,
+					postId = postId,
+					requesterUserId = requesterUserId,
+					receiverUserId = authorUserId,
+					createdAt = now.minus(LoungeChatRequestPolicy.EXPIRATION),
+				)
+
+				val exception: BusinessException = shouldThrow<BusinessException> {
+					request.acceptBy(actorUserId = authorUserId, now = now)
+				}
+
+				exception.errorCode shouldBe LoungeErrorCode.LOUNGE_CHAT_REQUEST_EXPIRED
+			}
+		}
+
+		context("신청 후 3일이 되기 직전의 PENDING 신청을 수락하면") {
+			it("정상적으로 ACCEPTED로 전이된다") {
+				val request = LoungeChatRequest(
+					id = 100L,
+					postId = postId,
+					requesterUserId = requesterUserId,
+					receiverUserId = authorUserId,
+					createdAt = now.minus(LoungeChatRequestPolicy.EXPIRATION).plusSeconds(1),
+				)
+
+				val accepted: LoungeChatRequest = request.acceptBy(actorUserId = authorUserId, now = now)
+
+				accepted.status shouldBe LoungeChatRequestStatus.ACCEPTED
+			}
+		}
+	}
+
+	describe("isExpired") {
+
+		context("이미 수락된 신청은") {
+			it("3일이 지나도 만료로 보지 않는다") {
+				val request = LoungeChatRequest(
+					id = 100L,
+					postId = postId,
+					requesterUserId = requesterUserId,
+					receiverUserId = authorUserId,
+					status = LoungeChatRequestStatus.ACCEPTED,
+					createdAt = now.minusDays(10),
+				)
+
+				request.isExpired(now) shouldBe false
+			}
+		}
+
+		context("저장 전이라 createdAt이 없는 신청은") {
+			it("방금 만든 것이므로 만료로 보지 않는다") {
+				val request = LoungeChatRequest(
+					postId = postId,
+					requesterUserId = requesterUserId,
+					receiverUserId = authorUserId,
+				)
+
+				request.isExpired(now) shouldBe false
 			}
 		}
 	}

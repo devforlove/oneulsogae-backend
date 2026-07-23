@@ -12,6 +12,7 @@ import com.org.oneulsogae.core.common.error.BusinessException
 import com.org.oneulsogae.core.common.event.DomainEventPublisher
 import com.org.oneulsogae.core.common.lock.DistributedLock
 import com.org.oneulsogae.core.common.lock.LockKeyConstraints
+import com.org.oneulsogae.core.common.time.TimeGenerator
 import com.org.oneulsogae.core.lounge.LoungeErrorCode
 import com.org.oneulsogae.core.lounge.command.application.port.`in`.AcceptLoungeChatUseCase
 import com.org.oneulsogae.core.lounge.command.application.port.`in`.result.AcceptLoungeChatResult
@@ -44,6 +45,7 @@ class AcceptLoungeChatService(
 	private val saveChatRoomUseCase: SaveChatRoomUseCase,
 	private val checkCompanyVerifiedUseCase: CheckCompanyVerifiedUseCase,
 	private val domainEventPublisher: DomainEventPublisher,
+	private val timeGenerator: TimeGenerator,
 ) : AcceptLoungeChatUseCase {
 
 	@DistributedLock(prefix = LockKeyConstraints.LOUNGE_CHAT_ACCEPT, keys = ["#requestId"], waitTime = 0)
@@ -54,8 +56,8 @@ class AcceptLoungeChatService(
 
 		val request: LoungeChatRequest = getLoungeChatRequestPort.findById(requestId)
 			?: throw BusinessException(LoungeErrorCode.LOUNGE_CHAT_REQUEST_NOT_FOUND)
-		// 소유권(내 글에 온 신청인가)·중복 수락 판정은 도메인이 한다. (신청 행이 수신자를 알고 있어 글을 다시 읽지 않는다)
-		saveLoungeChatRequestPort.save(request.acceptBy(actorUserId = userId))
+		// 소유권(내 글에 온 신청인가)·중복 수락·만료(신청 후 3일 경과) 판정은 도메인이 한다. (신청 행이 수신자를 알고 있어 글을 다시 읽지 않는다)
+		saveLoungeChatRequestPort.save(request.acceptBy(actorUserId = userId, now = timeGenerator.now()))
 		spendCoinUseCase.spend(userId, SpendCoinCommand(amount = USAGE_TYPE.coinAmount, coinUsageType = USAGE_TYPE))
 
 		// 채팅방 생성은 수락의 필수 산출물이라 같은 트랜잭션에서 동기로 처리한다. (실패 시 함께 롤백)

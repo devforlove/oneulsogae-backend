@@ -1,5 +1,6 @@
 package com.org.oneulsogae.core.lounge.command.domain
 
+import com.org.oneulsogae.common.lounge.LoungeChatRequestPolicy
 import com.org.oneulsogae.common.lounge.LoungeChatRequestStatus
 import com.org.oneulsogae.common.user.Gender
 import com.org.oneulsogae.core.common.error.BusinessException
@@ -26,16 +27,30 @@ data class LoungeChatRequest(
 	 * 신청을 받은 글 작성자가 이 신청을 수락해 [LoungeChatRequestStatus.ACCEPTED]로 전이한 새 모델을 반환한다.
 	 * - 수락자([actorUserId])가 수신자([receiverUserId])가 아니면 [LoungeErrorCode.LOUNGE_POST_NOT_OWNED]
 	 * - 이미 수락한 신청이면 [LoungeErrorCode.LOUNGE_CHAT_REQUEST_ALREADY_ACCEPTED]
+	 * - [now] 기준 만료된 신청이면 [LoungeErrorCode.LOUNGE_CHAT_REQUEST_EXPIRED] ([isExpired])
 	 */
-	fun acceptBy(actorUserId: Long): LoungeChatRequest {
+	fun acceptBy(actorUserId: Long, now: LocalDateTime): LoungeChatRequest {
 		if (receiverUserId != actorUserId) {
 			throw BusinessException(LoungeErrorCode.LOUNGE_POST_NOT_OWNED)
 		}
 		if (status == LoungeChatRequestStatus.ACCEPTED) {
 			throw BusinessException(LoungeErrorCode.LOUNGE_CHAT_REQUEST_ALREADY_ACCEPTED)
 		}
+		if (isExpired(now)) {
+			throw BusinessException(LoungeErrorCode.LOUNGE_CHAT_REQUEST_EXPIRED)
+		}
 		return copy(status = LoungeChatRequestStatus.ACCEPTED)
 	}
+
+	/**
+	 * [now] 기준으로 만료된 신청인지 여부.
+	 * 신청([createdAt])으로부터 [LoungeChatRequestPolicy.EXPIRATION](3일)이 지난 PENDING 신청만 만료로 본다.
+	 * (이미 수락된 신청은 만료되지 않고, 저장 전이라 [createdAt]이 null이면 방금 만든 신청이므로 만료가 아니다)
+	 */
+	fun isExpired(now: LocalDateTime): Boolean =
+		status == LoungeChatRequestStatus.PENDING &&
+			createdAt != null &&
+			!now.isBefore(createdAt.plus(LoungeChatRequestPolicy.EXPIRATION))
 
 	companion object {
 
