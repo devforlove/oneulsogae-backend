@@ -1,5 +1,6 @@
 package com.org.oneulsogae.core.lounge.command.domain
 
+import com.org.oneulsogae.common.coin.CoinUsageType
 import com.org.oneulsogae.common.lounge.LoungeChatRequestStatus
 import com.org.oneulsogae.common.user.Gender
 import com.org.oneulsogae.core.common.error.BusinessException
@@ -51,6 +52,13 @@ data class LoungeChatRequest(
 	 */
 	fun isExpired(now: LocalDateTime): Boolean =
 		status == LoungeChatRequestStatus.PENDING && !now.isBefore(expiredAt)
+
+	/**
+	 * 만료 정리 시 신청자에게 되돌려줄 코인. 신청 비용([CoinUsageType.LOUNGE_CHAT_INIT])의 절반(내림)이다.
+	 * (수락되지 못한 채 만료된 신청만 환불 대상이므로 호출 측이 [isExpired]로 판정한 뒤 사용한다)
+	 */
+	fun expiryRefundAmount(): Int =
+		CoinUsageType.LOUNGE_CHAT_INIT.coinAmount / 2
 
 	companion object {
 

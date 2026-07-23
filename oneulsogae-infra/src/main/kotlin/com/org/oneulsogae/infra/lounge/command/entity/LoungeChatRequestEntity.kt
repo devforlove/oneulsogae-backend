@@ -35,6 +35,8 @@ import java.time.LocalDateTime
 		Index(name = "idx_receiver_user_id_id", columnList = "receiver_user_id, id"),
 		// 내가 보낸 신청 목록(최신순). ux_post_requester는 선두가 post_id라 requester_user_id로 seek할 수 없어 따로 둔다.
 		Index(name = "idx_requester_user_id_id", columnList = "requester_user_id, id"),
+		// 만료 정리 배치의 "PENDING + expired_at < now" 조회를 seek로 받친다. (등치 컬럼 → 범위 컬럼 순)
+		Index(name = "idx_status_expired_at", columnList = "status, expired_at"),
 	],
 )
 class LoungeChatRequestEntity(

@@ -205,6 +205,21 @@ class LoungeChatRequestTest : DescribeSpec({
 		}
 	}
 
+	describe("expiryRefundAmount") {
+
+		it("신청 비용(LOUNGE_CHAT_INIT 32코인)의 절반을 돌려준다") {
+			val request = LoungeChatRequest(
+				id = 100L,
+				postId = postId,
+				requesterUserId = requesterUserId,
+				receiverUserId = authorUserId,
+				expiredAt = now,
+			)
+
+			request.expiryRefundAmount() shouldBe 16
+		}
+	}
+
 	describe("isExpired") {
 
 		context("이미 수락된 신청은") {
