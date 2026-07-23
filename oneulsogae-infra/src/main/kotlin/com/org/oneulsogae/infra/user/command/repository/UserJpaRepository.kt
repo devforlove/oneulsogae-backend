@@ -15,6 +15,8 @@ interface UserJpaRepository : JpaRepository<UserEntity, Long> {
 
 	fun findByProviderAndProviderId(provider: String, providerId: String): UserEntity?
 
+	fun findByReferralCode(referralCode: String): UserEntity?
+
 	fun existsByEmail(email: String): Boolean
 
 	/** 소프트삭제(탈퇴): deleted_at을 설정한다. @SQLRestriction 우회를 위해 네이티브. */

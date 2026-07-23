@@ -13,6 +13,8 @@ fun UserEntity.toDomain(): User =
 		role = role,
 		status = status,
 		lastLoginAt = lastLoginAt,
+		referralCode = referralCode,
+		referredByUserId = referredByUserId,
 	)
 
 /**
@@ -27,4 +29,6 @@ fun User.toEntity(): UserEntity =
 		role = role,
 		status = status,
 		lastLoginAt = lastLoginAt,
+		referralCode = referralCode,
+		referredByUserId = referredByUserId,
 	).also { if (id != 0L) it.id = id }

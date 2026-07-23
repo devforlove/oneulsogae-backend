@@ -27,6 +27,9 @@ class UserRepositoryAdapter(
 	override fun findById(id: Long): User? =
 		userJpaRepository.findById(id).orElse(null)?.toDomain()
 
+	override fun findByReferralCode(code: String): User? =
+		userJpaRepository.findByReferralCode(code)?.toDomain()
+
 	override fun existsByEmail(email: String): Boolean =
 		userJpaRepository.existsByEmail(email)
 

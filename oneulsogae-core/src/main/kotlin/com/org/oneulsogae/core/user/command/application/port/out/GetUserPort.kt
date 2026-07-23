@@ -14,6 +14,9 @@ interface GetUserPort {
 	/** id로 사용자를 조회한다. 없으면 null. */
 	fun findById(id: Long): User?
 
+	/** 추천 코드로 사용자를 조회한다. 없으면 null. */
+	fun findByReferralCode(code: String): User?
+
 	/** 해당 이메일을 쓰는 사용자가 이미 존재하는지 여부. */
 	fun existsByEmail(email: String): Boolean
 

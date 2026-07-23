@@ -22,7 +22,10 @@ import java.time.LocalDateTime
 @SQLRestriction("deleted_at is null")
 @Table(
 	name = "users",
-	uniqueConstraints = [UniqueConstraint(name = "ux_provider_provider_id", columnNames = ["provider", "provider_id"])],
+	uniqueConstraints = [
+		UniqueConstraint(name = "ux_provider_provider_id", columnNames = ["provider", "provider_id"]),
+		UniqueConstraint(name = "ux_referral_code", columnNames = ["referral_code"]),
+	],
 	indexes = [
 		// 매칭 배치/풀 그룹핑용. status 등치 + last_login_at 범위 seek + (lastLoginAt, id) 정렬/키셋을 filesort 없이 충족한다.
 		Index(name = "idx_status_last_login_at_id", columnList = "status, last_login_at, id"),
@@ -49,4 +52,12 @@ class UserEntity(
 	/** 마지막 로그인 시점. */
 	@Column(name = "last_login_at")
 	var lastLoginAt: LocalDateTime? = null,
+
+	/** 내가 남에게 공유하는 추천 코드. lazy 발급이라 발급 전엔 null. (유니크) */
+	@Column(name = "referral_code", length = 8)
+	var referralCode: String? = null,
+
+	/** 나를 추천한 추천인 user id. 추천 없이 가입하면 null. (FK 없이 id만 보관) */
+	@Column(name = "referred_by_user_id")
+	var referredByUserId: Long? = null,
 ) : BaseEntity()
