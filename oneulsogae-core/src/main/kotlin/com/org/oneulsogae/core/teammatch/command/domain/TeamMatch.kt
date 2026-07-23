@@ -23,8 +23,8 @@ data class TeamMatch(
 	val expiresAt: LocalDateTime,
 	val matchType: TeamMatchType,
 	val status: MatchStatus = MatchStatus.PROPOSED,
-	val dateInitAmount: Int = CoinUsageType.MEETING_INIT.coinAmount,
-	val dateAcceptAmount: Int = CoinUsageType.MEETING_ACCEPT.coinAmount,
+	val dateInitAmount: Int = CoinUsageType.MEETING_INIT.coinAmount(null),
+	val dateAcceptAmount: Int = CoinUsageType.MEETING_ACCEPT.coinAmount(null),
 	val deletedAt: LocalDateTime? = null,
 ) {
 

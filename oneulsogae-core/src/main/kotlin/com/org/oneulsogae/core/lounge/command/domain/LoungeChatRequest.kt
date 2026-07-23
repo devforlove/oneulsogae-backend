@@ -62,7 +62,7 @@ data class LoungeChatRequest(
 	 * (수락되지 못한 채 만료된 신청만 환불 대상이므로 호출 측이 [isExpired]로 판정한 뒤 사용한다)
 	 */
 	fun expiryRefundAmount(): Int =
-		(initCoinAmount ?: CoinUsageType.LOUNGE_CHAT_INIT.coinAmount) / 2
+		(initCoinAmount ?: CoinUsageType.LOUNGE_CHAT_INIT.coinAmount(null)) / 2
 
 	companion object {
 

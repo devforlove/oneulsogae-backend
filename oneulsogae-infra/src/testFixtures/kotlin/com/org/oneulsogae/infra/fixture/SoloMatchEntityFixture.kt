@@ -20,8 +20,8 @@ object SoloMatchEntityFixture {
 		expiresAt: LocalDateTime = LocalDateTime.now().plusDays(1),
 		matchType: SoloMatchType = SoloMatchType.DAILY,
 		status: MatchStatus = MatchStatus.PROPOSED,
-		dateInitAmount: Int = CoinUsageType.DATING_INIT.coinAmount,
-		dateAcceptAmount: Int = CoinUsageType.DATING_ACCEPT.coinAmount,
+		dateInitAmount: Int = CoinUsageType.DATING_INIT.coinAmount(null),
+		dateAcceptAmount: Int = CoinUsageType.DATING_ACCEPT.coinAmount(null),
 	): SoloMatchEntity =
 		SoloMatchEntity(
 			memberKey = memberKey,

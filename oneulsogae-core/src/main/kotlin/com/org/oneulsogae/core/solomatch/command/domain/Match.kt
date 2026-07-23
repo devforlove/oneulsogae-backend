@@ -28,8 +28,8 @@ data class Match(
 	val expiresAt: LocalDateTime,
 	val matchType: SoloMatchType,
 	val status: MatchStatus = MatchStatus.PROPOSED,
-	val datingInitAmount: Int = CoinUsageType.DATING_INIT.coinAmount,
-	val datingAcceptAmount: Int = CoinUsageType.DATING_ACCEPT.coinAmount,
+	val datingInitAmount: Int = CoinUsageType.DATING_INIT.coinAmount(null),
+	val datingAcceptAmount: Int = CoinUsageType.DATING_ACCEPT.coinAmount(null),
 	val deletedAt: LocalDateTime? = null,
 ) {
 
@@ -200,8 +200,8 @@ data class Match(
 				introducedDate = now.toLocalDate(),
 				expiresAt = now.plus(EXPIRATION),
 				matchType = matchType,
-				datingInitAmount = CoinUsageType.DATING_INIT.coinAmount,
-				datingAcceptAmount = CoinUsageType.DATING_ACCEPT.coinAmount,
+				datingInitAmount = CoinUsageType.DATING_INIT.coinAmount(null),
+				datingAcceptAmount = CoinUsageType.DATING_ACCEPT.coinAmount(null),
 			)
 	}
 }

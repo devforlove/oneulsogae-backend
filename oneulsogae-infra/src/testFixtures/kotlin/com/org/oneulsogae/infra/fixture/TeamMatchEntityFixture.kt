@@ -19,7 +19,7 @@ object TeamMatchEntityFixture {
 		expiresAt: LocalDateTime = LocalDateTime.now().plusDays(1),
 		matchType: TeamMatchType = TeamMatchType.DAILY,
 		status: MatchStatus = MatchStatus.PROPOSED,
-		dateInitAmount: Int = CoinUsageType.MEETING_INIT.coinAmount,
-		dateAcceptAmount: Int = CoinUsageType.MEETING_ACCEPT.coinAmount,
+		dateInitAmount: Int = CoinUsageType.MEETING_INIT.coinAmount(null),
+		dateAcceptAmount: Int = CoinUsageType.MEETING_ACCEPT.coinAmount(null),
 	): TeamMatchEntity = TeamMatchEntity(memberKey, introducedDate, expiresAt, status, matchType, dateInitAmount, dateAcceptAmount)
 }
