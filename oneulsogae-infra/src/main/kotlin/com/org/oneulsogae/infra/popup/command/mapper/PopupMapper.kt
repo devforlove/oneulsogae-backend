@@ -1,5 +1,6 @@
 package com.org.oneulsogae.infra.popup.command.mapper
 
+import com.org.oneulsogae.admin.popup.command.domain.AdminPopup
 import com.org.oneulsogae.core.popup.command.domain.Popup
 import com.org.oneulsogae.infra.popup.command.entity.PopupEntity
 
@@ -33,6 +34,39 @@ fun Popup.toEntity(): PopupEntity =
 		buttonText = buttonText,
 		popUpType = popUpType,
 		userId = userId,
+		exposedFrom = exposedFrom,
+		exposedTo = exposedTo,
+	).also { if (id != 0L) it.id = id }
+
+/** 영속성 엔티티 -> 어드민 도메인 모델. (전역 팝업 전용 — user_id는 어드민 모델에 없다) */
+fun PopupEntity.toAdminDomain(): AdminPopup =
+	AdminPopup(
+		id = id ?: 0,
+		title = title,
+		description = description,
+		displayOrder = displayOrder,
+		imageCode = imageCode,
+		linkUrl = linkUrl,
+		buttonText = buttonText,
+		popUpType = popUpType,
+		exposedFrom = exposedFrom,
+		exposedTo = exposedTo,
+	)
+
+/**
+ * 어드민 도메인 모델 -> 영속성 엔티티. 전역 팝업이므로 user_id는 항상 null이다.
+ * id가 0이면 신규로 저장(INSERT)되고, 0이 아니면 기존 행으로 식별돼 save 시 갱신(merge)된다.
+ */
+fun AdminPopup.toEntity(): PopupEntity =
+	PopupEntity(
+		title = title,
+		description = description,
+		displayOrder = displayOrder,
+		imageCode = imageCode,
+		linkUrl = linkUrl,
+		buttonText = buttonText,
+		popUpType = popUpType,
+		userId = null,
 		exposedFrom = exposedFrom,
 		exposedTo = exposedTo,
 	).also { if (id != 0L) it.id = id }

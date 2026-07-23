@@ -49,4 +49,9 @@ enum class AdminErrorCode(
 
 	/** 회원 인증(gathering_profile)을 마치지 않은 유저의 참가 신청을 승인하려 함. */
 	GATHERING_MEMBER_NOT_VERIFIED("GATHER-021", "회원 인증을 마친 유저만 승인할 수 있습니다.", HttpStatus.CONFLICT),
+
+	// 팝업 관리.
+	POPUP_NOT_FOUND("POPUP-001", "팝업을 찾을 수 없습니다.", HttpStatus.NOT_FOUND),
+	POPUP_INVALID_EXPOSURE_PERIOD("POPUP-002", "노출 종료 시각은 노출 시작 시각 이후여야 합니다.", HttpStatus.BAD_REQUEST),
+	POPUP_INVALID_TYPE("POPUP-003", "1회 조회 후 제거되는 유형은 전역 팝업으로 만들 수 없습니다.", HttpStatus.BAD_REQUEST),
 }
