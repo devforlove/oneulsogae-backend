@@ -118,12 +118,8 @@ oneulsogae:
       # 결성(ACTIVE) 팀끼리 가까운 권역으로 2:2 소개. 매일 13:00 (Asia/Seoul). 운영에서 ONEULSOGAE_TEAM_MATCH_BATCH_CRON 환경변수로 덮어쓸 수 있다.
       cron: ${ONEULSOGAE_TEAM_MATCH_BATCH_CRON:0 0 13 * * *}
     expire-batch:
-      # 매시간 정각 (Asia/Seoul). 만료 후 최대 ~1시간 내 정리·환불. ONEULSOGAE_EXPIRE_BATCH_CRON으로 조정
+      # 매시간 정각 (Asia/Seoul). 만료 매칭·라운지 대화 신청을 정리·환불(만료 후 최대 ~1시간 내). ONEULSOGAE_EXPIRE_BATCH_CRON으로 조정
       cron: ${ONEULSOGAE_EXPIRE_BATCH_CRON:0 0 * * * *}
-  lounge:
-    chat-request-expire-batch:
-      # 만료(신청 후 3일 경과)된 미수락 대화 신청 정리·절반 환불. 매시간 정각 (Asia/Seoul). ONEULSOGAE_LOUNGE_CHAT_REQUEST_EXPIRE_BATCH_CRON으로 조정
-      cron: ${ONEULSOGAE_LOUNGE_CHAT_REQUEST_EXPIRE_BATCH_CRON:0 0 * * * *}
   user:
     withdrawal:
       # 탈퇴 후 개인정보 보관 유예 기간(일). 기간 경과 후 파기 배치가 익명화한다.
@@ -172,10 +168,6 @@ oneulsogae:
       cron: ${ONEULSOGAE_TEAM_MATCH_BATCH_CRON:0 * * * * *}
     expire-batch:
       cron: ${ONEULSOGAE_EXPIRE_BATCH_CRON:0 * * * * *}
-  lounge:
-    chat-request-expire-batch:
-      # 로컬에서는 1분마다 돌려 동작을 빠르게 확인한다. (운영 기본값은 매시간 정각)
-      cron: ${ONEULSOGAE_LOUNGE_CHAT_REQUEST_EXPIRE_BATCH_CRON:0 * * * * *}
   user:
     withdrawal:
       retention-days: 10

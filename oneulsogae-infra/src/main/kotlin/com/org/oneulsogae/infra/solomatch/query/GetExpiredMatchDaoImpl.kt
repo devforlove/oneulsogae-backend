@@ -1,6 +1,8 @@
 package com.org.oneulsogae.infra.solomatch.query
 
+import com.org.oneulsogae.common.lounge.LoungeChatRequestStatus
 import com.org.oneulsogae.common.match.MatchStatus
+import com.org.oneulsogae.infra.lounge.command.entity.QLoungeChatRequestEntity
 import com.org.oneulsogae.infra.solomatch.command.entity.QSoloMatchEntity
 import com.org.oneulsogae.infra.teammatch.command.entity.QTeamMatchEntity
 import com.org.oneulsogae.scheduler.common.command.application.port.out.GetExpiredMatchPort
@@ -9,10 +11,10 @@ import org.springframework.stereotype.Component
 import java.time.LocalDateTime
 
 /**
- * [GetExpiredMatchPort] 구현. 만료된(미성사) 매칭 id를 조회한다.
- * 만료 = [now] 기준 expires_at 경과 + 상태가 PROPOSED/PARTIALLY_ACCEPTED. (성사 MATCHED는 만료 시각이 +100년이라 자연 제외)
- * 엔티티 @SQLRestriction("deleted_at is null")이 자동 적용돼 이미 제거된 매칭은 조회되지 않는다.
- * (status 등치 + expires_at 범위를 받치는 (status, expires_at) 복합 인덱스를 둔다 — Task 9)
+ * [GetExpiredMatchPort] 구현. 만료된(미성사) 매칭·만료된(미수락) 라운지 대화 신청 id를 조회한다.
+ * 만료 = [now] 기준 만료 시각 경과 + 매칭은 PROPOSED/PARTIALLY_ACCEPTED, 대화 신청은 PENDING. (성사 MATCHED는 만료 시각이 +100년이라 자연 제외)
+ * 엔티티 @SQLRestriction("deleted_at is null")이 자동 적용돼 이미 제거된 행은 조회되지 않는다.
+ * (status 등치 + 만료 시각 범위를 받치는 (status, expires_at)·(status, expired_at) 복합 인덱스를 둔다)
  */
 @Component
 class GetExpiredMatchDaoImpl(
@@ -39,6 +41,18 @@ class GetExpiredMatchDaoImpl(
 			.where(
 				teamMatch.status.`in`(MatchStatus.PROPOSED, MatchStatus.PARTIALLY_ACCEPTED),
 				teamMatch.expiresAt.lt(now),
+			)
+			.fetch()
+	}
+
+	override fun findExpiredLoungeChatRequestIds(now: LocalDateTime): List<Long> {
+		val request: QLoungeChatRequestEntity = QLoungeChatRequestEntity.loungeChatRequestEntity
+		return queryFactory
+			.select(request.id)
+			.from(request)
+			.where(
+				request.status.eq(LoungeChatRequestStatus.PENDING),
+				request.expiredAt.lt(now),
 			)
 			.fetch()
 	}

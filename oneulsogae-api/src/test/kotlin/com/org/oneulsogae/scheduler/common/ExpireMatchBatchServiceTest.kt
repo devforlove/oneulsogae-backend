@@ -20,13 +20,15 @@ class ExpireMatchBatchServiceTest : DescribeSpec({
 	}
 
 	describe("run") {
-		it("만료 솔로·팀을 건별로 처리하고, 한 건이 실패해도 나머지를 처리하며 실패를 집계한다") {
+		it("만료 솔로·팀·대화 신청을 건별로 처리하고, 한 건이 실패해도 나머지를 처리하며 실패를 집계한다") {
 			val getExpired = object : GetExpiredMatchPort {
 				override fun findExpiredSoloMatchIds(now: LocalDateTime): List<Long> = listOf(1L, 2L)
 				override fun findExpiredTeamMatchIds(now: LocalDateTime): List<Long> = listOf(3L)
+				override fun findExpiredLoungeChatRequestIds(now: LocalDateTime): List<Long> = listOf(4L, 5L)
 			}
 			val processedSolo = mutableListOf<Long>()
 			val processedTeam = mutableListOf<Long>()
+			val processedLounge = mutableListOf<Long>()
 			val expire = object : ExpireMatchPort {
 				override fun expireSoloMatch(matchId: Long) {
 					if (matchId == 2L) throw RuntimeException("boom")
@@ -34,6 +36,10 @@ class ExpireMatchBatchServiceTest : DescribeSpec({
 				}
 				override fun expireTeamMatch(teamMatchId: Long) {
 					processedTeam.add(teamMatchId)
+				}
+				override fun expireLoungeChatRequest(requestId: Long) {
+					if (requestId == 5L) throw RuntimeException("boom")
+					processedLounge.add(requestId)
 				}
 			}
 			val service = ExpireMatchBatchService(getExpired, expire, timeGenerator)
@@ -44,8 +50,11 @@ class ExpireMatchBatchServiceTest : DescribeSpec({
 			result.soloFailed shouldBe 1
 			result.teamExpired shouldBe 1
 			result.teamFailed shouldBe 0
+			result.loungeChatRequestExpired shouldBe 1
+			result.loungeChatRequestFailed shouldBe 1
 			processedSolo shouldBe listOf(1L)
 			processedTeam shouldBe listOf(3L)
+			processedLounge shouldBe listOf(4L)
 		}
 	}
 })
