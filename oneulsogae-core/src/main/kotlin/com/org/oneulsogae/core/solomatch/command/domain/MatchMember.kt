@@ -21,7 +21,7 @@ data class MatchMember(
 	val status: MatchMemberStatus = MatchMemberStatus.WAITING,
 	/** 이 참가자가 매칭을 확인한 시각. 미확인이면 null. (전이 로직엔 쓰지 않고, 애그리거트 저장 시 값이 유실되지 않도록 보존만 한다) */
 	val checkedAt: LocalDateTime? = null,
-	/** 신청(APPLY) 시 실제 지불한 신청 비용의 스냅샷. 미신청이거나 구행 데이터면 null. */
+	/** 신청(APPLY) 시 실제 지불한 신청 비용의 스냅샷. 미신청이거나 구행 데이터면 null. 수락(두 번째 응답)도 apply를 거치며 INIT 금액이 기록되지만, 성사(ACTIVE) 참가는 환불 대상이 아니라 사용되지 않는다. (INIT≠ACCEPT로 개정 시 이 스냅샷 의미 재검토 필요) */
 	val paidInitAmount: Int? = null,
 	val deletedAt: LocalDateTime? = null,
 ) {

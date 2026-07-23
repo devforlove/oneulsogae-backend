@@ -12,7 +12,7 @@ import java.time.LocalDateTime
  */
 data class LoungeChatRequestPageResponse(
 	val items: List<LoungeChatRequestItemResponse>,
-	/** 신청 한 건을 수락할 때 드는 코인 수. 신청마다 다르지 않은 전역 정책값이라 항목이 아니라 페이지에 한 번만 싣는다. */
+	/** 수락 1건 비용. 뷰어(글 작성자) 성별에 따라 다르다. (남 32 / 여 16) */
 	val acceptCoinAmount: Int,
 	val hasNext: Boolean,
 	val nextCursor: Long?,

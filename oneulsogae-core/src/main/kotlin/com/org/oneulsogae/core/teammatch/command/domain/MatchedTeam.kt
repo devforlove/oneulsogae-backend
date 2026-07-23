@@ -14,7 +14,7 @@ data class MatchedTeam(
 	val status: MatchedTeamStatus = MatchedTeamStatus.WAITING,
 	/** 이 팀이 신청(APPLY)할 때 코인을 지불한 구성원 userId. 미신청이면 null. (미성사 만료 환불 대상 식별용) */
 	val applicantUserId: Long? = null,
-	/** 신청(APPLY) 시 실제 지불한 신청 비용의 스냅샷. 미신청이거나 구행 데이터면 null. (환불 산정에 쓴다) */
+	/** 신청(APPLY) 시 실제 지불한 신청 비용의 스냅샷. 미신청이거나 구행 데이터면 null. (환불 산정에 쓴다) 수락(두 번째 응답)도 apply를 거치며 INIT 금액이 기록되지만, 성사(ACTIVE) 참가는 환불 대상이 아니라 사용되지 않는다. (INIT≠ACCEPT로 개정 시 이 스냅샷 의미 재검토 필요) */
 	val paidInitAmount: Int? = null,
 	val deletedAt: LocalDateTime? = null,
 ) {
