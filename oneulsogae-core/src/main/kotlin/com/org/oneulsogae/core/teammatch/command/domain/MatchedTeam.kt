@@ -14,12 +14,14 @@ data class MatchedTeam(
 	val status: MatchedTeamStatus = MatchedTeamStatus.WAITING,
 	/** 이 팀이 신청(APPLY)할 때 코인을 지불한 구성원 userId. 미신청이면 null. (미성사 만료 환불 대상 식별용) */
 	val applicantUserId: Long? = null,
+	/** 신청(APPLY) 시 실제 지불한 신청 비용의 스냅샷. 미신청이거나 구행 데이터면 null. (환불 산정에 쓴다) */
+	val paidInitAmount: Int? = null,
 	val deletedAt: LocalDateTime? = null,
 ) {
 
-	/** 이 팀이 매칭을 신청한(APPLY) 새 모델을 반환한다. 코인을 지불한 [applicantUserId]를 함께 기록한다. */
-	fun apply(applicantUserId: Long): MatchedTeam =
-		copy(status = MatchedTeamStatus.APPLY, applicantUserId = applicantUserId)
+	/** 이 팀이 매칭을 신청한(APPLY) 새 모델을 반환한다. 코인을 지불한 [applicantUserId]와 지불액([paidInitAmount])을 함께 기록한다. */
+	fun apply(applicantUserId: Long, paidInitAmount: Int): MatchedTeam =
+		copy(status = MatchedTeamStatus.APPLY, applicantUserId = applicantUserId, paidInitAmount = paidInitAmount)
 
 	/** 이 팀을 활성(ACTIVE)으로 승격한 새 모델을 반환한다. (양 팀 신청으로 팀 매칭 성사 시) */
 	fun activate(): MatchedTeam =

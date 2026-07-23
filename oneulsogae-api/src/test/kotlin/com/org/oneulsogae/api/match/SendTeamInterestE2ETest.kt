@@ -49,18 +49,18 @@ class SendTeamInterestE2ETest : AbstractIntegrationSupport({
 	}
 
 	// 회사 인증을 마친(회사명이 채워진) 프로필. 팀 초대·수락·관심 보내기는 모두 회사 인증을 마친 사용자만 할 수 있다.
-	fun persistVerifiedDetail(userId: Long) {
+	fun persistVerifiedDetail(userId: Long, gender: Gender = Gender.MALE) {
 		IntegrationUtil.persist(
-			UserDetailEntityFixture.create(userId = userId, gender = Gender.MALE, companyName = "오늘소개"),
+			UserDetailEntityFixture.create(userId = userId, gender = gender, companyName = "오늘소개"),
 		)
 	}
 
 	// 결성(ACTIVE)까지 진행한 팀의 teamId를 돌려준다. (초대 → 수락) 초대자·수락자 모두 회사 인증이 필요하다.
-	fun formedTeam(ownerId: Long, invitedUserId: Long): Long {
-		persistMatchUser(ownerId, Gender.MALE)
-		persistMatchUser(invitedUserId, Gender.MALE)
-		persistVerifiedDetail(ownerId)
-		persistVerifiedDetail(invitedUserId)
+	fun formedTeam(ownerId: Long, invitedUserId: Long, gender: Gender = Gender.MALE): Long {
+		persistMatchUser(ownerId, gender)
+		persistMatchUser(invitedUserId, gender)
+		persistVerifiedDetail(ownerId, gender)
+		persistVerifiedDetail(invitedUserId, gender)
 		val teamId: Long = post("/teams/v1/invitation") {
 			bearer(accessTokenFor(ownerId))
 			jsonBody("""{"invitedUserId": $invitedUserId, "regionId": 1, "name": "우리팀", "introduction": "함께 즐겁게 활동할 팀이에요"}""")
@@ -140,6 +140,29 @@ class SendTeamInterestE2ETest : AbstractIntegrationSupport({
 				interestAlarms(myOwner).size shouldBe 0
 				interestAlarms(myInvited).size shouldBe 0
 				interestAlarms(oppOwner).first().fromTeamId shouldBe myTeamId
+			}
+		}
+
+		context("여성 팀이 신청하면") {
+			it("절반 비용(20)만 차감된다") {
+				val myOwner = 6011L
+				val myInvited = 6012L
+				val oppOwner = 6013L
+				val oppInvited = 6014L
+				val myTeamId: Long = formedTeam(myOwner, myInvited, Gender.FEMALE)
+				val opponentTeamId: Long = formedTeam(oppOwner, oppInvited, Gender.MALE)
+				val teamMatchId: Long = persistTeamMatch(myTeamId, opponentTeamId)
+				IntegrationUtil.persist(CoinBalanceEntityFixture.create(userId = myOwner, balance = 100))
+
+				post("/team-matches/v1/$teamMatchId/interest") {
+					bearer(accessTokenFor(myOwner))
+				} expect {
+					status(200)
+					body("data.status", MatchStatus.PARTIALLY_ACCEPTED.name)
+				}
+
+				// 여성 팀 신청 비용(MEETING_INIT=20) 차감 → 잔액 80
+				coinBalanceOf(myOwner) shouldBe 80
 			}
 		}
 

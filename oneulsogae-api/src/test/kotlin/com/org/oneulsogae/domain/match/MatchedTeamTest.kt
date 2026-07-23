@@ -22,17 +22,18 @@ class MatchedTeamTest : DescribeSpec({
 	}
 
 	describe("apply") {
-		it("이 팀을 신청(APPLY) 상태로 전이하고 신청자를 기록한다") {
-			val applied: MatchedTeam = waitingTeam().apply(100L)
+		it("이 팀을 신청(APPLY) 상태로 전이하고 신청자와 지불액을 기록한다") {
+			val applied: MatchedTeam = waitingTeam().apply(100L, paidInitAmount = 20)
 
 			applied.status shouldBe MatchedTeamStatus.APPLY
 			applied.applicantUserId shouldBe 100L
+			applied.paidInitAmount shouldBe 20
 		}
 	}
 
 	describe("activate") {
 		it("이 팀을 활성(ACTIVE) 상태로 전이한다") {
-			waitingTeam().apply(100L).activate().status shouldBe MatchedTeamStatus.ACTIVE
+			waitingTeam().apply(100L, paidInitAmount = 40).activate().status shouldBe MatchedTeamStatus.ACTIVE
 		}
 	}
 

@@ -1,5 +1,6 @@
 package com.org.oneulsogae.core.teammatch.query.dao
 
+import com.org.oneulsogae.common.user.Gender
 import com.org.oneulsogae.core.teammatch.query.dto.RecommendedTeam
 
 /**
@@ -8,5 +9,6 @@ import com.org.oneulsogae.core.teammatch.query.dto.RecommendedTeam
  */
 interface GetRecommendedTeamDao {
 
-	fun findByUserId(userId: Long): List<RecommendedTeam>
+	/** [viewerGender]는 조회 사용자(뷰어) 성별로, 아직 매칭이 없는 순수 추천 팀의 신청/수락 비용 표시를 남녀별로 계산하는 데 쓴다. */
+	fun findByUserId(userId: Long, viewerGender: Gender?): List<RecommendedTeam>
 }

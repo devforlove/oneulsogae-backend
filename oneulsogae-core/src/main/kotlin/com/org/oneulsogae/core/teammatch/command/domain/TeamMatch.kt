@@ -114,22 +114,24 @@ data class TeamMatch(
 
 	/**
 	 * 참가 팀의 관심 신청을 반영한 새 상태를 만든다. (참가/미종료 검증은 호출 측 책임)
-	 * 응답 팀을 APPLY로 바꾸고 지불자([applicantUserId])를 기록한다. 전원 신청이면 MATCHED로 만들며 전원을 ACTIVE로 승격한다.
-	 * 일부만 신청이면 PARTIALLY_ACCEPTED. 성사(MATCHED)되면 만료로 목록에서 사라지지 않게 만료 시각을 100년 뒤로 미룬다.
+	 * 응답 팀을 APPLY로 바꾸고 지불자([applicantUserId])와 지불액([paidInitAmount])을 기록한다. (팀 성별은 이 도메인이 모르므로 호출 측이 산출해 전달한다)
+	 * 전원 신청이면 MATCHED로 만들며 전원을 ACTIVE로 승격한다. 일부만 신청이면 PARTIALLY_ACCEPTED.
+	 * 성사(MATCHED)되면 만료로 목록에서 사라지지 않게 만료 시각을 100년 뒤로 미룬다.
 	 */
-	fun respond(teamId: Long, applicantUserId: Long): TeamMatch {
-		val applied: TeamMatch = copy(matchedTeams = matchedTeams.apply(teamId, applicantUserId))
+	fun respond(teamId: Long, applicantUserId: Long, paidInitAmount: Int): TeamMatch {
+		val applied: TeamMatch = copy(matchedTeams = matchedTeams.apply(teamId, applicantUserId, paidInitAmount))
 		val recomputed: TeamMatch = applied.withRecomputedStatus()
 		return if (recomputed.status == MatchStatus.MATCHED) recomputed.extendExpirationForMatched() else recomputed
 	}
 
 	/**
 	 * 미성사(만료) 제거 시, 신청한 팀의 지불자별 환불 금액 목록을 산정한다. (1:1 [Match.failureRefunds] 미러)
-	 * 신청(APPLY)했으나 성사되지 못한 팀의 [MatchedTeam.applicantUserId]에게만 신청 비용([dateInitAmount])의 절반(내림)을 돌려준다. (성사로 ACTIVE가 된 팀은 제외)
+	 * 신청(APPLY)했으나 성사되지 못한 팀의 [MatchedTeam.applicantUserId]에게만 신청 시 실제 지불한 금액([MatchedTeam.paidInitAmount])의 절반(내림)을 돌려준다. (성사로 ACTIVE가 된 팀은 제외)
+	 * paidInitAmount가 없으면(구행 데이터) 헤더 [dateInitAmount]의 절반으로 대신한다. (0코인 환불은 제외한다)
 	 */
 	fun failureRefunds(): List<MatchRefund> =
 		matchedTeams.refundableTeams()
-			.mapNotNull { team: MatchedTeam -> team.applicantUserId?.let { userId: Long -> MatchRefund(userId = userId, amount = dateInitAmount / 2) } }
+			.mapNotNull { team: MatchedTeam -> team.applicantUserId?.let { userId: Long -> MatchRefund(userId = userId, amount = (team.paidInitAmount ?: dateInitAmount) / 2) } }
 			.filter { refund: MatchRefund -> refund.amount > 0 }
 
 	private fun withRecomputedStatus(): TeamMatch =

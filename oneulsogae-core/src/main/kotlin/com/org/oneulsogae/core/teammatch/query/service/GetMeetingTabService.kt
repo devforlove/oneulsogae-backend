@@ -1,7 +1,9 @@
 package com.org.oneulsogae.core.teammatch.query.service
 
 import com.org.oneulsogae.common.match.TeamStatus
+import com.org.oneulsogae.common.user.Gender
 import com.org.oneulsogae.core.common.time.TimeGenerator
+import com.org.oneulsogae.core.matchuser.command.application.port.`in`.GetMatchUserUseCase
 import com.org.oneulsogae.core.teammatch.query.dao.GetMatchedTeamDao
 import com.org.oneulsogae.core.teammatch.query.dao.GetMyTeamDao
 import com.org.oneulsogae.core.teammatch.query.dao.GetReceivedInvitationsDao
@@ -29,6 +31,7 @@ class GetMeetingTabService(
 	private val getMyTeamDao: GetMyTeamDao,
 	private val timeGenerator: TimeGenerator,
 	private val checkCompanyVerifiedUseCase: CheckCompanyVerifiedUseCase,
+	private val getMatchUserUseCase: GetMatchUserUseCase,
 ) : GetMeetingTabUseCase {
 
 	override fun get(userId: Long): MeetingTab {
@@ -49,6 +52,10 @@ class GetMeetingTabService(
 			getMatchedTeamDao.findInProgressByTeamId(myTeam.teamId, timeGenerator.now())
 		} else {
 			// 추천은 회사 인증 완료 시점에 미리 적재되므로, 여기서는 적재된 추천을 읽기만 한다. (없으면 빈 리스트)
-			getRecommendedTeamDao.findByUserId(userId)
+			// 뷰어 성별은 matchuser 도메인 in-port로 읽는다(match_user 미적재면 null → CoinUsageType이 남성 기본값으로 fallback).
+			getRecommendedTeamDao.findByUserId(userId, viewerGender(userId))
 		}
+
+	private fun viewerGender(userId: Long): Gender? =
+		getMatchUserUseCase.findByUserId(userId)?.gender
 }

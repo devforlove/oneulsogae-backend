@@ -35,6 +35,7 @@ import org.springframework.transaction.annotation.Transactional
  * - 성사(MATCHED): 수락 비용 차감 + 4인 채팅방 생성(동기) + 성사 알림 위임. ([completeMatch])
  * - 미성사(PARTIALLY_ACCEPTED): 신청 비용 차감 + 상대 팀에 관심 받음 알림 위임. ([recordInterest])
  *
+ * 신청/수락 비용은 행위자가 속한 팀의 성별([actorTeam.gender]) 기준으로 서버가 산출한다. (클라이언트가 금액을 정하지 않음)
  * 코인 차감·상태 변경·채팅방 생성은 같은 트랜잭션이라 한 단계라도 실패하면 함께 롤백된다. 알림만 커밋 후 best-effort([TeamMatchEventHandler])다.
  * 채팅방은 성사의 필수 산출물이라 같은 트랜잭션에서 동기로 만든다. matchId로는 teamMatch.id를 쓴다. (기존 [DisbandTeamService] 컨벤션과 동일)
  * 다른 도메인(coin/chat)은 자기 out-port가 아니라 in-port로 참조한다.
@@ -71,17 +72,19 @@ class SendTeamInterestService(
 
 		teamMatch.validateRespondable(actorTeam.id)
 
-		val updated: TeamMatch = saveTeamMatchPort.save(teamMatch.respond(actorTeam.id, userId))
+		val updated: TeamMatch = saveTeamMatchPort.save(
+			teamMatch.respond(actorTeam.id, userId, paidInitAmount = CoinUsageType.MEETING_INIT.coinAmount(actorTeam.gender)),
+		)
 		return when (updated.status) {
-			MatchStatus.MATCHED -> completeMatch(userId, updated, teams)
+			MatchStatus.MATCHED -> completeMatch(userId, updated, actorTeam, teams)
 			MatchStatus.PARTIALLY_ACCEPTED -> recordInterest(userId, updated, actorTeam, teams)
 			else -> error("팀 관심 보내기 결과 상태가 올바르지 않습니다: ${updated.status}")
 		}
 	}
 
 	/** 성사된 경우: 수락 비용 차감 + 4인 채팅방 생성(동기) + 성사 알림 위임(행위자 제외 양 팀 구성원). */
-	private fun completeMatch(userId: Long, teamMatch: TeamMatch, teams: Teams): TeamMatch {
-		spend(userId, amount = teamMatch.dateAcceptAmount, usageType = CoinUsageType.MEETING_ACCEPT)
+	private fun completeMatch(userId: Long, teamMatch: TeamMatch, actorTeam: Team, teams: Teams): TeamMatch {
+		spend(userId, amount = CoinUsageType.MEETING_ACCEPT.coinAmount(actorTeam.gender), usageType = CoinUsageType.MEETING_ACCEPT)
 		val participants: List<SaveChatRoomParticipant> = teams.activeMembers().map { member: TeamMember ->
 			SaveChatRoomParticipant(userId = member.userId, teamId = member.teamId)
 		}
@@ -107,7 +110,7 @@ class SendTeamInterestService(
 
 	/** 미성사(신청)인 경우: 신청 비용 차감 + 상대 팀 구성원에게 관심 받음 알림 위임. */
 	private fun recordInterest(userId: Long, teamMatch: TeamMatch, actorTeam: Team, teams: Teams): TeamMatch {
-		spend(userId, amount = teamMatch.dateInitAmount, usageType = CoinUsageType.MEETING_INIT)
+		spend(userId, amount = CoinUsageType.MEETING_INIT.coinAmount(actorTeam.gender), usageType = CoinUsageType.MEETING_INIT)
 		val opponentMemberIds: List<Long> = teams.opponentActiveMemberIds(actorTeam.id)
 		domainEventPublisher.publish(
 			TeamMatchInterestSent(teamMatchId = teamMatch.id, senderTeamId = actorTeam.id, recipientUserIds = opponentMemberIds),
@@ -115,7 +118,7 @@ class SendTeamInterestService(
 		return teamMatch
 	}
 
-	/** 팀 매칭에 저장된 금액·유형으로 코인을 차감한다. (같은 트랜잭션이라 이후 실패 시 함께 롤백) */
+	/** 주어진 금액·유형으로 코인을 차감한다. (같은 트랜잭션이라 이후 실패 시 함께 롤백) */
 	private fun spend(userId: Long, amount: Int, usageType: CoinUsageType) {
 		spendCoinUseCase.spend(userId, SpendCoinCommand(amount = amount, coinUsageType = usageType))
 	}

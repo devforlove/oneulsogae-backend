@@ -2,6 +2,7 @@ package com.org.oneulsogae.infra.teammatch.query
 
 import com.org.oneulsogae.common.coin.CoinUsageType
 import com.org.oneulsogae.common.match.TeamStatus
+import com.org.oneulsogae.common.user.Gender
 import com.org.oneulsogae.core.teammatch.query.dao.GetRecommendedTeamDao
 import com.org.oneulsogae.core.teammatch.query.dto.RecommendedTeam
 import com.org.oneulsogae.infra.teammatch.command.entity.QRecommendedTeamEntity
@@ -26,7 +27,7 @@ class GetRecommendedTeamDaoImpl(
 	private val recommendedTeamMemberLoader: RecommendedTeamMemberLoader,
 ) : GetRecommendedTeamDao {
 
-	override fun findByUserId(userId: Long): List<RecommendedTeam> {
+	override fun findByUserId(userId: Long, viewerGender: Gender?): List<RecommendedTeam> {
 		val recommended: QRecommendedTeamEntity = QRecommendedTeamEntity.recommendedTeamEntity
 		val team: QTeamEntity = QTeamEntity.teamEntity
 		val teamRegion: QRegionEntity = QRegionEntity("teamRegion")
@@ -61,9 +62,9 @@ class GetRecommendedTeamDaoImpl(
 				activityArea = header.get(teamActivityArea),
 				members = teamMembers?.members.orEmpty(),
 				lastLoginAt = teamMembers?.lastLoginAt,
-				// 순수 추천 팀은 아직 team_match가 없어, 관심 보낼 때 생성될 매칭의 기본 비용(MEETING_INIT/ACCEPT)을 채운다.
-				datingInitAmount = CoinUsageType.MEETING_INIT.coinAmount,
-				datingAcceptAmount = CoinUsageType.MEETING_ACCEPT.coinAmount,
+				// 순수 추천 팀은 아직 team_match가 없어, 관심 보낼 때 생성될 매칭의 기본 비용(MEETING_INIT/ACCEPT)을 뷰어 성별 기준으로 채운다.
+				datingInitAmount = CoinUsageType.MEETING_INIT.coinAmount(viewerGender),
+				datingAcceptAmount = CoinUsageType.MEETING_ACCEPT.coinAmount(viewerGender),
 				// 아직 매칭이 없으므로 팀 매칭 id/상태/관심 여부는 비어 있다.
 				teamMatchId = null,
 				teamMatchStatus = null,

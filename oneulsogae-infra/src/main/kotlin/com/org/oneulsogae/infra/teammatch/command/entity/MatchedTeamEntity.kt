@@ -44,4 +44,8 @@ class MatchedTeamEntity(
 	/** 이 팀이 신청(APPLY)할 때 코인을 지불한 구성원 userId. 미신청이면 null. (미성사 만료 환불 대상 식별용) */
 	@Column(name = "applicant_user_id")
 	var applicantUserId: Long? = null,
+
+	/** 신청(APPLY) 시 실제 지불한 신청 비용의 스냅샷. 미신청이거나 구행 데이터면 null. (환불 산정에 쓴다) */
+	@Column(name = "paid_init_amount")
+	var paidInitAmount: Int? = null,
 ) : BaseEntity()

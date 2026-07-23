@@ -39,9 +39,13 @@ data class MatchedTeams(
 	fun find(teamId: Long): MatchedTeam? =
 		values.firstOrNull { matchedTeam: MatchedTeam -> matchedTeam.teamId == teamId }
 
-	/** [teamId] 팀을 신청(APPLY) 처리하고 지불자([applicantUserId])를 기록한 새 컬렉션을 반환한다. (나머지는 그대로) */
-	fun apply(teamId: Long, applicantUserId: Long): MatchedTeams =
-		MatchedTeams(values.map { matchedTeam: MatchedTeam -> if (matchedTeam.teamId == teamId) matchedTeam.apply(applicantUserId) else matchedTeam })
+	/** [teamId] 팀을 신청(APPLY) 처리하고 지불자([applicantUserId])·지불액([paidInitAmount])을 기록한 새 컬렉션을 반환한다. (나머지는 그대로) */
+	fun apply(teamId: Long, applicantUserId: Long, paidInitAmount: Int): MatchedTeams =
+		MatchedTeams(
+			values.map { matchedTeam: MatchedTeam ->
+				if (matchedTeam.teamId == teamId) matchedTeam.apply(applicantUserId, paidInitAmount) else matchedTeam
+			},
+		)
 
 	/** 환불 대상(신청했으나 미성사) 팀들. (성사로 ACTIVE가 된 팀은 제외한다) */
 	fun refundableTeams(): List<MatchedTeam> =

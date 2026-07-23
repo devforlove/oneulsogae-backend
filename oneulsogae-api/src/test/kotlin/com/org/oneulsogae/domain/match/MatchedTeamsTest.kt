@@ -26,12 +26,13 @@ class MatchedTeamsTest : DescribeSpec({
 	}
 
 	describe("apply - 특정 팀 신청") {
-		it("주어진 teamId 팀만 APPLY로 전이하고 나머지는 그대로다") {
+		it("주어진 teamId 팀만 APPLY로 전이하고 지불액을 기록하며 나머지는 그대로다") {
 			val matchedTeams: MatchedTeams = MatchedTeams.of(listOf(10L, 20L))
 
-			val applied: MatchedTeams = matchedTeams.apply(10L, 100L)
+			val applied: MatchedTeams = matchedTeams.apply(10L, 100L, paidInitAmount = 20)
 
 			applied.values.first { it.teamId == 10L }.status shouldBe MatchedTeamStatus.APPLY
+			applied.values.first { it.teamId == 10L }.paidInitAmount shouldBe 20
 			applied.values.first { it.teamId == 20L }.status shouldBe MatchedTeamStatus.WAITING
 			// 원본 불변
 			matchedTeams.values.all { it.status == MatchedTeamStatus.WAITING } shouldBe true
@@ -40,7 +41,7 @@ class MatchedTeamsTest : DescribeSpec({
 
 	describe("refundableTeams - 환불 대상 팀") {
 		it("APPLY인 팀만 돌려주고 신청자(applicantUserId)를 보존한다") {
-			val matchedTeams: MatchedTeams = MatchedTeams.of(listOf(10L, 20L)).apply(10L, 100L)
+			val matchedTeams: MatchedTeams = MatchedTeams.of(listOf(10L, 20L)).apply(10L, 100L, paidInitAmount = 40)
 
 			val refundable: List<com.org.oneulsogae.core.teammatch.command.domain.MatchedTeam> = matchedTeams.refundableTeams()
 
@@ -49,7 +50,8 @@ class MatchedTeamsTest : DescribeSpec({
 		}
 
 		it("성사로 ACTIVE가 된 팀은 환불 대상에서 제외한다") {
-			val matched: MatchedTeams = MatchedTeams.of(listOf(10L, 20L)).apply(10L, 100L).apply(20L, 200L).activateAll()
+			val matched: MatchedTeams =
+				MatchedTeams.of(listOf(10L, 20L)).apply(10L, 100L, paidInitAmount = 40).apply(20L, 200L, paidInitAmount = 40).activateAll()
 
 			matched.refundableTeams() shouldBe emptyList()
 		}
@@ -61,11 +63,11 @@ class MatchedTeamsTest : DescribeSpec({
 			none.anyApplied() shouldBe false
 			none.allApplied() shouldBe false
 
-			val partial: MatchedTeams = none.apply(10L, 100L)
+			val partial: MatchedTeams = none.apply(10L, 100L, paidInitAmount = 40)
 			partial.anyApplied() shouldBe true
 			partial.allApplied() shouldBe false
 
-			val all: MatchedTeams = partial.apply(20L, 200L)
+			val all: MatchedTeams = partial.apply(20L, 200L, paidInitAmount = 40)
 			all.allApplied() shouldBe true
 		}
 	}
