@@ -29,7 +29,7 @@ import org.springframework.transaction.annotation.Transactional
  * 본인 글 신청 차단과 이성 여부 판정은 도메인([LoungeChatRequest.create])이 한다.
  * 성별은 user 도메인 in-port([GetUserDetailUseCase])로 조회해 파라미터로 넘긴다. (도메인은 인프라를 모른다)
  * 회사 인증 여부도 user 도메인 in-port([CheckCompanyVerifiedUseCase])로 검증한다. (미인증이면 코인 차감 전에 403으로 막는다)
- * 차감액은 [CoinUsageType.LOUNGE_CHAT_INIT]의 정책값이라 클라이언트가 금액을 정하지 않는다.
+ * 차감액은 신청자 성별 기준 [CoinUsageType.LOUNGE_CHAT_INIT] 정책값이라 클라이언트가 금액을 정하지 않는다.
  * 코인 도메인은 자기 out-port가 아니라 in-port([SpendCoinUseCase])로 참조한다.
  * 신청 저장과 코인 차감은 같은 트랜잭션이라 한 단계라도 실패하면 함께 롤백된다.
  * 알람만 커밋 후 best-effort([LoungeEventHandler])다.
@@ -67,6 +67,7 @@ class RequestLoungeChatService(
 		val requesterDetail: UserDetailView? = getUserDetailUseCase.findByUserId(userId)
 		val postAuthorDetail: UserDetailView? = getUserDetailUseCase.findByUserId(post.userId)
 
+		val initCoinAmount: Int = USAGE_TYPE.coinAmount(requesterDetail?.gender)
 		val saved: LoungeChatRequest = saveLoungeChatRequestPort.save(
 			LoungeChatRequest.create(
 				postId = postId,
@@ -75,9 +76,10 @@ class RequestLoungeChatService(
 				requesterGender = requesterDetail?.gender,
 				postAuthorGender = postAuthorDetail?.gender,
 				now = timeGenerator.now(),
+				initCoinAmount = initCoinAmount,
 			),
 		)
-		spendCoinUseCase.spend(userId, SpendCoinCommand(amount = USAGE_TYPE.coinAmount, coinUsageType = USAGE_TYPE))
+		spendCoinUseCase.spend(userId, SpendCoinCommand(amount = initCoinAmount, coinUsageType = USAGE_TYPE))
 
 		// 알람은 부가 효과라 커밋 후 별도 트랜잭션에서 best-effort로 처리한다. ([LoungeEventHandler])
 		domainEventPublisher.publish(
@@ -92,7 +94,7 @@ class RequestLoungeChatService(
 	}
 
 	companion object {
-		/** 대화 신청 차감 유형. 금액은 이 유형의 정책값(coinAmount)을 그대로 쓴다. */
+		/** 대화 신청 차감 유형. 금액은 이 유형의 신청자 성별별 정책값(coinAmount(gender))을 쓴다. */
 		private val USAGE_TYPE: CoinUsageType = CoinUsageType.LOUNGE_CHAT_INIT
 	}
 }

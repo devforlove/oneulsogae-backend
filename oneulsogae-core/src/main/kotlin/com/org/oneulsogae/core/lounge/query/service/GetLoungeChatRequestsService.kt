@@ -5,6 +5,7 @@ import com.org.oneulsogae.core.lounge.query.dao.GetLoungeChatRequestDao
 import com.org.oneulsogae.core.lounge.query.dto.LoungeChatRequestPage
 import com.org.oneulsogae.core.lounge.query.dto.LoungeChatRequestView
 import com.org.oneulsogae.core.lounge.query.service.port.`in`.GetLoungeChatRequestsUseCase
+import com.org.oneulsogae.core.user.query.service.port.`in`.GetUserDetailUseCase
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 
@@ -15,28 +16,30 @@ import org.springframework.transaction.annotation.Transactional
  * 페이지 크기 + 1건을 읽어 다음 페이지 존재 여부를 판정한다. (COUNT 없이 커서 페이징)
  * 상대방 만 나이는 [TimeGenerator]의 오늘 날짜로 계산한다.
  * 만료된 PENDING 신청(expired_at 경과)은 두 목록 모두에서 제외한다.
+ * 뷰어(조회한 사용자) 성별은 user 도메인 in-port([GetUserDetailUseCase])로 읽어 [LoungeChatRequestPage.acceptCoinAmount] 계산에 쓴다.
  */
 @Service
 @Transactional(readOnly = true)
 class GetLoungeChatRequestsService(
 	private val getLoungeChatRequestDao: GetLoungeChatRequestDao,
+	private val getUserDetailUseCase: GetUserDetailUseCase,
 	private val timeGenerator: TimeGenerator,
 ) : GetLoungeChatRequestsUseCase {
 
 	override fun getReceived(userId: Long, cursor: Long?): LoungeChatRequestPage {
 		val rows: List<LoungeChatRequestView> =
 			getLoungeChatRequestDao.findReceivedPage(userId, cursor, PAGE_SIZE + 1, timeGenerator.now())
-		return toPage(rows)
+		return toPage(rows, userId)
 	}
 
 	override fun getSent(userId: Long, cursor: Long?): LoungeChatRequestPage {
 		val rows: List<LoungeChatRequestView> =
 			getLoungeChatRequestDao.findSentPage(userId, cursor, PAGE_SIZE + 1, timeGenerator.now())
-		return toPage(rows)
+		return toPage(rows, userId)
 	}
 
-	private fun toPage(rows: List<LoungeChatRequestView>): LoungeChatRequestPage =
-		LoungeChatRequestPage.of(rows, PAGE_SIZE).withAges(timeGenerator.today())
+	private fun toPage(rows: List<LoungeChatRequestView>, userId: Long): LoungeChatRequestPage =
+		LoungeChatRequestPage.of(rows, PAGE_SIZE, getUserDetailUseCase.findByUserId(userId)?.gender).withAges(timeGenerator.today())
 
 	companion object {
 		/** 한 페이지에 내려주는 신청 건수. */

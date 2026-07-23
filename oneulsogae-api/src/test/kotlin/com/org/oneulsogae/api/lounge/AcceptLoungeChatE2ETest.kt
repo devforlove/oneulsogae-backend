@@ -3,6 +3,7 @@ package com.org.oneulsogae.api.lounge
 import com.org.oneulsogae.common.chat.ChatRoomMatchType
 import com.org.oneulsogae.common.integration.AbstractIntegrationSupport
 import com.org.oneulsogae.common.lounge.LoungeChatRequestStatus
+import com.org.oneulsogae.common.user.Gender
 import com.org.oneulsogae.infra.chat.command.entity.ChatRoomEntity
 import com.org.oneulsogae.infra.chat.command.entity.QChatRoomEntity
 import com.org.oneulsogae.infra.chat.command.entity.QChatRoomMemberEntity
@@ -44,8 +45,8 @@ class AcceptLoungeChatE2ETest : AbstractIntegrationSupport({
 			it("LOUNGE 채팅방과 참가자 2명이 생기고 코인 32가 차감된다") {
 				val authorId: Long = IntegrationUtil.persist(UserEntityFixture.create(providerId = "lounge-acc-author-1")).id!!
 				val requesterId: Long = IntegrationUtil.persist(UserEntityFixture.create(providerId = "lounge-acc-user-1")).id!!
-				// 회사 인증을 마쳐야 수락할 수 있다.
-				IntegrationUtil.persist(UserDetailEntityFixture.create(userId = authorId, companyName = "오늘소개"))
+				// 회사 인증을 마쳐야 수락할 수 있다. 수락 비용은 수락자(작성자) 성별 기준이라 명시적으로 남성으로 둔다.
+				IntegrationUtil.persist(UserDetailEntityFixture.create(userId = authorId, gender = Gender.MALE, companyName = "오늘소개"))
 				IntegrationUtil.persist(CoinBalanceEntityFixture.create(userId = authorId, balance = 100))
 				val post: LoungePostEntity = IntegrationUtil.persist(LoungePostEntityFixture.create(userId = authorId))
 				val request: LoungeChatRequestEntity = IntegrationUtil.persist(
@@ -96,8 +97,8 @@ class AcceptLoungeChatE2ETest : AbstractIntegrationSupport({
 				val authorId: Long = IntegrationUtil.persist(UserEntityFixture.create(providerId = "lounge-acc-author-2")).id!!
 				val firstRequesterId: Long = IntegrationUtil.persist(UserEntityFixture.create(providerId = "lounge-acc-user-2")).id!!
 				val secondRequesterId: Long = IntegrationUtil.persist(UserEntityFixture.create(providerId = "lounge-acc-user-3")).id!!
-				// 회사 인증을 마쳐야 수락할 수 있다.
-				IntegrationUtil.persist(UserDetailEntityFixture.create(userId = authorId, companyName = "오늘소개"))
+				// 회사 인증을 마쳐야 수락할 수 있다. 수락 비용은 수락자(작성자) 성별 기준이라 명시적으로 남성으로 둔다.
+				IntegrationUtil.persist(UserDetailEntityFixture.create(userId = authorId, gender = Gender.MALE, companyName = "오늘소개"))
 				IntegrationUtil.persist(CoinBalanceEntityFixture.create(userId = authorId, balance = 100))
 				val post: LoungePostEntity = IntegrationUtil.persist(LoungePostEntityFixture.create(userId = authorId))
 				val firstRequest: LoungeChatRequestEntity = IntegrationUtil.persist(
@@ -139,8 +140,8 @@ class AcceptLoungeChatE2ETest : AbstractIntegrationSupport({
 			it("409(LOUNGE-013)이고 코인은 한 번만 차감된다") {
 				val authorId: Long = IntegrationUtil.persist(UserEntityFixture.create(providerId = "lounge-acc-author-3")).id!!
 				val requesterId: Long = IntegrationUtil.persist(UserEntityFixture.create(providerId = "lounge-acc-user-4")).id!!
-				// 회사 인증을 마쳐야 수락할 수 있다.
-				IntegrationUtil.persist(UserDetailEntityFixture.create(userId = authorId, companyName = "오늘소개"))
+				// 회사 인증을 마쳐야 수락할 수 있다. 수락 비용은 수락자(작성자) 성별 기준이라 명시적으로 남성으로 둔다.
+				IntegrationUtil.persist(UserDetailEntityFixture.create(userId = authorId, gender = Gender.MALE, companyName = "오늘소개"))
 				IntegrationUtil.persist(CoinBalanceEntityFixture.create(userId = authorId, balance = 100))
 				val post: LoungePostEntity = IntegrationUtil.persist(LoungePostEntityFixture.create(userId = authorId))
 				val request: LoungeChatRequestEntity = IntegrationUtil.persist(

@@ -1,6 +1,5 @@
 package com.org.oneulsogae.core.lounge.query.dto
 
-import com.org.oneulsogae.common.coin.CoinUsageType
 import com.org.oneulsogae.common.user.Gender
 import com.org.oneulsogae.core.common.time.ageAt
 import java.time.LocalDate
@@ -40,10 +39,10 @@ data class SelfIntroPostDetailView(
 	val imageKeys: List<String> = emptyList(),
 	/**
 	 * 이 글의 작성자에게 대화를 신청할 때 드는 코인 수.
-	 * 글마다 다르지 않은 전역 정책값([CoinUsageType.LOUNGE_CHAT_INIT])이며, 클라이언트가 신청 전에 비용을 안내할 수 있도록 상세에 함께 내려준다.
-	 * (실제 차감도 서버가 같은 유형의 정책값으로 산출한다 — [com.org.oneulsogae.core.lounge.command.application.RequestLoungeChatService])
+	 * 뷰어(조회한 사용자) 성별로 갈리는 값이라 서비스가 채운다. 비로그인이면 신청할 수 없으므로 null이다.
+	 * (실제 차감도 서버가 신청자 성별 기준으로 산출한다 — [com.org.oneulsogae.core.lounge.command.application.RequestLoungeChatService])
 	 */
-	val chatRequestCoinAmount: Int = CoinUsageType.LOUNGE_CHAT_INIT.coinAmount,
+	val chatRequestCoinAmount: Int? = null,
 	/**
 	 * 조회한 사용자가 이 글에 이미 대화를 신청했는지 여부. 서비스가 채운다.
 	 * 신청 버튼을 "신청함"으로 바꾸는 데 쓴다. 상태(PENDING/ACCEPTED)는 구분하지 않는다 — 어느 쪽이든 다시 신청할 수 없다.
@@ -91,6 +90,10 @@ data class SelfIntroPostDetailView(
 	/** 조회한 사용자의 기존 신청 여부를 반영한 상세를 만든다. */
 	fun withChatRequested(requested: Boolean): SelfIntroPostDetailView =
 		copy(chatRequestedByMe = requested)
+
+	/** 조회한 사용자(뷰어) 성별 기준 대화 신청 비용을 반영한 상세를 만든다. 비로그인이면 null을 넘긴다. */
+	fun withChatRequestCoinAmount(amount: Int?): SelfIntroPostDetailView =
+		copy(chatRequestCoinAmount = amount)
 
 	/** 조회한 사용자의 회사 인증 여부를 반영한 상세를 만든다. */
 	fun withCompanyVerified(companyVerified: Boolean): SelfIntroPostDetailView =

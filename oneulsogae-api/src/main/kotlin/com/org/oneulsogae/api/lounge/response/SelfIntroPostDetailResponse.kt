@@ -29,8 +29,8 @@ data class SelfIntroPostDetailResponse(
 	val charmPoint: String,
 	val freeWord: String,
 	val imageUrls: List<String>,
-	/** 이 작성자에게 대화를 신청할 때 드는 코인 수. 글마다 다르지 않은 전역 정책값이며, 신청 전 비용 안내에 쓴다. */
-	val chatRequestCoinAmount: Int,
+	/** 이 작성자에게 대화를 신청할 때 드는 코인 수. 조회한 사용자(뷰어) 성별로 갈리며, 비로그인이면 null이다. */
+	val chatRequestCoinAmount: Int?,
 	/** 조회한 사용자가 이 글에 이미 대화를 신청했는지 여부. true면 신청 버튼을 "신청함"으로 바꾼다. */
 	val chatRequestedByMe: Boolean,
 	/** 조회한 사용자가 회사 인증을 마쳤는지 여부. 비로그인이면 false. false면 신청 시도 시 회사 인증 안내로 분기한다. */

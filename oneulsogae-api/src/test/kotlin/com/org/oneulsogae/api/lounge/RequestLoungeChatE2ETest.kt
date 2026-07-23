@@ -79,6 +79,32 @@ class RequestLoungeChatE2ETest : AbstractIntegrationSupport({
 			}
 		}
 
+		context("여성이 다른 사람의 셀소에 신청하면") {
+			it("절반 비용(16)만 차감된다") {
+				val authorId: Long = IntegrationUtil.persist(UserEntityFixture.create(providerId = "lounge-req-author-9")).id!!
+				val requesterId: Long = IntegrationUtil.persist(UserEntityFixture.create(providerId = "lounge-req-user-9")).id!!
+				// 이성에게만 신청할 수 있으므로 두 사람의 성별을 서로 다르게 둔다.
+				IntegrationUtil.persist(UserDetailEntityFixture.create(userId = authorId, gender = Gender.MALE))
+				IntegrationUtil.persist(UserDetailEntityFixture.create(userId = requesterId, gender = Gender.FEMALE, companyName = "오늘소개"))
+				IntegrationUtil.persist(CoinBalanceEntityFixture.create(userId = requesterId, balance = 100))
+				val post: LoungePostEntity = IntegrationUtil.persist(LoungePostEntityFixture.create(userId = authorId))
+
+				RestAssured.given()
+					.header("Authorization", "Bearer ${accessTokenFor(requesterId)}")
+					.post("/lounge/v1/self-intro-posts/${post.id}/chat-requests")
+					.then()
+					.statusCode(200)
+
+				// 여성 신청 비용(LOUNGE_CHAT_INIT=16) 차감 → 잔액 84
+				val balance: Int = IntegrationUtil.getQuery()
+					.select(QCoinBalanceEntity.coinBalanceEntity.balance)
+					.from(QCoinBalanceEntity.coinBalanceEntity)
+					.where(QCoinBalanceEntity.coinBalanceEntity.userId.eq(requesterId))
+					.fetchFirst()!!
+				balance shouldBe 84
+			}
+		}
+
 		context("본인이 쓴 셀소에 신청하면") {
 			it("400(LOUNGE-009)을 반환한다") {
 				val authorId: Long = IntegrationUtil.persist(UserEntityFixture.create(providerId = "lounge-req-author-2")).id!!

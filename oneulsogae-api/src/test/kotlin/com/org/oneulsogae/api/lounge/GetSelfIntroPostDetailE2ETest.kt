@@ -92,8 +92,8 @@ class GetSelfIntroPostDetailE2ETest : AbstractIntegrationSupport({
 					.body("data.universityName", Matchers.equalTo("한국대학교"))
 					.body("data.mbti", Matchers.equalTo("ENFP"))
 					.body("data.freeWord", Matchers.equalTo("편하게 연락 주세요"))
-					// 대화 신청 버튼의 비용 안내값. 글마다 다르지 않은 전역 정책값(LOUNGE_CHAT_INIT)이다.
-					.body("data.chatRequestCoinAmount", Matchers.equalTo(CoinUsageType.LOUNGE_CHAT_INIT.coinAmount))
+					// 대화 신청 버튼의 비용 안내값. 조회한 사용자(뷰어, 여기서는 작성자 본인=FEMALE) 성별 기준이다.
+					.body("data.chatRequestCoinAmount", Matchers.equalTo(CoinUsageType.LOUNGE_CHAT_INIT.coinAmount(Gender.FEMALE)))
 					.body("data.imageUrls", Matchers.hasSize<Any>(2))
 					.body("data.imageUrls[0]", Matchers.equalTo("https://presigned.test/lounge-posts/$userId/first.jpg"))
 					.body("data.imageUrls[1]", Matchers.equalTo("https://presigned.test/lounge-posts/$userId/second.png"))
@@ -212,6 +212,8 @@ class GetSelfIntroPostDetailE2ETest : AbstractIntegrationSupport({
 					.body("data.authorNickname", Matchers.equalTo("공개상세유저"))
 					.body("data.chatRequestedByMe", Matchers.equalTo(false))
 					.body("data.companyVerified", Matchers.equalTo(false))
+					// 비로그인이면 신청할 수 없으므로 비용 안내값도 null이다.
+					.body("data.chatRequestCoinAmount", Matchers.nullValue())
 			}
 		}
 	}

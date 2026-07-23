@@ -60,4 +60,8 @@ class LoungeChatRequestEntity(
 	/** 만료 시각(신청 시각 + 3일). 이 시각이 지난 PENDING 신청은 수락 불가·목록 제외로 다룬다. */
 	@Column(name = "expired_at", nullable = false)
 	val expiredAt: LocalDateTime,
+
+	/** 신청 시 실제 차감한 신청 비용의 스냅샷(남녀 비용이 달라 신청자 성별에 따라 다르다). 구행 데이터는 null. */
+	@Column(name = "init_coin_amount")
+	val initCoinAmount: Int? = null,
 ) : BaseEntity()

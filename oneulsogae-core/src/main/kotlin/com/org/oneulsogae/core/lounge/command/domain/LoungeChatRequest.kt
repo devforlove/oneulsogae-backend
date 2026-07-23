@@ -14,6 +14,7 @@ import java.time.LocalDateTime
  * 생성된 채팅방은 여기에 두지 않는다(`chat_rooms(match_type=LOUNGE, match_id=이 신청 id)`로 역참조한다).
  * [expiredAt]은 생성 시각 + [EXPIRATION]으로 확정해 저장한다. (만료 판정·응답 노출 모두 이 값 기준)
  * [createdAt]은 영속성(BaseEntity)이 채우므로 저장 전(신규)에는 null이다.
+ * [initCoinAmount]는 신청 시점에 실제로 차감한 신청 비용의 스냅샷이다(남녀 비용이 달라 신청자 성별에 따라 다르다). 구행(null)도 있다.
  */
 data class LoungeChatRequest(
 	val id: Long = 0,
@@ -25,6 +26,8 @@ data class LoungeChatRequest(
 	/** 만료 시각. 이 시각이 지난 PENDING 신청은 수락할 수 없고 목록에서도 빠진다. */
 	val expiredAt: LocalDateTime,
 	val createdAt: LocalDateTime? = null,
+	/** 신청 시 실제 차감한 신청 비용의 스냅샷. 구행(null)은 [expiryRefundAmount]가 정책값으로 대신한다. */
+	val initCoinAmount: Int? = null,
 ) {
 
 	/**
@@ -54,11 +57,12 @@ data class LoungeChatRequest(
 		status == LoungeChatRequestStatus.PENDING && !now.isBefore(expiredAt)
 
 	/**
-	 * 만료 정리 시 신청자에게 되돌려줄 코인. 신청 비용([CoinUsageType.LOUNGE_CHAT_INIT])의 절반(내림)이다.
+	 * 만료 정리 시 신청자에게 되돌려줄 코인 — 실제 낸 신청 비용([initCoinAmount])의 절반(내림).
+	 * 구행(null)은 기존 정책값([CoinUsageType.LOUNGE_CHAT_INIT]) 기준이다.
 	 * (수락되지 못한 채 만료된 신청만 환불 대상이므로 호출 측이 [isExpired]로 판정한 뒤 사용한다)
 	 */
 	fun expiryRefundAmount(): Int =
-		CoinUsageType.LOUNGE_CHAT_INIT.coinAmount / 2
+		(initCoinAmount ?: CoinUsageType.LOUNGE_CHAT_INIT.coinAmount) / 2
 
 	companion object {
 
@@ -71,6 +75,7 @@ data class LoungeChatRequest(
 		 * - 이성이 아님: [LoungeErrorCode.LOUNGE_CHAT_REQUEST_SAME_GENDER] ([validateOppositeGender])
 		 *
 		 * 본인 글 검사를 성별 검사보다 먼저 한다. (본인은 성별도 같으므로 순서가 바뀌면 엉뚱한 사유가 나간다)
+		 * [initCoinAmount]는 호출 측이 신청자 성별로 산출해 넘긴 실제 차감액이며, 그대로 스냅샷([LoungeChatRequest.initCoinAmount])된다.
 		 */
 		fun create(
 			postId: Long,
@@ -79,6 +84,7 @@ data class LoungeChatRequest(
 			requesterGender: Gender?,
 			postAuthorGender: Gender?,
 			now: LocalDateTime,
+			initCoinAmount: Int,
 		): LoungeChatRequest {
 			if (requesterUserId == postAuthorUserId) {
 				throw BusinessException(LoungeErrorCode.LOUNGE_CHAT_REQUEST_SELF)
@@ -89,6 +95,7 @@ data class LoungeChatRequest(
 				requesterUserId = requesterUserId,
 				receiverUserId = postAuthorUserId,
 				expiredAt = now.plus(EXPIRATION),
+				initCoinAmount = initCoinAmount,
 			)
 		}
 

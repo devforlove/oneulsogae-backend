@@ -32,6 +32,7 @@ class LoungeChatRequestTest : DescribeSpec({
 					requesterGender = Gender.MALE,
 					postAuthorGender = Gender.FEMALE,
 					now = now,
+					initCoinAmount = 32,
 				)
 
 				request.postId shouldBe postId
@@ -53,6 +54,7 @@ class LoungeChatRequestTest : DescribeSpec({
 						requesterGender = Gender.MALE,
 						postAuthorGender = Gender.MALE,
 						now = now,
+						initCoinAmount = 32,
 					)
 				}
 
@@ -70,6 +72,7 @@ class LoungeChatRequestTest : DescribeSpec({
 						requesterGender = Gender.FEMALE,
 						postAuthorGender = Gender.FEMALE,
 						now = now,
+						initCoinAmount = 32,
 					)
 				}
 
@@ -87,6 +90,7 @@ class LoungeChatRequestTest : DescribeSpec({
 						requesterGender = Gender.MALE,
 						postAuthorGender = null,
 						now = now,
+						initCoinAmount = 32,
 					)
 				}
 
@@ -104,6 +108,7 @@ class LoungeChatRequestTest : DescribeSpec({
 						requesterGender = Gender.MALE,
 						postAuthorGender = Gender.MALE,
 						now = now,
+						initCoinAmount = 32,
 					)
 				}
 
@@ -207,7 +212,7 @@ class LoungeChatRequestTest : DescribeSpec({
 
 	describe("expiryRefundAmount") {
 
-		it("신청 비용(LOUNGE_CHAT_INIT 32코인)의 절반을 돌려준다") {
+		it("initCoinAmount가 없는 구행 신청은 정책값(LOUNGE_CHAT_INIT 32코인)의 절반을 돌려준다") {
 			val request = LoungeChatRequest(
 				id = 100L,
 				postId = postId,
@@ -217,6 +222,19 @@ class LoungeChatRequestTest : DescribeSpec({
 			)
 
 			request.expiryRefundAmount() shouldBe 16
+		}
+
+		it("initCoinAmount가 있으면 실제 낸 신청 비용의 절반을 돌려준다 (여성 16 지불 → 8 환불)") {
+			val request = LoungeChatRequest(
+				id = 100L,
+				postId = postId,
+				requesterUserId = requesterUserId,
+				receiverUserId = authorUserId,
+				expiredAt = now,
+				initCoinAmount = 16,
+			)
+
+			request.expiryRefundAmount() shouldBe 8
 		}
 	}
 

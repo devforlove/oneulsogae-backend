@@ -2,6 +2,7 @@ package com.org.oneulsogae.core.lounge.command.application
 
 import com.org.oneulsogae.common.chat.ChatRoomMatchType
 import com.org.oneulsogae.common.coin.CoinUsageType
+import com.org.oneulsogae.common.user.Gender
 import com.org.oneulsogae.core.chat.command.application.port.`in`.SaveChatRoomUseCase
 import com.org.oneulsogae.core.chat.command.application.port.`in`.command.SaveChatRoomCommand
 import com.org.oneulsogae.core.chat.command.application.port.`in`.command.SaveChatRoomParticipant
@@ -21,6 +22,7 @@ import com.org.oneulsogae.core.lounge.command.application.port.out.SaveLoungeCha
 import com.org.oneulsogae.core.lounge.command.domain.LoungeChatRequest
 import com.org.oneulsogae.core.lounge.command.domain.event.LoungeChatRequestAccepted
 import com.org.oneulsogae.core.user.query.service.port.`in`.CheckCompanyVerifiedUseCase
+import com.org.oneulsogae.core.user.query.service.port.`in`.GetUserDetailUseCase
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 
@@ -31,6 +33,7 @@ import org.springframework.transaction.annotation.Transactional
  * 채팅방은 chat 도메인 in-port([SaveChatRoomUseCase])에 위임하며, 신청 한 건당 한 방이 되도록
  * `(match_type=LOUNGE, match_id=신청 id)`로 만든다. (chat 쪽이 이 조합으로 멱등 생성한다)
  * 작성자는 같은 글의 신청을 여러 건 수락할 수 있고, 수락할 때마다 코인을 내고 방이 하나씩 생긴다.
+ * 수락 비용은 수락자(작성자) 성별로 다르며, 성별은 user 도메인 in-port([GetUserDetailUseCase])로 조회한다.
  * 회사 인증 여부도 user 도메인 in-port([CheckCompanyVerifiedUseCase])로 검증한다. (미인증이면 코인 차감 전에 403으로 막는다)
  *
  * 신청별 분산 락([DistributedLock])으로 보호한다. 경합 대상이 신청 한 건의 상태 전이이므로 requestId로 잠근다.
@@ -44,6 +47,7 @@ class AcceptLoungeChatService(
 	private val spendCoinUseCase: SpendCoinUseCase,
 	private val saveChatRoomUseCase: SaveChatRoomUseCase,
 	private val checkCompanyVerifiedUseCase: CheckCompanyVerifiedUseCase,
+	private val getUserDetailUseCase: GetUserDetailUseCase,
 	private val domainEventPublisher: DomainEventPublisher,
 	private val timeGenerator: TimeGenerator,
 ) : AcceptLoungeChatUseCase {
@@ -58,7 +62,8 @@ class AcceptLoungeChatService(
 			?: throw BusinessException(LoungeErrorCode.LOUNGE_CHAT_REQUEST_NOT_FOUND)
 		// 소유권(내 글에 온 신청인가)·중복 수락·만료(신청 후 3일 경과) 판정은 도메인이 한다. (신청 행이 수신자를 알고 있어 글을 다시 읽지 않는다)
 		saveLoungeChatRequestPort.save(request.acceptBy(actorUserId = userId, now = timeGenerator.now()))
-		spendCoinUseCase.spend(userId, SpendCoinCommand(amount = USAGE_TYPE.coinAmount, coinUsageType = USAGE_TYPE))
+		val actorGender: Gender? = getUserDetailUseCase.findByUserId(userId)?.gender
+		spendCoinUseCase.spend(userId, SpendCoinCommand(amount = USAGE_TYPE.coinAmount(actorGender), coinUsageType = USAGE_TYPE))
 
 		// 채팅방 생성은 수락의 필수 산출물이라 같은 트랜잭션에서 동기로 처리한다. (실패 시 함께 롤백)
 		val chatRoom: ChatRoom = saveChatRoomUseCase.save(
@@ -85,7 +90,7 @@ class AcceptLoungeChatService(
 	}
 
 	companion object {
-		/** 대화 수락 차감 유형. 금액은 이 유형의 정책값(coinAmount)을 그대로 쓴다. */
+		/** 대화 수락 차감 유형. 금액은 이 유형의 수락자 성별별 정책값(coinAmount(gender))을 쓴다. */
 		private val USAGE_TYPE: CoinUsageType = CoinUsageType.LOUNGE_CHAT_ACCEPT
 	}
 }
