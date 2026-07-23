@@ -31,7 +31,7 @@ import org.hamcrest.Matchers.greaterThan
 /**
  * `POST /matches/v1/extra` E2E 테스트. (추가 소개 받기)
  *
- * 코인([com.org.oneulsogae.common.coin.CoinUsageType.EXTRA_INTRO]=30)을 차감하고 자격 후보 1명을 골라
+ * 코인([com.org.oneulsogae.common.coin.CoinUsageType.EXTRA_INTRO]=남 30·여 15)을 차감하고 자격 후보 1명을 골라
  * [com.org.oneulsogae.common.match.SoloMatchType.EXTRA] PROPOSED 매칭을 만든다. 후보가 없거나 코인이 부족하면 매칭·차감이 없다.
  * 선택은 무작위 셔플·거리 점수(빈 근접 스냅샷 0)를 쓰므로 어느 후보가 뽑히는지는 단언하지 않고,
  * 상대가 자격 후보 집합에 속하는지·코인 증감·매칭 생성/미생성만 단언한다.
@@ -40,15 +40,15 @@ import org.hamcrest.Matchers.greaterThan
 class ExtraIntroIntegrationTest : AbstractIntegrationSupport({
 
 	// 요청자(match_user만) + 코인 잔액을 저장한다. (POST /extra는 match_user·코인만 있으면 동작)
-	fun persistRequester(userId: Long, balance: Int) {
-		IntegrationUtil.persist(MatchUserEntityFixture.create(userId = userId, gender = Gender.MALE))
+	fun persistRequester(userId: Long, balance: Int, gender: Gender = Gender.MALE) {
+		IntegrationUtil.persist(MatchUserEntityFixture.create(userId = userId, gender = gender))
 		IntegrationUtil.persist(CoinBalanceEntityFixture.create(userId = userId, balance = balance))
 	}
 
 	// 자격 후보: 후보 조회가 match_user + user_details를 요구하므로 둘 다 저장한다.
-	fun persistCandidate(userId: Long): Long {
-		IntegrationUtil.persist(MatchUserEntityFixture.create(userId = userId, gender = Gender.FEMALE))
-		IntegrationUtil.persist(UserDetailEntityFixture.create(userId = userId, gender = Gender.FEMALE))
+	fun persistCandidate(userId: Long, gender: Gender = Gender.FEMALE): Long {
+		IntegrationUtil.persist(MatchUserEntityFixture.create(userId = userId, gender = gender))
+		IntegrationUtil.persist(UserDetailEntityFixture.create(userId = userId, gender = gender))
 		return userId
 	}
 
@@ -97,6 +97,25 @@ class ExtraIntroIntegrationTest : AbstractIntegrationSupport({
 					body("data.matches[0].matchId", matchId)
 					body("data.matches[0].partner.userId", partnerUserId)
 				}
+			}
+		}
+
+		context("요청자가 여성이면") {
+			it("절반 비용(15)만 차감된다") {
+				val requesterId: Long = IntegrationUtil.persist(UserEntityFixture.create(status = UserStatus.ACTIVE)).id!!
+				IntegrationUtil.persist(UserDetailEntityFixture.create(userId = requesterId, gender = Gender.FEMALE, companyName = "오늘소개"))
+				persistRequester(requesterId, balance = 100, gender = Gender.FEMALE)
+				persistCandidate(1001L, gender = Gender.MALE)
+
+				post("/matches/v1/extra") {
+					bearer(accessTokenFor(requesterId))
+				} expect {
+					status(200)
+					body("success", true)
+				}
+
+				// 여성 추가 소개 비용(EXTRA_INTRO=15) 차감 → 잔액 85
+				coinBalanceOf(requesterId) shouldBe 85
 			}
 		}
 

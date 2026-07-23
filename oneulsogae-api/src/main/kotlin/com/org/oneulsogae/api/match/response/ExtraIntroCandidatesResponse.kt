@@ -9,7 +9,7 @@ import java.time.LocalDate
 
 /**
  * 추가 소개 후보 목록 응답.
- * [totalCount]=전체 자격 후보 수, [coinCost]=추가 소개 1회에 필요한 코인 비용(서버 고정), [candidates]=점수 상위 표시 목록,
+ * [totalCount]=전체 자격 후보 수, [coinCost]=추가 소개 1회에 필요한 코인 비용(요청자 성별별 정책값), [candidates]=점수 상위 표시 목록,
  * [companyVerified]=요청자의 회사 인증 여부(미인증이면 추가 소개 받기가 403이라 프론트엔드가 시도 전에 인증 안내로 분기).
  */
 data class ExtraIntroCandidatesResponse(
@@ -22,7 +22,7 @@ data class ExtraIntroCandidatesResponse(
 		fun of(result: ExtraIntroCandidates, today: LocalDate): ExtraIntroCandidatesResponse =
 			ExtraIntroCandidatesResponse(
 				totalCount = result.totalCount,
-				coinCost = CoinUsageType.EXTRA_INTRO.coinAmount,
+				coinCost = CoinUsageType.EXTRA_INTRO.coinAmount(result.requesterGender),
 				candidates = result.candidates.map { c: ExtraIntroCandidate -> ExtraIntroCandidateResponse.of(c, today) },
 				companyVerified = result.companyVerified,
 			)

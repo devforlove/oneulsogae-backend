@@ -75,7 +75,22 @@ class ExtraIntroCandidatesIntegrationTest : AbstractIntegrationSupport({
 					body("success", true)
 					body("data.candidates.size()", 11)
 					body("data.totalCount", 12)
-					body("data.coinCost", CoinUsageType.EXTRA_INTRO.coinAmount)
+					body("data.coinCost", CoinUsageType.EXTRA_INTRO.coinAmount(Gender.MALE))
+				}
+			}
+		}
+
+		context("요청자가 여성이면") {
+			it("절반 비용(15)을 coinCost로 반환한다") {
+				val requesterId = 2L
+				persistRequester(requesterId, gender = Gender.FEMALE)
+				persistCandidate(1001L, gender = Gender.MALE)
+
+				get("/matches/v1/extra/candidates") {
+					bearer(accessTokenFor(requesterId))
+				} expect {
+					status(200)
+					body("data.coinCost", CoinUsageType.EXTRA_INTRO.coinAmount(Gender.FEMALE))
 				}
 			}
 		}

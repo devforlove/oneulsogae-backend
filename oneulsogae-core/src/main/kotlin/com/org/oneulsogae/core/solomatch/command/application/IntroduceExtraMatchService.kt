@@ -80,7 +80,7 @@ class IntroduceExtraMatchService(
 		) ?: throw BusinessException(MatchErrorCode.EXTRA_INTRO_NO_CANDIDATE)
 
 		// 후보를 확정한 뒤에만 차감한다. (후보 없으면 차감 없음)
-		spendCoinUseCase.spend(userId, SpendCoinCommand(amount = CoinUsageType.EXTRA_INTRO.coinAmount, coinUsageType = CoinUsageType.EXTRA_INTRO))
+		spendCoinUseCase.spend(userId, SpendCoinCommand(amount = CoinUsageType.EXTRA_INTRO.coinAmount(requester.gender), coinUsageType = CoinUsageType.EXTRA_INTRO))
 
 		val match: Match = Match.propose(
 			requesterId = requester.userId,

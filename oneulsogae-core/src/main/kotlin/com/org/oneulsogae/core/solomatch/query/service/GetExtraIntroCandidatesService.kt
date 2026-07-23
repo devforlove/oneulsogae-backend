@@ -34,7 +34,7 @@ class GetExtraIntroCandidatesService(
 
 		// 매칭 가능 상태가 아니면 후보도 없다. (읽기 모델 미적재)
 		val requester: MatchUser = getMatchUserUseCase.findByUserId(userId)
-			?: return ExtraIntroCandidates(totalCount = 0, candidates = emptyList(), companyVerified = companyVerified)
+			?: return ExtraIntroCandidates(totalCount = 0, candidates = emptyList(), companyVerified = companyVerified, requesterGender = null)
 
 		val loginAfter: LocalDateTime = timeGenerator.now().minusWeeks(RECENT_LOGIN_WEEKS)
 		val eligibleUserIds: List<Long> =
@@ -45,7 +45,7 @@ class GetExtraIntroCandidatesService(
 				requesterCompanyName = requester.companyName,
 				requesterRefusesSameCompanyIntro = requester.refuseSameCompanyIntro,
 			)
-		if (eligibleUserIds.isEmpty()) return ExtraIntroCandidates(totalCount = 0, candidates = emptyList(), companyVerified = companyVerified)
+		if (eligibleUserIds.isEmpty()) return ExtraIntroCandidates(totalCount = 0, candidates = emptyList(), companyVerified = companyVerified, requesterGender = requester.gender)
 
 		// 목록은 마스킹되어 노출되므로 무작위로 섞어 상위 일부만 표시한다. (스코어링·정렬 불필요)
 		val pickedUserIds: List<Long> = eligibleUserIds.shuffled(random).take(DISPLAY_LIMIT)
@@ -54,7 +54,7 @@ class GetExtraIntroCandidatesService(
 		// 섞은 순서를 유지한다.
 		val candidates: List<ExtraIntroCandidate> = pickedUserIds.mapNotNull { id: Long -> profileByUserId[id] }
 
-		return ExtraIntroCandidates(totalCount = eligibleUserIds.size, candidates = candidates, companyVerified = companyVerified)
+		return ExtraIntroCandidates(totalCount = eligibleUserIds.size, candidates = candidates, companyVerified = companyVerified, requesterGender = requester.gender)
 	}
 
 	companion object {
