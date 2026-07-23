@@ -40,11 +40,16 @@
 - 도메인 유닛(Kotest): 코드 생성 형식(8자, 문자셋), 추천인 유효성 판정.
 - E2E(`oneulsogae-api`): ① 유효 코드 온보딩 → 양쪽 잔액 +50 ② 무효 코드 → 온보딩 성공·지급 없음 ③ 코드 조회 → 발급, 재호출 시 동일 코드.
 
-## 5. 프론트 영향 (백엔드에서 구현 안 함, 안내만)
+## 5. 프론트 구현 (웹 + 모바일 둘 다, 사용자 직접 요청)
 
-- 온보딩 요청에 `referralCode` 선택 필드 추가.
-- 코드 조회 API 연동 및 공유 화면.
-- 구현 완료 후 상세 안내 예정.
+### 온보딩 — 추천 코드 입력
+- 마지막에 선택(skip 가능) 스텝 "추천 코드" 추가. 미입력 시 필드 생략/null.
+- 웹: `OnboardingSteps.tsx` 스텝 추가, `submissionMapper.ts`·`OnboardingSubmission.ts`에 `referralCode` 반영.
+- 모바일: `onboarding-steps.ts` `STEP_KEYS`에 스텝 추가, `onboarding-draft.ts`·`buildCompleteRequest()`에 반영.
+
+### 마이탭 — 내 추천 코드 화면
+- 마이탭 "코인" 섹션에 `LinkRow` "내 추천 코드" 추가 → 코드 표시 + 복사(+공유) 화면.
+- `GET /users/v1/me/referral-code` 연동 (웹: user 도메인 datasource, 모바일: `*-api.ts` + `*-queries.ts` 쌍).
 
 ## 검토한 대안
 
