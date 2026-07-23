@@ -57,4 +57,7 @@ enum class UserErrorCode(
 	IDENTITY_NOT_ADULT("USER-029", "만 19세 이상만 가입할 수 있습니다.", HttpStatus.BAD_REQUEST),
 	IDENTITY_ALREADY_REGISTERED("USER-030", "이미 본인확인으로 가입된 사용자입니다.", HttpStatus.CONFLICT),
 	IDENTITY_VERIFICATION_NOT_ONBOARDING("USER-031", "본인확인은 온보딩 중에만 시작할 수 있습니다.", HttpStatus.CONFLICT),
+
+	// 추천 코드
+	REFERRAL_CODE_ISSUE_FAILED("USER-040", "추천 코드 발급에 실패했습니다. 잠시 후 다시 시도해 주세요.", HttpStatus.INTERNAL_SERVER_ERROR),
 }
