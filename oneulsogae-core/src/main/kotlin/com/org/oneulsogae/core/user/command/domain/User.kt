@@ -19,6 +19,10 @@ data class User(
 	val role: Role = Role.USER,
 	val status: UserStatus = UserStatus.ONBOARDING,
 	val lastLoginAt: LocalDateTime? = null,
+	/** 내가 남에게 공유하는 추천 코드. 조회 시점 lazy 발급이라 발급 전엔 null. */
+	val referralCode: String? = null,
+	/** 나를 추천한(내가 가입 시 코드를 입력한) 추천인 id. 추천 없이 가입하면 null. */
+	val referredByUserId: Long? = null,
 ) {
 
 	/** 온보딩(프로필 입력)을 마치고 정식 가입을 완료한다. (-> ACTIVE) */
@@ -49,6 +53,18 @@ data class User(
 	/** 마지막 로그인 시점을 기록한다. */
 	fun recordLogin(at: LocalDateTime): User =
 		copy(lastLoginAt = at)
+
+	/** 추천 코드를 발급(부여)한다. */
+	fun assignReferralCode(code: String): User =
+		copy(referralCode = code)
+
+	/** 나를 추천한 추천인을 기록한다. */
+	fun referredBy(referrerId: Long): User =
+		copy(referredByUserId = referrerId)
+
+	/** 이 유저(추천인)가 해당 신규 유저를 추천해 보상받을 수 있는지 판정한다. (정식 가입 상태 + 본인 아님) */
+	fun canRefer(newUserId: Long): Boolean =
+		isRegistered && id != newUserId
 
 	companion object {
 
