@@ -144,6 +144,40 @@ class ExtraIntroCandidatesIntegrationTest : AbstractIntegrationSupport({
 			}
 		}
 
+		context("요청자 프로필에 회사명이 있으면") {
+			it("companyVerified=true를 내려준다") {
+				val requesterId = 1L
+				persistRequester(requesterId)
+				IntegrationUtil.persist(
+					UserDetailEntityFixture.create(userId = requesterId, gender = Gender.MALE, companyName = "오늘소개"),
+				)
+				persistCandidate(1001L)
+
+				get("/matches/v1/extra/candidates") {
+					bearer(accessTokenFor(requesterId))
+				} expect {
+					status(200)
+					body("data.companyVerified", true)
+				}
+			}
+		}
+
+		context("요청자 프로필에 회사명이 없으면") {
+			it("companyVerified=false를 내려준다") {
+				val requesterId = 1L
+				persistRequester(requesterId)
+				IntegrationUtil.persist(UserDetailEntityFixture.create(userId = requesterId, gender = Gender.MALE))
+				persistCandidate(1001L)
+
+				get("/matches/v1/extra/candidates") {
+					bearer(accessTokenFor(requesterId))
+				} expect {
+					status(200)
+					body("data.companyVerified", false)
+				}
+			}
+		}
+
 		context("요청자가 매칭 가능 상태가 아니면(match_user 없음)") {
 			it("전체 수 0·빈 목록을 반환한다") {
 				val requesterId = 99L
