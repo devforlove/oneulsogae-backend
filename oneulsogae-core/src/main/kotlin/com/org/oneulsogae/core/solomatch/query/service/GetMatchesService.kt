@@ -21,7 +21,7 @@ import java.time.LocalDateTime
  * 조회 트랜잭션 자체는 쓰지 않는다 — 온보딩 직후 첫 매칭 자동 소개는 회사 이메일 인증 완료 시점([com.org.oneulsogae.core.user.command.application.UserEventHandler])이 담당한다.
  * 단, "내가 관심을 보내지 않았고 상대만 관심을 보냈는데 아직 확인 시각이 없는" 매칭은 [MatchChecked] 이벤트를 발행해,
  * 커밋 후 command 측([com.org.oneulsogae.core.solomatch.command.application.MatchEventHandler])이 확인 시각 기록·상대 알람을 별도 트랜잭션으로 처리한다.
- * (성별은 상대 프로필 표시 조인에 쓰며, 매칭 대상이 아니어도 조회 자체는 막지 않는다)
+ * (성별은 상대 프로필 표시 조인 + 신청/수락 비용 남녀별 계산에 쓰며, 매칭 대상이 아니어도 조회 자체는 막지 않는다)
  */
 @Service
 class GetMatchesService(

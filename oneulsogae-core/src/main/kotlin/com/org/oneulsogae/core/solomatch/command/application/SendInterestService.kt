@@ -30,7 +30,7 @@ import org.springframework.transaction.annotation.Transactional
  * - 성사(MATCHED): 수락 비용 차감 + 채팅방 생성(동기) + 성사 알람 위임. ([completeMatch])
  * - 미성사(PARTIALLY_ACCEPTED): 신청 비용 차감 + 관심 받음 알람 위임. ([recordInterest])
  *
- * 신청/수락 비용은 매칭에 저장된 값으로 서버가 산출한다. (클라이언트가 금액을 정하지 않음)
+ * 신청/수락 비용은 행위자(참가자) 성별 기준으로 서버가 산출한다. (클라이언트가 금액을 정하지 않음)
  * 코인 차감·상태 변경·채팅방 생성은 같은 트랜잭션이라 한 단계라도 실패하면 함께 롤백된다. 알람만 커밋 후 best-effort([MatchEventHandler])다.
  * 다른 도메인(coin/chat)은 자기 out-port가 아니라 in-port로 참조한다.
  * 회사 인증 여부는 user 도메인 in-port([CheckCompanyVerifiedUseCase])로 검증한다. (미인증이면 코인 차감 전에 403으로 막는다)
@@ -73,7 +73,7 @@ class SendInterestService(
 
 	/** 수락으로 성사된 경우: 수락 비용 차감 + 채팅방 생성(동기) + 성사 알람 위임. */
 	private fun completeMatch(userId: Long, match: Match): Match {
-		spend(userId, amount = match.datingAcceptAmount, usageType = CoinUsageType.DATING_ACCEPT)
+		spend(userId, amount = match.datingAcceptAmountFor(userId), usageType = CoinUsageType.DATING_ACCEPT)
 		// 채팅방 생성은 성사의 필수 산출물이라 같은 트랜잭션에서 동기로 처리한다. (실패 시 함께 롤백)
 		saveChatRoomUseCase.save(
 			SaveChatRoomCommand(
@@ -89,7 +89,7 @@ class SendInterestService(
 
 	/** 아직 미성사(신청)인 경우: 신청 비용 차감 + 상대에게 관심 받음 알람 위임. */
 	private fun recordInterest(userId: Long, match: Match): Match {
-		spend(userId, amount = match.datingInitAmount, usageType = CoinUsageType.DATING_INIT)
+		spend(userId, amount = match.datingInitAmountFor(userId), usageType = CoinUsageType.DATING_INIT)
 		domainEventPublisher.publish(InterestSent.from(match, userId))
 		return match
 	}

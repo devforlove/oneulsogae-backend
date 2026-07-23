@@ -12,7 +12,7 @@ interface GetMatchWithPartnerDao {
 
 	/**
 	 * 사용자가 참가한 매칭 + 상대 프로필을 조인 조회한다. (만료된 소개는 [now] 기준으로 제외)
-	 * 1:1이라 상대 참가자는 정확히 한 명이다. ([gender]는 더 이상 컬럼 선택에 쓰지 않아 무시한다)
+	 * 1:1이라 상대 참가자는 정확히 한 명이다. [gender]는 조회 사용자(뷰어) 성별로, 신청/수락 비용 표시를 남녀별로 계산하는 데 쓴다.
 	 */
 	fun findAllWithPartnerByUserId(userId: Long, gender: Gender, now: LocalDateTime): List<MatchWithPartner>
 }

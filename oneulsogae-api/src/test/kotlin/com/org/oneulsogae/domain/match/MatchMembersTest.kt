@@ -43,6 +43,13 @@ class MatchMembersTest : DescribeSpec({
 
 			responded.allApplied() shouldBe true
 		}
+
+		it("신청 시 참가자 성별 기준 신청 비용을 paidInitAmount에 스냅샷한다 (남 32 / 여 16)") {
+			val responded: MatchMembers = members().apply(100L).apply(200L)
+
+			responded.find(100L)!!.paidInitAmount shouldBe 32
+			responded.find(200L)!!.paidInitAmount shouldBe 16
+		}
 	}
 
 	describe("withMatchId") {

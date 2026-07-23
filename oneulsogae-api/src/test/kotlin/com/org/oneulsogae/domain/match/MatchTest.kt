@@ -58,6 +58,25 @@ class MatchTest : DescribeSpec({
 		}
 	}
 
+	describe("datingInitAmountFor / datingAcceptAmountFor - 참가자 성별 기준 비용") {
+		it("여성 참가자는 절반(16), 남성 참가자는 기존 금액(32)이다") {
+			val match: Match = proposedMatch()
+
+			match.datingInitAmountFor(maleUserId) shouldBe 32
+			match.datingInitAmountFor(femaleUserId) shouldBe 16
+			match.datingAcceptAmountFor(maleUserId) shouldBe 32
+			match.datingAcceptAmountFor(femaleUserId) shouldBe 16
+		}
+	}
+
+	describe("respond - 신청 시 지불액 스냅샷") {
+		it("APPLY 전이 시 해당 참가자의 성별 기준 신청 비용을 paidInitAmount에 기록한다") {
+			val responded: Match = proposedMatch().respond(femaleUserId)
+
+			responded.members.find(femaleUserId)!!.paidInitAmount shouldBe 16
+		}
+	}
+
 	describe("failureRefunds - 미성사 만료 환불 산정") {
 		it("신청(APPLY)했으나 미성사인 참가자에게만 신청 비용의 절반을 환불한다") {
 			val partiallyAccepted: Match = MatchFixture.create(
@@ -89,6 +108,16 @@ class MatchTest : DescribeSpec({
 
 		it("아무도 신청하지 않았으면 환불 대상이 없다") {
 			proposedMatch().failureRefunds() shouldBe emptyList()
+		}
+
+		it("실차감액(paidInitAmount) 스냅샷이 있으면 헤더 금액이 아닌 실차감액의 절반을 환불한다 (여성 16 지불 → 8 환불)") {
+			val partiallyAccepted: Match = proposedMatch().respond(femaleUserId)
+
+			val refunds: List<MatchRefund> = partiallyAccepted.failureRefunds()
+
+			refunds.size shouldBe 1
+			refunds.first().userId shouldBe femaleUserId
+			refunds.first().amount shouldBe 8
 		}
 	}
 

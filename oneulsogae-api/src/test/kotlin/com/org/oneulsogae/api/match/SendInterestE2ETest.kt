@@ -93,6 +93,26 @@ class SendInterestE2ETest : AbstractIntegrationSupport({
 				alarm.description shouldBe "철수님이 회원님에게 관심을 보냈어요."
 				alarm.link shouldBe "/"
 			}
+
+			it("여성이 신청하면 절반 비용(16)만 차감된다") {
+				val maleUserId = 1005L
+				val femaleUserId = 2005L
+				val match: SoloMatchEntity = persistMatch(maleUserId, femaleUserId)
+				IntegrationUtil.persist(
+					UserDetailEntityFixture.create(userId = femaleUserId, gender = Gender.FEMALE, nickname = "영희", companyName = "오늘소개"),
+				)
+				IntegrationUtil.persist(CoinBalanceEntityFixture.create(userId = femaleUserId, balance = 100))
+
+				post("/matches/v1/${match.id}/interest") {
+					bearer(accessTokenFor(femaleUserId))
+				} expect {
+					status(200)
+					body("data.matchStatus", MatchStatus.PARTIALLY_ACCEPTED.name)
+				}
+
+				// 여성 신청 비용(DATING_INIT=16) 차감 → 잔액 84
+				coinBalanceOf(femaleUserId) shouldBe 84
+			}
 		}
 
 		context("상대가 이미 관심을 보낸 매칭에 관심을 보내면") {

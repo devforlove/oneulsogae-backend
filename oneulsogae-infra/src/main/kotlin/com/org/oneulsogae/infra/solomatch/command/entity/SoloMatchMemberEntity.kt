@@ -54,4 +54,8 @@ class SoloMatchMemberEntity(
 	/** 이 참가자가 매칭(소개)을 확인한 시각. 목록 조회로 처음 확인될 때 채워지며, 미확인이면 null. */
 	@Column(name = "checked_at")
 	var checkedAt: LocalDateTime? = null,
+
+	/** 신청(APPLY) 시 실제 지불한 신청 비용의 스냅샷. 미신청이거나 구행 데이터면 null. (환불 산정에 쓴다) */
+	@Column(name = "paid_init_amount")
+	var paidInitAmount: Int? = null,
 ) : BaseEntity()

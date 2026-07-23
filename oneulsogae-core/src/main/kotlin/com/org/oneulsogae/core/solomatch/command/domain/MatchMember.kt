@@ -1,5 +1,6 @@
 package com.org.oneulsogae.core.solomatch.command.domain
 
+import com.org.oneulsogae.common.coin.CoinUsageType
 import com.org.oneulsogae.common.match.MatchMemberStatus
 import com.org.oneulsogae.common.user.Gender
 import java.time.LocalDateTime
@@ -8,6 +9,7 @@ import java.time.LocalDateTime
  * 매칭(소개)에 참가한 사용자 한 명의 참가 정보 도메인 모델.
  * 참가자를 (matchId, userId) 한 쌍의 행으로 정규화해, 1:1뿐 아니라 N:N(2:2·3:3) 미팅으로 확장한다.
  * [status]가 참가자 상태(WAITING→APPLY→ACTIVE/DEACTIVE)를 담는다. 관심 신청 여부는 [hasApplied]로 본다.
+ * [paidInitAmount]는 신청(APPLY) 시 이 참가자가 실제로 지불한 신청 비용의 스냅샷이다. (환불 산정에 쓰며, 구행 데이터는 null)
  * [deletedAt]이 채워지면 소프트 삭제된(제거된) 참가자다.
  * 영속성은 [com.org.oneulsogae.infra.solomatch.command.entity.SoloMatchMemberEntity]가 담당한다.
  */
@@ -19,6 +21,8 @@ data class MatchMember(
 	val status: MatchMemberStatus = MatchMemberStatus.WAITING,
 	/** 이 참가자가 매칭을 확인한 시각. 미확인이면 null. (전이 로직엔 쓰지 않고, 애그리거트 저장 시 값이 유실되지 않도록 보존만 한다) */
 	val checkedAt: LocalDateTime? = null,
+	/** 신청(APPLY) 시 실제 지불한 신청 비용의 스냅샷. 미신청이거나 구행 데이터면 null. */
+	val paidInitAmount: Int? = null,
 	val deletedAt: LocalDateTime? = null,
 ) {
 
@@ -34,9 +38,9 @@ data class MatchMember(
 	val isDeactivated: Boolean
 		get() = status == MatchMemberStatus.DEACTIVE
 
-	/** 이 참가자가 관심을 신청한(APPLY) 새 모델을 반환한다. */
+	/** 이 참가자가 관심을 신청한(APPLY) 새 모델을 반환한다. 지불액은 이 참가자의 성별 기준 신청 비용([CoinUsageType.DATING_INIT])으로 스냅샷한다. */
 	fun apply(): MatchMember =
-		copy(status = MatchMemberStatus.APPLY)
+		copy(status = MatchMemberStatus.APPLY, paidInitAmount = CoinUsageType.DATING_INIT.coinAmount(gender))
 
 	/** 이 참가자를 활성(ACTIVE)으로 승격한 새 모델을 반환한다. (매치 성사 시) */
 	fun activate(): MatchMember =

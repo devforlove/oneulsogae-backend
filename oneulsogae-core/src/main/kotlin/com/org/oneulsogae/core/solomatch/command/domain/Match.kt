@@ -17,7 +17,8 @@ import java.time.LocalDateTime
  * 재소개 방지는 참가자 조합의 정규화 키([memberKey])에 유니크 제약을 걸어 막는다.
  * [introducedDate]로 "하루에 한 번만 소개" 제약을 판단하고, [expiresAt]까지 응답이 없으면 만료된 소개로 본다.
  * 각 참가자의 상태(WAITING→APPLY→ACTIVE/DEACTIVE)는 [members]가 보관하며, 전원 신청(APPLY)하면 성사([MatchStatus.MATCHED])되어 전원 ACTIVE가 된다.
- * [datingInitAmount]/[datingAcceptAmount]는 소개팅 신청/수락 코인 비용([CoinUsageType])이고, [matchType]은 생성 경로(일일 배치/온보딩/필수 신청)다.
+ * [datingInitAmount]/[datingAcceptAmount]는 매칭 생성 시점의 코인 비용([CoinUsageType]) 스냅샷이나, 남녀 비용이 달라 실제 차감·표시는 참가자 성별 기준([datingInitAmountFor]/[datingAcceptAmountFor])으로 하고
+ * 이 헤더 값은 구행 환불 fallback([failureRefunds])에만 쓴다. [matchType]은 생성 경로(일일 배치/온보딩/필수 신청)다.
  * 영속성은 [com.org.oneulsogae.infra.solomatch.command.entity.SoloMatchEntity](헤더) + [com.org.oneulsogae.infra.solomatch.command.entity.SoloMatchMemberEntity](참가자)가 담당한다.
  */
 data class Match(
@@ -84,13 +85,25 @@ data class Match(
 		members.withMatchId(matchId)
 
 	/**
+	 * 해당 참가자의 성별 기준 소개팅 신청 비용. (남 32 / 여 16)
+	 */
+	fun datingInitAmountFor(userId: Long): Int =
+		CoinUsageType.DATING_INIT.coinAmount(members.find(userId)?.gender)
+
+	/**
+	 * 해당 참가자의 성별 기준 소개팅 수락 비용. (남 32 / 여 16)
+	 */
+	fun datingAcceptAmountFor(userId: Long): Int =
+		CoinUsageType.DATING_ACCEPT.coinAmount(members.find(userId)?.gender)
+
+	/**
 	 * 매칭 실패(미성사 만료/채팅 종료)로 제거될 때, 참가자별 환불 금액 목록을 산정한다.
-	 * 신청(APPLY)했으나 성사되지 못한 참가자에게만 신청 비용([datingInitAmount])의 절반(내림)을 돌려준다. (성사로 ACTIVE가 된 참가자는 제외)
-	 * (소개팅 신청·수락 비용이 동일하다는 전제이며, 0코인 환불은 제외한다)
+	 * 신청(APPLY)했으나 성사되지 못한 참가자에게만 신청 시 실제 지불한 금액([MatchMember.paidInitAmount])의 절반(내림)을 돌려준다. (성사로 ACTIVE가 된 참가자는 제외)
+	 * paidInitAmount가 없으면(구행 데이터) 헤더 [datingInitAmount]의 절반으로 대신한다. (0코인 환불은 제외한다)
 	 */
 	fun failureRefunds(): List<MatchRefund> =
 		members.refundableMembers()
-			.map { member: MatchMember -> MatchRefund(userId = member.userId, amount = datingInitAmount / 2) }
+			.map { member: MatchMember -> MatchRefund(userId = member.userId, amount = (member.paidInitAmount ?: datingInitAmount) / 2) }
 			.filter { refund: MatchRefund -> refund.amount > 0 }
 
 	/** 참가자 조합을 식별하는 정규화 키. (재소개 방지 유니크 키) */
