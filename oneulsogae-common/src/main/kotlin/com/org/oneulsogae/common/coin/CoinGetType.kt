@@ -17,4 +17,7 @@ enum class CoinGetType(val description: String) {
 
 	/** 신규 가입(온보딩 완료) 축하로 1회 지급하는 코인. */
 	SIGNUP("가입 축하"),
+
+	/** 추천 코드 입력으로 추천인·신규 유저 양쪽에 지급하는 코인. */
+	REFERRAL("추천 보상"),
 }

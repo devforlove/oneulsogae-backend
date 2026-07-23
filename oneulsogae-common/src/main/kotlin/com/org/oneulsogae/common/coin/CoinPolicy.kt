@@ -8,4 +8,7 @@ object CoinPolicy {
 
 	/** 신규 가입(온보딩 완료) 축하로 1회 지급하는 코인 수량. */
 	const val SIGNUP_REWARD_COIN_AMOUNT: Int = 100
+
+	/** 추천 코드 보상으로 추천인·신규 유저 각각에게 지급하는 코인 수량. */
+	const val REFERRAL_REWARD_COIN_AMOUNT: Int = 50
 }
