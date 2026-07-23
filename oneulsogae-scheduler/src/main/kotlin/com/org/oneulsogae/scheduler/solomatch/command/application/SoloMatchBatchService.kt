@@ -22,7 +22,7 @@ import java.time.LocalDateTime
 import kotlin.random.Random
 
 /**
- * [RunSoloMatchBatchUseCase] 구현. 매일 정오에 도는 일일 매칭 배치.
+ * [RunSoloMatchBatchUseCase] 구현. 매일 새벽에 도는 일일 매칭 배치.
  *
  * "2주 내 활성 + 오늘 미매칭 + 성사 상태 아님" 유저를 한 번 적재해 [MatchPool]을 만들고,
  * 스코어링 프로필([GetMatchScoringProfileDao])을 1회 적재한다. 대상마다 가용 반대 성별 후보 전체를
