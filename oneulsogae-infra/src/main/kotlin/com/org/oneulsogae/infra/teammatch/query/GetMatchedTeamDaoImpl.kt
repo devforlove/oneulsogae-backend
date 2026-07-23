@@ -1,8 +1,10 @@
 package com.org.oneulsogae.infra.teammatch.query
 
+import com.org.oneulsogae.common.coin.CoinUsageType
 import com.org.oneulsogae.common.match.MatchStatus
 import com.org.oneulsogae.common.match.MatchedTeamStatus
 import com.org.oneulsogae.common.match.TeamStatus
+import com.org.oneulsogae.common.user.Gender
 import com.org.oneulsogae.core.teammatch.query.dao.GetMatchedTeamDao
 import com.org.oneulsogae.core.teammatch.query.dto.RecommendedTeam
 import com.org.oneulsogae.core.teammatch.query.dto.RecommendedTeamMember
@@ -31,7 +33,7 @@ class GetMatchedTeamDaoImpl(
 	private val recommendedTeamMemberLoader: RecommendedTeamMemberLoader,
 ) : GetMatchedTeamDao {
 
-	override fun findInProgressByTeamId(myTeamId: Long, now: LocalDateTime): List<RecommendedTeam> {
+	override fun findInProgressByTeamId(myTeamId: Long, now: LocalDateTime, viewerGender: Gender?): List<RecommendedTeam> {
 		val teams: List<RecommendedTeam> = findInProgressOpponentTeams(myTeamId, now)
 		if (teams.isEmpty()) return emptyList()
 
@@ -42,7 +44,13 @@ class GetMatchedTeamDaoImpl(
 		return teams
 			.map { team: RecommendedTeam ->
 				val teamMembers: TeamMembers? = membersByTeamId[team.teamId]
-				team.copy(members = teamMembers?.members.orEmpty(), lastLoginAt = teamMembers?.lastLoginAt)
+				team.copy(
+					members = teamMembers?.members.orEmpty(),
+					lastLoginAt = teamMembers?.lastLoginAt,
+					// datingInitAmount/datingAcceptAmount는 team_matches 헤더 스냅샷(생성 시점, 남성 기본값) 대신 뷰어 성별 기준으로 다시 계산해 덮어쓴다. (남녀 비용 분리)
+					datingInitAmount = CoinUsageType.MEETING_INIT.coinAmount(viewerGender),
+					datingAcceptAmount = CoinUsageType.MEETING_ACCEPT.coinAmount(viewerGender),
+				)
 			}
 			.sortedWith(
 				compareBy<RecommendedTeam> { team: RecommendedTeam -> team.teamMatchStatus?.listPriority ?: Int.MAX_VALUE }

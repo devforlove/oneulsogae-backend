@@ -1,5 +1,6 @@
 package com.org.oneulsogae.core.teammatch.query.dao
 
+import com.org.oneulsogae.common.user.Gender
 import com.org.oneulsogae.core.teammatch.query.dto.RecommendedTeam
 import java.time.LocalDateTime
 
@@ -12,6 +13,7 @@ interface GetMatchedTeamDao {
 	/**
 	 * 내 팀([myTeamId])과 진행 중으로 매칭된 상대 팀들을 팀원 프로필과 함께 최신순으로 반환한다.
 	 * 진행 중 기준: team_match가 종료(CLOSED)되지 않고 [now] 기준 미만료이며, 상대 팀 참가가 DEACTIVE가 아니고 상대 팀 자체가 ACTIVE인 경우. (없으면 빈 리스트)
+	 * [viewerGender]는 조회 사용자(뷰어) 성별로, 신청/수락 비용 표시를 남녀별로 계산하는 데 쓴다.
 	 */
-	fun findInProgressByTeamId(myTeamId: Long, now: LocalDateTime): List<RecommendedTeam>
+	fun findInProgressByTeamId(myTeamId: Long, now: LocalDateTime, viewerGender: Gender?): List<RecommendedTeam>
 }

@@ -47,14 +47,16 @@ class GetMeetingTabService(
 	}
 
 	// 결성(ACTIVE)/해체중(DISBANDED) 팀이 있을 때만 그 팀과 진행 중으로 매칭된 상대 팀을 보여준다. (DISBANDED는 한 명이 나갔어도 매칭이 유지되므로 매칭 경로) 팀이 없거나 초대중(INVITING)이면 매칭 전이라 추천 팀을 보여준다.
-	private fun teamCardsFor(userId: Long, myTeam: MyTeam?): List<RecommendedTeam> =
-		if (myTeam?.status == TeamStatus.ACTIVE || myTeam?.status == TeamStatus.DISBANDED) {
-			getMatchedTeamDao.findInProgressByTeamId(myTeam.teamId, timeGenerator.now())
+	// 뷰어 성별은 matchuser 도메인 in-port로 읽어(match_user 미적재면 null → CoinUsageType이 남성 기본값으로 fallback) 두 경로 모두에 전달한다. (신청/수락 비용 표시를 남녀별로 계산)
+	private fun teamCardsFor(userId: Long, myTeam: MyTeam?): List<RecommendedTeam> {
+		val gender: Gender? = viewerGender(userId)
+		return if (myTeam?.status == TeamStatus.ACTIVE || myTeam?.status == TeamStatus.DISBANDED) {
+			getMatchedTeamDao.findInProgressByTeamId(myTeam.teamId, timeGenerator.now(), gender)
 		} else {
 			// 추천은 회사 인증 완료 시점에 미리 적재되므로, 여기서는 적재된 추천을 읽기만 한다. (없으면 빈 리스트)
-			// 뷰어 성별은 matchuser 도메인 in-port로 읽는다(match_user 미적재면 null → CoinUsageType이 남성 기본값으로 fallback).
-			getRecommendedTeamDao.findByUserId(userId, viewerGender(userId))
+			getRecommendedTeamDao.findByUserId(userId, gender)
 		}
+	}
 
 	private fun viewerGender(userId: Long): Gender? =
 		getMatchUserUseCase.findByUserId(userId)?.gender

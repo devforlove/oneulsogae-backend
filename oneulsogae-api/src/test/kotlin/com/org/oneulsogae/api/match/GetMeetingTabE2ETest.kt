@@ -148,6 +148,29 @@ class GetMeetingTabE2ETest : AbstractIntegrationSupport({
 			}
 		}
 
+		context("여성 뷰어에게 추천 팀이 적재되어 있으면") {
+			it("신청/수락 비용이 절반(20/20)으로 내려온다") {
+				val soloUserId = 5009L
+				persistMatchUser(soloUserId, Gender.FEMALE)
+				val teamId: Long = persistTeam(TeamStatus.ACTIVE, Gender.MALE)
+				persistMember(teamId, 5901L, TeamMemberStatus.ACTIVE)
+				persistMatchUser(5901L, Gender.MALE)
+				IntegrationUtil.persist(UserDetailEntityFixture.create(userId = 5901L, gender = Gender.MALE))
+				IntegrationUtil.persist(
+					RecommendedTeamEntityFixture.create(userId = soloUserId, teamId = teamId, recommendedDate = LocalDate.of(2026, 6, 22)),
+				)
+
+				get("/team-matches/v1/meeting-tab") {
+					bearer(accessTokenFor(soloUserId))
+				} expect {
+					status(200)
+					// 뷰어(여성) 성별 기준(DAO까지 gender 배선 검증)
+					body("data.recommendedTeams[0].datingInitAmount", 20)
+					body("data.recommendedTeams[0].datingAcceptAmount", 20)
+				}
+			}
+		}
+
 		context("초대를 2건 받은 유저") {
 			it("receivedInvitationCount=2를 반환한다 (200)") {
 				val me = 5002L
@@ -252,7 +275,7 @@ class GetMeetingTabE2ETest : AbstractIntegrationSupport({
 				persistMatchUser(5402L, Gender.FEMALE)
 				IntegrationUtil.persist(UserDetailEntityFixture.create(userId = 5401L, gender = Gender.FEMALE))
 				IntegrationUtil.persist(UserDetailEntityFixture.create(userId = 5402L, gender = Gender.FEMALE))
-				// 비용은 team_matches(DB)에서 내려오므로, 상수 기본값(40)과 다른 값으로 저장해 DB 조회임을 검증한다.
+				// 헤더 저장값(DB)은 뷰어 성별 비용 표시에 쓰이지 않음을 검증하기 위해 상수 기본값(40)과 다른 값으로 저장한다.
 				// 상대 팀만 신청(APPLY)한 PARTIALLY_ACCEPTED 상태 → 내 팀 관심 false, 상대 팀 관심 true.
 				val liveMatch: Long = persistTeamMatch(
 					"$myTeamId-$oppTeamId",
@@ -279,9 +302,9 @@ class GetMeetingTabE2ETest : AbstractIntegrationSupport({
 					body("data.recommendedTeams[0].members", hasSize<Any>(2))
 					// 매칭 상대 팀 경로에서도 구성원 최근 로그인이 채워진다.
 					body("data.recommendedTeams[0].lastLoginAt", notNullValue())
-					// 비용은 team_matches(DB)에서 조회한 값(55/65)이 그대로 내려온다.
-					body("data.recommendedTeams[0].datingInitAmount", 55)
-					body("data.recommendedTeams[0].datingAcceptAmount", 65)
+					// 비용은 헤더 저장값(55/65)이 아니라 뷰어(me, 남성) 성별 기준으로 재계산된 값(40/40)이 내려온다.
+					body("data.recommendedTeams[0].datingInitAmount", 40)
+					body("data.recommendedTeams[0].datingAcceptAmount", 40)
 					// 매칭된 상대 팀이라 관심 보내기 호출용 teamMatchId가 실린다.
 					body("data.recommendedTeams[0].teamMatchId", liveMatch.toInt())
 					// 헤더 상태 + 양 팀 관심 여부(상대만 APPLY → 내 팀 false, 상대 true)
@@ -292,6 +315,43 @@ class GetMeetingTabE2ETest : AbstractIntegrationSupport({
 					body("data.recommendedTeams[0].hasPartnerInterest", true)
 					body("data.myTeam.teamId", myTeamId.toInt())
 					body("data.receivedInvitationCount", 0)
+				}
+			}
+		}
+
+		context("여성 뷰어가 진행 중 매칭된 상대 팀을 조회하면") {
+			it("신청/수락 비용이 절반(20/20)으로 내려온다") {
+				val me = 5008L
+				val friend = 5308L
+				persistMatchUser(me, Gender.FEMALE)
+				persistMatchUser(friend, Gender.FEMALE)
+				val myTeamId: Long = persistTeam(TeamStatus.ACTIVE, Gender.FEMALE)
+				persistMember(myTeamId, me, TeamMemberStatus.ACTIVE)
+				persistMember(myTeamId, friend, TeamMemberStatus.ACTIVE)
+
+				val oppTeamId: Long = persistTeam(TeamStatus.ACTIVE, Gender.MALE)
+				persistMember(oppTeamId, 5801L, TeamMemberStatus.ACTIVE)
+				persistMember(oppTeamId, 5802L, TeamMemberStatus.ACTIVE)
+				persistMatchUser(5801L, Gender.MALE)
+				persistMatchUser(5802L, Gender.MALE)
+				IntegrationUtil.persist(UserDetailEntityFixture.create(userId = 5801L, gender = Gender.MALE))
+				IntegrationUtil.persist(UserDetailEntityFixture.create(userId = 5802L, gender = Gender.MALE))
+				val liveMatch: Long = persistTeamMatch(
+					"$myTeamId-$oppTeamId",
+					expiresAt = LocalDateTime.of(2999, 1, 1, 0, 0),
+					status = MatchStatus.PROPOSED,
+				)
+				persistMatchedTeam(liveMatch, myTeamId, MatchedTeamStatus.WAITING)
+				persistMatchedTeam(liveMatch, oppTeamId, MatchedTeamStatus.WAITING)
+
+				get("/team-matches/v1/meeting-tab") {
+					bearer(accessTokenFor(me))
+				} expect {
+					status(200)
+					body("data.recommendedTeams[0].teamId", oppTeamId.toInt())
+					// 헤더 저장값(40/40)이 아니라 뷰어(me, 여성) 성별 기준(DAO까지 gender 배선 검증)
+					body("data.recommendedTeams[0].datingInitAmount", 20)
+					body("data.recommendedTeams[0].datingAcceptAmount", 20)
 				}
 			}
 		}
