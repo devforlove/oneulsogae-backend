@@ -88,6 +88,9 @@ app:
     # 비우면 기본 자격증명 체인(IAM 역할·환경변수 등)을 쓴다. 운영에서는 IAM 역할 권장.
     access-key: ${S3_ACCESS_KEY:}
     secret-key: ${S3_SECRET_KEY:}
+  # 공개 이미지 프록시(/images/{key}) 절대 URL의 base. 이미지 템플릿(image_templates)에 저장되는 URL 앞에 붙는다.
+  image-proxy:
+    public-base-url: ${IMAGE_PROXY_PUBLIC_BASE_URL:http://localhost:8080}
   # SES(이메일 인증번호 발송). prod 프로파일에서만 SES 어댑터가 활성화된다(local·test는 로깅 스텁).
   ses:
     region: ${SES_REGION:ap-northeast-2}

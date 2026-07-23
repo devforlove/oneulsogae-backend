@@ -3,6 +3,8 @@ package com.org.oneulsogae.common.config
 import com.org.oneulsogae.admin.companyverification.query.service.port.out.CompanyVerificationImageUrlPort
 import com.org.oneulsogae.admin.gathering.command.application.port.out.UploadGatheringImagePort
 import com.org.oneulsogae.admin.memberverification.query.service.port.out.MemberVerificationImageUrlPort
+import com.org.oneulsogae.admin.popup.command.application.port.out.UploadPopupImagePort
+import com.org.oneulsogae.admin.popup.query.service.port.out.PopupImageUrlPort
 import com.org.oneulsogae.admin.gathering.query.service.port.out.GatheringImageUrlPort as AdminGatheringImageUrlPort
 import com.org.oneulsogae.core.gathering.command.application.port.out.FileStoragePort as GatheringFileStoragePort
 import com.org.oneulsogae.core.gathering.query.service.port.out.GatheringImageUrlPort as UserGatheringImageUrlPort
@@ -68,4 +70,14 @@ class TestFileStorageConfig {
 	@Primary
 	fun fakeUserGatheringImageUrlPort(): UserGatheringImageUrlPort =
 		UserGatheringImageUrlPort { imageKey: String -> "https://presigned.test/$imageKey" }
+
+	@Bean
+	@Primary
+	fun fakeUploadPopupImagePort(): UploadPopupImagePort =
+		UploadPopupImagePort { key: String, _: ByteArray, _: String -> key }
+
+	@Bean
+	@Primary
+	fun fakePopupImageUrlPort(): PopupImageUrlPort =
+		PopupImageUrlPort { imageKey: String -> "https://presigned.test/$imageKey" }
 }

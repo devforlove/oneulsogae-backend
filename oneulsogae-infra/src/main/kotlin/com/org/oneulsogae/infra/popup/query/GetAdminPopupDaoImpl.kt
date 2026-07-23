@@ -4,6 +4,7 @@ import com.org.oneulsogae.admin.popup.query.dao.GetAdminPopupDao
 import com.org.oneulsogae.admin.popup.query.dto.AdminPopupDetailView
 import com.org.oneulsogae.admin.popup.query.dto.AdminPopupView
 import com.org.oneulsogae.admin.popup.query.dto.AdminPopupViews
+import com.org.oneulsogae.infra.image.entity.QImageTemplateEntity
 import com.org.oneulsogae.infra.popup.command.entity.QPopupEntity
 import com.querydsl.core.types.Projections
 import com.querydsl.jpa.impl.JPAQueryFactory
@@ -12,6 +13,7 @@ import org.springframework.stereotype.Component
 /**
  * [GetAdminPopupDao]의 QueryDSL 구현. (조회 전용)
  * 전역 팝업(user_id is null)만 노출 순서(display_order asc, 동률이면 id desc)로 offset/limit 페이징해 read model에 직접 투영한다.
+ * 이미지는 image_code 대신 image_templates를 left join해 미리보기 URL로 해석한다. (이미지가 없으면 null)
  * (soft delete 행은 @SQLRestriction으로 모든 쿼리에서 제외. 팝업은 어드민이 관리하는 소량 데이터라 offset 스캔로 충분하다)
  * 저장 out-port는 [com.org.oneulsogae.infra.popup.command.adapter.PopupAdapter]가 따로 구현한다.
  */
@@ -22,6 +24,7 @@ class GetAdminPopupDaoImpl(
 
 	override fun findPage(offset: Long, limit: Int): AdminPopupViews {
 		val popup: QPopupEntity = QPopupEntity.popupEntity
+		val template: QImageTemplateEntity = QImageTemplateEntity.imageTemplateEntity
 		val views: List<AdminPopupView> = queryFactory
 			.select(
 				Projections.constructor(
@@ -30,12 +33,14 @@ class GetAdminPopupDaoImpl(
 					popup.title,
 					popup.displayOrder,
 					popup.popUpType,
+					template.imageUrl,
 					popup.exposedFrom,
 					popup.exposedTo,
 					popup.createdAt,
 				),
 			)
 			.from(popup)
+			.leftJoin(template).on(template.code.eq(popup.imageCode))
 			.where(popup.userId.isNull)
 			.orderBy(popup.displayOrder.asc(), popup.id.desc())
 			.offset(offset)
@@ -55,6 +60,7 @@ class GetAdminPopupDaoImpl(
 
 	override fun findDetailById(id: Long): AdminPopupDetailView? {
 		val popup: QPopupEntity = QPopupEntity.popupEntity
+		val template: QImageTemplateEntity = QImageTemplateEntity.imageTemplateEntity
 		return queryFactory
 			.select(
 				Projections.constructor(
@@ -63,7 +69,7 @@ class GetAdminPopupDaoImpl(
 					popup.title,
 					popup.description,
 					popup.displayOrder,
-					popup.imageCode,
+					template.imageUrl,
 					popup.linkUrl,
 					popup.buttonText,
 					popup.popUpType,
@@ -73,6 +79,7 @@ class GetAdminPopupDaoImpl(
 				),
 			)
 			.from(popup)
+			.leftJoin(template).on(template.code.eq(popup.imageCode))
 			.where(popup.id.eq(id), popup.userId.isNull)
 			.fetchOne()
 	}

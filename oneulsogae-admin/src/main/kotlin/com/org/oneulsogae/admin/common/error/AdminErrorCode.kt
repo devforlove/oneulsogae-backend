@@ -54,4 +54,6 @@ enum class AdminErrorCode(
 	POPUP_NOT_FOUND("POPUP-001", "팝업을 찾을 수 없습니다.", HttpStatus.NOT_FOUND),
 	POPUP_INVALID_EXPOSURE_PERIOD("POPUP-002", "노출 종료 시각은 노출 시작 시각 이후여야 합니다.", HttpStatus.BAD_REQUEST),
 	POPUP_INVALID_TYPE("POPUP-003", "1회 조회 후 제거되는 유형은 전역 팝업으로 만들 수 없습니다.", HttpStatus.BAD_REQUEST),
+	POPUP_INVALID_IMAGE_TYPE("POPUP-004", "팝업 이미지는 비어 있지 않은 JPEG 또는 PNG 파일이어야 합니다.", HttpStatus.BAD_REQUEST),
+	POPUP_IMAGE_TOO_LARGE("POPUP-005", "팝업 이미지는 10MB 이하여야 합니다.", HttpStatus.BAD_REQUEST),
 }
