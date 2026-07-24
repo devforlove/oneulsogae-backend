@@ -34,7 +34,8 @@ class GetMatchesService(
 
 	@Transactional(readOnly = true)
 	override fun getMatches(userId: Long): MyMatches {
-		// 상대 프로필 표시 조인에 필요한 요청자 성별은 user 도메인 in-port로 읽는다. (표시 경로는 user_details에 의존)
+		// 요청자 성별은 user 도메인 in-port로 읽는다. (표시 경로는 user_details에 의존)
+		// 상대 프로필 표시 조인 + 신청/수락 비용(datingInitAmount/datingAcceptAmount)의 남녀별 계산에 쓴다 — DAO가 이 성별 기준 상수로 프로젝션에 채운다.
 		val gender: Gender = getUserWithDetailUseCase.getByUserId(userId).getGender()
 		val now: LocalDateTime = timeGenerator.now()
 		val matches: List<MatchWithPartner> = getMatchWithPartnerDao.findAllWithPartnerByUserId(userId, gender, now)
