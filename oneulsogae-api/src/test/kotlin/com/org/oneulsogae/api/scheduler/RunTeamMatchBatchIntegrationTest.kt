@@ -256,8 +256,6 @@ private fun persistTeamMatch(teamAId: Long, teamBId: Long, status: MatchStatus, 
 			expiresAt = LocalDateTime.now().plusDays(1),
 			status = status,
 			matchType = TeamMatchType.DAILY,
-			dateInitAmount = 0,
-			dateAcceptAmount = 0,
 		),
 	)
 	// 성사(MATCHED) 매칭의 참가 팀은 ACTIVE, 그 외(PROPOSED 등)는 WAITING.
@@ -276,8 +274,6 @@ private fun persistCancelledPastTeamMatch(teamAId: Long, teamBId: Long) {
 			expiresAt = LocalDateTime.now().plusDays(1),
 			status = MatchStatus.CLOSED,
 			matchType = TeamMatchType.DAILY,
-			dateInitAmount = 0,
-			dateAcceptAmount = 0,
 		).apply { softDelete() },
 	)
 	IntegrationUtil.persist(MatchedTeamEntity(teamMatchId = header.id!!, teamId = teamAId, status = MatchedTeamStatus.DEACTIVE).apply { softDelete() })

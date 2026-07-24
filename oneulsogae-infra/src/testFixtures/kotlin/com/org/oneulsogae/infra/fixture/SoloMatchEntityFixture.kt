@@ -1,6 +1,5 @@
 package com.org.oneulsogae.infra.fixture
 
-import com.org.oneulsogae.common.coin.CoinUsageType
 import com.org.oneulsogae.common.match.MatchStatus
 import com.org.oneulsogae.common.match.SoloMatchType
 import com.org.oneulsogae.infra.solomatch.command.entity.SoloMatchEntity
@@ -20,8 +19,6 @@ object SoloMatchEntityFixture {
 		expiresAt: LocalDateTime = LocalDateTime.now().plusDays(1),
 		matchType: SoloMatchType = SoloMatchType.DAILY,
 		status: MatchStatus = MatchStatus.PROPOSED,
-		dateInitAmount: Int = CoinUsageType.DATING_INIT.coinAmount(null),
-		dateAcceptAmount: Int = CoinUsageType.DATING_ACCEPT.coinAmount(null),
 	): SoloMatchEntity =
 		SoloMatchEntity(
 			memberKey = memberKey,
@@ -29,7 +26,5 @@ object SoloMatchEntityFixture {
 			expiresAt = expiresAt,
 			status = status,
 			matchType = matchType,
-			dateInitAmount = dateInitAmount,
-			dateAcceptAmount = dateAcceptAmount,
 		)
 }

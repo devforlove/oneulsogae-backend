@@ -175,8 +175,6 @@ class TeamMatchPromotionOnAcceptE2ETest : AbstractIntegrationSupport({
 						expiresAt = LocalDateTime.of(2026, 1, 1, 0, 0),
 						status = MatchStatus.CLOSED,
 						matchType = TeamMatchType.RECOMMENDED,
-						dateInitAmount = 0,
-						dateAcceptAmount = 0,
 					).also { it.softDelete(LocalDateTime.of(2026, 1, 1, 0, 0)) },
 				)
 

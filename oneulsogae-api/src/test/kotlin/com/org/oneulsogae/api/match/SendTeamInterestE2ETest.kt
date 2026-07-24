@@ -97,8 +97,6 @@ class SendTeamInterestE2ETest : AbstractIntegrationSupport({
 				expiresAt = LocalDateTime.of(2026, 6, 25, 12, 0),
 				status = headerStatus,
 				matchType = TeamMatchType.RECOMMENDED,
-				dateInitAmount = 40,
-				dateAcceptAmount = 40,
 			),
 		)
 		val teamMatchId: Long = header.id!!

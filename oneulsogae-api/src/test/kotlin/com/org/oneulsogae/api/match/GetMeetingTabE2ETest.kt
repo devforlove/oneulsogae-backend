@@ -64,8 +64,6 @@ class GetMeetingTabE2ETest : AbstractIntegrationSupport({
 		memberKey: String,
 		expiresAt: LocalDateTime,
 		status: MatchStatus = MatchStatus.PROPOSED,
-		dateInitAmount: Int = 40,
-		dateAcceptAmount: Int = 40,
 	): Long =
 		IntegrationUtil.persist(
 			TeamMatchEntity(
@@ -74,8 +72,6 @@ class GetMeetingTabE2ETest : AbstractIntegrationSupport({
 				expiresAt = expiresAt,
 				status = status,
 				matchType = TeamMatchType.RECOMMENDED,
-				dateInitAmount = dateInitAmount,
-				dateAcceptAmount = dateAcceptAmount,
 			),
 		).id!!
 
@@ -275,14 +271,11 @@ class GetMeetingTabE2ETest : AbstractIntegrationSupport({
 				persistMatchUser(5402L, Gender.FEMALE)
 				IntegrationUtil.persist(UserDetailEntityFixture.create(userId = 5401L, gender = Gender.FEMALE))
 				IntegrationUtil.persist(UserDetailEntityFixture.create(userId = 5402L, gender = Gender.FEMALE))
-				// 헤더 저장값(DB)은 뷰어 성별 비용 표시에 쓰이지 않음을 검증하기 위해 상수 기본값(40)과 다른 값으로 저장한다.
 				// 상대 팀만 신청(APPLY)한 PARTIALLY_ACCEPTED 상태 → 내 팀 관심 false, 상대 팀 관심 true.
 				val liveMatch: Long = persistTeamMatch(
 					"$myTeamId-$oppTeamId",
 					expiresAt = LocalDateTime.of(2999, 1, 1, 0, 0),
 					status = MatchStatus.PARTIALLY_ACCEPTED,
-					dateInitAmount = 55,
-					dateAcceptAmount = 65,
 				)
 				persistMatchedTeam(liveMatch, myTeamId, MatchedTeamStatus.WAITING)
 				persistMatchedTeam(liveMatch, oppTeamId, MatchedTeamStatus.APPLY)
@@ -302,7 +295,7 @@ class GetMeetingTabE2ETest : AbstractIntegrationSupport({
 					body("data.recommendedTeams[0].members", hasSize<Any>(2))
 					// 매칭 상대 팀 경로에서도 구성원 최근 로그인이 채워진다.
 					body("data.recommendedTeams[0].lastLoginAt", notNullValue())
-					// 비용은 헤더 저장값(55/65)이 아니라 뷰어(me, 남성) 성별 기준으로 재계산된 값(40/40)이 내려온다.
+					// 비용은 뷰어(me, 남성) 성별 기준으로 계산된 값(40/40)이 내려온다.
 					body("data.recommendedTeams[0].datingInitAmount", 40)
 					body("data.recommendedTeams[0].datingAcceptAmount", 40)
 					// 매칭된 상대 팀이라 관심 보내기 호출용 teamMatchId가 실린다.
@@ -349,7 +342,7 @@ class GetMeetingTabE2ETest : AbstractIntegrationSupport({
 				} expect {
 					status(200)
 					body("data.recommendedTeams[0].teamId", oppTeamId.toInt())
-					// 헤더 저장값(40/40)이 아니라 뷰어(me, 여성) 성별 기준(DAO까지 gender 배선 검증)
+					// 뷰어(me, 여성) 성별 기준(DAO까지 gender 배선 검증)
 					body("data.recommendedTeams[0].datingInitAmount", 20)
 					body("data.recommendedTeams[0].datingAcceptAmount", 20)
 				}

@@ -65,8 +65,6 @@ class EndTeamMatchE2ETest : AbstractIntegrationSupport({
 				expiresAt = LocalDateTime.of(2126, 6, 27, 0, 0),
 				status = MatchStatus.MATCHED,
 				matchType = TeamMatchType.RECOMMENDED,
-				dateInitAmount = 40,
-				dateAcceptAmount = 40,
 			),
 		)
 		val teamMatchId: Long = teamMatch.id!!
@@ -165,8 +163,6 @@ class EndTeamMatchE2ETest : AbstractIntegrationSupport({
 						expiresAt = LocalDateTime.of(2026, 6, 28, 0, 0),
 						status = MatchStatus.PARTIALLY_ACCEPTED,
 						matchType = TeamMatchType.RECOMMENDED,
-						dateInitAmount = 40,
-						dateAcceptAmount = 40,
 					),
 				)
 				val teamMatchId: Long = teamMatch.id!!

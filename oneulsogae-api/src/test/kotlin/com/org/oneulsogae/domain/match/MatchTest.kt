@@ -79,11 +79,9 @@ class MatchTest : DescribeSpec({
 
 	describe("failureRefunds - 미성사 만료 환불 산정") {
 		it("신청(APPLY)했으나 미성사인 참가자에게만 신청 비용의 절반을 환불한다") {
+			// 남성 신청 비용(32) 스냅샷을 실제로 채우기 위해 apply()를 거쳐 APPLY 전이한다. (직접 status만 지정하면 paidInitAmount가 비어 환불 대상에서 제외된다)
 			val partiallyAccepted: Match = MatchFixture.create(
-				members = MatchFixture.membersOf(
-					maleUserId = maleUserId, femaleUserId = femaleUserId,
-					maleStatus = MatchMemberStatus.APPLY, femaleStatus = MatchMemberStatus.WAITING,
-				),
+				members = MatchFixture.membersOf(maleUserId = maleUserId, femaleUserId = femaleUserId).apply(maleUserId),
 				status = MatchStatus.PARTIALLY_ACCEPTED,
 			)
 
@@ -91,7 +89,7 @@ class MatchTest : DescribeSpec({
 
 			refunds.size shouldBe 1
 			refunds.first().userId shouldBe maleUserId
-			refunds.first().amount shouldBe partiallyAccepted.datingInitAmount / 2
+			refunds.first().amount shouldBe 16
 		}
 
 		it("성사(MATCHED)되어 전원 ACTIVE면 환불 대상이 없다") {

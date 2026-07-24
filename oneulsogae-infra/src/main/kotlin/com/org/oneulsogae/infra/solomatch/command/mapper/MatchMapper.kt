@@ -17,8 +17,6 @@ fun SoloMatchEntity.toDomain(members: MatchMembers): Match =
 		expiresAt = expiresAt,
 		matchType = matchType,
 		status = status,
-		datingInitAmount = dateInitAmount,
-		datingAcceptAmount = dateAcceptAmount,
 		deletedAt = deletedAt,
 	)
 
@@ -35,8 +33,6 @@ fun Match.toEntity(): SoloMatchEntity =
 		expiresAt = expiresAt,
 		matchType = matchType,
 		status = status,
-		dateInitAmount = datingInitAmount,
-		dateAcceptAmount = datingAcceptAmount,
 	).also {
 		if (id != 0L) it.id = id
 		deletedAt?.let { at: LocalDateTime -> it.softDelete(at) }

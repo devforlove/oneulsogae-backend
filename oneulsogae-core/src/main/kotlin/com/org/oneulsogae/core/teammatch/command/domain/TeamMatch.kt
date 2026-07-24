@@ -1,6 +1,5 @@
 package com.org.oneulsogae.core.teammatch.command.domain
 
-import com.org.oneulsogae.common.coin.CoinUsageType
 import com.org.oneulsogae.common.match.MatchStatus
 import com.org.oneulsogae.common.match.TeamMatchType
 import com.org.oneulsogae.core.common.error.BusinessException
@@ -23,8 +22,6 @@ data class TeamMatch(
 	val expiresAt: LocalDateTime,
 	val matchType: TeamMatchType,
 	val status: MatchStatus = MatchStatus.PROPOSED,
-	val dateInitAmount: Int = CoinUsageType.MEETING_INIT.coinAmount(null),
-	val dateAcceptAmount: Int = CoinUsageType.MEETING_ACCEPT.coinAmount(null),
 	val deletedAt: LocalDateTime? = null,
 ) {
 
@@ -127,11 +124,11 @@ data class TeamMatch(
 	/**
 	 * 미성사(만료) 제거 시, 신청한 팀의 지불자별 환불 금액 목록을 산정한다. (1:1 [Match.failureRefunds] 미러)
 	 * 신청(APPLY)했으나 성사되지 못한 팀의 [MatchedTeam.applicantUserId]에게만 신청 시 실제 지불한 금액([MatchedTeam.paidInitAmount])의 절반(내림)을 돌려준다. (성사로 ACTIVE가 된 팀은 제외)
-	 * paidInitAmount가 없으면(구행 데이터) 헤더 [dateInitAmount]의 절반으로 대신한다. (0코인 환불은 제외한다)
+	 * 환불 대상(APPLY)은 신청 시 지불액이 항상 스냅샷되어 있다. (방어적 ?: 0, 0코인 환불은 제외)
 	 */
 	fun failureRefunds(): List<MatchRefund> =
 		matchedTeams.refundableTeams()
-			.mapNotNull { team: MatchedTeam -> team.applicantUserId?.let { userId: Long -> MatchRefund(userId = userId, amount = (team.paidInitAmount ?: dateInitAmount) / 2) } }
+			.mapNotNull { team: MatchedTeam -> team.applicantUserId?.let { userId: Long -> MatchRefund(userId = userId, amount = (team.paidInitAmount ?: 0) / 2) } }
 			.filter { refund: MatchRefund -> refund.amount > 0 }
 
 	private fun withRecomputedStatus(): TeamMatch =
@@ -155,8 +152,7 @@ data class TeamMatch(
 
 		/**
 		 * 두 팀([teamAId], [teamBId])을 참가 팀으로 하는 신규 팀 매칭을 생성한다. (status PROPOSED, 양쪽 팀 WAITING)
-		 * 소개 일자(introducedDate)는 [now]의 날짜, 만료 시각(expiresAt)은 [now] + [EXPIRATION]으로 설정한다.
-		 * 팀 매칭 신청/수락 코인 비용은 [CoinUsageType]에서 가져오고, 생성 경로는 [matchType]으로 기록한다.
+		 * 소개 일자(introducedDate)는 [now]의 날짜, 만료 시각(expiresAt)은 [now] + [EXPIRATION]으로 설정한다. 생성 경로는 [matchType]으로 기록한다.
 		 */
 		fun propose(teamAId: Long, teamBId: Long, matchType: TeamMatchType, now: LocalDateTime): TeamMatch =
 			TeamMatch(

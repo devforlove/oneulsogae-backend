@@ -58,14 +58,6 @@ class TeamMatchEntity(
 	@Enumerated(EnumType.STRING)
 	@Column(name = "match_type", nullable = false, columnDefinition = "varchar(50)")
 	val matchType: TeamMatchType,
-
-	/** 팀 매칭 신청에 드는 코인 비용. */
-	@Column(name = "date_init_amount", nullable = false)
-	val dateInitAmount: Int,
-
-	/** 팀 매칭 수락에 드는 코인 비용. */
-	@Column(name = "date_accept_amount", nullable = false)
-	val dateAcceptAmount: Int,
 ) : BaseEntity() {
 
 	/**

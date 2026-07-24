@@ -72,8 +72,6 @@ class DisbandTeamMatchTeardownE2ETest : AbstractIntegrationSupport({
 				expiresAt = LocalDateTime.of(2999, 1, 1, 0, 0),
 				status = status,
 				matchType = TeamMatchType.RECOMMENDED,
-				dateInitAmount = 40,
-				dateAcceptAmount = 40,
 			),
 		)
 		val teamMatchId: Long = header.id!!

@@ -15,8 +15,6 @@ fun TeamMatchEntity.toDomain(matchedTeams: MatchedTeams): TeamMatch =
 		expiresAt = expiresAt,
 		matchType = matchType,
 		status = status,
-		dateInitAmount = dateInitAmount,
-		dateAcceptAmount = dateAcceptAmount,
 		deletedAt = deletedAt,
 	)
 
@@ -32,8 +30,6 @@ fun TeamMatch.toEntity(): TeamMatchEntity =
 		expiresAt = expiresAt,
 		status = status,
 		matchType = matchType,
-		dateInitAmount = dateInitAmount,
-		dateAcceptAmount = dateAcceptAmount,
 	).also {
 		if (id != 0L) it.id = id
 		// 읽은 시점의 버전을 그대로 실어, merge 시 낙관적 락이 그 버전 기준으로 충돌을 검사하도록 한다.

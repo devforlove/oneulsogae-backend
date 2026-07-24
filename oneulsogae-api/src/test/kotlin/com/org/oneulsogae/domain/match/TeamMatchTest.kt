@@ -33,8 +33,6 @@ class TeamMatchTest : DescribeSpec({
 			teamMatch.matchType shouldBe TeamMatchType.RECOMMENDED
 			teamMatch.introducedDate shouldBe now.toLocalDate()
 			teamMatch.expiresAt shouldBe now.plusDays(1)
-			teamMatch.dateInitAmount shouldBe 40
-			teamMatch.dateAcceptAmount shouldBe 40
 			teamMatch.matchedTeams.teamIds() shouldBe listOf(10L, 20L)
 			teamMatch.matchedTeams.values.all { it.status == MatchedTeamStatus.WAITING } shouldBe true
 		}

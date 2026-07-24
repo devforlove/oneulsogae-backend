@@ -15,11 +15,13 @@ object SoloMatchMemberEntityFixture {
 		userId: Long = 1L,
 		gender: Gender = Gender.MALE,
 		status: MatchMemberStatus = MatchMemberStatus.WAITING,
+		paidInitAmount: Int? = null,
 	): SoloMatchMemberEntity =
 		SoloMatchMemberEntity(
 			matchId = matchId,
 			userId = userId,
 			gender = gender,
 			status = status,
+			paidInitAmount = paidInitAmount,
 		)
 }

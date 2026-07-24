@@ -34,7 +34,7 @@ class GetMatchedTeamDaoImpl(
 ) : GetMatchedTeamDao {
 
 	override fun findInProgressByTeamId(myTeamId: Long, now: LocalDateTime, viewerGender: Gender?): List<RecommendedTeam> {
-		val teams: List<RecommendedTeam> = findInProgressOpponentTeams(myTeamId, now)
+		val teams: List<RecommendedTeam> = findInProgressOpponentTeams(myTeamId, now, viewerGender)
 		if (teams.isEmpty()) return emptyList()
 
 		val membersByTeamId: Map<Long, TeamMembers> =
@@ -47,9 +47,6 @@ class GetMatchedTeamDaoImpl(
 				team.copy(
 					members = teamMembers?.members.orEmpty(),
 					lastLoginAt = teamMembers?.lastLoginAt,
-					// datingInitAmount/datingAcceptAmount는 team_matches 헤더 스냅샷(생성 시점, 남성 기본값) 대신 뷰어 성별 기준으로 다시 계산해 덮어쓴다. (남녀 비용 분리)
-					datingInitAmount = CoinUsageType.MEETING_INIT.coinAmount(viewerGender),
-					datingAcceptAmount = CoinUsageType.MEETING_ACCEPT.coinAmount(viewerGender),
 				)
 			}
 			.sortedWith(
@@ -60,7 +57,8 @@ class GetMatchedTeamDaoImpl(
 
 	// ① 내 참가 행(mine) 기준으로 같은 팀 매칭의 상대 참가 행(opp)을 이어 진행 중인 상대 팀(ACTIVE) 헤더를 최신순으로 조회한다. (구성원은 ②에서 채우므로 빈 목록으로 둔다)
 	// 관심(신청) 여부는 참가 status가 APPLY(신청)/ACTIVE(성사)인지로 본다. 팀 활동지역은 regions를 left join해 "시/도 시/군/구"로 만든다. (지역 미설정이면 null)
-	private fun findInProgressOpponentTeams(myTeamId: Long, now: LocalDateTime): List<RecommendedTeam> {
+	// 금액은 뷰어 성별([viewerGender]) 기준 상수로 프로젝션에서 직접 채운다.
+	private fun findInProgressOpponentTeams(myTeamId: Long, now: LocalDateTime, viewerGender: Gender?): List<RecommendedTeam> {
 		val mine: QMatchedTeamEntity = QMatchedTeamEntity("mine")
 		val opp: QMatchedTeamEntity = QMatchedTeamEntity("opp")
 		val teamMatch: QTeamMatchEntity = QTeamMatchEntity.teamMatchEntity
@@ -79,8 +77,8 @@ class GetMatchedTeamDaoImpl(
 					Expressions.constant(emptyList<RecommendedTeamMember>()),
 					// lastLoginAt은 구성원 로더에서 채우므로 여기선 null 자리표시자로 둔다.
 					Expressions.nullExpression(LocalDateTime::class.java),
-					teamMatch.dateInitAmount,
-					teamMatch.dateAcceptAmount,
+					Expressions.constant(CoinUsageType.MEETING_INIT.coinAmount(viewerGender)),
+					Expressions.constant(CoinUsageType.MEETING_ACCEPT.coinAmount(viewerGender)),
 					teamMatch.id,
 					teamMatch.status,
 					teamMatch.expiresAt,

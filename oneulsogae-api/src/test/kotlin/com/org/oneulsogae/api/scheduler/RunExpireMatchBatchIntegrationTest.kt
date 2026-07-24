@@ -43,7 +43,7 @@ class RunExpireMatchBatchIntegrationTest(
 			val expiredSolo: SoloMatchEntity = IntegrationUtil.persist(
 				SoloMatchEntityFixture.create(memberKey = "1501-2501", status = MatchStatus.PARTIALLY_ACCEPTED, expiresAt = past),
 			)
-			IntegrationUtil.persist(SoloMatchMemberEntityFixture.create(matchId = expiredSolo.id!!, userId = applicantId, gender = Gender.MALE, status = MatchMemberStatus.APPLY))
+			IntegrationUtil.persist(SoloMatchMemberEntityFixture.create(matchId = expiredSolo.id!!, userId = applicantId, gender = Gender.MALE, status = MatchMemberStatus.APPLY, paidInitAmount = 32))
 			IntegrationUtil.persist(SoloMatchMemberEntityFixture.create(matchId = expiredSolo.id!!, userId = 2501L, gender = Gender.FEMALE, status = MatchMemberStatus.WAITING))
 			IntegrationUtil.persist(CoinBalanceEntityFixture.create(userId = applicantId, balance = 100))
 
@@ -63,7 +63,7 @@ class RunExpireMatchBatchIntegrationTest(
 			val expiredSolo: SoloMatchEntity = IntegrationUtil.persist(
 				SoloMatchEntityFixture.create(memberKey = "1001-2001", status = MatchStatus.PARTIALLY_ACCEPTED, expiresAt = past),
 			)
-			IntegrationUtil.persist(SoloMatchMemberEntityFixture.create(matchId = expiredSolo.id!!, userId = soloApplicant, gender = Gender.MALE, status = MatchMemberStatus.APPLY))
+			IntegrationUtil.persist(SoloMatchMemberEntityFixture.create(matchId = expiredSolo.id!!, userId = soloApplicant, gender = Gender.MALE, status = MatchMemberStatus.APPLY, paidInitAmount = 32))
 			IntegrationUtil.persist(SoloMatchMemberEntityFixture.create(matchId = expiredSolo.id!!, userId = 2001L, gender = Gender.FEMALE, status = MatchMemberStatus.WAITING))
 			IntegrationUtil.persist(CoinBalanceEntityFixture.create(userId = soloApplicant, balance = 100))
 
@@ -88,11 +88,9 @@ class RunExpireMatchBatchIntegrationTest(
 					expiresAt = past,
 					status = MatchStatus.PARTIALLY_ACCEPTED,
 					matchType = TeamMatchType.DAILY,
-					dateInitAmount = 40,
-					dateAcceptAmount = 40,
 				),
 			)
-			IntegrationUtil.persist(MatchedTeamEntity(teamMatchId = expiredTeam.id!!, teamId = 10L, status = MatchedTeamStatus.APPLY, applicantUserId = teamApplicant))
+			IntegrationUtil.persist(MatchedTeamEntity(teamMatchId = expiredTeam.id!!, teamId = 10L, status = MatchedTeamStatus.APPLY, applicantUserId = teamApplicant, paidInitAmount = 40))
 			IntegrationUtil.persist(MatchedTeamEntity(teamMatchId = expiredTeam.id!!, teamId = 20L, status = MatchedTeamStatus.WAITING))
 			IntegrationUtil.persist(CoinBalanceEntityFixture.create(userId = teamApplicant, balance = 100))
 

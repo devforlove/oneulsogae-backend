@@ -56,12 +56,4 @@ class SoloMatchEntity(
 	@Enumerated(EnumType.STRING)
 	@Column(name = "match_type", nullable = false, columnDefinition = "varchar(50)")
 	val matchType: SoloMatchType,
-
-	/** 소개팅 신청에 드는 코인 비용. [com.org.oneulsogae.common.coin.CoinUsageType.DATING_INIT]에서 가져온다. */
-	@Column(name = "date_init_amount", nullable = false)
-	val dateInitAmount: Int,
-
-	/** 소개팅 수락에 드는 코인 비용. [com.org.oneulsogae.common.coin.CoinUsageType.DATING_ACCEPT]에서 가져온다. */
-	@Column(name = "date_accept_amount", nullable = false)
-	val dateAcceptAmount: Int,
 ) : BaseEntity()

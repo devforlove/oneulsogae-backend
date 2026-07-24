@@ -46,7 +46,7 @@ class ExpireMatchServiceIntegrationTest(
 				val header: SoloMatchEntity = IntegrationUtil.persist(
 					SoloMatchEntityFixture.create(memberKey = "1001-2001", status = MatchStatus.PARTIALLY_ACCEPTED),
 				)
-				IntegrationUtil.persist(SoloMatchMemberEntityFixture.create(matchId = header.id!!, userId = applicantId, gender = Gender.MALE, status = MatchMemberStatus.APPLY))
+				IntegrationUtil.persist(SoloMatchMemberEntityFixture.create(matchId = header.id!!, userId = applicantId, gender = Gender.MALE, status = MatchMemberStatus.APPLY, paidInitAmount = 32))
 				IntegrationUtil.persist(SoloMatchMemberEntityFixture.create(matchId = header.id!!, userId = partnerId, gender = Gender.FEMALE, status = MatchMemberStatus.WAITING))
 				IntegrationUtil.persist(CoinBalanceEntityFixture.create(userId = applicantId, balance = 100))
 
@@ -110,11 +110,9 @@ class ExpireMatchServiceIntegrationTest(
 						expiresAt = LocalDateTime.now().minusHours(1),
 						status = MatchStatus.PARTIALLY_ACCEPTED,
 						matchType = TeamMatchType.DAILY,
-						dateInitAmount = 40,
-						dateAcceptAmount = 40,
 					),
 				)
-				IntegrationUtil.persist(MatchedTeamEntity(teamMatchId = header.id!!, teamId = teamAId, status = MatchedTeamStatus.APPLY, applicantUserId = applicantId))
+				IntegrationUtil.persist(MatchedTeamEntity(teamMatchId = header.id!!, teamId = teamAId, status = MatchedTeamStatus.APPLY, applicantUserId = applicantId, paidInitAmount = 40))
 				IntegrationUtil.persist(MatchedTeamEntity(teamMatchId = header.id!!, teamId = teamBId, status = MatchedTeamStatus.WAITING))
 				IntegrationUtil.persist(CoinBalanceEntityFixture.create(userId = applicantId, balance = 100))
 
@@ -138,8 +136,6 @@ class ExpireMatchServiceIntegrationTest(
 						expiresAt = LocalDateTime.now().plusYears(100),
 						status = MatchStatus.MATCHED,
 						matchType = TeamMatchType.DAILY,
-						dateInitAmount = 40,
-						dateAcceptAmount = 40,
 					),
 				)
 				IntegrationUtil.persist(MatchedTeamEntity(teamMatchId = header.id!!, teamId = teamAId, status = MatchedTeamStatus.ACTIVE, applicantUserId = applicantId))

@@ -1,6 +1,5 @@
 package com.org.oneulsogae.infra.fixture
 
-import com.org.oneulsogae.common.coin.CoinUsageType
 import com.org.oneulsogae.common.match.MatchStatus
 import com.org.oneulsogae.common.match.TeamMatchType
 import com.org.oneulsogae.infra.teammatch.command.entity.TeamMatchEntity
@@ -19,7 +18,5 @@ object TeamMatchEntityFixture {
 		expiresAt: LocalDateTime = LocalDateTime.now().plusDays(1),
 		matchType: TeamMatchType = TeamMatchType.DAILY,
 		status: MatchStatus = MatchStatus.PROPOSED,
-		dateInitAmount: Int = CoinUsageType.MEETING_INIT.coinAmount(null),
-		dateAcceptAmount: Int = CoinUsageType.MEETING_ACCEPT.coinAmount(null),
-	): TeamMatchEntity = TeamMatchEntity(memberKey, introducedDate, expiresAt, status, matchType, dateInitAmount, dateAcceptAmount)
+	): TeamMatchEntity = TeamMatchEntity(memberKey, introducedDate, expiresAt, status, matchType)
 }
