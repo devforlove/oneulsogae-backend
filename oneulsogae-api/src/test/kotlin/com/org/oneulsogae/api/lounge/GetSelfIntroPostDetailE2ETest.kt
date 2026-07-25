@@ -216,5 +216,28 @@ class GetSelfIntroPostDetailE2ETest : AbstractIntegrationSupport({
 					.body("data.chatRequestCoinAmount", Matchers.nullValue())
 			}
 		}
+
+		context("상세를 여러 번 조회하면") {
+			it("조회할 때마다 viewCount가 1씩 오른다 (비로그인 포함)") {
+				val userId: Long = IntegrationUtil.persist(UserEntityFixture.create(providerId = "lounge-detail-view")).id!!
+				val post: LoungePostEntity = IntegrationUtil.persist(LoungePostEntityFixture.create(userId = userId))
+				IntegrationUtil.persist(SelfIntroPostEntityFixture.create(postId = post.id!!))
+
+				// 첫 조회 — 이번 조회 반영분(+1)이 포함돼 내려간다.
+				RestAssured.given()
+					.get("/lounge/v1/self-intro-posts/${post.id}")
+					.then()
+					.statusCode(200)
+					.body("data.viewCount", Matchers.equalTo(1))
+
+				// 같은 사용자든 비로그인이든 재조회도 무조건 +1이다.
+				RestAssured.given()
+					.header("Authorization", "Bearer ${accessTokenFor(userId)}")
+					.get("/lounge/v1/self-intro-posts/${post.id}")
+					.then()
+					.statusCode(200)
+					.body("data.viewCount", Matchers.equalTo(2))
+			}
+		}
 	}
 })

@@ -40,4 +40,8 @@ class LoungePostEntity(
 	/** 좋아요 수(비정규화). 실제 좋아요 행은 [LoungePostLikeEntity]가 보관한다. */
 	@Column(name = "like_count", nullable = false)
 	var likeCount: Int = 0,
+
+	/** 상세 조회수(비정규화). 상세 조회마다 원자 UPDATE로 1씩 오른다. (중복 조회 허용) */
+	@Column(name = "view_count", nullable = false)
+	var viewCount: Int = 0,
 ) : BaseEntity()

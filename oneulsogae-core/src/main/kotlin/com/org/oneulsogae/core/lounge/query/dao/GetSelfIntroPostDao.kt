@@ -24,6 +24,12 @@ interface GetSelfIntroPostDao {
 	 */
 	fun existsChatRequest(postId: Long, requesterUserId: Long): Boolean
 
+	/** [userId]가 이 글에 좋아요를 눌렀는지 여부. (상세의 좋아요 버튼 상태 표시용) */
+	fun existsLike(postId: Long, userId: Long): Boolean
+
+	/** [postIds] 중 [userId]가 좋아요를 누른 글의 id 집합. (목록 한 페이지의 likedByMe 일괄 판정용) */
+	fun findLikedPostIds(userId: Long, postIds: List<Long>): Set<Long>
+
 	/**
 	 * [authorUserId]가 자기 셀소로 받은 신청 중 아직 수락하지 않은(PENDING) 건수. (목록 화면 배지용)
 	 * 내가 쓴 모든 셀소를 합산한다.

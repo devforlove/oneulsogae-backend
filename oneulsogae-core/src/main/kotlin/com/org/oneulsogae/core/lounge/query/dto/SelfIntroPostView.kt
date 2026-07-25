@@ -14,6 +14,7 @@ data class SelfIntroPostView(
 	val postId: Long,
 	val authorNickname: String?,
 	val likeCount: Int,
+	val viewCount: Int,
 	val imageKey: String?,
 	val authorGender: Gender?,
 	/** 작성자 생년월일. 응답에는 노출하지 않고 [authorAge] 계산에만 쓴다. */
@@ -29,12 +30,15 @@ data class SelfIntroPostView(
 	val imageUrl: String? = null,
 	/** 작성자 만 나이. 서비스가 [authorBirthday]와 기준일로 채운다. (생년월일이 없으면 null) */
 	val authorAge: Int? = null,
+	/** 조회한 사용자가 이 글에 좋아요를 눌렀는지 여부. 서비스가 채운다. (비로그인이면 false) */
+	val likedByMe: Boolean = false,
 ) {
-	/** dao 투영용 생성자. imageUrl·나이는 서비스가 채운다. */
+	/** dao 투영용 생성자. imageUrl·나이·likedByMe는 서비스가 채운다. */
 	constructor(
 		postId: Long,
 		authorNickname: String?,
 		likeCount: Int,
+		viewCount: Int,
 		imageKey: String?,
 		authorGender: Gender?,
 		authorBirthday: LocalDate?,
@@ -44,9 +48,9 @@ data class SelfIntroPostView(
 		authorUniversityName: String?,
 		authorActivityArea: String?,
 	) : this(
-		postId, authorNickname, likeCount, imageKey,
+		postId, authorNickname, likeCount, viewCount, imageKey,
 		authorGender, authorBirthday, authorProfileImageCode, authorJob,
-		authorCompanyName, authorUniversityName, authorActivityArea, null, null,
+		authorCompanyName, authorUniversityName, authorActivityArea, null, null, false,
 	)
 
 	/** 기준일([today])로 작성자 만 나이를 채운 항목을 만든다. */

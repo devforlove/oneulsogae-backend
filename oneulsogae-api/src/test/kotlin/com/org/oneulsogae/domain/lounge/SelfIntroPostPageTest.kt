@@ -16,6 +16,7 @@ class SelfIntroPostPageTest : DescribeSpec({
 			postId = postId,
 			authorNickname = "닉네임",
 			likeCount = 3,
+			viewCount = 0,
 			imageKey = imageKey,
 			authorGender = null,
 			authorBirthday = null,

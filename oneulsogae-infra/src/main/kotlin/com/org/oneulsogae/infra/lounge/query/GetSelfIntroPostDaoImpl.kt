@@ -8,6 +8,7 @@ import com.org.oneulsogae.core.lounge.query.dto.SelfIntroPostView
 import com.org.oneulsogae.infra.lounge.command.entity.QLoungeChatRequestEntity
 import com.org.oneulsogae.infra.lounge.command.entity.QLoungePostEntity
 import com.org.oneulsogae.infra.lounge.command.entity.QLoungePostImageEntity
+import com.org.oneulsogae.infra.lounge.command.entity.QLoungePostLikeEntity
 import com.org.oneulsogae.infra.lounge.command.entity.QSelfIntroPostEntity
 import com.org.oneulsogae.infra.region.entity.QRegionEntity
 import com.org.oneulsogae.infra.user.command.entity.QUserDetailEntity
@@ -42,6 +43,7 @@ class GetSelfIntroPostDaoImpl(
 					post.id,
 					userDetail.nickname,
 					post.likeCount,
+					post.viewCount,
 					image.imageKey,
 					userDetail.gender,
 					userDetail.birthday,
@@ -78,6 +80,7 @@ class GetSelfIntroPostDaoImpl(
 					post.id,
 					userDetail.nickname,
 					post.likeCount,
+					post.viewCount,
 					userDetail.gender,
 					userDetail.birthday,
 					userDetail.height,
@@ -112,6 +115,30 @@ class GetSelfIntroPostDaoImpl(
 			.where(image.postId.eq(postId))
 			.orderBy(image.displayOrder.asc())
 			.fetch()
+	}
+
+	// (post_id, user_id) 유니크 인덱스(ux_post_id_user_id)를 그대로 타는 존재 확인이다.
+	override fun existsLike(postId: Long, userId: Long): Boolean {
+		val like: QLoungePostLikeEntity = QLoungePostLikeEntity.loungePostLikeEntity
+		return queryFactory
+			.selectOne()
+			.from(like)
+			.where(like.postId.eq(postId), like.userId.eq(userId))
+			.fetchFirst() != null
+	}
+
+	// user_id 동등 + post_id in — ux_post_id_user_id(post_id, user_id) 인덱스로 (post, user) 쌍 seek가 된다.
+	override fun findLikedPostIds(userId: Long, postIds: List<Long>): Set<Long> {
+		if (postIds.isEmpty()) {
+			return emptySet()
+		}
+		val like: QLoungePostLikeEntity = QLoungePostLikeEntity.loungePostLikeEntity
+		return queryFactory
+			.select(like.postId)
+			.from(like)
+			.where(like.postId.`in`(postIds), like.userId.eq(userId))
+			.fetch()
+			.toSet()
 	}
 
 	// (post_id, requester_user_id) 유니크 인덱스(ux_post_requester)를 그대로 타는 존재 확인이다.

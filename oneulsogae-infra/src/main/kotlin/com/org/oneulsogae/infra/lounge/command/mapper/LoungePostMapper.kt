@@ -10,6 +10,7 @@ fun LoungePostEntity.toDomain(): LoungePost =
 		type = type,
 		userId = userId,
 		likeCount = likeCount,
+		viewCount = viewCount,
 	)
 
 /**
@@ -21,4 +22,5 @@ fun LoungePost.toEntity(): LoungePostEntity =
 		type = type,
 		userId = userId,
 		likeCount = likeCount,
+		viewCount = viewCount,
 	).also { if (id != 0L) it.id = id }

@@ -61,6 +61,16 @@ class SelfIntroPostPage private constructor(
 			companyVerified = companyVerified,
 		)
 
+	/** 조회한 사용자가 좋아요를 누른 글([likedPostIds])에 likedByMe를 반영한 페이지를 만든다. */
+	fun withLikedPostIds(likedPostIds: Set<Long>): SelfIntroPostPage =
+		SelfIntroPostPage(
+			values = values.map { view: SelfIntroPostView -> view.copy(likedByMe = view.postId in likedPostIds) },
+			hasNext = hasNext,
+			receivedPendingChatRequestCount = receivedPendingChatRequestCount,
+			sentPendingChatRequestCount = sentPendingChatRequestCount,
+			companyVerified = companyVerified,
+		)
+
 	/** 조회한 사용자의 회사 인증 여부를 반영한 페이지를 만든다. */
 	fun withCompanyVerified(companyVerified: Boolean): SelfIntroPostPage =
 		SelfIntroPostPage(

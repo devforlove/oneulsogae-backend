@@ -3,7 +3,9 @@ package com.org.oneulsogae.infra.lounge.command.adapter
 import com.org.oneulsogae.common.lounge.LoungePostType
 import com.org.oneulsogae.core.lounge.command.application.port.out.CountRecentSelfIntroPostPort
 import com.org.oneulsogae.core.lounge.command.application.port.out.GetLoungePostPort
+import com.org.oneulsogae.core.lounge.command.application.port.out.IncreaseLoungePostViewCountPort
 import com.org.oneulsogae.core.lounge.command.application.port.out.SaveLoungePostPort
+import com.org.oneulsogae.core.lounge.command.application.port.out.UpdateLoungePostLikeCountPort
 import com.org.oneulsogae.core.lounge.command.domain.LoungePost
 import com.org.oneulsogae.infra.lounge.command.mapper.toDomain
 import com.org.oneulsogae.infra.lounge.command.mapper.toEntity
@@ -14,12 +16,13 @@ import java.time.LocalDateTime
 /**
  * 라운지 글(공통 골격) 엔티티의 out-port 어댑터. (엔티티당 어댑터 하나)
  * 저장([SaveLoungePostPort])과 등록 빈도 판단용 카운트([CountRecentSelfIntroPostPort]),
- * 대화 신청에서 쓰는 단건 조회([GetLoungePostPort])를 함께 구현한다.
+ * 대화 신청에서 쓰는 단건 조회([GetLoungePostPort]),
+ * 좋아요 총합·조회수 원자 증감([UpdateLoungePostLikeCountPort]·[IncreaseLoungePostViewCountPort])을 함께 구현한다.
  */
 @Component
 class LoungePostAdapter(
 	private val loungePostJpaRepository: LoungePostJpaRepository,
-) : SaveLoungePostPort, CountRecentSelfIntroPostPort, GetLoungePostPort {
+) : SaveLoungePostPort, CountRecentSelfIntroPostPort, GetLoungePostPort, UpdateLoungePostLikeCountPort, IncreaseLoungePostViewCountPort {
 
 	// id가 0이면 INSERT, 0이 아니면 기존 행 UPDATE(merge). 둘 다 Spring Data save가 처리한다.
 	override fun save(post: LoungePost): LoungePost =
@@ -31,4 +34,16 @@ class LoungePostAdapter(
 	// @SQLRestriction("deleted_at is null")이 걸려 있어 소프트 삭제된 글은 조회되지 않는다.
 	override fun findById(postId: Long): LoungePost? =
 		loungePostJpaRepository.findById(postId).orElse(null)?.toDomain()
+
+	override fun increaseLikeCount(postId: Long) {
+		loungePostJpaRepository.updateLikeCount(postId, 1)
+	}
+
+	override fun decreaseLikeCount(postId: Long) {
+		loungePostJpaRepository.updateLikeCount(postId, -1)
+	}
+
+	override fun increaseViewCount(postId: Long) {
+		loungePostJpaRepository.incrementViewCount(postId)
+	}
 }

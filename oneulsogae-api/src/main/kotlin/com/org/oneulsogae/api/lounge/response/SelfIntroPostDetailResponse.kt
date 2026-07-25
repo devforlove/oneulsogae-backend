@@ -12,6 +12,10 @@ data class SelfIntroPostDetailResponse(
 	val postId: Long,
 	val authorNickname: String?,
 	val likeCount: Int,
+	/** 상세 조회수. (이번 조회 반영분 포함) */
+	val viewCount: Int,
+	/** 조회한 사용자가 이 글에 좋아요를 눌렀는지 여부. (비로그인이면 false) */
+	val likedByMe: Boolean,
 	val gender: Gender?,
 	val age: Int?,
 	val height: Int?,
@@ -43,6 +47,8 @@ data class SelfIntroPostDetailResponse(
 				postId = view.postId,
 				authorNickname = view.authorNickname,
 				likeCount = view.likeCount,
+				viewCount = view.viewCount,
+				likedByMe = view.likedByMe,
 				gender = view.gender,
 				age = view.age,
 				height = view.height,

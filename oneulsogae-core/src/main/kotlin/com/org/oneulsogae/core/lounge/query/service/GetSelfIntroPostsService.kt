@@ -49,6 +49,9 @@ class GetSelfIntroPostsService(
 							sent = getSelfIntroPostDao.countSentPendingChatRequests(userId),
 						)
 						.withCompanyVerified(checkCompanyVerifiedUseCase.isCompanyVerified(userId))
+						.withLikedPostIds(
+							getSelfIntroPostDao.findLikedPostIds(userId, page.values.map { view: SelfIntroPostView -> view.postId }),
+						)
 				}
 			}
 	}
@@ -63,6 +66,7 @@ class GetSelfIntroPostsService(
 				today = timeGenerator.today(),
 			) { imageKey: String -> loungeImageUrlPort.presignedGetUrl(imageKey) }
 			.withChatRequested(userId != null && getSelfIntroPostDao.existsChatRequest(postId, userId))
+			.withLikedByMe(userId != null && getSelfIntroPostDao.existsLike(postId, userId))
 			.withCompanyVerified(userId != null && checkCompanyVerifiedUseCase.isCompanyVerified(userId))
 			.withChatRequestCoinAmount(
 				userId?.let { CoinUsageType.LOUNGE_CHAT_INIT.coinAmount(getUserDetailUseCase.findByUserId(it)?.gender) },

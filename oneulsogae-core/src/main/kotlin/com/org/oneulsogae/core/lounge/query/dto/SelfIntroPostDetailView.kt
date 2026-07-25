@@ -13,6 +13,7 @@ data class SelfIntroPostDetailView(
 	val postId: Long,
 	val authorNickname: String?,
 	val likeCount: Int,
+	val viewCount: Int,
 	val gender: Gender?,
 	/** 작성자 생년월일. 응답에는 노출하지 않고 [age] 계산에만 쓴다. */
 	val birthday: LocalDate?,
@@ -53,12 +54,15 @@ data class SelfIntroPostDetailView(
 	 * 대화 신청은 인증 사용자만 가능하므로, 클라이언트가 신청 시도 시점에 인증 안내로 선차단하는 데 쓴다.
 	 */
 	val companyVerified: Boolean = false,
+	/** 조회한 사용자가 이 글에 좋아요를 눌렀는지 여부. 서비스가 채운다. (비로그인이면 false) */
+	val likedByMe: Boolean = false,
 ) {
-	/** dao 투영용 생성자. 나이·사진은 서비스가 채운다. */
+	/** dao 투영용 생성자. 나이·사진·likedByMe는 서비스가 채운다. */
 	constructor(
 		postId: Long,
 		authorNickname: String?,
 		likeCount: Int,
+		viewCount: Int,
 		gender: Gender?,
 		birthday: LocalDate?,
 		height: Int?,
@@ -74,7 +78,7 @@ data class SelfIntroPostDetailView(
 		charmPoint: String,
 		freeWord: String,
 	) : this(
-		postId, authorNickname, likeCount, gender, birthday, height, activityArea, job, companyName, universityName,
+		postId, authorNickname, likeCount, viewCount, gender, birthday, height, activityArea, job, companyName, universityName,
 		longDistance, desiredAge, mbti, marriageThought, preferredPartner, charmPoint, freeWord,
 		null, emptyList(), emptyList(),
 	)
@@ -98,4 +102,8 @@ data class SelfIntroPostDetailView(
 	/** 조회한 사용자의 회사 인증 여부를 반영한 상세를 만든다. */
 	fun withCompanyVerified(companyVerified: Boolean): SelfIntroPostDetailView =
 		copy(companyVerified = companyVerified)
+
+	/** 조회한 사용자의 좋아요 여부를 반영한 상세를 만든다. */
+	fun withLikedByMe(liked: Boolean): SelfIntroPostDetailView =
+		copy(likedByMe = liked)
 }

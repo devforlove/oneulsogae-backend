@@ -6,6 +6,7 @@ import com.org.oneulsogae.api.lounge.response.SelfIntroPostResponse
 import com.org.oneulsogae.auth.AuthUser
 import com.org.oneulsogae.auth.LoginUser
 import com.org.oneulsogae.core.common.response.ApiResponse
+import com.org.oneulsogae.core.lounge.command.application.port.`in`.IncreaseLoungePostViewUseCase
 import com.org.oneulsogae.core.lounge.command.application.port.`in`.RegisterSelfIntroPostUseCase
 import com.org.oneulsogae.core.lounge.command.application.port.`in`.command.RegisterSelfIntroPostCommand
 import com.org.oneulsogae.core.lounge.query.service.port.`in`.GetSelfIntroPostsUseCase
@@ -33,6 +34,7 @@ import org.springframework.web.multipart.MultipartFile
 class SelfIntroPostController(
 	private val registerSelfIntroPostUseCase: RegisterSelfIntroPostUseCase,
 	private val getSelfIntroPostsUseCase: GetSelfIntroPostsUseCase,
+	private val increaseLoungePostViewUseCase: IncreaseLoungePostViewUseCase,
 ) {
 
 	/** 사진(JPEG·PNG, 1~5장, 장당 최대 10MB)과 본문 7개 항목을 받아 셀소 글을 등록한다. */
@@ -88,8 +90,11 @@ class SelfIntroPostController(
 	fun getSelfIntroPost(
 		@LoginUser user: AuthUser?,
 		@PathVariable("postId") postId: Long,
-	): ApiResponse<SelfIntroPostDetailResponse> =
-		ApiResponse.success(SelfIntroPostDetailResponse.of(getSelfIntroPostsUseCase.getPost(user?.id, postId)))
+	): ApiResponse<SelfIntroPostDetailResponse> {
+		// 조회수는 CQS를 지키려 조회 서비스가 아니라 별도 명령 유스케이스로 올린다. (없는 글이면 no-op, 이어지는 조회가 404)
+		increaseLoungePostViewUseCase.increase(postId)
+		return ApiResponse.success(SelfIntroPostDetailResponse.of(getSelfIntroPostsUseCase.getPost(user?.id, postId)))
+	}
 
 	/** MultipartFile에서 core가 받는 원시 바이트·메타([RegisterSelfIntroPostCommand.FilePart])를 뽑는다. */
 	private fun toFilePart(file: MultipartFile): RegisterSelfIntroPostCommand.FilePart =
