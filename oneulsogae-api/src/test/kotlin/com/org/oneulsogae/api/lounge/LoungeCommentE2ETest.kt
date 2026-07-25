@@ -2,6 +2,7 @@ package com.org.oneulsogae.api.lounge
 
 import com.org.oneulsogae.common.alarm.AlarmType
 import com.org.oneulsogae.common.integration.AbstractIntegrationSupport
+import com.org.oneulsogae.common.user.Gender
 import com.org.oneulsogae.infra.alarm.command.entity.AlarmEntity
 import com.org.oneulsogae.infra.alarm.command.entity.QAlarmEntity
 import com.org.oneulsogae.infra.fixture.IntegrationUtil
@@ -178,7 +179,7 @@ class LoungeCommentE2ETest : AbstractIntegrationSupport({
 		context("댓글과 대댓글이 있는 글을 조회하면") {
 			it("root는 오래된 순으로, 대댓글은 각 root에 중첩돼 내려간다 (비로그인 허용)") {
 				val authorId: Long = IntegrationUtil.persist(UserEntityFixture.create(providerId = "lounge-cmt-author-7")).id!!
-				IntegrationUtil.persist(UserDetailEntityFixture.create(userId = authorId, nickname = "글쓴이"))
+				IntegrationUtil.persist(UserDetailEntityFixture.create(userId = authorId, nickname = "글쓴이", gender = Gender.FEMALE))
 				val post: LoungePostEntity = IntegrationUtil.persist(LoungePostEntityFixture.create(userId = authorId))
 				val first: LoungeCommentEntity = IntegrationUtil.persist(
 					LoungeCommentEntityFixture.create(postId = post.id!!, userId = authorId, content = "첫 댓글"),
@@ -198,6 +199,8 @@ class LoungeCommentE2ETest : AbstractIntegrationSupport({
 					.body("data.comments.size()", Matchers.equalTo(2))
 					.body("data.comments[0].content", Matchers.equalTo("첫 댓글"))
 					.body("data.comments[0].authorNickname", Matchers.equalTo("글쓴이"))
+					// 아바타가 성별+아바타 번호 조합으로 그려지므로 작성자 성별이 함께 내려간다.
+					.body("data.comments[0].authorGender", Matchers.equalTo("FEMALE"))
 					.body("data.comments[0].mine", Matchers.equalTo(false))
 					.body("data.comments[0].replies.size()", Matchers.equalTo(1))
 					.body("data.comments[0].replies[0].content", Matchers.equalTo("첫 댓글의 답글"))

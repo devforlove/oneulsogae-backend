@@ -1,5 +1,6 @@
 package com.org.oneulsogae.core.lounge.query.dto
 
+import com.org.oneulsogae.common.user.Gender
 import java.time.LocalDateTime
 
 /**
@@ -16,6 +17,8 @@ data class LoungeCommentView(
 	val createdAt: LocalDateTime,
 	val authorUserId: Long,
 	val authorNickname: String?,
+	/** 작성자 성별. 아바타가 성별+아바타 번호 조합으로 그려져 표시용으로 함께 내려준다. (프로필 미설정이면 null) */
+	val authorGender: Gender?,
 	val authorProfileImageCode: String?,
 	val mine: Boolean = false,
 ) {
@@ -28,10 +31,11 @@ data class LoungeCommentView(
 		createdAt: LocalDateTime,
 		authorUserId: Long,
 		authorNickname: String?,
+		authorGender: Gender?,
 		authorProfileImageCode: String?,
 	) : this(
 		commentId, parentCommentId, content, deleted, createdAt,
-		authorUserId, authorNickname, authorProfileImageCode, false,
+		authorUserId, authorNickname, authorGender, authorProfileImageCode, false,
 	)
 
 	/** 삭제된 댓글이면 내용을 null로 마스킹한 항목을 만든다. */

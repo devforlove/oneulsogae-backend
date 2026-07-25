@@ -77,6 +77,7 @@ class GetLoungeCommentDaoImpl(
 			comment.createdAt,
 			comment.userId,
 			userDetail.nickname,
+			userDetail.gender,
 			userDetail.profileImageCode,
 		)
 }

@@ -1,5 +1,6 @@
 package com.org.oneulsogae.api.lounge.response
 
+import com.org.oneulsogae.common.user.Gender
 import com.org.oneulsogae.core.lounge.query.dto.LoungeCommentPage
 import com.org.oneulsogae.core.lounge.query.dto.LoungeCommentView
 import java.time.LocalDateTime
@@ -39,6 +40,8 @@ data class LoungeCommentResponse(
 	val deleted: Boolean,
 	val createdAt: LocalDateTime,
 	val authorNickname: String?,
+	/** 작성자 성별. 아바타가 성별+아바타 번호 조합으로 그려져 함께 내려준다. (프로필 미설정이면 null) */
+	val authorGender: Gender?,
 	val authorProfileImageCode: String?,
 	val mine: Boolean,
 	/** 이 댓글에 달린 대댓글(오래된 순). 대댓글 항목에서는 항상 빈 목록이다. */
@@ -53,6 +56,7 @@ data class LoungeCommentResponse(
 				deleted = view.deleted,
 				createdAt = view.createdAt,
 				authorNickname = view.authorNickname,
+				authorGender = view.authorGender,
 				authorProfileImageCode = view.authorProfileImageCode,
 				mine = view.mine,
 				replies = replies.map { reply: LoungeCommentView -> of(reply, emptyList()) },
