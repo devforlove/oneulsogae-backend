@@ -5,6 +5,7 @@ import com.org.oneulsogae.core.alarm.command.application.port.`in`.SaveAlarmUseC
 import com.org.oneulsogae.core.alarm.command.application.port.`in`.command.SaveAlarmCommand
 import com.org.oneulsogae.core.lounge.command.domain.event.LoungeChatRequestAccepted
 import com.org.oneulsogae.core.lounge.command.domain.event.LoungeChatRequested
+import com.org.oneulsogae.core.lounge.command.domain.event.LoungeCommentAdded
 import com.org.oneulsogae.core.user.query.service.port.`in`.GetUserDetailUseCase
 import org.springframework.stereotype.Component
 import org.springframework.transaction.annotation.Propagation
@@ -64,6 +65,41 @@ class LoungeEventHandler(
 				link = "/chat/${event.chatRoomId}",
 				fromUserId = event.postAuthorUserId,
 			),
+		)
+	}
+
+	/** 댓글 → 글 작성자에게, 대댓글 → 부모 댓글 작성자에게 알람. (본인 대상 이벤트는 발행측이 걸러 여기 오지 않는다) */
+	@TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
+	@Transactional(propagation = Propagation.REQUIRES_NEW)
+	fun onLoungeCommentAdded(event: LoungeCommentAdded) {
+		val authorNickname: String? = getUserDetailUseCase.findByUserId(event.commentAuthorUserId)?.nickname
+
+		saveAlarmUseCase.save(
+			if (event.reply) {
+				SaveAlarmCommand(
+					userId = event.receiverUserId,
+					type = AlarmType.LOUNGE_COMMENT_REPLY_RECEIVED,
+					title = "새로운 답글",
+					description = authorNickname
+						?.let { "${it}님이 회원님의 댓글에 답글을 남겼어요." }
+						?: "회원님의 댓글에 답글이 달렸어요.",
+					// 알람을 누르면 라운지로 이동한다. (프론트 라우팅에 맞춘 경로)
+					link = "/",
+					fromUserId = event.commentAuthorUserId,
+				)
+			} else {
+				SaveAlarmCommand(
+					userId = event.receiverUserId,
+					type = AlarmType.LOUNGE_COMMENT_RECEIVED,
+					title = "새로운 댓글",
+					description = authorNickname
+						?.let { "${it}님이 회원님의 셀소에 댓글을 남겼어요." }
+						?: "회원님의 셀소에 댓글이 달렸어요.",
+					// 알람을 누르면 라운지로 이동한다. (프론트 라우팅에 맞춘 경로)
+					link = "/",
+					fromUserId = event.commentAuthorUserId,
+				)
+			},
 		)
 	}
 }

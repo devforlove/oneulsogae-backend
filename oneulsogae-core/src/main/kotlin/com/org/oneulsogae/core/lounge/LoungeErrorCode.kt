@@ -60,4 +60,17 @@ enum class LoungeErrorCode(
 
 	/** 신청 후 3일이 지나 만료된 대화 신청을 수락함. */
 	LOUNGE_CHAT_REQUEST_EXPIRED("LOUNGE-015", "만료된 대화 신청입니다.", HttpStatus.GONE),
+
+	// 라운지 댓글
+	/** 댓글을 id로 찾지 못함(없거나 삭제됨). */
+	LOUNGE_COMMENT_NOT_FOUND("LOUNGE-016", "댓글을 찾을 수 없습니다.", HttpStatus.NOT_FOUND),
+
+	/** 댓글 내용이 비었거나 최대 길이를 넘음. */
+	LOUNGE_COMMENT_INVALID_CONTENT("LOUNGE-017", "댓글 내용을 1자 이상 500자 이하로 입력해주세요.", HttpStatus.BAD_REQUEST),
+
+	/** 본인이 작성한 댓글이 아님. (수정·삭제) */
+	LOUNGE_COMMENT_NOT_OWNED("LOUNGE-018", "본인이 작성한 댓글이 아닙니다.", HttpStatus.FORBIDDEN),
+
+	/** 대댓글에 다시 답글을 달려고 함. (깊이는 1단계까지) */
+	LOUNGE_COMMENT_REPLY_DEPTH_EXCEEDED("LOUNGE-019", "답글에는 다시 답글을 달 수 없습니다.", HttpStatus.BAD_REQUEST),
 }

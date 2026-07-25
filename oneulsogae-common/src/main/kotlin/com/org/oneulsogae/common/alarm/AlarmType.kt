@@ -55,6 +55,12 @@ enum class AlarmType(val description: String) {
 
 	/** [라운지] 내가 보낸 대화 신청이 수락됨. (신청자에게) */
 	LOUNGE_CHAT_ACCEPTED("대화 신청 수락됨"),
+
+	/** [라운지] 내 셀소에 댓글이 달림. (글 작성자에게) */
+	LOUNGE_COMMENT_RECEIVED("댓글 받음"),
+
+	/** [라운지] 내 댓글에 답글(대댓글)이 달림. (부모 댓글 작성자에게) */
+	LOUNGE_COMMENT_REPLY_RECEIVED("답글 받음"),
 	;
 
 	/** 이 알람 유형이 속한 알림 설정 카테고리. (알림톡 전송 게이트가 이 값으로 사용자 설정을 평가) */
@@ -62,7 +68,7 @@ enum class AlarmType(val description: String) {
 		when (this) {
 			ONE_TO_ONE_INTEREST_RECEIVED, ONE_TO_ONE_MATCH_CHECKED, ONE_TO_ONE_MATCHED, ONE_TO_ONE_MATCH_ENDED, ONE_TO_ONE_NO_MATCH_TODAY ->
 				NotificationCategory.ONE_TO_ONE
-			LOUNGE_CHAT_REQUEST_RECEIVED, LOUNGE_CHAT_ACCEPTED ->
+			LOUNGE_CHAT_REQUEST_RECEIVED, LOUNGE_CHAT_ACCEPTED, LOUNGE_COMMENT_RECEIVED, LOUNGE_COMMENT_REPLY_RECEIVED ->
 				NotificationCategory.LOUNGE
 			MANY_TO_MANY_INTEREST_RECEIVED, MANY_TO_MANY_MATCHED, MANY_TO_MANY_MATCH_ENDED, MANY_TO_MANY_NO_MATCH_TODAY ->
 				NotificationCategory.MEETING
