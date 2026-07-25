@@ -60,4 +60,7 @@ enum class UserErrorCode(
 
 	// 추천 코드
 	REFERRAL_CODE_ISSUE_FAILED("USER-040", "추천 코드 발급에 실패했습니다. 잠시 후 다시 시도해 주세요.", HttpStatus.INTERNAL_SERVER_ERROR),
+
+	// 학교 서류 이미지 인증(university_image_verifications)
+	INVALID_UNIVERSITY_NAME("USER-041", "학교명을 입력해 주세요. (최대 50자)", HttpStatus.BAD_REQUEST),
 }

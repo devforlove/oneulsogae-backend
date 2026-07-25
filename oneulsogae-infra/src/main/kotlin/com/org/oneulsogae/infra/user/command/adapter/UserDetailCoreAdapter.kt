@@ -1,6 +1,7 @@
 package com.org.oneulsogae.infra.user.command.adapter
 
 import com.org.oneulsogae.admin.companyverification.command.application.port.out.UpdateUserCompanyNamePort
+import com.org.oneulsogae.admin.universityverification.command.application.port.out.UpdateUserUniversityNamePort
 import com.org.oneulsogae.admin.memberverification.command.application.port.out.GetVerifiedUserProfilePort
 import com.org.oneulsogae.admin.memberverification.command.application.port.out.UpdateUserCompanyNamePort as UpdateUserCompanyNameOnMemberVerificationPort
 import com.org.oneulsogae.admin.memberverification.command.application.port.out.VerifiedUserProfile
@@ -29,6 +30,7 @@ class UserDetailCoreAdapter(
 	SaveUserDetailPort,
 	AnonymizeUserDetailPort,
 	UpdateUserCompanyNamePort,
+	UpdateUserUniversityNamePort,
 	UpdateUserCompanyNameOnMemberVerificationPort,
 	GetVerifiedUserProfilePort {
 
@@ -57,6 +59,14 @@ class UserDetailCoreAdapter(
 		val entity: UserDetailEntity = userDetailJpaRepository.findByUserId(userId)
 			?: throw IllegalStateException("사용자 프로필을 찾을 수 없습니다: $userId")
 		entity.companyName = companyName
+		userDetailJpaRepository.save(entity)
+	}
+
+	// 학교 서류 인증 승인: 어드민이 기입한 학교명을 프로필에 확정한다.
+	override fun updateUniversityName(userId: Long, universityName: String) {
+		val entity: UserDetailEntity = userDetailJpaRepository.findByUserId(userId)
+			?: throw IllegalStateException("사용자 프로필을 찾을 수 없습니다: $userId")
+		entity.universityName = universityName
 		userDetailJpaRepository.save(entity)
 	}
 
