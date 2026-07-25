@@ -18,6 +18,7 @@ import com.org.oneulsogae.core.payments.command.application.port.out.StoreReceip
 import com.org.oneulsogae.core.payments.command.application.port.out.VerifiedReceipt
 import com.org.oneulsogae.core.payments.command.domain.IapPayment
 import com.org.oneulsogae.core.payments.command.domain.PaymentStatus
+import org.springframework.dao.DataIntegrityViolationException
 import org.springframework.stereotype.Service
 
 /**
@@ -66,19 +67,23 @@ class VerifyIapPurchaseService(
 		// 적립+가드 원자.
 		val balance: CoinBalance = acquirePurchasedCoinUseCase.acquire(userId, item)
 
-		// IAP 기록(transaction_id 유니크). 경합으로 이미 있으면 재생 경로와 같은 의미이므로 현재 잔액으로 응답한다.
-		saveIapPaymentPort.save(
-			IapPayment(
-				userId = userId,
-				itemId = item.id,
-				platform = command.platform,
-				productId = verified.productId,
-				transactionId = verified.transactionId,
-				coinAmount = item.coinAmount,
-				status = PaymentStatus.APPROVED,
-			),
-		)
-
-		return VerifyIapPurchaseResult(coinBalance = balance.balance)
+		// IAP 기록(transaction_id 유니크). 동일 transaction_id가 경합으로 먼저 저장됐으면
+		// 멱등 재생과 같은 의미이므로 현재 잔액으로 응답한다(예외를 삼키지 말고 명시 처리).
+		return try {
+			saveIapPaymentPort.save(
+				IapPayment(
+					userId = userId,
+					itemId = item.id,
+					platform = command.platform,
+					productId = verified.productId,
+					transactionId = verified.transactionId,
+					coinAmount = item.coinAmount,
+					status = PaymentStatus.APPROVED,
+				),
+			)
+			VerifyIapPurchaseResult(coinBalance = balance.balance)
+		} catch (e: DataIntegrityViolationException) {
+			VerifyIapPurchaseResult(coinBalance = getCoinBalanceUseCase.getBalance(userId).balance)
+		}
 	}
 }
