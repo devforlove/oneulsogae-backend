@@ -1,10 +1,13 @@
 package com.org.oneulsogae.core.coin.query.dto
 
+import com.org.oneulsogae.common.coin.CoinSaleChannel
 import kotlin.math.roundToInt
 
 /**
  * 판매(구매) 가능한 코인 상품 도메인 모델.
  * 상품 구매 시 [coinAmount]만큼의 코인이 할인가([salePrice])에 지급되며, [price]는 정가다.
+ * [oncePerUser]가 true면 회원당 한 번만 구매할 수 있는 패키지다.
+ * [saleChannel]은 판매 채널(PG·IAP·BOTH)이며, IAP로 팔리는 상품(IAP·BOTH)은 스토어 SKU([storeProductId])가 필수다.
  * 영속성은 [com.org.oneulsogae.infra.coin.command.entity.CoinItemEntity]가 담당한다.
  */
 data class CoinItem(
@@ -12,6 +15,9 @@ data class CoinItem(
 	val coinAmount: Int,
 	val price: Int,
 	val salePrice: Int,
+	val oncePerUser: Boolean = false,
+	val saleChannel: CoinSaleChannel = CoinSaleChannel.PG,
+	val storeProductId: String? = null,
 ) {
 
 	/** 코인 1개당 실제 결제 가격. (salePrice / coinAmount) */
@@ -31,13 +37,33 @@ data class CoinItem(
 
 	companion object {
 
-		/** 새 코인 상품을 생성한다. */
-		fun create(coinAmount: Int, price: Int, salePrice: Int): CoinItem {
+		/**
+		 * 새 코인 상품을 생성한다.
+		 * IAP로 팔리는 상품(IAP·BOTH)은 스토어 SKU([storeProductId])가 반드시 있어야 한다(공백 불가).
+		 */
+		fun create(
+			coinAmount: Int,
+			price: Int,
+			salePrice: Int,
+			oncePerUser: Boolean = false,
+			saleChannel: CoinSaleChannel = CoinSaleChannel.PG,
+			storeProductId: String? = null,
+		): CoinItem {
 			require(coinAmount > 0) { "코인 개수는 1 이상이어야 합니다." }
 			require(price > 0) { "정가는 1 이상이어야 합니다." }
 			require(salePrice > 0) { "할인가는 1 이상이어야 합니다." }
 			require(salePrice <= price) { "할인가는 정가보다 클 수 없습니다." }
-			return CoinItem(coinAmount = coinAmount, price = price, salePrice = salePrice)
+			if (saleChannel.sellableVia(CoinSaleChannel.IAP)) {
+				require(!storeProductId.isNullOrBlank()) { "IAP 판매 상품은 스토어 상품 id가 필요합니다." }
+			}
+			return CoinItem(
+				coinAmount = coinAmount,
+				price = price,
+				salePrice = salePrice,
+				oncePerUser = oncePerUser,
+				saleChannel = saleChannel,
+				storeProductId = storeProductId,
+			)
 		}
 	}
 }
