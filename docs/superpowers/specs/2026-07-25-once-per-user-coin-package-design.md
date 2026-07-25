@@ -110,10 +110,10 @@
 
 ## 상점 조회 (구매한 패키지 숨김 + 채널 필터)
 
-- **`GET /coins/v1/shop?channel=IAP`** — `channel` 필수 쿼리 파라미터(`CoinSaleChannel`). `@LoginUser AuthUser?` 추가(비로그인 허용).
+- **`GET /coins/v1/shop?channel=IAP`** — `channel` 필수 쿼리 파라미터(`CoinSaleChannel`). `@LoginUser AuthUser` 추가. (`/coins/v1/**`는 SecurityConfig permitAll 목록에 없어 이미 인증 필수 — userId 항상 존재)
 - `GetCoinShopService.getCoinShop(userId, channel)`:
   - `findShopItems`는 `sale_channel = :channel OR sale_channel = BOTH` 인 상품을 반환하되,
-  - `once_per_user = true` 이고 `coin_item_purchases`에 `(userId, itemId)`가 있는 상품은 제외(로그인 시). 비로그인이면 제외 없음.
+  - `once_per_user = true` 이고 `coin_item_purchases`에 `(userId, itemId)`가 있는 상품은 제외.
 - QueryDSL: `coin_items` LEFT JOIN `coin_item_purchases` on (item.id = p.item_id AND p.user_id = :userId), `where channel조건 AND NOT(once_per_user AND p.id IS NOT NULL)`.
 - 응답 `CoinItemResponse`에 `oncePerUser` 필드 추가(클라이언트가 "한정" 뱃지 표시). `saleChannel`은 채널로 이미 걸러 내려가므로 노출 불필요(YAGNI).
 
