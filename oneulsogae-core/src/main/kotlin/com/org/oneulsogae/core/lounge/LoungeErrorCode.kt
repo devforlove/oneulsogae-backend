@@ -73,4 +73,7 @@ enum class LoungeErrorCode(
 
 	/** 대댓글에 다시 답글을 달려고 함. (깊이는 1단계까지) */
 	LOUNGE_COMMENT_REPLY_DEPTH_EXCEEDED("LOUNGE-019", "답글에는 다시 답글을 달 수 없습니다.", HttpStatus.BAD_REQUEST),
+
+	/** 대화 신청 메시지가 최대 길이를 넘음. */
+	LOUNGE_CHAT_REQUEST_MESSAGE_TOO_LONG("LOUNGE-020", "신청 메시지는 200자까지 입력할 수 있습니다.", HttpStatus.BAD_REQUEST),
 }

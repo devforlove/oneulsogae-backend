@@ -8,5 +8,6 @@ import com.org.oneulsogae.core.lounge.command.application.port.`in`.result.Reque
  */
 interface RequestLoungeChatUseCase {
 
-	fun request(userId: Long, postId: Long): RequestLoungeChatResult
+	/** [message]는 작성자에게 남길 선택 메시지(최대 200자)다. 공백뿐이면 없는 것으로 다룬다. */
+	fun request(userId: Long, postId: Long, message: String?): RequestLoungeChatResult
 }

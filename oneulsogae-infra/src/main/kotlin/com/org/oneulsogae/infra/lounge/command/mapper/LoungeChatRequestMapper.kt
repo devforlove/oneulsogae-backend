@@ -14,6 +14,7 @@ fun LoungeChatRequestEntity.toDomain(): LoungeChatRequest =
 		expiredAt = expiredAt,
 		createdAt = createdAt,
 		initCoinAmount = initCoinAmount,
+		message = message,
 	)
 
 /**
@@ -28,4 +29,5 @@ fun LoungeChatRequest.toEntity(): LoungeChatRequestEntity =
 		status = status,
 		expiredAt = expiredAt,
 		initCoinAmount = initCoinAmount,
+		message = message,
 	).also { if (id != 0L) it.id = id }

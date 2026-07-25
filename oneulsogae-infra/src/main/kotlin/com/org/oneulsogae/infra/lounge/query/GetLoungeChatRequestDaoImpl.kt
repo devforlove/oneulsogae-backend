@@ -98,6 +98,7 @@ class GetLoungeChatRequestDaoImpl(
 					request.status,
 					request.createdAt,
 					request.expiredAt,
+					request.message,
 				),
 			)
 			.from(request)

@@ -19,6 +19,7 @@ import com.org.oneulsogae.infra.lounge.command.entity.QLoungePostEntity
 import com.org.oneulsogae.infra.user.command.entity.QUserDetailEntity
 import io.kotest.matchers.shouldBe
 import io.restassured.RestAssured
+import io.restassured.http.ContentType
 import org.hamcrest.Matchers
 
 /**
@@ -102,6 +103,67 @@ class RequestLoungeChatE2ETest : AbstractIntegrationSupport({
 					.where(QCoinBalanceEntity.coinBalanceEntity.userId.eq(requesterId))
 					.fetchFirst()!!
 				balance shouldBe 84
+			}
+		}
+
+		context("메시지를 담아 신청하면") {
+			it("메시지가 저장되고, 글 작성자의 받은 신청 목록에 노출된다") {
+				val authorId: Long = IntegrationUtil.persist(UserEntityFixture.create(providerId = "lounge-req-author-10")).id!!
+				val requesterId: Long = IntegrationUtil.persist(UserEntityFixture.create(providerId = "lounge-req-user-10")).id!!
+				IntegrationUtil.persist(UserDetailEntityFixture.create(userId = authorId, gender = Gender.FEMALE))
+				IntegrationUtil.persist(UserDetailEntityFixture.create(userId = requesterId, gender = Gender.MALE, companyName = "오늘소개"))
+				IntegrationUtil.persist(CoinBalanceEntityFixture.create(userId = requesterId, balance = 100))
+				val post: LoungePostEntity = IntegrationUtil.persist(LoungePostEntityFixture.create(userId = authorId))
+
+				RestAssured.given()
+					.header("Authorization", "Bearer ${accessTokenFor(requesterId)}")
+					.contentType(ContentType.JSON)
+					.body("""{"message": "  프로필 보고 반가워서 신청해요!  "}""")
+					.post("/lounge/v1/self-intro-posts/${post.id}/chat-requests")
+					.then()
+					.statusCode(200)
+
+				// 앞뒤 공백은 정리돼 저장된다.
+				val saved: LoungeChatRequestEntity = IntegrationUtil.getQuery()
+					.selectFrom(QLoungeChatRequestEntity.loungeChatRequestEntity)
+					.where(QLoungeChatRequestEntity.loungeChatRequestEntity.postId.eq(post.id!!))
+					.fetchFirst()!!
+				saved.message shouldBe "프로필 보고 반가워서 신청해요!"
+
+				// 글 작성자의 받은 신청 목록에 메시지가 함께 내려간다.
+				RestAssured.given()
+					.header("Authorization", "Bearer ${accessTokenFor(authorId)}")
+					.get("/lounge/v1/chat-requests/received")
+					.then()
+					.statusCode(200)
+					.body("data.items[0].message", Matchers.equalTo("프로필 보고 반가워서 신청해요!"))
+			}
+		}
+
+		context("메시지가 200자를 넘으면") {
+			it("400(LOUNGE-020)을 반환하고 코인이 차감되지 않는다") {
+				val authorId: Long = IntegrationUtil.persist(UserEntityFixture.create(providerId = "lounge-req-author-11")).id!!
+				val requesterId: Long = IntegrationUtil.persist(UserEntityFixture.create(providerId = "lounge-req-user-11")).id!!
+				IntegrationUtil.persist(UserDetailEntityFixture.create(userId = authorId, gender = Gender.FEMALE))
+				IntegrationUtil.persist(UserDetailEntityFixture.create(userId = requesterId, gender = Gender.MALE, companyName = "오늘소개"))
+				IntegrationUtil.persist(CoinBalanceEntityFixture.create(userId = requesterId, balance = 100))
+				val post: LoungePostEntity = IntegrationUtil.persist(LoungePostEntityFixture.create(userId = authorId))
+
+				RestAssured.given()
+					.header("Authorization", "Bearer ${accessTokenFor(requesterId)}")
+					.contentType(ContentType.JSON)
+					.body("""{"message": "${"가".repeat(201)}"}""")
+					.post("/lounge/v1/self-intro-posts/${post.id}/chat-requests")
+					.then()
+					.statusCode(400)
+					.body("error.code", Matchers.equalTo("LOUNGE-020"))
+
+				val balance: Int = IntegrationUtil.getQuery()
+					.select(QCoinBalanceEntity.coinBalanceEntity.balance)
+					.from(QCoinBalanceEntity.coinBalanceEntity)
+					.where(QCoinBalanceEntity.coinBalanceEntity.userId.eq(requesterId))
+					.fetchFirst()!!
+				balance shouldBe 100
 			}
 		}
 

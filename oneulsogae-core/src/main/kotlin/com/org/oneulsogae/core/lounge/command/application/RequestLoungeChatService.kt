@@ -52,7 +52,7 @@ class RequestLoungeChatService(
 
 	@DistributedLock(prefix = LockKeyConstraints.LOUNGE_CHAT_REQUEST, keys = ["#postId", "#userId"], waitTime = 0)
 	@Transactional
-	override fun request(userId: Long, postId: Long): RequestLoungeChatResult {
+	override fun request(userId: Long, postId: Long, message: String?): RequestLoungeChatResult {
 		// 회사 인증을 마친 사용자만 라운지 대화신청을 할 수 있다. 코인 차감 전에 막아 미인증 요청에 과금이 생기지 않게 한다.
 		checkCompanyVerifiedUseCase.validateCompanyVerified(userId)
 
@@ -77,6 +77,7 @@ class RequestLoungeChatService(
 				postAuthorGender = postAuthorDetail?.gender,
 				now = timeGenerator.now(),
 				initCoinAmount = initCoinAmount,
+				message = message,
 			),
 		)
 		spendCoinUseCase.spend(userId, SpendCoinCommand(amount = initCoinAmount, coinUsageType = USAGE_TYPE))

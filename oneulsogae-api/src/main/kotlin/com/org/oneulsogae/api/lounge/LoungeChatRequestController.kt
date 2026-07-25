@@ -1,5 +1,6 @@
 package com.org.oneulsogae.api.lounge
 
+import com.org.oneulsogae.api.lounge.request.RequestLoungeChatRequest
 import com.org.oneulsogae.api.lounge.response.AcceptLoungeChatResponse
 import com.org.oneulsogae.api.lounge.response.LoungeChatRequestPageResponse
 import com.org.oneulsogae.api.lounge.response.LoungeChatRequestResponse
@@ -15,9 +16,11 @@ import io.swagger.v3.oas.annotations.tags.Tag
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.PostMapping
+import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RequestParam
 import org.springframework.web.bind.annotation.RestController
+import tools.jackson.databind.ObjectMapper
 
 /**
  * 라운지 셀소 대화 신청 엔드포인트. (인증 필요)
@@ -33,19 +36,29 @@ class LoungeChatRequestController(
 	private val requestLoungeChatUseCase: RequestLoungeChatUseCase,
 	private val getLoungeChatRequestsUseCase: GetLoungeChatRequestsUseCase,
 	private val acceptLoungeChatUseCase: AcceptLoungeChatUseCase,
+	private val objectMapper: ObjectMapper,
 ) {
 
 	/** 셀소 작성자에게 대화를 신청한다. 신청 비용(신청자 성별별)이 차감된다. */
 	@Operation(
 		summary = "대화 신청",
-		description = "라운지 셀소 상세에서 작성자에게 대화를 신청한다. 신청 비용(신청자 성별별로 다름)이 차감되고 신청은 PENDING 상태로 저장된다. 본인 글이면 400(LOUNGE-009), 이미 신청한 글이면 409(LOUNGE-010), 글이 없으면 404(LOUNGE-008)를 반환한다. 동시 요청이 겹치면 409(LOCK-001)를 반환한다.",
+		description = "라운지 셀소 상세에서 작성자에게 대화를 신청한다. 신청 비용(신청자 성별별로 다름)이 차감되고 신청은 PENDING 상태로 저장된다. 본문(message, 최대 200자)은 작성자에게 남길 선택 메시지로 받은 신청 목록에 노출되며, 본문 자체를 생략해도 된다(200자 초과는 400 LOUNGE-020). 본인 글이면 400(LOUNGE-009), 이미 신청한 글이면 409(LOUNGE-010), 글이 없으면 404(LOUNGE-008)를 반환한다. 동시 요청이 겹치면 409(LOCK-001)를 반환한다.",
 	)
 	@PostMapping("/self-intro-posts/{postId}/chat-requests")
 	fun requestChat(
 		@LoginUser user: AuthUser,
 		@PathVariable("postId") postId: Long,
-	): ApiResponse<LoungeChatRequestResponse> =
-		ApiResponse.success(LoungeChatRequestResponse.of(requestLoungeChatUseCase.request(user.id, postId)))
+		// 메시지 없는 구버전 클라이언트는 본문·Content-Type 없이 호출한다. DTO @RequestBody는 그 경우
+		// 415(octet-stream 변환 불가)로 막히므로, 어떤 Content-Type이든 읽히는 String으로 받아 직접 파싱한다.
+		@RequestBody(required = false) body: String?,
+	): ApiResponse<LoungeChatRequestResponse> {
+		val message: String? = body
+			?.takeIf { raw: String -> raw.isNotBlank() }
+			?.let { raw: String -> objectMapper.readValue(raw, RequestLoungeChatRequest::class.java).message }
+		return ApiResponse.success(
+			LoungeChatRequestResponse.of(requestLoungeChatUseCase.request(user.id, postId, message)),
+		)
+	}
 
 	/** 내가 받은 대화 신청 목록을 최신순 한 페이지 조회한다. */
 	@Operation(

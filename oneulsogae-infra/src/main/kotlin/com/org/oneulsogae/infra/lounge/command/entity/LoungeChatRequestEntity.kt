@@ -64,4 +64,8 @@ class LoungeChatRequestEntity(
 	/** 신청 시 실제 차감한 신청 비용의 스냅샷(남녀 비용이 달라 신청자 성별에 따라 다르다). 구행 데이터는 null. */
 	@Column(name = "init_coin_amount")
 	val initCoinAmount: Int? = null,
+
+	/** 신청자가 작성자에게 남긴 메시지(선택, 최대 200자). 받은 신청 목록에 노출된다. */
+	@Column(name = "message", columnDefinition = "varchar(200)")
+	val message: String? = null,
 ) : BaseEntity()

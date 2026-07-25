@@ -73,6 +73,8 @@ data class LoungeChatRequestItemResponse(
 	val requestedAt: LocalDateTime,
 	/** 만료 시각(신청 시각 + 3일). 이 시각이 지난 PENDING 신청은 수락할 수 없고 목록에서도 빠진다. */
 	val expiredAt: LocalDateTime,
+	/** 신청자가 남긴 메시지(선택, 최대 200자). 받은 목록에서는 신청자가, 보낸 목록에서는 내가 쓴 것이다. */
+	val message: String?,
 ) {
 	companion object {
 
@@ -91,6 +93,7 @@ data class LoungeChatRequestItemResponse(
 				status = view.status,
 				requestedAt = view.requestedAt,
 				expiredAt = view.expiredAt,
+				message = view.message,
 			)
 	}
 }

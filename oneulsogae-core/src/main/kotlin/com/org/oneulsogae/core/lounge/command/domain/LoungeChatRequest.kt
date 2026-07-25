@@ -28,6 +28,8 @@ data class LoungeChatRequest(
 	val createdAt: LocalDateTime? = null,
 	/** 신청 시 실제 차감한 신청 비용의 스냅샷. 구행(null)은 [expiryRefundAmount]가 정책값으로 대신한다. */
 	val initCoinAmount: Int? = null,
+	/** 신청자가 작성자에게 남긴 메시지(선택, 최대 [MAX_MESSAGE_LENGTH]자). 받은 신청 목록에 노출된다. */
+	val message: String? = null,
 ) {
 
 	/**
@@ -69,6 +71,9 @@ data class LoungeChatRequest(
 		/** 대화 신청의 유효 기간(3일). 신청 시각으로부터 이 기간이 지나면 만료로 본다. */
 		val EXPIRATION: Duration = Duration.ofDays(3)
 
+		/** 신청 메시지의 최대 길이. */
+		const val MAX_MESSAGE_LENGTH: Int = 200
+
 		/**
 		 * 신규 대화 신청을 만든다. (PENDING 상태로 시작, 만료 시각은 [now] + [EXPIRATION])
 		 * - 본인이 작성한 글([postAuthorUserId]와 [requesterUserId]가 같음): [LoungeErrorCode.LOUNGE_CHAT_REQUEST_SELF]
@@ -76,6 +81,8 @@ data class LoungeChatRequest(
 		 *
 		 * 본인 글 검사를 성별 검사보다 먼저 한다. (본인은 성별도 같으므로 순서가 바뀌면 엉뚱한 사유가 나간다)
 		 * [initCoinAmount]는 호출 측이 신청자 성별로 산출해 넘긴 실제 차감액이며, 그대로 스냅샷([LoungeChatRequest.initCoinAmount])된다.
+		 * [message]는 선택 입력이다 — 공백뿐이면 null로 정규화하고, [MAX_MESSAGE_LENGTH]를 넘으면
+		 * [LoungeErrorCode.LOUNGE_CHAT_REQUEST_MESSAGE_TOO_LONG] ([validateMessage]).
 		 */
 		fun create(
 			postId: Long,
@@ -85,18 +92,31 @@ data class LoungeChatRequest(
 			postAuthorGender: Gender?,
 			now: LocalDateTime,
 			initCoinAmount: Int,
+			message: String? = null,
 		): LoungeChatRequest {
 			if (requesterUserId == postAuthorUserId) {
 				throw BusinessException(LoungeErrorCode.LOUNGE_CHAT_REQUEST_SELF)
 			}
 			validateOppositeGender(requesterGender, postAuthorGender)
+			validateMessage(message)
 			return LoungeChatRequest(
 				postId = postId,
 				requesterUserId = requesterUserId,
 				receiverUserId = postAuthorUserId,
 				expiredAt = now.plus(EXPIRATION),
 				initCoinAmount = initCoinAmount,
+				message = message?.trim()?.takeIf { trimmed: String -> trimmed.isNotEmpty() },
 			)
+		}
+
+		/**
+		 * 신청 메시지 검증. 선택 입력이라 null·공백은 허용하고,
+		 * (trim 후) [MAX_MESSAGE_LENGTH]를 넘으면 [LoungeErrorCode.LOUNGE_CHAT_REQUEST_MESSAGE_TOO_LONG].
+		 */
+		fun validateMessage(message: String?) {
+			if (message != null && message.trim().length > MAX_MESSAGE_LENGTH) {
+				throw BusinessException(LoungeErrorCode.LOUNGE_CHAT_REQUEST_MESSAGE_TOO_LONG)
+			}
 		}
 
 		/**

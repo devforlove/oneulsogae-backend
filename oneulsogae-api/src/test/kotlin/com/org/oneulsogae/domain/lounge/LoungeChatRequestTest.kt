@@ -115,6 +115,53 @@ class LoungeChatRequestTest : DescribeSpec({
 				exception.errorCode shouldBe LoungeErrorCode.LOUNGE_CHAT_REQUEST_SELF
 			}
 		}
+
+		context("메시지를 담아 신청하면") {
+			it("앞뒤 공백을 정리해 보관하고, 공백뿐이면 null로 정규화한다") {
+				val withMessage: LoungeChatRequest = LoungeChatRequest.create(
+					postId = postId,
+					requesterUserId = requesterUserId,
+					postAuthorUserId = authorUserId,
+					requesterGender = Gender.MALE,
+					postAuthorGender = Gender.FEMALE,
+					now = now,
+					initCoinAmount = 32,
+					message = "  반가워요! 대화해요  ",
+				)
+				withMessage.message shouldBe "반가워요! 대화해요"
+
+				val blankMessage: LoungeChatRequest = LoungeChatRequest.create(
+					postId = postId,
+					requesterUserId = requesterUserId,
+					postAuthorUserId = authorUserId,
+					requesterGender = Gender.MALE,
+					postAuthorGender = Gender.FEMALE,
+					now = now,
+					initCoinAmount = 32,
+					message = "   ",
+				)
+				blankMessage.message shouldBe null
+			}
+		}
+
+		context("메시지가 최대 길이(200자)를 넘으면") {
+			it("LOUNGE_CHAT_REQUEST_MESSAGE_TOO_LONG 예외를 던진다") {
+				val exception: BusinessException = shouldThrow<BusinessException> {
+					LoungeChatRequest.create(
+						postId = postId,
+						requesterUserId = requesterUserId,
+						postAuthorUserId = authorUserId,
+						requesterGender = Gender.MALE,
+						postAuthorGender = Gender.FEMALE,
+						now = now,
+						initCoinAmount = 32,
+						message = "가".repeat(LoungeChatRequest.MAX_MESSAGE_LENGTH + 1),
+					)
+				}
+
+				exception.errorCode shouldBe LoungeErrorCode.LOUNGE_CHAT_REQUEST_MESSAGE_TOO_LONG
+			}
+		}
 	}
 
 	describe("acceptBy") {
