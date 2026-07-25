@@ -1,12 +1,11 @@
 package com.org.oneulsogae.core.payments.command.application
 
-import com.org.oneulsogae.common.coin.CoinGetType
-import com.org.oneulsogae.core.coin.command.application.port.`in`.AcquireCoinUseCase
-import com.org.oneulsogae.core.coin.command.application.port.`in`.command.AcquireCoinCommand
+import com.org.oneulsogae.core.coin.command.application.port.`in`.AcquirePurchasedCoinUseCase
 import com.org.oneulsogae.core.coin.command.domain.CoinBalance
 import com.org.oneulsogae.core.coin.query.dto.CoinItem
 import com.org.oneulsogae.core.coin.query.service.port.`in`.GetCoinBalanceUseCase
 import com.org.oneulsogae.core.coin.query.service.port.`in`.GetCoinCheckoutUseCase
+import com.org.oneulsogae.core.coin.query.service.port.`in`.IsCoinItemPurchasedUseCase
 import com.org.oneulsogae.core.common.error.BusinessException
 import com.org.oneulsogae.core.payments.PaymentsErrorCode
 import com.org.oneulsogae.core.payments.command.application.port.`in`.CompleteCoinPurchaseUseCase
@@ -37,11 +36,12 @@ import org.springframework.stereotype.Service
 class CompleteCoinPurchaseService(
 	private val getCoinCheckoutUseCase: GetCoinCheckoutUseCase,
 	private val getCoinBalanceUseCase: GetCoinBalanceUseCase,
+	private val isCoinItemPurchasedUseCase: IsCoinItemPurchasedUseCase,
 	private val paymentGatewayPort: PaymentGatewayPort,
 	private val getCoinPaymentPort: GetCoinPaymentPort,
 	private val saveCoinPaymentPort: SaveCoinPaymentPort,
 	private val updateCoinPaymentStatusPort: UpdateCoinPaymentStatusPort,
-	private val acquireCoinUseCase: AcquireCoinUseCase,
+	private val acquirePurchasedCoinUseCase: AcquirePurchasedCoinUseCase,
 ) : CompleteCoinPurchaseUseCase {
 
 	override fun complete(userId: Long, command: CompleteCoinPurchaseCommand): CompleteCoinPurchaseResult {
@@ -53,6 +53,11 @@ class CompleteCoinPurchaseService(
 
 		// 코인 상품 조회(없으면 COIN-004). salePrice가 서버 확정 실결제가.
 		val item: CoinItem = getCoinCheckoutUseCase.getCheckout(command.itemId)
+
+		// 회원당 1회 패키지를 이미 샀으면 PG confirm 전에 막아 헛된 과금을 피한다(이른 409).
+		if (item.oncePerUser && isCoinItemPurchasedUseCase.isPurchased(userId, item.id)) {
+			throw BusinessException(PaymentsErrorCode.COIN_PACKAGE_ALREADY_PURCHASED)
+		}
 
 		// ① PENDING 결제 기록 선저장 (자기 트랜잭션). paymentKey를 승인 전에 durable하게 남긴다.
 		val payment: CoinPayment = saveCoinPaymentPort.save(
@@ -75,11 +80,9 @@ class CompleteCoinPurchaseService(
 			throw BusinessException(PaymentsErrorCode.PAYMENT_CONFIRM_FAILED)
 		}
 
-		// ③-성공: 코인을 즉시 적립(원장+잔액 정합)한 뒤 기록을 APPROVED로 전이한다.
-		val balance: CoinBalance = acquireCoinUseCase.acquire(
-			userId,
-			AcquireCoinCommand(amount = item.coinAmount, coinType = CoinGetType.PURCHASE),
-		)
+		// ③-성공: 코인 적립 + (1회 패키지면) 구매 가드를 한 트랜잭션에서 처리한다.
+		// 선검사와 적립 사이 경합으로 가드가 먼저 들어갔으면 409로 막히고 적립도 롤백된다.
+		val balance: CoinBalance = acquirePurchasedCoinUseCase.acquire(userId, item)
 		updateCoinPaymentStatusPort.updateStatus(payment.id!!, PaymentStatus.APPROVED)
 
 		return CompleteCoinPurchaseResult(amount = item.salePrice, coinAmount = item.coinAmount, balance = balance.balance)
