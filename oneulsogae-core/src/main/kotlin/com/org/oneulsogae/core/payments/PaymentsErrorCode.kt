@@ -30,4 +30,7 @@ enum class PaymentsErrorCode(
 
 	/** 회원당 1회 구매 패키지를 이미 구매함. (PG·IAP 공통) */
 	COIN_PACKAGE_ALREADY_PURCHASED("PAYMENTS-006", "이미 구매한 패키지입니다.", HttpStatus.CONFLICT),
+
+	/** IAP로 판매하지 않는 상품을 인앱결제로 검증 요청함. */
+	COIN_ITEM_NOT_SOLD_VIA_IAP("PAYMENTS-007", "인앱결제로 구매할 수 없는 상품입니다.", HttpStatus.BAD_REQUEST),
 }
