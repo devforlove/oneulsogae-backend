@@ -55,13 +55,14 @@
 
 **조회 서비스 `GetCoinShopService`** (`coin/query/service`) — 노출 게이트
 - 기존: `getCoinItemDao.findShopItems(userId, channel)` 위임.
-- 변경: 유저 가입시각(user in-port)·`now`(TimeGenerator)를 얻어, dao 결과에 `activeOffersAt(userCreatedAt, now)` 적용해 만료 오퍼 제거.
+- 변경: dao 결과에 기간 한정 상품(`validDays != null`)이 하나라도 있을 때만 유저 가입시각(user in-port)·`now`(TimeGenerator)를 얻어 `activeOffersAt(userCreatedAt, now)` 적용해 만료 오퍼 제거. 기간 한정 상품이 없으면 유저 조회 없이 그대로 반환.
+- **가입시각 조회를 지연(lazy)하는 이유**: 상시 상품(validDays 전부 null)만 있는 정상 케이스에서 불필요한 user 조회를 피하고, 미가입 userId로도 동작하던 기존 흐름·테스트를 깨지 않는다.
 - dao의 채널 필터·`once_per_user` 구매분 제외는 그대로(SQL). 만료 필터만 서비스에서 도메인 술어로 적용(상점은 작은 목록이라 메모리 필터로 충분).
 - `@Transactional(readOnly = true)` 유지.
 
 **체크아웃 서비스 `GetCoinCheckoutService`** (`coin/query/service`) — 결제-전 게이트
 - in-port 시그니처 변경: `getCheckout(itemId: Long): CoinItem` → `getCheckout(userId: Long, itemId: Long): CoinItem`.
-- 로직: `findById(itemId)` (없으면 `COIN_ITEM_NOT_FOUND`) → 유저 가입시각·`now` 로 `isOfferActiveAt` 검사 → 만료면 `COIN_ITEM_OFFER_EXPIRED`(신규). 활성이면 `CoinItem` 반환.
+- 로직: `findById(itemId)` (없으면 `COIN_ITEM_NOT_FOUND`) → 상품이 기간 한정(`validDays != null`)일 때만 유저 가입시각·`now` 로 `isOfferActiveAt` 검사 → 만료면 `COIN_ITEM_OFFER_EXPIRED`(신규). 상시 상품이면 유저 조회 없이 그대로 반환. 활성이면 `CoinItem` 반환.
 - 호출자 2곳 모두 userId 전달:
   - `oneulsogae-api` `PaymentsController`(체크아웃 화면 조회) — `@LoginUser` userId.
   - `CompleteCoinPurchaseService.complete` — 이미 보유한 `userId`.
@@ -95,16 +96,15 @@
 
 `@Transactional(readOnly = true)`:
 
-1. `now = timeGenerator.now()`, `userCreatedAt = getUserByIdUseCase.getById(userId).createdAt`.
-2. `items = getCoinItemDao.findShopItems(userId, channel)` (채널·미구매 1회패키지).
-3. `items.activeOffersAt(userCreatedAt, now)` — 만료 오퍼 제거.
-4. 결과 `CoinItems` 반환.
+1. `items = getCoinItemDao.findShopItems(userId, channel)` (채널·미구매 1회패키지).
+2. `items.values` 에 `validDays != null` 이 없으면 `items` 그대로 반환(유저 조회 생략).
+3. 있으면 `now = timeGenerator.now()`, `userCreatedAt = getUserByIdUseCase.getById(userId).createdAt` 로드 → `items.activeOffersAt(userCreatedAt, now)` 로 만료 오퍼 제거해 반환.
 
 ### 체크아웃 / 구매 확정 — `GetCoinCheckoutService.getCheckout(userId, itemId)`
 
 1. `item = getCoinItemDao.findById(itemId)` — 없으면 `COIN_ITEM_NOT_FOUND`(404).
-2. `now`·`userCreatedAt` 로 `item.isOfferActiveAt(...)` — 만료면 `COIN_ITEM_OFFER_EXPIRED`(400).
-3. `item` 반환.
+2. `item.validDays == null` 이면 유저 조회 없이 `item` 반환(상시 상품).
+3. 기간 한정이면 `now`·`userCreatedAt` 로 `item.isOfferActiveAt(...)` — 만료면 `COIN_ITEM_OFFER_EXPIRED`(400), 활성이면 `item` 반환.
 
 `CompleteCoinPurchaseService.complete`:
 - 기존 흐름 그대로. 단 `getCheckout(command.itemId)` → `getCheckout(userId, command.itemId)`. 만료면 이 시점(PG confirm 전)에 400으로 중단 → 과금·적립 없음.
