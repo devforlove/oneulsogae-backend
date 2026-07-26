@@ -10,7 +10,6 @@ import com.org.oneulsogae.infra.fixture.IntegrationUtil
 import com.org.oneulsogae.infra.fixture.MissionEntityFixture
 import com.org.oneulsogae.infra.fixture.UserDetailEntityFixture
 import com.org.oneulsogae.infra.fixture.UserEntityFixture
-import com.org.oneulsogae.infra.mission.command.entity.MissionEntity
 import com.org.oneulsogae.infra.mission.command.entity.QMissionCompletionEntity
 import com.org.oneulsogae.infra.mission.command.entity.QMissionEntity
 import com.org.oneulsogae.infra.user.command.entity.QUserDetailEntity
