@@ -38,6 +38,7 @@ class GetUserWithDetailDaoImpl(
 						user.id,
 						user.email,
 						user.status,
+						user.createdAt,
 					),
 					Projections.constructor(
 						UserDetailView::class.java,

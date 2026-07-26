@@ -20,4 +20,7 @@ enum class CoinGetType(val description: String) {
 
 	/** 추천 코드 입력으로 추천인·신규 유저 양쪽에 지급하는 코인. */
 	REFERRAL("추천 보상"),
+
+	/** 미션 완료 보상으로 지급하는 코인. */
+	MISSION("미션 보상"),
 }

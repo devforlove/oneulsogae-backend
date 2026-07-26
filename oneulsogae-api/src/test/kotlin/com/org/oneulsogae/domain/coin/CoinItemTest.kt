@@ -5,6 +5,7 @@ import com.org.oneulsogae.core.coin.query.dto.CoinItem
 import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.core.spec.style.DescribeSpec
 import io.kotest.matchers.shouldBe
+import java.time.LocalDateTime
 
 /**
  * [CoinItem] 생성 규칙 유닛 테스트.
@@ -48,6 +49,38 @@ class CoinItemTest : DescribeSpec({
 					oncePerUser = false, saleChannel = CoinSaleChannel.BOTH, storeProductId = "  ",
 				)
 			}
+		}
+	}
+
+	describe("isOfferActiveAt") {
+		val createdAt: LocalDateTime = LocalDateTime.of(2026, 1, 1, 0, 0)
+
+		it("validDays가 null이면 언제나 활성이다(상시 상품)") {
+			val item: CoinItem = CoinItem.create(
+				coinAmount = 100, price = 12000, salePrice = 10000, validDays = null,
+			)
+			item.isOfferActiveAt(createdAt, LocalDateTime.of(2999, 1, 1, 0, 0)) shouldBe true
+		}
+
+		it("가입시각 + validDays일 직전이면 활성이다") {
+			val item: CoinItem = CoinItem.create(
+				coinAmount = 200, price = 10000, salePrice = 4900, oncePerUser = true, validDays = 7,
+			)
+			item.isOfferActiveAt(createdAt, LocalDateTime.of(2026, 1, 7, 23, 59)) shouldBe true
+		}
+
+		it("가입시각 + validDays일 정각이면 만료다(exclusive 경계)") {
+			val item: CoinItem = CoinItem.create(
+				coinAmount = 200, price = 10000, salePrice = 4900, oncePerUser = true, validDays = 7,
+			)
+			item.isOfferActiveAt(createdAt, LocalDateTime.of(2026, 1, 8, 0, 0)) shouldBe false
+		}
+
+		it("가입시각 + validDays일 이후면 만료다") {
+			val item: CoinItem = CoinItem.create(
+				coinAmount = 200, price = 10000, salePrice = 4900, oncePerUser = true, validDays = 7,
+			)
+			item.isOfferActiveAt(createdAt, LocalDateTime.of(2026, 1, 9, 0, 0)) shouldBe false
 		}
 	}
 })
