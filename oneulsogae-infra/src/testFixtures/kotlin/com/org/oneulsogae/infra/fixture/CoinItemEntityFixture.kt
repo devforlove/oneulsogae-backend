@@ -16,6 +16,7 @@ object CoinItemEntityFixture {
 		oncePerUser: Boolean = false,
 		saleChannel: CoinSaleChannel = CoinSaleChannel.PG,
 		storeProductId: String? = null,
+		validDays: Int? = null,
 	): CoinItemEntity =
 		CoinItemEntity(
 			coinAmount = coinAmount,
@@ -24,5 +25,6 @@ object CoinItemEntityFixture {
 			oncePerUser = oncePerUser,
 			saleChannel = saleChannel,
 			storeProductId = storeProductId,
+			validDays = validDays,
 		)
 }

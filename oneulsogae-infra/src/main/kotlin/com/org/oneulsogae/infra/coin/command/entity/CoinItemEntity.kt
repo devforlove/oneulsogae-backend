@@ -43,4 +43,8 @@ class CoinItemEntity(
 	/** 스토어 상품 id(SKU). IAP 검증이 SKU→coin_item 해석에 쓴다. PG 전용 상품은 null. 유니크. */
 	@Column(name = "store_product_id", unique = true)
 	var storeProductId: String? = null,
+
+	/** 유저 가입시각 기준 유효일수. null이면 상시 판매. */
+	@Column(name = "valid_days")
+	var validDays: Int? = null,
 ) : BaseEntity()
