@@ -1,6 +1,7 @@
 package com.org.oneulsogae.core.coin.query.dto
 
 import com.org.oneulsogae.common.coin.CoinSaleChannel
+import java.time.LocalDateTime
 import kotlin.math.roundToInt
 
 /**
@@ -18,6 +19,8 @@ data class CoinItem(
 	val oncePerUser: Boolean = false,
 	val saleChannel: CoinSaleChannel = CoinSaleChannel.PG,
 	val storeProductId: String? = null,
+	/** 유저 가입시각 기준 유효일수. null이면 상시 판매. N이면 가입시각 + N일까지만 노출·구매 가능. */
+	val validDays: Int? = null,
 ) {
 
 	/** 코인 1개당 실제 결제 가격. (salePrice / coinAmount) */
@@ -35,6 +38,13 @@ data class CoinItem(
 			return rate.roundToInt()
 		}
 
+	/**
+	 * 이 상품이 [now] 시점에 이 유저에게 판매 활성인지 여부.
+	 * [validDays]가 null이면 상시(항상 true). N이면 가입시각([userCreatedAt]) + N일 직전까지 활성이다(만료 시각 exclusive).
+	 */
+	fun isOfferActiveAt(userCreatedAt: LocalDateTime, now: LocalDateTime): Boolean =
+		validDays?.let { now.isBefore(userCreatedAt.plusDays(it.toLong())) } ?: true
+
 	companion object {
 
 		/**
@@ -48,6 +58,7 @@ data class CoinItem(
 			oncePerUser: Boolean = false,
 			saleChannel: CoinSaleChannel = CoinSaleChannel.PG,
 			storeProductId: String? = null,
+			validDays: Int? = null,
 		): CoinItem {
 			require(coinAmount > 0) { "코인 개수는 1 이상이어야 합니다." }
 			require(price > 0) { "정가는 1 이상이어야 합니다." }
@@ -63,6 +74,7 @@ data class CoinItem(
 				oncePerUser = oncePerUser,
 				saleChannel = saleChannel,
 				storeProductId = storeProductId,
+				validDays = validDays,
 			)
 		}
 	}
