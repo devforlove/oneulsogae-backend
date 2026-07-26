@@ -15,6 +15,8 @@ data class CoinItemResponse(
 	val pricePerCoin: Int,
 	/** 정가 대비 할인율(%). */
 	val discountRate: Int,
+	/** 회원당 1회만 구매 가능한 패키지 여부. (클라이언트가 "한정" 뱃지 표시) */
+	val oncePerUser: Boolean,
 ) {
 	companion object {
 		fun of(coinItem: CoinItem): CoinItemResponse =
@@ -25,6 +27,7 @@ data class CoinItemResponse(
 				salePrice = coinItem.salePrice,
 				pricePerCoin = coinItem.pricePerCoin.toInt(),
 				discountRate = coinItem.discountRate,
+				oncePerUser = coinItem.oncePerUser,
 			)
 
 		/** 코인 상품 목록을 응답 목록으로 변환한다. */

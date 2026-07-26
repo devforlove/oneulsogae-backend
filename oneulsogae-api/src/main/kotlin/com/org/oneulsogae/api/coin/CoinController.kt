@@ -5,6 +5,7 @@ import com.org.oneulsogae.api.coin.response.CoinHistoryPageResponse
 import com.org.oneulsogae.api.coin.response.CoinItemResponse
 import com.org.oneulsogae.auth.AuthUser
 import com.org.oneulsogae.auth.LoginUser
+import com.org.oneulsogae.common.coin.CoinSaleChannel
 import com.org.oneulsogae.core.coin.query.service.port.`in`.GetCoinBalanceUseCase
 import com.org.oneulsogae.core.coin.query.service.port.`in`.GetCoinHistoriesUseCase
 import com.org.oneulsogae.core.coin.query.service.port.`in`.GetCoinShopUseCase
@@ -25,11 +26,17 @@ class CoinController(
 	private val getCoinHistoriesUseCase: GetCoinHistoriesUseCase,
 ) {
 
-	/** 코인 상점에 노출할 전체 코인 상품 목록을 조회한다. */
-	@Operation(summary = "코인 상점 조회", description = "코인 상점에 노출할 전체 코인 상품 목록을 조회한다.")
+	/** 코인 상점에 노출할 코인 상품 목록을 조회한다. (요청 채널·BOTH 상품 중 이미 산 1회 패키지 제외) */
+	@Operation(
+		summary = "코인 상점 조회",
+		description = "요청 채널(channel=PG|IAP|BOTH)로 파는 코인 상품 목록을 조회한다. 앱은 IAP, 웹은 PG를 넘긴다. 회원당 1회 패키지 중 이미 구매한 상품은 제외된다.",
+	)
 	@GetMapping("/shop")
-	fun getCoinShop(): ApiResponse<List<CoinItemResponse>> =
-		ApiResponse.success(CoinItemResponse.listOf(getCoinShopUseCase.getCoinShop()))
+	fun getCoinShop(
+		@LoginUser user: AuthUser,
+		@RequestParam channel: CoinSaleChannel,
+	): ApiResponse<List<CoinItemResponse>> =
+		ApiResponse.success(CoinItemResponse.listOf(getCoinShopUseCase.getCoinShop(user.id, channel)))
 
 	/** 현재 로그인 사용자의 코인 잔액을 조회한다. */
 	@Operation(summary = "코인 잔액 조회", description = "현재 로그인 사용자의 코인 잔액을 조회한다.")
