@@ -25,6 +25,7 @@ class GetUserDaoImpl(
 					user.id,
 					user.email,
 					user.status,
+					user.createdAt,
 				),
 			)
 			.from(user)
