@@ -83,4 +83,22 @@ class CoinItemTest : DescribeSpec({
 			item.isOfferActiveAt(createdAt, LocalDateTime.of(2026, 1, 9, 0, 0)) shouldBe false
 		}
 	}
+
+	describe("expiresAtFor") {
+		val createdAt: LocalDateTime = LocalDateTime.of(2026, 1, 1, 0, 0)
+
+		it("validDays가 null이면 만료 시각도 null이다(상시 상품)") {
+			val item: CoinItem = CoinItem.create(
+				coinAmount = 100, price = 12000, salePrice = 10000, validDays = null,
+			)
+			item.expiresAtFor(createdAt) shouldBe null
+		}
+
+		it("validDays=7이면 가입시각 + 7일을 반환한다") {
+			val item: CoinItem = CoinItem.create(
+				coinAmount = 200, price = 10000, salePrice = 4900, oncePerUser = true, validDays = 7,
+			)
+			item.expiresAtFor(createdAt) shouldBe LocalDateTime.of(2026, 1, 8, 0, 0)
+		}
+	}
 })

@@ -7,8 +7,10 @@ import com.org.oneulsogae.core.coin.query.dto.CoinItems
 import com.org.oneulsogae.infra.coin.command.entity.QCoinItemEntity
 import com.org.oneulsogae.infra.coin.command.entity.QCoinItemPurchaseEntity
 import com.querydsl.core.types.Projections
+import com.querydsl.core.types.dsl.Expressions
 import com.querydsl.jpa.impl.JPAQueryFactory
 import org.springframework.stereotype.Component
+import java.time.LocalDateTime
 
 /**
  * 코인 상품 조회 dao([GetCoinItemDao])의 QueryDSL 구현.
@@ -57,7 +59,8 @@ class GetCoinItemDaoImpl(
 			.fetchOne()
 	}
 
-	/** 8-arg CoinItem 생성자 투영. (id, coinAmount, price, salePrice, oncePerUser, saleChannel, storeProductId, validDays) */
+	/** 9-arg CoinItem 생성자 투영. (id, coinAmount, price, salePrice, oncePerUser, saleChannel, storeProductId, validDays, offerExpiresAt) */
+	/** offerExpiresAt은 DB 컬럼이 아니라 조회 서비스가 가입시각으로 채우는 파생값이므로 투영에선 null. */
 	private fun projection(coinItem: QCoinItemEntity) =
 		Projections.constructor(
 			CoinItem::class.java,
@@ -69,5 +72,6 @@ class GetCoinItemDaoImpl(
 			coinItem.saleChannel,
 			coinItem.storeProductId,
 			coinItem.validDays,
+			Expressions.nullExpression(LocalDateTime::class.java),
 		)
 }

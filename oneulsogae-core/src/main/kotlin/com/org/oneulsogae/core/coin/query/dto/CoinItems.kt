@@ -24,6 +24,10 @@ data class CoinItems(
 	fun activeOffersAt(userCreatedAt: LocalDateTime, now: LocalDateTime): CoinItems =
 		CoinItems(values.filter { it.isOfferActiveAt(userCreatedAt, now) })
 
+	/** 각 상품에 이 유저 기준 오퍼 만료 시각([CoinItem.offerExpiresAt])을 채운 새 목록을 반환한다. */
+	fun withExpiryFor(userCreatedAt: LocalDateTime): CoinItems =
+		CoinItems(values.map { it.copy(offerExpiresAt = it.expiresAtFor(userCreatedAt)) })
+
 	companion object {
 
 		/** 빈 코인 상품 목록. */
