@@ -48,6 +48,9 @@ dependencies {
 	testImplementation("io.kotest:kotest-assertions-core:5.9.1")
 	testImplementation("io.kotest.extensions:kotest-extensions-spring:1.3.0")
 
+	// 도메인 유닛 테스트: 포트 목킹 (MockK)
+	testImplementation("io.mockk:mockk:1.13.13")
+
 	// 통합테스트: infra의 testFixtures(IntegrationUtil + QueryDSL)를 테스트 의존성으로만 가져온다.
 	testImplementation(testFixtures(project(":oneulsogae-infra")))
 
