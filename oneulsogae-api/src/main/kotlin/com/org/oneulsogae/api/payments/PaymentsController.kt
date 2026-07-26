@@ -71,7 +71,7 @@ class PaymentsController(
 	/** 코인 구매 직전 체크아웃 데이터(구매할 코인 아이템 + 구매방법)를 조회한다. */
 	@Operation(
 		summary = "코인 체크아웃 조회",
-		description = "구매할 코인 아이템(itemId)과 활성 구매방법(결제수단) 목록을 반환한다. 코인 상품 없음 404(COIN-004).",
+		description = "구매할 코인 아이템(itemId)과 활성 구매방법(결제수단) 목록을 반환한다. 코인 상품 없음 404(COIN-004), 판매 기간 종료 400(COIN-005).",
 	)
 	@GetMapping("/coin/checkout")
 	fun getCoinCheckout(
@@ -81,7 +81,7 @@ class PaymentsController(
 		ApiResponse.success(
 			CoinCheckoutResponse.of(
 				user.id,
-				getCoinCheckoutUseCase.getCheckout(itemId),
+				getCoinCheckoutUseCase.getCheckout(user.id, itemId),
 				getPaymentMethodsUseCase.getActiveMethods(),
 			),
 		)

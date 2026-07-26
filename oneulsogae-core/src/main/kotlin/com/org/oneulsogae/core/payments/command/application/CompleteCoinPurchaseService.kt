@@ -52,8 +52,8 @@ class CompleteCoinPurchaseService(
 			return replay(userId, received)
 		}
 
-		// 코인 상품 조회(없으면 COIN-004). salePrice가 서버 확정 실결제가.
-		val item: CoinItem = getCoinCheckoutUseCase.getCheckout(command.itemId)
+		// 코인 상품 조회(없으면 COIN-004). 기간 한정이면 가입시각 기준 만료 재검증(만료면 COIN-005). salePrice가 서버 확정 실결제가.
+		val item: CoinItem = getCoinCheckoutUseCase.getCheckout(userId, command.itemId)
 
 		// 회원당 1회 패키지를 이미 샀으면 PG confirm 전에 막아 헛된 과금을 피한다(이른 409).
 		if (item.oncePerUser && isCoinItemPurchasedUseCase.isPurchased(userId, item.id)) {
