@@ -34,7 +34,7 @@ class AcquirePurchasedCoinService(
 		if (item.oncePerUser) {
 			try {
 				saveCoinItemPurchasePort.save(userId, item.id)
-			} catch (e: DataIntegrityViolationException) {
+			} catch (_: DataIntegrityViolationException) {
 				// 선검사와 적립 사이 경합으로 가드가 먼저 들어간 경우. 트랜잭션 롤백 → 적립 취소.
 				throw BusinessException(PaymentsErrorCode.COIN_PACKAGE_ALREADY_PURCHASED)
 			}

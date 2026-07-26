@@ -57,7 +57,7 @@ class GetCoinItemDaoImpl(
 			.fetchOne()
 	}
 
-	/** 6-arg CoinItem 생성자 투영. (id, coinAmount, price, salePrice, oncePerUser, saleChannel, storeProductId) */
+	/** 7-arg CoinItem 생성자 투영. (id, coinAmount, price, salePrice, oncePerUser, saleChannel, storeProductId) */
 	private fun projection(coinItem: QCoinItemEntity) =
 		Projections.constructor(
 			CoinItem::class.java,

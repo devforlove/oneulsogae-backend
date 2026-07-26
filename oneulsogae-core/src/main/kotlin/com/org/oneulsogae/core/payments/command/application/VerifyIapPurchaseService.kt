@@ -82,7 +82,7 @@ class VerifyIapPurchaseService(
 				),
 			)
 			VerifyIapPurchaseResult(coinBalance = balance.balance)
-		} catch (e: DataIntegrityViolationException) {
+		} catch (_: DataIntegrityViolationException) {
 			VerifyIapPurchaseResult(coinBalance = getCoinBalanceUseCase.getBalance(userId).balance)
 		}
 	}
