@@ -8,4 +8,7 @@ enum class MissionType {
 
 	/** 자기소개를 일정 길이 이상 작성. */
 	WRITE_INTRODUCTION,
+
+	/** 학교(대학) 인증 완료. */
+	VERIFY_UNIVERSITY,
 }
