@@ -30,6 +30,6 @@ class GetCoinShopService(
 		}
 		val now: LocalDateTime = timeGenerator.now()
 		val userCreatedAt: LocalDateTime = getUserByIdUseCase.getById(userId).createdAt
-		return items.activeOffersAt(userCreatedAt, now)
+		return items.activeOffersAt(userCreatedAt, now).withExpiryFor(userCreatedAt)
 	}
 }

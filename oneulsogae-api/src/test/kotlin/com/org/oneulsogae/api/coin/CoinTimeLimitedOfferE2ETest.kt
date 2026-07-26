@@ -10,6 +10,8 @@ import com.org.oneulsogae.infra.fixture.UserEntityFixture
 import com.org.oneulsogae.infra.user.command.entity.QUserEntity
 import org.hamcrest.Matchers.hasItem
 import org.hamcrest.Matchers.not
+import org.hamcrest.Matchers.notNullValue
+import org.hamcrest.Matchers.nullValue
 
 /**
  * 코인샵 기간 한정 오퍼 E2E 테스트.
@@ -39,6 +41,7 @@ class CoinTimeLimitedOfferE2ETest : AbstractIntegrationSupport({
 					status(200)
 					body("data.id", hasItem(alwaysId.toInt()))
 					body("data.id", not(hasItem(expiredId.toInt())))
+					body("data[0].offerExpiresAt", nullValue())
 				}
 			}
 		}
@@ -55,6 +58,7 @@ class CoinTimeLimitedOfferE2ETest : AbstractIntegrationSupport({
 				} expect {
 					status(200)
 					body("data.id", hasItem(activeId.toInt()))
+					body("data[0].offerExpiresAt", notNullValue())
 				}
 			}
 		}

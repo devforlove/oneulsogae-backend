@@ -21,6 +21,8 @@ data class CoinItem(
 	val storeProductId: String? = null,
 	/** 유저 가입시각 기준 유효일수. null이면 상시 판매. N이면 가입시각 + N일까지만 노출·구매 가능. */
 	val validDays: Int? = null,
+	/** 이 유저 기준 오퍼 만료 시각(가입시각 + validDays). 조회 서비스가 채우는 파생값이며 DB 컬럼이 아니다. 상시 상품·미계산 시 null. */
+	val offerExpiresAt: LocalDateTime? = null,
 ) {
 
 	/** 코인 1개당 실제 결제 가격. (salePrice / coinAmount) */
@@ -44,6 +46,10 @@ data class CoinItem(
 	 */
 	fun isOfferActiveAt(userCreatedAt: LocalDateTime, now: LocalDateTime): Boolean =
 		validDays?.let { now.isBefore(userCreatedAt.plusDays(it.toLong())) } ?: true
+
+	/** 이 유저 기준 오퍼 만료 시각을 계산한다. [validDays]가 null(상시)이면 null. */
+	fun expiresAtFor(userCreatedAt: LocalDateTime): LocalDateTime? =
+		validDays?.let { userCreatedAt.plusDays(it.toLong()) }
 
 	companion object {
 
