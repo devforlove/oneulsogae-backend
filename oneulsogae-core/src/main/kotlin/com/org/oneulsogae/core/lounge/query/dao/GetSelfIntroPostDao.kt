@@ -2,6 +2,7 @@ package com.org.oneulsogae.core.lounge.query.dao
 
 import com.org.oneulsogae.core.lounge.query.dto.SelfIntroPostDetailView
 import com.org.oneulsogae.core.lounge.query.dto.SelfIntroPostView
+import java.time.LocalDateTime
 
 /** 라운지 셀소 조회 dao. (조회 전용) */
 interface GetSelfIntroPostDao {
@@ -32,13 +33,13 @@ interface GetSelfIntroPostDao {
 
 	/**
 	 * [authorUserId]가 자기 셀소로 받은 신청 중 아직 수락하지 않은(PENDING) 건수. (목록 화면 배지용)
-	 * 내가 쓴 모든 셀소를 합산한다.
+	 * 내가 쓴 모든 셀소를 합산하며, 만료 시각이 [now] 이전인 신청은 제외한다. (신청 목록 조회와 같은 기준)
 	 */
-	fun countReceivedPendingChatRequests(authorUserId: Long): Int
+	fun countReceivedPendingChatRequests(authorUserId: Long, now: LocalDateTime): Int
 
 	/**
 	 * [requesterUserId]가 남의 셀소에 보낸 신청 중 아직 수락되지 않은(PENDING) 건수. (목록 화면 배지용)
-	 * 상대의 응답을 기다리는 신청 수를 뜻한다.
+	 * 상대의 응답을 기다리는 신청 수를 뜻하며, 만료 시각이 [now] 이전인 신청은 제외한다. (신청 목록 조회와 같은 기준)
 	 */
-	fun countSentPendingChatRequests(requesterUserId: Long): Int
+	fun countSentPendingChatRequests(requesterUserId: Long, now: LocalDateTime): Int
 }

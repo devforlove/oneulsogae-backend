@@ -20,6 +20,7 @@ import com.org.oneulsogae.infra.user.command.entity.QUserDetailEntity
 import io.restassured.RestAssured
 import org.hamcrest.Matchers
 import java.time.LocalDate
+import java.time.LocalDateTime
 import java.time.Period
 
 /**
@@ -190,6 +191,36 @@ class GetSelfIntroPostsE2ETest : AbstractIntegrationSupport({
 					.then()
 					.statusCode(200)
 					.body("data.receivedPendingChatRequestCount", Matchers.equalTo(0))
+			}
+		}
+
+		context("만료 시각이 지난 미수락 신청이 남아 있으면") {
+			it("받은 배지에서 제외한다 (신청 목록과 같은 기준)") {
+				val authorId: Long = IntegrationUtil.persist(UserEntityFixture.create(providerId = "lounge-list-badge-expired")).id!!
+				val post: LoungePostEntity = IntegrationUtil.persist(LoungePostEntityFixture.create(userId = authorId))
+				val liveRequesterId: Long =
+					IntegrationUtil.persist(UserEntityFixture.create(providerId = "lounge-list-badge-expired-live")).id!!
+				val expiredRequesterId: Long =
+					IntegrationUtil.persist(UserEntityFixture.create(providerId = "lounge-list-badge-expired-old")).id!!
+				IntegrationUtil.persist(
+					LoungeChatRequestEntityFixture.create(postId = post.id!!, requesterUserId = liveRequesterId, receiverUserId = authorId),
+				)
+				// 만료 정리 배치는 하루 1회라, 만료됐지만 아직 PENDING으로 남아 있는 신청이 존재할 수 있다.
+				IntegrationUtil.persist(
+					LoungeChatRequestEntityFixture.create(
+						postId = post.id!!,
+						requesterUserId = expiredRequesterId,
+						receiverUserId = authorId,
+						expiredAt = LocalDateTime.now().minusMinutes(1),
+					),
+				)
+
+				RestAssured.given()
+					.header("Authorization", "Bearer ${accessTokenFor(authorId)}")
+					.get("/lounge/v1/self-intro-posts")
+					.then()
+					.statusCode(200)
+					.body("data.receivedPendingChatRequestCount", Matchers.equalTo(1))
 			}
 		}
 
