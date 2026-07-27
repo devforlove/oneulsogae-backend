@@ -29,6 +29,8 @@ import java.time.LocalDateTime
 	indexes = [
 		// 매칭 배치/풀 그룹핑용. status 등치 + last_login_at 범위 seek + (lastLoginAt, id) 정렬/키셋을 filesort 없이 충족한다.
 		Index(name = "idx_status_last_login_at_id", columnList = "status, last_login_at, id"),
+		// 추천 실적(내 코드로 가입한 친구 수) 집계용. referred_by_user_id 동등 조건을 seek로 받는다.
+		Index(name = "idx_referred_by_user_id", columnList = "referred_by_user_id"),
 	],
 )
 class UserEntity(

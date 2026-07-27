@@ -1,5 +1,6 @@
 package com.org.oneulsogae.api.user
 
+import com.org.oneulsogae.common.coin.CoinPolicy
 import com.org.oneulsogae.common.integration.AbstractIntegrationSupport
 import com.org.oneulsogae.common.integration.expect
 import com.org.oneulsogae.common.integration.get
@@ -51,6 +52,48 @@ class ReferralCodeE2ETest : AbstractIntegrationSupport({
 				} expect {
 					status(200)
 					body("data.referralCode", "FIXED123")
+				}
+			}
+		}
+
+		context("추천한 친구가 아직 없으면") {
+			it("추천 실적은 0명·0코인이다") {
+				val userId: Long = IntegrationUtil.persist(
+					UserEntityFixture.create(providerId = "referral-summary-none", status = UserStatus.ACTIVE),
+				).id!!
+
+				get("/users/v1/me/referral-code") {
+					bearer(accessTokenFor(userId))
+				} expect {
+					status(200)
+					body("data.referredUserCount", 0)
+					body("data.earnedCoinAmount", 0)
+				}
+			}
+		}
+
+		context("내 코드로 가입한 친구가 2명이면") {
+			it("추천 실적은 2명과 보상 단가 × 2코인이다 (내가 추천받아 받은 보상은 빼고)") {
+				val referrer = UserEntityFixture.create(providerId = "referral-summary-referrer", status = UserStatus.ACTIVE)
+				// 이 유저 자신도 남의 코드로 가입해 REFERRAL 보상을 받았지만, 그 코인은 내 실적에 잡히지 않아야 한다.
+				val inviterId: Long = IntegrationUtil.persist(
+					UserEntityFixture.create(providerId = "referral-summary-inviter", status = UserStatus.ACTIVE),
+				).id!!
+				referrer.referredByUserId = inviterId
+				val referrerId: Long = IntegrationUtil.persist(referrer).id!!
+
+				(1..2).forEach { index: Int ->
+					val referred = UserEntityFixture.create(providerId = "referral-summary-friend-$index", status = UserStatus.ACTIVE)
+					referred.referredByUserId = referrerId
+					IntegrationUtil.persist(referred)
+				}
+
+				get("/users/v1/me/referral-code") {
+					bearer(accessTokenFor(referrerId))
+				} expect {
+					status(200)
+					body("data.referredUserCount", 2)
+					body("data.earnedCoinAmount", CoinPolicy.REFERRAL_REWARD_COIN_AMOUNT * 2)
 				}
 			}
 		}
