@@ -31,8 +31,12 @@ class RefreshTokenService(
 	/**
 	 * refresh token을 회전한다. 기존 토큰을 폐기하고 새 access/refresh를 발급한다.
 	 * 이미 폐기된 토큰이 다시 들어오면 탈취로 간주해 해당 사용자의 모든 토큰을 폐기한다.
+	 *
+	 * 재사용 탐지의 일괄 폐기는 예외를 던지기 **전에** 실행되므로, 기본 롤백 규칙(RuntimeException)대로면
+	 * 폐기까지 함께 되돌아가 탈취된 세션이 살아남는다. 그래서 [BusinessException]은 롤백 대상에서 뺀다.
+	 * (이 메서드가 던지는 [BusinessException]은 모두 검증 실패 — 되돌릴 부분 쓰기가 없다)
 	 */
-	@Transactional
+	@Transactional(noRollbackFor = [BusinessException::class])
 	fun rotate(refreshToken: String): IssuedTokens {
 		if (!tokenProvider.validateToken(refreshToken)) {
 			throw BusinessException(AuthErrorCode.AUTHENTICATION_REQUIRED, "유효하지 않거나 만료된 refresh token")
