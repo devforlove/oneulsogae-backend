@@ -108,7 +108,8 @@ class MeetingTabNearestRecommendationE2ETest : AbstractIntegrationSupport() {
 					  "smokingStatus": "NON_SMOKER",
 					  "religion": "NONE",
 					  "drinkingStatus": "SOMETIMES",
-					  "bodyType": "MALE_NORMAL"
+					  "bodyType": "MALE_NORMAL",
+					  "mbti": "ENFP"
 					}
 					""".trimIndent(),
 				)

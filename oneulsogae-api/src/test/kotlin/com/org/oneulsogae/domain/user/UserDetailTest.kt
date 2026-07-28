@@ -48,6 +48,7 @@ class UserDetailTest : DescribeSpec({
 				religion = null,
 				drinkingStatus = null,
 				bodyType = null,
+				mbti = null,
 				today = today,
 			)
 
@@ -73,6 +74,7 @@ class UserDetailTest : DescribeSpec({
 					religion = null,
 					drinkingStatus = null,
 					bodyType = null,
+					mbti = null,
 					today = today,
 				)
 			}
@@ -98,6 +100,7 @@ class UserDetailTest : DescribeSpec({
 					religion = null,
 					drinkingStatus = null,
 					bodyType = null,
+					mbti = null,
 					today = today,
 				)
 			}
@@ -124,6 +127,7 @@ class UserDetailTest : DescribeSpec({
 					religion = Religion.NONE,
 					drinkingStatus = DrinkingStatus.SOMETIMES,
 					bodyType = BodyType.MALE_NORMAL,
+					mbti = null,
 					today = today,
 				)
 			}
@@ -149,6 +153,7 @@ class UserDetailTest : DescribeSpec({
 				religion = Religion.NONE,
 				drinkingStatus = DrinkingStatus.SOMETIMES,
 				bodyType = BodyType.MALE_NORMAL,
+				mbti = null,
 				today = today,
 			)
 
@@ -173,6 +178,7 @@ class UserDetailTest : DescribeSpec({
 				religion = Religion.NONE,
 				drinkingStatus = DrinkingStatus.SOMETIMES,
 				bodyType = BodyType.FEMALE_NORMAL,
+				mbti = null,
 				today = today,
 			)
 
@@ -198,6 +204,7 @@ class UserDetailTest : DescribeSpec({
 					religion = Religion.NONE,
 					drinkingStatus = DrinkingStatus.SOMETIMES,
 					bodyType = BodyType.FEMALE_NORMAL,
+					mbti = null,
 					today = today,
 				)
 			}
@@ -223,6 +230,7 @@ class UserDetailTest : DescribeSpec({
 					religion = Religion.NONE,
 					drinkingStatus = DrinkingStatus.SOMETIMES,
 					bodyType = BodyType.MALE_NORMAL,
+					mbti = null,
 					today = today,
 				)
 			}
@@ -248,6 +256,7 @@ class UserDetailTest : DescribeSpec({
 					religion = Religion.NONE,
 					drinkingStatus = DrinkingStatus.SOMETIMES,
 					bodyType = BodyType.MALE_NORMAL,
+					mbti = null,
 					today = today,
 				)
 			}
@@ -285,6 +294,7 @@ class UserDetailTest : DescribeSpec({
 				religion = null,
 				drinkingStatus = null,
 				bodyType = null,
+				mbti = null,
 			)
 
 			updated.gender shouldBe Gender.FEMALE // 편집에서 성별은 보존
@@ -306,6 +316,7 @@ class UserDetailTest : DescribeSpec({
 					religion = null,
 					drinkingStatus = null,
 					bodyType = null,
+					mbti = null,
 				)
 			}
 

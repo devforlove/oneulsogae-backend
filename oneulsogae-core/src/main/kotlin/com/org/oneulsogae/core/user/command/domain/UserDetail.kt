@@ -49,6 +49,8 @@ data class UserDetail(
 	val religion: Religion? = null,
 	val drinkingStatus: DrinkingStatus? = null,
 	val bodyType: BodyType? = null,
+	/** MBTI 4자(대문자). 온보딩·프로필 수정에서 필수로 받는다. (그 이전 가입자는 null) */
+	val mbti: String? = null,
 ) {
 
 	/** 사용자가 직접 닉네임을 설정/변경한다. */
@@ -85,6 +87,7 @@ data class UserDetail(
 		religion: Religion?,
 		drinkingStatus: DrinkingStatus?,
 		bodyType: BodyType?,
+		mbti: String?,
 		today: LocalDate,
 	): UserDetail {
 		val updated: UserDetail = copy(
@@ -103,6 +106,7 @@ data class UserDetail(
 			religion = religion,
 			drinkingStatus = drinkingStatus,
 			bodyType = bodyType,
+			mbti = mbti,
 		).assignProfileImageCodeIfAbsent()
 		updated.validateBirthday(today)
 		updated.validateMatchProfile()
@@ -129,6 +133,7 @@ data class UserDetail(
 		religion: Religion?,
 		drinkingStatus: DrinkingStatus?,
 		bodyType: BodyType?,
+		mbti: String?,
 	): UserDetail {
 		val updated: UserDetail = copy(
 			nickname = nickname,
@@ -143,6 +148,7 @@ data class UserDetail(
 			religion = religion,
 			drinkingStatus = drinkingStatus,
 			bodyType = bodyType,
+			mbti = mbti,
 		)
 		updated.validateMatchProfile()
 		return updated

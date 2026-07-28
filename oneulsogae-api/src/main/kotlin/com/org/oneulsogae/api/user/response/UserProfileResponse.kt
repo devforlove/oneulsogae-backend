@@ -38,6 +38,8 @@ data class UserProfileResponse(
 	val religion: Religion?,
 	val drinkingStatus: DrinkingStatus?,
 	val bodyType: BodyType?,
+	/** MBTI 4자(대문자). 온보딩·프로필 수정 이전 가입자는 null. */
+	val mbti: String?,
 	/** 같은 회사 구성원 소개 거부 여부. 조회(GET) 시 match_user join으로 채워지고, 수정(PUT) 응답에선 null. */
 	val refuseSameCompanyIntro: Boolean?,
 ) {
@@ -67,6 +69,7 @@ data class UserProfileResponse(
 				religion = detail.religion,
 				drinkingStatus = detail.drinkingStatus,
 				bodyType = detail.bodyType,
+				mbti = detail.mbti,
 				refuseSameCompanyIntro = detail.refuseSameCompanyIntro,
 			)
 
@@ -95,6 +98,7 @@ data class UserProfileResponse(
 				religion = detail.religion,
 				drinkingStatus = detail.drinkingStatus,
 				bodyType = detail.bodyType,
+				mbti = detail.mbti,
 				refuseSameCompanyIntro = null,
 			)
 	}

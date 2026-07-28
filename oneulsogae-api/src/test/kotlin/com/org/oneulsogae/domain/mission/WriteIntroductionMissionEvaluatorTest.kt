@@ -80,6 +80,7 @@ private fun userDetailViewOf(introduction: String?): UserDetailView = UserDetail
 	religion = null,
 	drinkingStatus = null,
 	bodyType = null,
+	mbti = null,
 	refuseSameCompanyIntro = false,
 )
 

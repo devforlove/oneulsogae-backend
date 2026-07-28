@@ -117,6 +117,7 @@ private fun profileBodyWithReferral(regionId: Long, referralCode: String?): Stri
 		  "religion": "NONE",
 		  "drinkingStatus": "SOMETIMES",
 		  "bodyType": "MALE_NORMAL",
+		  "mbti": "ENFP",
 		  "referralCode": $referralJson
 		}
 	""".trimIndent()

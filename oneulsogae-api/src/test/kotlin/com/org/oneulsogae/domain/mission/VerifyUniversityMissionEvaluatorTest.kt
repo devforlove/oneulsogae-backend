@@ -77,6 +77,7 @@ private fun userDetailViewOf(universityName: String?): UserDetailView = UserDeta
 	religion = null,
 	drinkingStatus = null,
 	bodyType = null,
+	mbti = null,
 	refuseSameCompanyIntro = false,
 )
 
