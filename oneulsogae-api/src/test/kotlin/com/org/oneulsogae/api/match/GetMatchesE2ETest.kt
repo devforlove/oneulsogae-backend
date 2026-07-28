@@ -57,6 +57,7 @@ class GetMatchesE2ETest : AbstractIntegrationSupport({
 						birthday = LocalDate.of(1999, 1, 1),
 						traits = listOf("요가", "등산"),
 						interests = listOf("재즈", "미술"),
+						mbti = "ENFP",
 					),
 				)
 
@@ -89,6 +90,7 @@ class GetMatchesE2ETest : AbstractIntegrationSupport({
 					body("data.matches[0].partner.nickname", "영희")
 					body("data.matches[0].partner.traits", contains("요가", "등산"))
 					body("data.matches[0].partner.interests", contains("재즈", "미술"))
+					body("data.matches[0].partner.mbti", "ENFP")
 					body("data.matches[0].partner.lastLoginAt", notNullValue())
 				}
 			}

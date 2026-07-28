@@ -52,6 +52,8 @@ data class ExtraIntroCandidateResponse(
 	val religion: String?,
 	val drinkingStatus: String?,
 	val bodyType: String?,
+	/** MBTI 4자(대문자). 온보딩·프로필 수정 이전 가입자는 null. */
+	val mbti: String?,
 ) {
 	companion object {
 		fun of(c: ExtraIntroCandidate, today: LocalDate): ExtraIntroCandidateResponse =
@@ -74,6 +76,7 @@ data class ExtraIntroCandidateResponse(
 				religion = c.religion?.description,
 				drinkingStatus = c.drinkingStatus?.description,
 				bodyType = c.bodyType?.description,
+				mbti = c.mbti,
 			)
 	}
 }

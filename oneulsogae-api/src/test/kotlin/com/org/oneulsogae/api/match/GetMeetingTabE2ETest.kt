@@ -98,7 +98,7 @@ class GetMeetingTabE2ETest : AbstractIntegrationSupport({
 				IntegrationUtil.persist(
 					UserDetailEntityFixture.create(
 						userId = 5101L, gender = Gender.FEMALE, job = "디자이너", companyName = "카카오",
-						height = 165, regionId = gangnamId, introduction = "반가워요",
+						height = 165, regionId = gangnamId, introduction = "반가워요", mbti = "INTJ",
 					),
 				)
 				IntegrationUtil.persist(
@@ -124,6 +124,7 @@ class GetMeetingTabE2ETest : AbstractIntegrationSupport({
 					body("data.recommendedTeams[0].members[0].height", 165)
 					body("data.recommendedTeams[0].members[0].activityArea", "서울특별시 강남구")
 					body("data.recommendedTeams[0].members[0].introduction", "반가워요")
+					body("data.recommendedTeams[0].members[0].mbti", "INTJ")
 					body("data.recommendedTeams[0].members[0].traits", hasSize<Any>(0))
 					body("data.recommendedTeams[0].members[0].interests", hasSize<Any>(0))
 					// 팀 최근 로그인은 구성원(6/20, 6/25) 중 최댓값

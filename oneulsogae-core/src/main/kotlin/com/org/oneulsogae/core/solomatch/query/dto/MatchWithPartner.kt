@@ -45,6 +45,8 @@ data class MatchWithPartner(
 	val religion: Religion?,
 	val drinkingStatus: DrinkingStatus?,
 	val bodyType: BodyType?,
+	/** MBTI 4자(대문자). 온보딩·프로필 수정 이전 가입자는 null. */
+	val mbti: String?,
 	/** 상대방의 마지막 로그인 시각. (users 원천, 미로그인 이력이면 null) */
 	val lastLoginAt: LocalDateTime?,
 )

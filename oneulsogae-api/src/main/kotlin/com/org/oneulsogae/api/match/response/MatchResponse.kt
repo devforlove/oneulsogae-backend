@@ -83,6 +83,8 @@ data class PartnerResponse(
 	val religion: String?,
 	val drinkingStatus: String?,
 	val bodyType: String?,
+	/** MBTI 4자(대문자). 온보딩·프로필 수정 이전 가입자는 null. */
+	val mbti: String?,
 	val lastLoginAt: LocalDateTime?,
 ) {
 	companion object {
@@ -106,6 +108,7 @@ data class PartnerResponse(
 				religion = matchWithPartner.religion?.description,
 				drinkingStatus = matchWithPartner.drinkingStatus?.description,
 				bodyType = matchWithPartner.bodyType?.description,
+				mbti = matchWithPartner.mbti,
 				lastLoginAt = matchWithPartner.lastLoginAt,
 			)
 	}
