@@ -125,6 +125,10 @@ oneulsogae:
       # 매일 01:00 1회 (Asia/Seoul). 만료 매칭·라운지 대화 신청을 정리·환불. ONEULSOGAE_EXPIRE_BATCH_CRON으로 조정
       cron: ${ONEULSOGAE_EXPIRE_BATCH_CRON:0 0 1 * * *}
   user:
+    referral:
+      # 추천 보상 1인 1회 판정용 DI 해시 salt. 운영에서 ONEULSOGAE_REFERRAL_DI_HASH_SALT로 반드시 덮어쓴다.
+      # 값을 바꾸면 기존 지급 이력과 매칭되지 않아 어뷰징 방어가 초기화되므로 한 번 정하면 고정한다.
+      di-hash-salt: ${ONEULSOGAE_REFERRAL_DI_HASH_SALT:oneulsogae-referral-di}
     withdrawal:
       # 탈퇴 후 개인정보 보관 유예 기간(일). 기간 경과 후 파기 배치가 익명화한다.
       retention-days: 10
