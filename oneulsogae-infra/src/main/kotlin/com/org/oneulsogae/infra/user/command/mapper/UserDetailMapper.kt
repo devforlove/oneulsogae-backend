@@ -29,6 +29,7 @@ fun UserDetailEntity.toDomain(): UserDetail =
 		religion = religion,
 		drinkingStatus = drinkingStatus,
 		bodyType = bodyType,
+		mbti = mbti,
 	)
 
 /**
@@ -59,4 +60,5 @@ fun UserDetail.toEntity(): UserDetailEntity =
 		religion = religion,
 		drinkingStatus = drinkingStatus,
 		bodyType = bodyType,
+		mbti = mbti,
 	).also { if (id != 0L) it.id = id }

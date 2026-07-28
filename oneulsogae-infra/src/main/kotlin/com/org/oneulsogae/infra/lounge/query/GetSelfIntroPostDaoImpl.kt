@@ -16,6 +16,7 @@ import com.querydsl.core.types.Projections
 import com.querydsl.core.types.dsl.NumberPath
 import com.querydsl.jpa.impl.JPAQueryFactory
 import org.springframework.stereotype.Component
+import java.time.LocalDateTime
 
 /**
  * [GetSelfIntroPostDao]의 QueryDSL 구현. (조회 전용)
@@ -155,15 +156,19 @@ class GetSelfIntroPostDaoImpl(
 	 * 신청 행이 수신자(receiver_user_id)를 알고 있어 글을 조인하지 않는다.
 	 * (receiver_user_id 동등 조건이 idx_receiver_user_id_id를 그대로 타고, status는 좁혀진 행에만 적용된다)
 	 */
-	override fun countReceivedPendingChatRequests(authorUserId: Long): Int =
-		countPendingBy(QLoungeChatRequestEntity.loungeChatRequestEntity.receiverUserId, authorUserId)
+	override fun countReceivedPendingChatRequests(authorUserId: Long, now: LocalDateTime): Int =
+		countPendingBy(QLoungeChatRequestEntity.loungeChatRequestEntity.receiverUserId, authorUserId, now)
 
 	// requester_user_id 동등 조건이 idx_requester_user_id_id를 탄다.
-	override fun countSentPendingChatRequests(requesterUserId: Long): Int =
-		countPendingBy(QLoungeChatRequestEntity.loungeChatRequestEntity.requesterUserId, requesterUserId)
+	override fun countSentPendingChatRequests(requesterUserId: Long, now: LocalDateTime): Int =
+		countPendingBy(QLoungeChatRequestEntity.loungeChatRequestEntity.requesterUserId, requesterUserId, now)
 
-	/** [ownerColumn]이 [ownerUserId]인 PENDING 신청 건수. (받은/보낸 배지가 기준 컬럼만 다르고 나머지가 같다) */
-	private fun countPendingBy(ownerColumn: NumberPath<Long>, ownerUserId: Long): Int {
+	/**
+	 * [ownerColumn]이 [ownerUserId]인 PENDING 신청 건수. (받은/보낸 배지가 기준 컬럼만 다르고 나머지가 같다)
+	 * 만료 시각이 [now] 이전인 신청은 목록([com.org.oneulsogae.infra.lounge.query.GetLoungeChatRequestDaoImpl])에서 빠지므로 여기서도 뺀다.
+	 * (만료 정리 배치는 하루 1회라 그 전까지 PENDING 행이 남아 배지와 목록이 어긋났다)
+	 */
+	private fun countPendingBy(ownerColumn: NumberPath<Long>, ownerUserId: Long, now: LocalDateTime): Int {
 		val request: QLoungeChatRequestEntity = QLoungeChatRequestEntity.loungeChatRequestEntity
 		return queryFactory
 			.select(request.count())
@@ -171,6 +176,7 @@ class GetSelfIntroPostDaoImpl(
 			.where(
 				ownerColumn.eq(ownerUserId),
 				request.status.eq(LoungeChatRequestStatus.PENDING),
+				request.expiredAt.gt(now),
 			)
 			.fetchFirst()
 			?.toInt() ?: 0

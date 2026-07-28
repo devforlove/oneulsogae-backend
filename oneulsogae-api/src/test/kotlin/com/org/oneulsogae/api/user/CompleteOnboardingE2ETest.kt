@@ -86,6 +86,38 @@ class CompleteOnboardingE2ETest : AbstractIntegrationSupport({
 			}
 		}
 
+		context("MBTI를 소문자로 보내면") {
+			it("대문자로 정규화해 저장한다 (200)") {
+				val userId: Long = IntegrationUtil.persist(
+					UserEntityFixture.create(status = UserStatus.ONBOARDING),
+				).id!!
+				val regionId: Long = IntegrationUtil.persist(
+					RegionEntityFixture.create(sido = "서울특별시", sigungu = "강남구"),
+				).id!!
+
+				post("/users/v1/onboarding/complete") {
+					bearer(accessTokenFor(userId))
+					jsonBody(fullProfileBody(regionId = regionId, mbti = "entj"))
+				} expect {
+					status(200)
+				}
+
+				userDetailOf(userId).mbti shouldBe "ENTJ"
+			}
+		}
+
+		context("MBTI 형식이 아닌 값을 보내면") {
+			it("도메인에 닿기 전 검증 실패로 400을 반환한다") {
+				post("/users/v1/onboarding/complete") {
+					bearer(accessTokenFor(1L))
+					jsonBody(fullProfileBody(regionId = 1L, mbti = "ABCD"))
+				} expect {
+					status(400)
+					body("error.code", "INVALID_REQUEST")
+				}
+			}
+		}
+
 		context("본인인증으로 birthday·gender·phone이 이미 저장된 유저가 그 3필드를 생략해 제출하면") {
 			it("기존 인증 저장값이 유지되고 정식 가입(ACTIVE)된다 (200)") {
 				val userId: Long = IntegrationUtil.persist(
@@ -129,9 +161,11 @@ private fun fullProfileBody(
 	regionId: Long,
 	nickname: String? = "테스트유저",
 	gender: Gender? = Gender.MALE,
+	mbti: String? = "ENFP",
 ): String {
 	val nicknameJson: String = nickname?.let { "\"$it\"" } ?: "null"
 	val genderJson: String = gender?.let { "\"${it.name}\"" } ?: "null"
+	val mbtiJson: String = mbti?.let { "\"$it\"" } ?: "null"
 	return """
 		{
 		  "nickname": $nicknameJson,
@@ -148,7 +182,8 @@ private fun fullProfileBody(
 		  "smokingStatus": "NON_SMOKER",
 		  "religion": "NONE",
 		  "drinkingStatus": "SOMETIMES",
-		  "bodyType": "MALE_NORMAL"
+		  "bodyType": "MALE_NORMAL",
+		  "mbti": $mbtiJson
 		}
 	""".trimIndent()
 }
@@ -167,6 +202,7 @@ private fun profileBodyWithoutIdentity(regionId: Long): String =
 	  "smokingStatus": "NON_SMOKER",
 	  "religion": "NONE",
 	  "drinkingStatus": "SOMETIMES",
-	  "bodyType": "MALE_NORMAL"
+	  "bodyType": "MALE_NORMAL",
+	  "mbti": "ENFP"
 	}
 	""".trimIndent()

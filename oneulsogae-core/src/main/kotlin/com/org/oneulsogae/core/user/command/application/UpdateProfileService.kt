@@ -47,6 +47,7 @@ class UpdateProfileService(
 			religion = command.religion,
 			drinkingStatus = command.drinkingStatus,
 			bodyType = command.bodyType,
+			mbti = command.mbti,
 		)
 
 		val saved: UserDetail = saveUserDetailPort.save(updated)

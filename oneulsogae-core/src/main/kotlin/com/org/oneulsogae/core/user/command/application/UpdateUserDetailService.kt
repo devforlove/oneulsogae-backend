@@ -52,6 +52,7 @@ class UpdateUserDetailService(
 			religion = command.religion,
 			drinkingStatus = command.drinkingStatus,
 			bodyType = command.bodyType,
+			mbti = command.mbti,
 			today = timeGenerator.today(),
 		)
 

@@ -14,6 +14,7 @@ import com.org.oneulsogae.core.user.query.service.port.`in`.CheckCompanyVerified
 import com.org.oneulsogae.core.user.query.service.port.`in`.GetUserDetailUseCase
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
+import java.time.LocalDateTime
 
 /**
  * [GetSelfIntroPostsUseCase] 구현. (조회 전용 - 쓰기 부수효과 없음)
@@ -43,10 +44,11 @@ class GetSelfIntroPostsService(
 				if (userId == null) {
 					page
 				} else {
+					val now: LocalDateTime = timeGenerator.now()
 					page
 						.withPendingChatRequestCounts(
-							received = getSelfIntroPostDao.countReceivedPendingChatRequests(userId),
-							sent = getSelfIntroPostDao.countSentPendingChatRequests(userId),
+							received = getSelfIntroPostDao.countReceivedPendingChatRequests(userId, now),
+							sent = getSelfIntroPostDao.countSentPendingChatRequests(userId, now),
 						)
 						.withCompanyVerified(checkCompanyVerifiedUseCase.isCompanyVerified(userId))
 						.withLikedPostIds(

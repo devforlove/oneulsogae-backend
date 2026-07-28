@@ -120,6 +120,10 @@ class UserDetailEntity(
 	@Enumerated(EnumType.STRING)
 	@Column(name = "body_type", columnDefinition = "varchar(50)")
 	var bodyType: BodyType? = null,
+
+	/** MBTI 4자(대문자). 온보딩·프로필 수정에서 필수로 받는다. (그 이전 가입자는 null) */
+	@Column(name = "mbti", length = 4)
+	var mbti: String? = null,
 ) : BaseEntity() {
 
 	/** 모든 프로필 개인정보(PII)를 제거한다. (파기 단계 — id/userId만 남는다) */
@@ -145,5 +149,6 @@ class UserDetailEntity(
 		religion = null
 		drinkingStatus = null
 		bodyType = null
+		mbti = null
 	}
 }

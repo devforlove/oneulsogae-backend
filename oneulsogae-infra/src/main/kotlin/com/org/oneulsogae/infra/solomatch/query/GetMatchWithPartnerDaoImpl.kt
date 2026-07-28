@@ -74,6 +74,7 @@ class GetMatchWithPartnerDaoImpl(
 					userDetail.religion,
 					userDetail.drinkingStatus,
 					userDetail.bodyType,
+					userDetail.mbti,
 					partnerUser.lastLoginAt,
 				),
 			)

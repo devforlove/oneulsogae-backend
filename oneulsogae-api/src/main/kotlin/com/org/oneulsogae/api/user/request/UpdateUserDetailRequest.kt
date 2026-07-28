@@ -12,6 +12,7 @@ import jakarta.validation.constraints.Min
 import jakarta.validation.constraints.NotBlank
 import jakarta.validation.constraints.NotEmpty
 import jakarta.validation.constraints.NotNull
+import jakarta.validation.constraints.Pattern
 import jakarta.validation.constraints.Size
 import java.time.LocalDate
 
@@ -71,6 +72,11 @@ data class UpdateUserDetailRequest(
 	@field:NotNull(message = "체형은 필수입니다.")
 	val bodyType: BodyType? = null,
 
+	/** MBTI 4자. 대소문자를 가리지 않고 받아 command로 넘길 때 대문자로 정규화한다. */
+	@field:NotBlank(message = "MBTI는 필수입니다.")
+	@field:Pattern(regexp = MBTI_PATTERN, message = "MBTI는 E/I, N/S, T/F, J/P 순서의 4자여야 합니다.")
+	val mbti: String? = null,
+
 	/** 추천 코드(선택). 온보딩 완료 시에만 의미가 있고 프로필 수정에서는 무시된다. */
 	@field:Size(max = 8, message = "추천 코드는 8자 이하여야 합니다.")
 	val referralCode: String? = null,
@@ -94,5 +100,11 @@ data class UpdateUserDetailRequest(
 			religion = religion!!,
 			drinkingStatus = drinkingStatus!!,
 			bodyType = bodyType!!,
+			mbti = mbti!!.uppercase(),
 		)
+
+	companion object {
+		/** MBTI 4자 형식. 저장은 대문자로 하지만 입력은 대소문자를 가리지 않는다. */
+		const val MBTI_PATTERN: String = "^[EIei][NSns][TFtf][JPjp]$"
+	}
 }

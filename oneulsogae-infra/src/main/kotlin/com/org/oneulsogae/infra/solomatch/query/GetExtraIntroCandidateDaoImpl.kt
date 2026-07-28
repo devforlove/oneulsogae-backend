@@ -77,6 +77,7 @@ class GetExtraIntroCandidateDaoImpl(
 					detail.religion,
 					detail.drinkingStatus,
 					detail.bodyType,
+					detail.mbti,
 				),
 			)
 			.from(detail)

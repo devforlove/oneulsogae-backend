@@ -60,6 +60,7 @@ class RecommendedTeamMemberLoader(
 			userDetail.introduction,
 			Expressions.path(List::class.java, userDetail, "traits"),
 			Expressions.path(List::class.java, userDetail, "interests"),
+			userDetail.mbti,
 		)
 
 		return queryFactory

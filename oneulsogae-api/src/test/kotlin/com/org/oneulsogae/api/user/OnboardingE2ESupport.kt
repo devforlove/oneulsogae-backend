@@ -6,6 +6,8 @@ import com.org.oneulsogae.infra.coin.command.entity.QCoinHistoryEntity
 import com.org.oneulsogae.infra.fixture.IntegrationUtil
 import com.org.oneulsogae.infra.matchuser.command.entity.QMatchUserEntity
 import com.org.oneulsogae.infra.region.entity.QRegionEntity
+import com.org.oneulsogae.infra.user.command.entity.QIdentityVerificationEntity
+import com.org.oneulsogae.infra.user.command.entity.QReferralRewardGrantEntity
 import com.org.oneulsogae.infra.user.command.entity.QUserDetailEntity
 import com.org.oneulsogae.infra.user.command.entity.UserDetailEntity
 import com.org.oneulsogae.infra.user.command.entity.QCompanyEmailVerificationEntity
@@ -28,6 +30,9 @@ internal fun cleanupOnboarding() {
 	// 정식 가입(ACTIVE) 전이 시 매칭 읽기 모델에 적재되므로 함께 정리한다.
 	IntegrationUtil.deleteAll(QMatchUserEntity.matchUserEntity)
 	IntegrationUtil.deleteAll(QUserDetailEntity.userDetailEntity)
+	// 추천 보상은 본인확인 DI 기준 1인 1회라, 인증 행과 지급 이력을 지우지 않으면 다음 테스트에서 지급이 막힌다.
+	IntegrationUtil.deleteAll(QIdentityVerificationEntity.identityVerificationEntity)
+	IntegrationUtil.deleteAll(QReferralRewardGrantEntity.referralRewardGrantEntity)
 	IntegrationUtil.deleteAll(QUserEntity.userEntity)
 	// 온보딩 입력의 활동지역은 regionId로 받으므로 지역 참조 데이터도 함께 정리한다.
 	IntegrationUtil.deleteAll(QRegionEntity.regionEntity)

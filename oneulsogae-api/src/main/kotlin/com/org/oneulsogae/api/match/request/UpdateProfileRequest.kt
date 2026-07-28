@@ -5,10 +5,12 @@ import com.org.oneulsogae.common.user.DrinkingStatus
 import com.org.oneulsogae.common.user.MaritalStatus
 import com.org.oneulsogae.common.user.Religion
 import com.org.oneulsogae.common.user.SmokingStatus
+import com.org.oneulsogae.api.user.request.UpdateUserDetailRequest
 import com.org.oneulsogae.core.user.command.application.port.`in`.command.UpdateProfileCommand
 import jakarta.validation.constraints.NotBlank
 import jakarta.validation.constraints.NotEmpty
 import jakarta.validation.constraints.NotNull
+import jakarta.validation.constraints.Pattern
 import jakarta.validation.constraints.Size
 
 /**
@@ -58,6 +60,11 @@ data class UpdateProfileRequest(
 
 	@field:NotNull(message = "체형은 필수입니다.")
 	val bodyType: BodyType? = null,
+
+	/** MBTI 4자. 대소문자를 가리지 않고 받아 command로 넘길 때 대문자로 정규화한다. */
+	@field:NotBlank(message = "MBTI는 필수입니다.")
+	@field:Pattern(regexp = UpdateUserDetailRequest.MBTI_PATTERN, message = "MBTI는 E/I, N/S, T/F, J/P 순서의 4자여야 합니다.")
+	val mbti: String? = null,
 ) {
 
 	// @Valid 검증을 통과한 뒤 호출되므로, 필수 필드는 non-null이 보장된다. (command가 non-null 타입이라 여기서 풀어 넘긴다)
@@ -75,5 +82,6 @@ data class UpdateProfileRequest(
 			religion = religion!!,
 			drinkingStatus = drinkingStatus!!,
 			bodyType = bodyType!!,
+			mbti = mbti!!.uppercase(),
 		)
 }

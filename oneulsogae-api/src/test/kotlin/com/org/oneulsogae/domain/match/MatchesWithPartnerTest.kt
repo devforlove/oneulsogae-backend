@@ -41,6 +41,7 @@ class MatchesWithPartnerTest : DescribeSpec({
 			religion = null,
 			drinkingStatus = null,
 			bodyType = null,
+			mbti = null,
 			lastLoginAt = null,
 		)
 

@@ -25,4 +25,6 @@ data class UpdateProfileCommand(
 	val religion: Religion,
 	val drinkingStatus: DrinkingStatus,
 	val bodyType: BodyType,
+	/** MBTI 4자(대문자). 요청 경계에서 형식 검증·정규화를 마친 값이다. */
+	val mbti: String,
 )

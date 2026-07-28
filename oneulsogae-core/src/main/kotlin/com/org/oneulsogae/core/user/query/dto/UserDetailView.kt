@@ -39,6 +39,8 @@ data class UserDetailView(
 	val religion: Religion?,
 	val drinkingStatus: DrinkingStatus?,
 	val bodyType: BodyType?,
+	/** MBTI 4자(대문자). 온보딩·프로필 수정 이전 가입자는 null. */
+	val mbti: String?,
 	/** 같은 회사 구성원 소개 거부 여부. match_user join으로 채우며, 행이 없으면 기본값 거부(true). */
 	val refuseSameCompanyIntro: Boolean,
 )
