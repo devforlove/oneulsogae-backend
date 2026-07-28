@@ -8,7 +8,6 @@ import org.springframework.transaction.annotation.Transactional
 
 /**
  * [GetReferralSummaryUseCase] 구현. 조회 dao([GetReferralSummaryDao])에만 의존한다. (쓰기 부수효과 없음)
- * 받은 코인은 추천 인원수로 [ReferralSummary]가 계산한다.
  */
 @Service
 @Transactional(readOnly = true)
@@ -17,5 +16,5 @@ class GetReferralSummaryService(
 ) : GetReferralSummaryUseCase {
 
 	override fun getSummary(userId: Long): ReferralSummary =
-		ReferralSummary.of(getReferralSummaryDao.countReferredUsers(userId))
+		getReferralSummaryDao.findSummary(userId)
 }

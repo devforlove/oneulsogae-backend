@@ -13,5 +13,7 @@ CREATE TABLE referral_reward_grants
     updated_at        DATETIME     NOT NULL,
     deleted_at        DATETIME     NULL,
     PRIMARY KEY (id),
-    UNIQUE KEY ux_referred_di_hash (referred_di_hash)
+    UNIQUE KEY ux_referred_di_hash (referred_di_hash),
+    -- 추천 실적 집계(추천 코드 화면의 친구 수·받은 코인)용.
+    KEY idx_referrer_user_id (referrer_user_id)
 );

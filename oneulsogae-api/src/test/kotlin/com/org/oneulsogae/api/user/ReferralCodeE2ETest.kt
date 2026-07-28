@@ -6,6 +6,7 @@ import com.org.oneulsogae.common.integration.expect
 import com.org.oneulsogae.common.integration.get
 import com.org.oneulsogae.common.user.UserStatus
 import com.org.oneulsogae.infra.fixture.IntegrationUtil
+import com.org.oneulsogae.infra.fixture.ReferralRewardGrantEntityFixture
 import com.org.oneulsogae.infra.fixture.UserEntityFixture
 import com.org.oneulsogae.infra.user.command.entity.QUserEntity
 import io.kotest.matchers.shouldBe
@@ -72,21 +73,33 @@ class ReferralCodeE2ETest : AbstractIntegrationSupport({
 			}
 		}
 
-		context("내 코드로 가입한 친구가 2명이면") {
-			it("추천 실적은 2명과 보상 단가 × 2코인이다 (내가 추천받아 받은 보상은 빼고)") {
-				val referrer = UserEntityFixture.create(providerId = "referral-summary-referrer", status = UserStatus.ACTIVE)
-				// 이 유저 자신도 남의 코드로 가입해 REFERRAL 보상을 받았지만, 그 코인은 내 실적에 잡히지 않아야 한다.
+		context("내 추천으로 보상이 지급된 친구가 2명이면") {
+			it("추천 실적은 2명과 지급된 코인 합계다 (내가 추천받아 받은 보상은 빼고)") {
+				val referrerId: Long = IntegrationUtil.persist(
+					UserEntityFixture.create(providerId = "referral-summary-referrer", status = UserStatus.ACTIVE),
+				).id!!
 				val inviterId: Long = IntegrationUtil.persist(
 					UserEntityFixture.create(providerId = "referral-summary-inviter", status = UserStatus.ACTIVE),
 				).id!!
-				referrer.referredByUserId = inviterId
-				val referrerId: Long = IntegrationUtil.persist(referrer).id!!
 
+				// 내가 추천인인 지급 2건.
 				(1..2).forEach { index: Int ->
-					val referred = UserEntityFixture.create(providerId = "referral-summary-friend-$index", status = UserStatus.ACTIVE)
-					referred.referredByUserId = referrerId
-					IntegrationUtil.persist(referred)
+					IntegrationUtil.persist(
+						ReferralRewardGrantEntityFixture.create(
+							referredDiHash = "summary-friend-$index",
+							referrerUserId = referrerId,
+							referredUserId = 9000L + index,
+						),
+					)
 				}
+				// 내가 남의 코드를 입력해 받은 건(추천인은 inviter)은 내 실적에 잡히지 않는다.
+				IntegrationUtil.persist(
+					ReferralRewardGrantEntityFixture.create(
+						referredDiHash = "summary-me",
+						referrerUserId = inviterId,
+						referredUserId = referrerId,
+					),
+				)
 
 				get("/users/v1/me/referral-code") {
 					bearer(accessTokenFor(referrerId))
@@ -94,6 +107,30 @@ class ReferralCodeE2ETest : AbstractIntegrationSupport({
 					status(200)
 					body("data.referredUserCount", 2)
 					body("data.earnedCoinAmount", CoinPolicy.REFERRAL_REWARD_COIN_AMOUNT * 2)
+				}
+			}
+		}
+
+		context("보상이 지급된 친구가 탈퇴해도") {
+			it("이미 받은 실적은 그대로 남는다") {
+				val referrerId: Long = IntegrationUtil.persist(
+					UserEntityFixture.create(providerId = "referral-summary-withdrawn", status = UserStatus.ACTIVE),
+				).id!!
+				// 피추천인 계정 자체가 없어도(탈퇴·파기) 지급 이력은 남아 실적에 잡힌다.
+				IntegrationUtil.persist(
+					ReferralRewardGrantEntityFixture.create(
+						referredDiHash = "summary-withdrawn-friend",
+						referrerUserId = referrerId,
+						referredUserId = 9500L,
+					),
+				)
+
+				get("/users/v1/me/referral-code") {
+					bearer(accessTokenFor(referrerId))
+				} expect {
+					status(200)
+					body("data.referredUserCount", 1)
+					body("data.earnedCoinAmount", CoinPolicy.REFERRAL_REWARD_COIN_AMOUNT)
 				}
 			}
 		}
