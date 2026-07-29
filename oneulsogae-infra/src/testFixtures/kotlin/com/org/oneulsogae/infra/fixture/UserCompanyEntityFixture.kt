@@ -4,7 +4,7 @@ import com.org.oneulsogae.infra.user.command.entity.UserCompanyEntity
 
 /**
  * [UserCompanyEntity] 테스트 픽스처. 회사 이메일 도메인 -> 회사명 매핑을 만든다.
- * (email_domain 유니크 제약이 있어 한 테스트에서 여러 매핑을 만들면 emailDomain을 달리한다.)
+ * ((email_domain, company_name) 조합 유니크라 같은 도메인에 회사명을 달리해 여러 회사를 만들 수 있다.)
  */
 object UserCompanyEntityFixture {
 

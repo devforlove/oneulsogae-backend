@@ -9,6 +9,7 @@ fun CompanyEmailVerificationEntity.toDomain(): CompanyEmailVerification =
 		id = id ?: 0,
 		userId = userId,
 		companyEmail = companyEmail,
+		userCompanyId = userCompanyId,
 		code = code,
 		expiresAt = expiresAt,
 		verifiedAt = verifiedAt,
@@ -22,6 +23,7 @@ fun CompanyEmailVerification.toEntity(): CompanyEmailVerificationEntity =
 	CompanyEmailVerificationEntity(
 		userId = userId,
 		companyEmail = companyEmail,
+		userCompanyId = userCompanyId,
 		code = code,
 		expiresAt = expiresAt,
 		verifiedAt = verifiedAt,

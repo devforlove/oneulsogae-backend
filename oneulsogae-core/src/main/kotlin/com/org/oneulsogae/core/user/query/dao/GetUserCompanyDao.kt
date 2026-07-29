@@ -7,6 +7,9 @@ import com.org.oneulsogae.core.user.query.dto.UserCompany
  */
 interface GetUserCompanyDao {
 
-	/** 이메일 도메인(예: "oneulsogae.com")으로 회사를 조회한다. 없으면 null. */
-	fun findByEmailDomain(emailDomain: String): UserCompany?
+	/** 이메일 도메인(예: "oneulsogae.com")에 매핑된 회사 후보 목록을 조회한다. 한 도메인을 여러 회사가 공유할 수 있다(1:N). 없으면 빈 목록. */
+	fun findAllByEmailDomain(emailDomain: String): List<UserCompany>
+
+	/** 회사 매핑 id로 회사를 조회한다. 없으면 null. */
+	fun findById(userCompanyId: Long): UserCompany?
 }

@@ -57,6 +57,65 @@ class ConfirmCompanyEmailVerificationE2ETest : AbstractIntegrationSupport({
 			}
 		}
 
+		context("요청 시점에 회사가 확정된 인증이면(같은 도메인 회사 여럿)") {
+			it("도메인 재조회 없이 확정된 회사명으로 프로필에 반영된다 (200)") {
+				val userId: Long = IntegrationUtil.persist(
+					UserEntityFixture.create(status = UserStatus.ACTIVE),
+				).id!!
+				IntegrationUtil.persist(UserDetailEntityFixture.create(userId = userId))
+				IntegrationUtil.persist(UserCompanyEntityFixture.create(emailDomain = "oneulsogae.com", companyName = "오늘의 소개"))
+				val selectedCompanyId: Long = IntegrationUtil.persist(
+					UserCompanyEntityFixture.create(emailDomain = "oneulsogae.com", companyName = "오늘의 소개 계열사"),
+				).id!!
+				IntegrationUtil.persist(
+					CompanyEmailVerificationEntityFixture.create(
+						userId = userId,
+						companyEmail = "user@oneulsogae.com",
+						userCompanyId = selectedCompanyId,
+						code = "123456",
+					),
+				)
+
+				post("/users/v1/onboarding/company-email/verifications/confirm") {
+					bearer(accessTokenFor(userId))
+					jsonBody("""{"code": "123456"}""")
+				} expect {
+					status(200)
+					body("data.companyName", "오늘의 소개 계열사")
+				}
+
+				userDetailOf(userId).companyName shouldBe "오늘의 소개 계열사"
+			}
+		}
+
+		context("회사 확정 없는 구버전 인증인데 같은 도메인 회사가 여럿이면") {
+			it("회사를 특정할 수 없어 USER-034로 실패한다 (400)") {
+				val userId: Long = IntegrationUtil.persist(
+					UserEntityFixture.create(status = UserStatus.ACTIVE),
+				).id!!
+				IntegrationUtil.persist(UserDetailEntityFixture.create(userId = userId))
+				IntegrationUtil.persist(UserCompanyEntityFixture.create(emailDomain = "oneulsogae.com", companyName = "오늘의 소개"))
+				IntegrationUtil.persist(UserCompanyEntityFixture.create(emailDomain = "oneulsogae.com", companyName = "오늘의 소개 계열사"))
+				IntegrationUtil.persist(
+					CompanyEmailVerificationEntityFixture.create(
+						userId = userId,
+						companyEmail = "user@oneulsogae.com",
+						code = "123456",
+					),
+				)
+
+				post("/users/v1/onboarding/company-email/verifications/confirm") {
+					bearer(accessTokenFor(userId))
+					jsonBody("""{"code": "123456"}""")
+				} expect {
+					status(400)
+					body("error.code", "USER-034")
+				}
+
+				userDetailOf(userId).companyName shouldBe null
+			}
+		}
+
 		context("인증번호는 맞지만 회사 도메인 매핑이 없으면") {
 			it("USER-034로 인증이 실패하고 프로필에 아무것도 반영되지 않는다 (400)") {
 				val userId: Long = IntegrationUtil.persist(

@@ -9,6 +9,7 @@ import com.org.oneulsogae.infra.fixture.UserCompanyEntityFixture
 import com.org.oneulsogae.infra.fixture.UserDetailEntityFixture
 import com.org.oneulsogae.infra.fixture.UserEntityFixture
 import io.kotest.matchers.shouldBe
+import org.hamcrest.Matchers.hasItems
 import org.hamcrest.Matchers.notNullValue
 
 /**
@@ -38,9 +39,84 @@ class RequestCompanyEmailVerificationE2ETest : AbstractIntegrationSupport({
 					body("success", true)
 					body("data.companyEmail", "user@oneulsogae.com")
 					body("data.expiresAt", notNullValue())
+					body("data.requiresCompanySelection", false)
 				}
 
 				verificationCountOf(userId) shouldBe 1
+			}
+		}
+
+		context("같은 도메인을 쓰는 회사가 여럿인데 회사를 지정하지 않으면") {
+			it("발송 없이 회사 후보 목록을 반환한다 (200, requiresCompanySelection=true)") {
+				val userId: Long = IntegrationUtil.persist(
+					UserEntityFixture.create(status = UserStatus.ACTIVE),
+				).id!!
+				IntegrationUtil.persist(UserCompanyEntityFixture.create(emailDomain = "oneulsogae.com", companyName = "오늘의 소개"))
+				IntegrationUtil.persist(UserCompanyEntityFixture.create(emailDomain = "oneulsogae.com", companyName = "오늘의 소개 계열사"))
+
+				post("/users/v1/onboarding/company-email/verifications") {
+					bearer(accessTokenFor(userId))
+					jsonBody("""{"companyEmail": "user@oneulsogae.com"}""")
+				} expect {
+					status(200)
+					body("success", true)
+					body("data.requiresCompanySelection", true)
+					body("data.companyCandidates.size()", 2)
+					body("data.companyCandidates.companyName", hasItems("오늘의 소개", "오늘의 소개 계열사"))
+				}
+
+				// 회사 선택 전이므로 인증번호 발급·메일 발송 부수효과가 없어야 한다.
+				verificationCountOf(userId) shouldBe 0
+			}
+		}
+
+		context("같은 도메인 회사가 여럿이어도 회사를 지정해 요청하면") {
+			it("지정한 회사로 확정해 인증번호가 발급된다 (200)") {
+				val userId: Long = IntegrationUtil.persist(
+					UserEntityFixture.create(status = UserStatus.ACTIVE),
+				).id!!
+				IntegrationUtil.persist(UserCompanyEntityFixture.create(emailDomain = "oneulsogae.com", companyName = "오늘의 소개"))
+				val selectedCompanyId: Long = IntegrationUtil.persist(
+					UserCompanyEntityFixture.create(emailDomain = "oneulsogae.com", companyName = "오늘의 소개 계열사"),
+				).id!!
+
+				post("/users/v1/onboarding/company-email/verifications") {
+					bearer(accessTokenFor(userId))
+					jsonBody("""{"companyEmail": "user@oneulsogae.com", "companyId": $selectedCompanyId}""")
+				} expect {
+					status(200)
+					body("success", true)
+					body("data.expiresAt", notNullValue())
+					body("data.requiresCompanySelection", false)
+				}
+
+				verificationCountOf(userId) shouldBe 1
+				// 인증 행에 선택한 회사가 확정 저장된다. (확정 시 도메인 재조회 없이 이 id를 쓴다)
+				verificationUserCompanyIdOf(userId) shouldBe selectedCompanyId
+			}
+		}
+
+		context("지정한 회사가 해당 도메인의 후보가 아니면") {
+			it("부수효과 없이 400(COMPANY_NOT_FOUND)를 반환한다") {
+				val userId: Long = IntegrationUtil.persist(
+					UserEntityFixture.create(status = UserStatus.ACTIVE),
+				).id!!
+				IntegrationUtil.persist(UserCompanyEntityFixture.create(emailDomain = "oneulsogae.com", companyName = "오늘의 소개"))
+				// 다른 도메인 회사 id를 지정하는 조작된 요청.
+				val otherDomainCompanyId: Long = IntegrationUtil.persist(
+					UserCompanyEntityFixture.create(emailDomain = "other-corp.com", companyName = "다른 회사"),
+				).id!!
+
+				post("/users/v1/onboarding/company-email/verifications") {
+					bearer(accessTokenFor(userId))
+					jsonBody("""{"companyEmail": "user@oneulsogae.com", "companyId": $otherDomainCompanyId}""")
+				} expect {
+					status(400)
+					body("success", false)
+					body("error.code", "USER-034")
+				}
+
+				verificationCountOf(userId) shouldBe 0
 			}
 		}
 

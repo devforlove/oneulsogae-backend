@@ -14,6 +14,8 @@ data class CompanyEmailVerification(
 	val id: Long = 0,
 	val userId: Long,
 	val companyEmail: String,
+	/** 요청 시점에 확정한 회사 매핑(user_companies) id. 같은 도메인을 쓰는 회사가 여럿이라 요청 시 확정해 둔다. (이 컬럼 도입 전 구버전 행만 null) */
+	val userCompanyId: Long? = null,
 	val code: String,
 	val expiresAt: LocalDateTime,
 	val verifiedAt: LocalDateTime? = null,
@@ -78,10 +80,11 @@ data class CompanyEmailVerification(
 			"protonmail.com",
 		)
 
-		/** 신규 인증 요청을 생성한다. (회사 이메일 검증 후, 만료 시각 = now + [CODE_TTL]) */
+		/** 신규 인증 요청을 생성한다. (회사 이메일 검증 후, 만료 시각 = now + [CODE_TTL]. [userCompanyId]는 요청 시점에 확정한 회사) */
 		fun create(
 			userId: Long,
 			companyEmail: String,
+			userCompanyId: Long,
 			code: String,
 			now: LocalDateTime,
 		): CompanyEmailVerification {
@@ -89,6 +92,7 @@ data class CompanyEmailVerification(
 			return CompanyEmailVerification(
 				userId = userId,
 				companyEmail = companyEmail,
+				userCompanyId = userCompanyId,
 				code = code,
 				expiresAt = now.plus(CODE_TTL),
 			)

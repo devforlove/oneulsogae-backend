@@ -74,6 +74,15 @@ internal fun verificationCountOf(userId: Long): Int =
 		.fetch()
 		.size
 
+/** 해당 사용자의 가장 최근 인증 요청에 확정 저장된 회사 매핑(user_company_id) 값. */
+internal fun verificationUserCompanyIdOf(userId: Long): Long? =
+	IntegrationUtil.getQuery()
+		.select(QCompanyEmailVerificationEntity.companyEmailVerificationEntity.userCompanyId)
+		.from(QCompanyEmailVerificationEntity.companyEmailVerificationEntity)
+		.where(QCompanyEmailVerificationEntity.companyEmailVerificationEntity.userId.eq(userId))
+		.orderBy(QCompanyEmailVerificationEntity.companyEmailVerificationEntity.id.desc())
+		.fetchFirst()
+
 /** 해당 사용자의 추천인(referred_by_user_id) 기록값. */
 internal fun referredByOf(userId: Long): Long? =
 	IntegrationUtil.getQuery()

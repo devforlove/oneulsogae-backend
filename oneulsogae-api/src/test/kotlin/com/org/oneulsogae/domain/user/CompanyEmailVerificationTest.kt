@@ -17,26 +17,28 @@ class CompanyEmailVerificationTest : DescribeSpec({
 	val now: LocalDateTime = LocalDateTime.of(2026, 6, 11, 12, 0)
 	val userId: Long = 1L
 	val code: String = "123456"
+	val userCompanyId: Long = 10L
 
 	describe("create") {
 		it("회사 도메인 이메일이면 만료 시각(now + CODE_TTL)으로 생성한다") {
 			val verification: CompanyEmailVerification =
-				CompanyEmailVerification.create(userId, "hong@mycompany.com", code, now)
+				CompanyEmailVerification.create(userId, "hong@mycompany.com", userCompanyId, code, now)
 
 			verification.companyEmail shouldBe "hong@mycompany.com"
+			verification.userCompanyId shouldBe userCompanyId
 			verification.expiresAt shouldBe now.plus(CompanyEmailVerification.CODE_TTL)
 		}
 
 		it("개인/무료 이메일 도메인이면 PERSONAL_EMAIL_NOT_ALLOWED를 던진다") {
 			val exception: BusinessException = shouldThrow {
-				CompanyEmailVerification.create(userId, "hong@gmail.com", code, now)
+				CompanyEmailVerification.create(userId, "hong@gmail.com", userCompanyId, code, now)
 			}
 			exception.errorCode shouldBe UserErrorCode.PERSONAL_EMAIL_NOT_ALLOWED
 		}
 
 		it("도메인은 대소문자를 무시하고 차단한다") {
 			val exception: BusinessException = shouldThrow {
-				CompanyEmailVerification.create(userId, "Hong@Naver.COM", code, now)
+				CompanyEmailVerification.create(userId, "Hong@Naver.COM", userCompanyId, code, now)
 			}
 			exception.errorCode shouldBe UserErrorCode.PERSONAL_EMAIL_NOT_ALLOWED
 		}
@@ -44,7 +46,7 @@ class CompanyEmailVerificationTest : DescribeSpec({
 		it("차단 목록의 모든 도메인을 거부한다") {
 			CompanyEmailVerification.PERSONAL_EMAIL_DOMAINS.forEach { domain: String ->
 				val exception: BusinessException = shouldThrow {
-					CompanyEmailVerification.create(userId, "user@$domain", code, now)
+					CompanyEmailVerification.create(userId, "user@$domain", userCompanyId, code, now)
 				}
 				exception.errorCode shouldBe UserErrorCode.PERSONAL_EMAIL_NOT_ALLOWED
 			}

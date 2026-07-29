@@ -12,6 +12,7 @@ object CompanyEmailVerificationEntityFixture {
 	fun create(
 		userId: Long = 1L,
 		companyEmail: String = "user@oneulsogae.com",
+		userCompanyId: Long? = null,
 		code: String = "123456",
 		expiresAt: LocalDateTime = LocalDateTime.now().plusMinutes(10),
 		verifiedAt: LocalDateTime? = null,
@@ -19,6 +20,7 @@ object CompanyEmailVerificationEntityFixture {
 		CompanyEmailVerificationEntity(
 			userId = userId,
 			companyEmail = companyEmail,
+			userCompanyId = userCompanyId,
 			code = code,
 			expiresAt = expiresAt,
 			verifiedAt = verifiedAt,

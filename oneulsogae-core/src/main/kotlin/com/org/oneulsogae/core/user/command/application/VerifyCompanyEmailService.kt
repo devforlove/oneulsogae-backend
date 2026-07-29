@@ -25,8 +25,9 @@ import java.time.LocalDateTime
  * 온보딩 완료·가입 축하 코인·첫 소개는 [CompleteOnboardingService]가 담당한다)
  *
  * 사용자의 가장 최근 인증 요청을 찾아 입력한 인증번호와 비교한다. (재전송으로 누적된 옛 코드는 자동 무효)
- * 일치/미만료/미사용을 확인한 뒤 회사명을 조회([GetUserCompanyUseCase])해 회사 이메일·회사명을 프로필에 확정 반영하고,
- * 인증번호를 사용 처리한다. 회사명은 같은 회사 소개 차단 판정에 쓰이므로 매칭 읽기 모델(match_user)을 함께 동기화한다.
+ * 일치/미만료/미사용을 확인한 뒤 요청 시점에 확정해 둔 회사(userCompanyId)의 회사명을 조회([GetUserCompanyUseCase])해
+ * 회사 이메일·회사명을 프로필에 확정 반영하고, 인증번호를 사용 처리한다.
+ * 회사명은 같은 회사 소개 차단 판정에 쓰이므로 매칭 읽기 모델(match_user)을 함께 동기화한다.
  */
 @Service
 class VerifyCompanyEmailService(
@@ -52,8 +53,8 @@ class VerifyCompanyEmailService(
 		// 인증번호를 사용(검증) 처리해 재사용을 막는다.
 		saveCompanyEmailVerificationPort.save(verification.verify(now))
 
-		// 회사 이메일 도메인으로 회사명을 조회한다. (요청 시점에 등록 도메인만 발급되므로 통상 존재하나, 요청~확정 사이 매핑 삭제 엣지에서는 못 찾을 수 있어 인증 자체를 실패 처리한다)
-		val companyName: String = getUserCompanyUseCase.findCompanyNameByEmail(verification.companyEmail)
+		// 요청 시점에 확정한 회사(userCompanyId)의 회사명을 조회한다. (요청~확정 사이 매핑 삭제 엣지에서는 못 찾을 수 있어 인증 자체를 실패 처리한다)
+		val companyName: String = resolveCompanyName(verification)
 			?: throw BusinessException(UserErrorCode.COMPANY_NOT_FOUND)
 		confirmCompanyOnProfile(verification.userId, verification.companyEmail, companyName)
 
@@ -62,6 +63,14 @@ class VerifyCompanyEmailService(
 
 		return VerifyCompanyEmailResult(companyName)
 	}
+
+	/**
+	 * 인증 행에 확정된 회사(userCompanyId)로 회사명을 찾는다.
+	 * userCompanyId가 없는 구버전 행은 도메인 후보가 정확히 하나일 때만 그 회사로 본다. (여럿이면 회사를 특정할 수 없어 실패)
+	 */
+	private fun resolveCompanyName(verification: CompanyEmailVerification): String? =
+		verification.userCompanyId?.let { userCompanyId: Long -> getUserCompanyUseCase.findById(userCompanyId)?.companyName }
+			?: getUserCompanyUseCase.findCompaniesByEmail(verification.companyEmail).singleOrNull()?.companyName
 
 	// 검증을 마친 회사 이메일과 (조회한) 회사명을 프로필에 확정 반영한다.
 	private fun confirmCompanyOnProfile(userId: Long, companyEmail: String, companyName: String) {

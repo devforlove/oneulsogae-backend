@@ -29,6 +29,10 @@ class CompanyEmailVerificationEntity(
 	@Column(name = "company_email", nullable = false)
 	val companyEmail: String,
 
+	/** 요청 시점에 확정한 회사 매핑(user_companies) id. (컬럼 도입 전 구버전 행만 null) */
+	@Column(name = "user_company_id")
+	val userCompanyId: Long? = null,
+
 	@Column(name = "code", nullable = false, length = 16)
 	val code: String,
 

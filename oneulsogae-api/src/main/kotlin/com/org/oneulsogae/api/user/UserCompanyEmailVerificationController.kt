@@ -30,8 +30,15 @@ class UserCompanyEmailVerificationController(
 	private val verifyCompanyEmailUseCase: VerifyCompanyEmailUseCase,
 ) {
 
-	/** 입력한 회사 이메일로 인증번호를 발송한다. */
-	@Operation(summary = "회사 이메일 인증번호 발송", description = "입력한 회사 이메일로 인증번호를 발송한다.")
+	/**
+	 * 입력한 회사 이메일로 인증번호를 발송한다.
+	 * 같은 도메인을 쓰는 회사가 여럿이면 발송 없이 후보 목록(requiresCompanySelection=true)을 내려주고,
+	 * 클라이언트는 companyId를 지정해 재요청한다.
+	 */
+	@Operation(
+		summary = "회사 이메일 인증번호 발송",
+		description = "입력한 회사 이메일로 인증번호를 발송한다. 같은 도메인 회사가 여럿이면 발송 없이 후보 목록을 반환하며, companyId를 지정해 재요청한다.",
+	)
 	@PostMapping("/company-email/verifications")
 	fun requestCompanyEmailVerification(
 		@LoginUser user: AuthUser,
@@ -39,7 +46,8 @@ class UserCompanyEmailVerificationController(
 	): ApiResponse<CompanyEmailVerificationResponse> =
 		ApiResponse.success(
 			CompanyEmailVerificationResponse.of(
-				requestCompanyEmailVerificationUseCase.request(user.id, request.companyEmail),
+				companyEmail = request.companyEmail,
+				result = requestCompanyEmailVerificationUseCase.request(user.id, request.companyEmail, request.companyId),
 			),
 		)
 
