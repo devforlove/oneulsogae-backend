@@ -7,6 +7,7 @@ import java.time.LocalDateTime
 /**
  * 셀프 소개팅(셀소) 본문 도메인 모델. 공통 골격([LoungePost])에 [postId]로 붙는다.
  * 작성자의 성별·나이·키·지역·직업은 프로필(user 도메인)이 소유하므로 여기에 담지 않고 조회 시 조인한다.
+ * MBTI도 프로필 소유라 입력받지 않으며, 등록 시점의 프로필 값을 스냅샷으로 담는다. (프로필에 없으면 null)
  * 본문 항목은 모두 필수이며 각자 최대 길이가 있다. 등록 빈도는 [validateDailyLimit]로 제한한다.
  */
 data class SelfIntroPost(
@@ -16,8 +17,8 @@ data class SelfIntroPost(
 	val longDistance: String,
 	/** 원하는 상대 나이대. */
 	val desiredAge: String,
-	/** 본인 MBTI. */
-	val mbti: String,
+	/** 등록 시점 프로필의 MBTI 스냅샷. 프로필에 MBTI가 없으면 null. */
+	val mbti: String?,
 	/** 결혼에 대한 생각. */
 	val marriageThought: String,
 	/** 선호하는 상대의 성격·가치관. */
@@ -42,9 +43,6 @@ data class SelfIntroPost(
 		/** 한 줄 입력(장거리·희망 나이대)의 최대 길이. */
 		const val MAX_SHORT_TEXT_LENGTH: Int = 40
 
-		/** MBTI의 최대 길이. */
-		const val MAX_MBTI_LENGTH: Int = 10
-
 		/** 서술형 입력(결혼관·선호 상대·매력 어필·자유 한마디)의 최대 길이. */
 		const val MAX_LONG_TEXT_LENGTH: Int = 500
 
@@ -54,18 +52,18 @@ data class SelfIntroPost(
 		/** 제한 구간 안에 등록할 수 있는 셀소 수. */
 		const val MAX_POSTS_PER_WINDOW: Int = 1
 
-		/** 본문을 검증해 신규 셀소를 만든다. */
+		/** 본문을 검증해 신규 셀소를 만든다. ([mbti]는 입력이 아니라 등록 시점 프로필 스냅샷) */
 		fun create(
 			postId: Long,
 			longDistance: String,
 			desiredAge: String,
-			mbti: String,
+			mbti: String?,
 			marriageThought: String,
 			preferredPartner: String,
 			charmPoint: String,
 			freeWord: String,
 		): SelfIntroPost {
-			validateContent(longDistance, desiredAge, mbti, marriageThought, preferredPartner, charmPoint, freeWord)
+			validateContent(longDistance, desiredAge, marriageThought, preferredPartner, charmPoint, freeWord)
 			return SelfIntroPost(
 				postId = postId,
 				longDistance = longDistance,
@@ -81,11 +79,11 @@ data class SelfIntroPost(
 		/**
 		 * 본문 검증. 모든 항목이 필수이며 각자 최대 길이를 넘을 수 없다.
 		 * 하나라도 비었거나 길이를 넘으면 [LoungeErrorCode.SELF_INTRO_INVALID_CONTENT].
+		 * (MBTI는 입력이 아니라 프로필 스냅샷이므로 검증 대상이 아니다)
 		 */
 		fun validateContent(
 			longDistance: String,
 			desiredAge: String,
-			mbti: String,
 			marriageThought: String,
 			preferredPartner: String,
 			charmPoint: String,
@@ -93,7 +91,6 @@ data class SelfIntroPost(
 		) {
 			validateText(longDistance, MAX_SHORT_TEXT_LENGTH)
 			validateText(desiredAge, MAX_SHORT_TEXT_LENGTH)
-			validateText(mbti, MAX_MBTI_LENGTH)
 			validateText(marriageThought, MAX_LONG_TEXT_LENGTH)
 			validateText(preferredPartner, MAX_LONG_TEXT_LENGTH)
 			validateText(charmPoint, MAX_LONG_TEXT_LENGTH)

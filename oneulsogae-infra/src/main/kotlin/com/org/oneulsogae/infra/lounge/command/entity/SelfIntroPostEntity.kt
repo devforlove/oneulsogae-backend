@@ -33,9 +33,9 @@ class SelfIntroPostEntity(
 	@Column(name = "desired_age", nullable = false, length = 40)
 	var desiredAge: String,
 
-	/** 본인 MBTI. */
-	@Column(name = "mbti", nullable = false, length = 10)
-	var mbti: String,
+	/** 등록 시점 프로필의 MBTI 스냅샷. 프로필에 MBTI가 없으면 null. */
+	@Column(name = "mbti", length = 10)
+	var mbti: String?,
 
 	/** 결혼에 대한 생각. */
 	@Column(name = "marriage_thought", nullable = false, length = 500)

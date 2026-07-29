@@ -14,6 +14,7 @@ import com.org.oneulsogae.core.lounge.command.domain.LoungePostImages
 import com.org.oneulsogae.core.lounge.command.domain.SelfIntroPost
 import com.org.oneulsogae.core.user.query.service.port.`in`.CheckCompanyVerifiedUseCase
 import com.org.oneulsogae.core.user.query.service.port.`in`.GetUserByIdUseCase
+import com.org.oneulsogae.core.user.query.service.port.`in`.GetUserDetailUseCase
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import java.time.LocalDateTime
@@ -25,6 +26,7 @@ import java.util.UUID
  * 라운지 글(공통 골격) → 셀소 본문 → 사진 순으로 저장한다.
  * 유저 존재 확인은 user 도메인 in-port([GetUserByIdUseCase])로 위임한다(없으면 그쪽이 USER_NOT_FOUND).
  * 회사 인증 여부도 user 도메인 in-port([CheckCompanyVerifiedUseCase])로 검증한다. (미인증 사용자의 셀소가 라운지에 노출되지 않도록 막는다)
+ * MBTI는 프로필이 소유하므로 입력받지 않고, 등록 시점의 프로필 값([GetUserDetailUseCase])을 스냅샷으로 담는다.
  */
 @Service
 class RegisterSelfIntroPostService(
@@ -36,6 +38,7 @@ class RegisterSelfIntroPostService(
 	private val saveLoungePostImagePort: SaveLoungePostImagePort,
 	private val timeGenerator: TimeGenerator,
 	private val checkCompanyVerifiedUseCase: CheckCompanyVerifiedUseCase,
+	private val getUserDetailUseCase: GetUserDetailUseCase,
 ) : RegisterSelfIntroPostUseCase {
 
 	@Transactional
@@ -49,7 +52,6 @@ class RegisterSelfIntroPostService(
 		SelfIntroPost.validateContent(
 			longDistance = command.longDistance,
 			desiredAge = command.desiredAge,
-			mbti = command.mbti,
 			marriageThought = command.marriageThought,
 			preferredPartner = command.preferredPartner,
 			charmPoint = command.charmPoint,
@@ -72,7 +74,8 @@ class RegisterSelfIntroPostService(
 				postId = post.id,
 				longDistance = command.longDistance,
 				desiredAge = command.desiredAge,
-				mbti = command.mbti,
+				// MBTI는 프로필 소유 — 입력 대신 등록 시점 프로필 값을 스냅샷으로 담는다.
+				mbti = getUserDetailUseCase.getByUserId(userId).mbti,
 				marriageThought = command.marriageThought,
 				preferredPartner = command.preferredPartner,
 				charmPoint = command.charmPoint,

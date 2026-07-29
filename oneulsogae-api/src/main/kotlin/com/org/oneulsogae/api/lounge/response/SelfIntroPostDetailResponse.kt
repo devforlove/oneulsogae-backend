@@ -27,7 +27,7 @@ data class SelfIntroPostDetailResponse(
 	val universityName: String?,
 	val longDistance: String,
 	val desiredAge: String,
-	val mbti: String,
+	val mbti: String?,
 	val marriageThought: String,
 	val preferredPartner: String,
 	val charmPoint: String,

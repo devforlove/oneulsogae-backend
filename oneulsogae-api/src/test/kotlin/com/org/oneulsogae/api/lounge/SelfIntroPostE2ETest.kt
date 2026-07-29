@@ -32,9 +32,10 @@ class SelfIntroPostE2ETest : AbstractIntegrationSupport({
 	}
 
 	// companyName이 null이 아니면 회사 인증을 마친 사용자로 시딩한다. (게이트를 통과시켜야 나머지 케이스에 도달한다)
-	fun persistUser(providerId: String, companyName: String? = "오늘소개"): Long {
+	// mbti는 셀소 등록 시 프로필에서 스냅샷되므로 프로필에 심어 검증한다.
+	fun persistUser(providerId: String, companyName: String? = "오늘소개", mbti: String? = "ENFP"): Long {
 		val userId: Long = IntegrationUtil.persist(UserEntityFixture.create(providerId = providerId)).id!!
-		IntegrationUtil.persist(UserDetailEntityFixture.create(userId = userId, companyName = companyName))
+		IntegrationUtil.persist(UserDetailEntityFixture.create(userId = userId, companyName = companyName, mbti = mbti))
 		return userId
 	}
 
@@ -56,13 +57,12 @@ class SelfIntroPostE2ETest : AbstractIntegrationSupport({
 			.fetch()
 	}
 
-	/** 본문 7개 항목을 모두 채운 요청. 사진은 호출부가 덧붙인다. */
+	/** 본문 6개 항목을 모두 채운 요청. 사진은 호출부가 덧붙인다. (MBTI는 입력이 아니라 프로필 스냅샷) */
 	fun requestWithContent(userId: Long): RequestSpecification =
 		RestAssured.given()
 			.header("Authorization", "Bearer ${accessTokenFor(userId)}")
 			.multiPart("longDistance", "장거리 가능해요", "text/plain;charset=UTF-8")
 			.multiPart("desiredAge", "28~34세", "text/plain;charset=UTF-8")
-			.multiPart("mbti", "ENFP", "text/plain;charset=UTF-8")
 			.multiPart("marriageThought", "3년 안에 하고 싶어요", "text/plain;charset=UTF-8")
 			.multiPart("preferredPartner", "대화가 잘 통하는 사람", "text/plain;charset=UTF-8")
 			.multiPart("charmPoint", "잘 웃어요", "text/plain;charset=UTF-8")
@@ -88,6 +88,7 @@ class SelfIntroPostE2ETest : AbstractIntegrationSupport({
 				post.likeCount shouldBe 0
 
 				val selfIntro: SelfIntroPostEntity = selfIntroOf(post.id!!)!!
+				// MBTI는 요청에 없고, 등록 시점 프로필 값이 스냅샷으로 담긴다.
 				selfIntro.mbti shouldBe "ENFP"
 				selfIntro.desiredAge shouldBe "28~34세"
 				selfIntro.freeWord shouldBe "편하게 연락 주세요"
@@ -98,6 +99,21 @@ class SelfIntroPostE2ETest : AbstractIntegrationSupport({
 				images[0].imageKey shouldStartWith "lounge-posts/$userId/"
 				images[1].displayOrder shouldBe 1
 				images[1].imageKey shouldStartWith "lounge-posts/$userId/"
+			}
+		}
+
+		context("프로필에 MBTI가 없는 사용자가 등록하면") {
+			it("셀소는 저장되고 mbti 스냅샷은 null이다") {
+				val userId: Long = persistUser("self-intro-no-mbti", mbti = null)
+
+				requestWithContent(userId)
+					.multiPart("photos", "first.jpg", "fake-first-bytes".toByteArray(), "image/jpeg")
+					.post("/lounge/v1/self-intro-posts")
+					.then()
+					.statusCode(200)
+
+				val post: LoungePostEntity = latestPostOf(userId)!!
+				selfIntroOf(post.id!!)!!.mbti shouldBe null
 			}
 		}
 
@@ -139,7 +155,6 @@ class SelfIntroPostE2ETest : AbstractIntegrationSupport({
 					.header("Authorization", "Bearer ${accessTokenFor(userId)}")
 					.multiPart("longDistance", "장거리 가능해요", "text/plain;charset=UTF-8")
 					.multiPart("desiredAge", "28~34세", "text/plain;charset=UTF-8")
-					.multiPart("mbti", "ENFP", "text/plain;charset=UTF-8")
 					.multiPart("marriageThought", "3년 안에 하고 싶어요", "text/plain;charset=UTF-8")
 					.multiPart("preferredPartner", "대화가 잘 통하는 사람", "text/plain;charset=UTF-8")
 					.multiPart("charmPoint", "잘 웃어요", "text/plain;charset=UTF-8")

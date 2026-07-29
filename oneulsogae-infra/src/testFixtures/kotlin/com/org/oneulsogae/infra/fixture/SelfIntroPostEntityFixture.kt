@@ -2,14 +2,14 @@ package com.org.oneulsogae.infra.fixture
 
 import com.org.oneulsogae.infra.lounge.command.entity.SelfIntroPostEntity
 
-/** [SelfIntroPostEntity] 테스트 픽스처. 본문 7개 항목을 모두 채운다. */
+/** [SelfIntroPostEntity] 테스트 픽스처. 본문 항목을 모두 채운다. (mbti는 프로필 스냅샷 — null 허용) */
 object SelfIntroPostEntityFixture {
 
 	fun create(
 		postId: Long,
 		longDistance: String = "장거리 가능해요",
 		desiredAge: String = "28~34세",
-		mbti: String = "ENFP",
+		mbti: String? = "ENFP",
 		marriageThought: String = "3년 안에 하고 싶어요",
 		preferredPartner: String = "대화가 잘 통하는 사람",
 		charmPoint: String = "잘 웃어요",

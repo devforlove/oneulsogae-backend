@@ -11,8 +11,6 @@ data class RegisterSelfIntroPostCommand(
 	val longDistance: String,
 	/** 원하는 상대 나이대. */
 	val desiredAge: String,
-	/** 본인 MBTI. */
-	val mbti: String,
 	/** 결혼에 대한 생각. */
 	val marriageThought: String,
 	/** 선호하는 상대의 성격·가치관. */

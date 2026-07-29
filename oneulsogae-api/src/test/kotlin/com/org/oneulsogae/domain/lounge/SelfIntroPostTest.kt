@@ -27,7 +27,7 @@ class SelfIntroPostTest : DescribeSpec({
 	)
 
 	describe("create") {
-		it("본문 7개 항목을 담아 셀소를 만든다") {
+		it("본문 항목과 프로필 MBTI 스냅샷을 담아 셀소를 만든다") {
 			val post: SelfIntroPost = create()
 
 			post.postId shouldBe 1L
@@ -48,7 +48,6 @@ class SelfIntroPostTest : DescribeSpec({
 				SelfIntroPost.validateContent(
 					longDistance = "장거리 가능해요",
 					desiredAge = "  ",
-					mbti = "ENFP",
 					marriageThought = "3년 안에 하고 싶어요",
 					preferredPartner = "대화가 잘 통하는 사람",
 					charmPoint = "잘 웃어요",
@@ -64,7 +63,6 @@ class SelfIntroPostTest : DescribeSpec({
 				SelfIntroPost.validateContent(
 					longDistance = "장거리 가능해요",
 					desiredAge = "28~34세",
-					mbti = "ENFP",
 					marriageThought = "가".repeat(SelfIntroPost.MAX_LONG_TEXT_LENGTH + 1),
 					preferredPartner = "대화가 잘 통하는 사람",
 					charmPoint = "잘 웃어요",
@@ -75,21 +73,6 @@ class SelfIntroPostTest : DescribeSpec({
 			exception.errorCode shouldBe LoungeErrorCode.SELF_INTRO_INVALID_CONTENT
 		}
 
-		it("MBTI가 최대 길이를 넘으면 SELF_INTRO_INVALID_CONTENT") {
-			val exception: BusinessException = shouldThrow {
-				SelfIntroPost.validateContent(
-					longDistance = "장거리 가능해요",
-					desiredAge = "28~34세",
-					mbti = "E".repeat(SelfIntroPost.MAX_MBTI_LENGTH + 1),
-					marriageThought = "3년 안에 하고 싶어요",
-					preferredPartner = "대화가 잘 통하는 사람",
-					charmPoint = "잘 웃어요",
-					freeWord = "편하게 연락 주세요",
-				)
-			}
-
-			exception.errorCode shouldBe LoungeErrorCode.SELF_INTRO_INVALID_CONTENT
-		}
 	}
 
 	describe("validatePhotoCount") {
