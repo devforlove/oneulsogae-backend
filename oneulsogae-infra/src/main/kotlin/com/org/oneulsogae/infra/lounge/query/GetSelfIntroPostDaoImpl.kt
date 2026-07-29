@@ -90,13 +90,10 @@ class GetSelfIntroPostDaoImpl(
 					userDetail.job,
 					userDetail.companyName,
 					userDetail.universityName,
-					selfIntro.longDistance,
-					selfIntro.desiredAge,
 					selfIntro.mbti,
-					selfIntro.marriageThought,
-					selfIntro.preferredPartner,
+					selfIntro.interests,
+					selfIntro.idealType,
 					selfIntro.charmPoint,
-					selfIntro.freeWord,
 				),
 			)
 			.from(post)

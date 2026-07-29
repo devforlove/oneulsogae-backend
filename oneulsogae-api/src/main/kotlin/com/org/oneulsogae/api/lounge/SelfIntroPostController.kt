@@ -37,30 +37,24 @@ class SelfIntroPostController(
 	private val increaseLoungePostViewUseCase: IncreaseLoungePostViewUseCase,
 ) {
 
-	/** 사진(JPEG·PNG, 1~5장, 장당 최대 10MB)과 본문 6개 항목을 받아 셀소 글을 등록한다. (MBTI는 입력받지 않고 프로필 값을 스냅샷) */
+	/** 사진(JPEG·PNG, 1~5장, 장당 최대 10MB)과 본문 3개 항목을 받아 셀소 글을 등록한다. (MBTI는 입력받지 않고 프로필 값을 스냅샷) */
 	@Operation(
 		summary = "셀소 등록",
-		description = "multipart/form-data로 사진(photos, 1~5장 — 보낸 순서가 노출 순서)과 본문(longDistance·desiredAge 최대 40자, marriageThought·preferredPartner·charmPoint·freeWord 각 최대 500자)을 함께 보낸다. 본문 항목은 모두 필수다. MBTI는 입력받지 않고 등록 시점 프로필 값을 스냅샷으로 담는다. 사진은 S3에 비공개 저장되고 lounge_posts·self_intro_posts·lounge_post_images에 기록된다. 최근 24시간 안에 이미 등록했다면 429(LOUNGE-007)를 반환한다.",
+		description = "multipart/form-data로 사진(photos, 1~5장 — 보낸 순서가 노출 순서)과 본문(interests·idealType·charmPoint 각 최대 500자)을 함께 보낸다. 본문 항목은 모두 필수다. MBTI는 입력받지 않고 등록 시점 프로필 값을 스냅샷으로 담는다. 사진은 S3에 비공개 저장되고 lounge_posts·self_intro_posts·lounge_post_images에 기록된다. 최근 24시간 안에 이미 등록했다면 429(LOUNGE-007)를 반환한다.",
 	)
 	@PostMapping("/self-intro-posts", consumes = [MediaType.MULTIPART_FORM_DATA_VALUE])
 	fun registerSelfIntroPost(
 		@LoginUser user: AuthUser,
 		@RequestParam("photos", required = false) photos: List<MultipartFile>?,
-		@RequestParam("longDistance", required = false) longDistance: String?,
-		@RequestParam("desiredAge", required = false) desiredAge: String?,
-		@RequestParam("marriageThought", required = false) marriageThought: String?,
-		@RequestParam("preferredPartner", required = false) preferredPartner: String?,
+		@RequestParam("interests", required = false) interests: String?,
+		@RequestParam("idealType", required = false) idealType: String?,
 		@RequestParam("charmPoint", required = false) charmPoint: String?,
-		@RequestParam("freeWord", required = false) freeWord: String?,
 	): ApiResponse<SelfIntroPostResponse> {
 		val command = RegisterSelfIntroPostCommand(
 			photos = photos.orEmpty().map { photo: MultipartFile -> toFilePart(photo) },
-			longDistance = longDistance.orEmpty(),
-			desiredAge = desiredAge.orEmpty(),
-			marriageThought = marriageThought.orEmpty(),
-			preferredPartner = preferredPartner.orEmpty(),
+			interests = interests.orEmpty(),
+			idealType = idealType.orEmpty(),
 			charmPoint = charmPoint.orEmpty(),
-			freeWord = freeWord.orEmpty(),
 		)
 		return ApiResponse.success(
 			SelfIntroPostResponse.of(registerSelfIntroPostUseCase.register(user.id, command)),

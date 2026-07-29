@@ -57,16 +57,13 @@ class SelfIntroPostE2ETest : AbstractIntegrationSupport({
 			.fetch()
 	}
 
-	/** 본문 6개 항목을 모두 채운 요청. 사진은 호출부가 덧붙인다. (MBTI는 입력이 아니라 프로필 스냅샷) */
+	/** 본문 3개 항목을 모두 채운 요청. 사진은 호출부가 덧붙인다. (MBTI는 입력이 아니라 프로필 스냅샷) */
 	fun requestWithContent(userId: Long): RequestSpecification =
 		RestAssured.given()
 			.header("Authorization", "Bearer ${accessTokenFor(userId)}")
-			.multiPart("longDistance", "장거리 가능해요", "text/plain;charset=UTF-8")
-			.multiPart("desiredAge", "28~34세", "text/plain;charset=UTF-8")
-			.multiPart("marriageThought", "3년 안에 하고 싶어요", "text/plain;charset=UTF-8")
-			.multiPart("preferredPartner", "대화가 잘 통하는 사람", "text/plain;charset=UTF-8")
+			.multiPart("interests", "러닝과 전시 관람", "text/plain;charset=UTF-8")
+			.multiPart("idealType", "대화가 잘 통하는 사람", "text/plain;charset=UTF-8")
 			.multiPart("charmPoint", "잘 웃어요", "text/plain;charset=UTF-8")
-			.multiPart("freeWord", "편하게 연락 주세요", "text/plain;charset=UTF-8")
 
 	describe("POST /lounge/v1/self-intro-posts") {
 
@@ -90,8 +87,9 @@ class SelfIntroPostE2ETest : AbstractIntegrationSupport({
 				val selfIntro: SelfIntroPostEntity = selfIntroOf(post.id!!)!!
 				// MBTI는 요청에 없고, 등록 시점 프로필 값이 스냅샷으로 담긴다.
 				selfIntro.mbti shouldBe "ENFP"
-				selfIntro.desiredAge shouldBe "28~34세"
-				selfIntro.freeWord shouldBe "편하게 연락 주세요"
+				selfIntro.interests shouldBe "러닝과 전시 관람"
+				selfIntro.idealType shouldBe "대화가 잘 통하는 사람"
+				selfIntro.charmPoint shouldBe "잘 웃어요"
 
 				val images: List<LoungePostImageEntity> = imagesOf(post.id!!)
 				images.size shouldBe 2
@@ -153,11 +151,8 @@ class SelfIntroPostE2ETest : AbstractIntegrationSupport({
 
 				RestAssured.given()
 					.header("Authorization", "Bearer ${accessTokenFor(userId)}")
-					.multiPart("longDistance", "장거리 가능해요", "text/plain;charset=UTF-8")
-					.multiPart("desiredAge", "28~34세", "text/plain;charset=UTF-8")
-					.multiPart("marriageThought", "3년 안에 하고 싶어요", "text/plain;charset=UTF-8")
-					.multiPart("preferredPartner", "대화가 잘 통하는 사람", "text/plain;charset=UTF-8")
-					.multiPart("charmPoint", "잘 웃어요", "text/plain;charset=UTF-8")
+					.multiPart("interests", "러닝과 전시 관람", "text/plain;charset=UTF-8")
+					.multiPart("idealType", "대화가 잘 통하는 사람", "text/plain;charset=UTF-8")
 					.multiPart("photos", "first.jpg", "fake-first-bytes".toByteArray(), "image/jpeg")
 					.post("/lounge/v1/self-intro-posts")
 					.then()

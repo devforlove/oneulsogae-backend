@@ -7,18 +7,12 @@ package com.org.oneulsogae.core.lounge.command.application.port.`in`.command
 data class RegisterSelfIntroPostCommand(
 	/** 첨부한 사진. 목록 순서가 곧 노출 순서다. */
 	val photos: List<FilePart>,
-	/** 장거리 연애 가능 여부에 대한 답변. */
-	val longDistance: String,
-	/** 원하는 상대 나이대. */
-	val desiredAge: String,
-	/** 결혼에 대한 생각. */
-	val marriageThought: String,
-	/** 선호하는 상대의 성격·가치관. */
-	val preferredPartner: String,
+	/** 관심사. */
+	val interests: String,
+	/** 이상형/연애관. */
+	val idealType: String,
 	/** 나의 매력 어필. */
 	val charmPoint: String,
-	/** 자유 한마디. */
-	val freeWord: String,
 ) {
 
 	/** 업로드 파일 한 개의 바이트·메타. */

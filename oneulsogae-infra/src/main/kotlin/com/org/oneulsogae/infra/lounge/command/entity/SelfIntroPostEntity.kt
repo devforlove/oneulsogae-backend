@@ -25,31 +25,19 @@ class SelfIntroPostEntity(
 	@Column(name = "post_id", nullable = false)
 	val postId: Long,
 
-	/** 장거리 연애 가능 여부에 대한 답변. */
-	@Column(name = "long_distance", nullable = false, length = 40)
-	var longDistance: String,
-
-	/** 원하는 상대 나이대. */
-	@Column(name = "desired_age", nullable = false, length = 40)
-	var desiredAge: String,
-
 	/** 등록 시점 프로필의 MBTI 스냅샷. 프로필에 MBTI가 없으면 null. */
 	@Column(name = "mbti", length = 10)
 	var mbti: String?,
 
-	/** 결혼에 대한 생각. */
-	@Column(name = "marriage_thought", nullable = false, length = 500)
-	var marriageThought: String,
+	/** 관심사. */
+	@Column(name = "interests", nullable = false, length = 500)
+	var interests: String,
 
-	/** 선호하는 상대의 성격·가치관. */
-	@Column(name = "preferred_partner", nullable = false, length = 500)
-	var preferredPartner: String,
+	/** 이상형/연애관. */
+	@Column(name = "ideal_type", nullable = false, length = 500)
+	var idealType: String,
 
 	/** 나의 매력 어필. */
 	@Column(name = "charm_point", nullable = false, length = 500)
 	var charmPoint: String,
-
-	/** 자유 한마디. */
-	@Column(name = "free_word", nullable = false, length = 500)
-	var freeWord: String,
 ) : BaseEntity()

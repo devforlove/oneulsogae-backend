@@ -7,22 +7,16 @@ object SelfIntroPostEntityFixture {
 
 	fun create(
 		postId: Long,
-		longDistance: String = "장거리 가능해요",
-		desiredAge: String = "28~34세",
 		mbti: String? = "ENFP",
-		marriageThought: String = "3년 안에 하고 싶어요",
-		preferredPartner: String = "대화가 잘 통하는 사람",
+		interests: String = "러닝과 전시 관람",
+		idealType: String = "대화가 잘 통하는 사람",
 		charmPoint: String = "잘 웃어요",
-		freeWord: String = "편하게 연락 주세요",
 	): SelfIntroPostEntity =
 		SelfIntroPostEntity(
 			postId = postId,
-			longDistance = longDistance,
-			desiredAge = desiredAge,
 			mbti = mbti,
-			marriageThought = marriageThought,
-			preferredPartner = preferredPartner,
+			interests = interests,
+			idealType = idealType,
 			charmPoint = charmPoint,
-			freeWord = freeWord,
 		)
 }

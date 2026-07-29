@@ -25,13 +25,14 @@ data class SelfIntroPostDetailResponse(
 	val companyName: String?,
 	/** 학교명. 학교 인증을 하지 않았으면 null. */
 	val universityName: String?,
-	val longDistance: String,
-	val desiredAge: String,
+	/** 등록 시점 프로필의 MBTI 스냅샷. 프로필에 MBTI가 없던 글은 null. */
 	val mbti: String?,
-	val marriageThought: String,
-	val preferredPartner: String,
+	/** 관심사. (필드 도입 전 구버전 글은 빈 문자열) */
+	val interests: String,
+	/** 이상형/연애관. (필드 도입 전 구버전 글은 빈 문자열) */
+	val idealType: String,
+	/** 나의 매력 어필. */
 	val charmPoint: String,
-	val freeWord: String,
 	val imageUrls: List<String>,
 	/** 이 작성자에게 대화를 신청할 때 드는 코인 수. 조회한 사용자(뷰어) 성별로 갈리며, 비로그인이면 null이다. */
 	val chatRequestCoinAmount: Int?,
@@ -56,13 +57,10 @@ data class SelfIntroPostDetailResponse(
 				job = view.job,
 				companyName = view.companyName,
 				universityName = view.universityName,
-				longDistance = view.longDistance,
-				desiredAge = view.desiredAge,
 				mbti = view.mbti,
-				marriageThought = view.marriageThought,
-				preferredPartner = view.preferredPartner,
+				interests = view.interests,
+				idealType = view.idealType,
 				charmPoint = view.charmPoint,
-				freeWord = view.freeWord,
 				imageUrls = view.imageUrls,
 				chatRequestCoinAmount = view.chatRequestCoinAmount,
 				chatRequestedByMe = view.chatRequestedByMe,

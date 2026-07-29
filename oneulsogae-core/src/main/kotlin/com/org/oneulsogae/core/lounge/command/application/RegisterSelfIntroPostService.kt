@@ -50,12 +50,9 @@ class RegisterSelfIntroPostService(
 
 		// 잘못된 입력이 S3에 올라가지 않도록 업로드 전에 본문·사진·등록 빈도를 모두 검증한다. (롤백돼도 S3 고아 객체가 남지 않게)
 		SelfIntroPost.validateContent(
-			longDistance = command.longDistance,
-			desiredAge = command.desiredAge,
-			marriageThought = command.marriageThought,
-			preferredPartner = command.preferredPartner,
+			interests = command.interests,
+			idealType = command.idealType,
 			charmPoint = command.charmPoint,
-			freeWord = command.freeWord,
 		)
 		SelfIntroPost.validatePhotoCount(command.photos.size)
 		command.photos.forEach { photo: RegisterSelfIntroPostCommand.FilePart ->
@@ -72,14 +69,11 @@ class RegisterSelfIntroPostService(
 		saveSelfIntroPostPort.save(
 			SelfIntroPost.create(
 				postId = post.id,
-				longDistance = command.longDistance,
-				desiredAge = command.desiredAge,
 				// MBTI는 프로필 소유 — 입력 대신 등록 시점 프로필 값을 스냅샷으로 담는다.
 				mbti = getUserDetailUseCase.getByUserId(userId).mbti,
-				marriageThought = command.marriageThought,
-				preferredPartner = command.preferredPartner,
+				interests = command.interests,
+				idealType = command.idealType,
 				charmPoint = command.charmPoint,
-				freeWord = command.freeWord,
 			),
 		)
 		saveLoungePostImagePort.saveAll(LoungePostImages.of(post.id, imageKeys))

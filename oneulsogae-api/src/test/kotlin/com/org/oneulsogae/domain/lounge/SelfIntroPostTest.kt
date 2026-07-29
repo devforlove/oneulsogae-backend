@@ -17,13 +17,10 @@ class SelfIntroPostTest : DescribeSpec({
 
 	fun create(): SelfIntroPost = SelfIntroPost.create(
 		postId = 1L,
-		longDistance = "장거리 가능해요",
-		desiredAge = "28~34세",
 		mbti = "ENFP",
-		marriageThought = "3년 안에 하고 싶어요",
-		preferredPartner = "대화가 잘 통하는 사람",
+		interests = "러닝과 전시 관람",
+		idealType = "대화가 잘 통하는 사람",
 		charmPoint = "잘 웃어요",
-		freeWord = "편하게 연락 주세요",
 	)
 
 	describe("create") {
@@ -31,13 +28,10 @@ class SelfIntroPostTest : DescribeSpec({
 			val post: SelfIntroPost = create()
 
 			post.postId shouldBe 1L
-			post.longDistance shouldBe "장거리 가능해요"
-			post.desiredAge shouldBe "28~34세"
 			post.mbti shouldBe "ENFP"
-			post.marriageThought shouldBe "3년 안에 하고 싶어요"
-			post.preferredPartner shouldBe "대화가 잘 통하는 사람"
+			post.interests shouldBe "러닝과 전시 관람"
+			post.idealType shouldBe "대화가 잘 통하는 사람"
 			post.charmPoint shouldBe "잘 웃어요"
-			post.freeWord shouldBe "편하게 연락 주세요"
 			post.id shouldBe 0
 		}
 	}
@@ -46,12 +40,9 @@ class SelfIntroPostTest : DescribeSpec({
 		it("본문 항목이 공백이면 SELF_INTRO_INVALID_CONTENT") {
 			val exception: BusinessException = shouldThrow {
 				SelfIntroPost.validateContent(
-					longDistance = "장거리 가능해요",
-					desiredAge = "  ",
-					marriageThought = "3년 안에 하고 싶어요",
-					preferredPartner = "대화가 잘 통하는 사람",
+					interests = "  ",
+					idealType = "대화가 잘 통하는 사람",
 					charmPoint = "잘 웃어요",
-					freeWord = "편하게 연락 주세요",
 				)
 			}
 
@@ -61,12 +52,9 @@ class SelfIntroPostTest : DescribeSpec({
 		it("서술형 항목이 최대 길이를 넘으면 SELF_INTRO_INVALID_CONTENT") {
 			val exception: BusinessException = shouldThrow {
 				SelfIntroPost.validateContent(
-					longDistance = "장거리 가능해요",
-					desiredAge = "28~34세",
-					marriageThought = "가".repeat(SelfIntroPost.MAX_LONG_TEXT_LENGTH + 1),
-					preferredPartner = "대화가 잘 통하는 사람",
+					interests = "러닝과 전시 관람",
+					idealType = "가".repeat(SelfIntroPost.MAX_LONG_TEXT_LENGTH + 1),
 					charmPoint = "잘 웃어요",
-					freeWord = "편하게 연락 주세요",
 				)
 			}
 

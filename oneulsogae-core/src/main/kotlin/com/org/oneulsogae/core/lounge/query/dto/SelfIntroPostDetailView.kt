@@ -25,13 +25,14 @@ data class SelfIntroPostDetailView(
 	val companyName: String?,
 	/** 학교명. 학교 인증을 하지 않았으면 null. */
 	val universityName: String?,
-	val longDistance: String,
-	val desiredAge: String,
+	/** 등록 시점 프로필의 MBTI 스냅샷. 프로필에 MBTI가 없던 글은 null. */
 	val mbti: String?,
-	val marriageThought: String,
-	val preferredPartner: String,
+	/** 관심사. (필드 도입 전 구버전 글은 빈 문자열) */
+	val interests: String,
+	/** 이상형/연애관. (필드 도입 전 구버전 글은 빈 문자열) */
+	val idealType: String,
+	/** 나의 매력 어필. */
 	val charmPoint: String,
-	val freeWord: String,
 	/** 작성자 만 나이. 서비스가 [birthday]와 기준일로 채운다. (생년월일이 없으면 null) */
 	val age: Int? = null,
 	/** 사진의 열람용 URL 목록(노출 순서). 서비스가 [imageKeys]를 presign해 채운다. */
@@ -70,16 +71,13 @@ data class SelfIntroPostDetailView(
 		job: String?,
 		companyName: String?,
 		universityName: String?,
-		longDistance: String,
-		desiredAge: String,
 		mbti: String?,
-		marriageThought: String,
-		preferredPartner: String,
+		interests: String,
+		idealType: String,
 		charmPoint: String,
-		freeWord: String,
 	) : this(
 		postId, authorNickname, likeCount, viewCount, gender, birthday, height, activityArea, job, companyName, universityName,
-		longDistance, desiredAge, mbti, marriageThought, preferredPartner, charmPoint, freeWord,
+		mbti, interests, idealType, charmPoint,
 		null, emptyList(), emptyList(),
 	)
 
