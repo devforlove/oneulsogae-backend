@@ -3,6 +3,7 @@ package com.org.oneulsogae.infra.user.command.entity
 import com.org.oneulsogae.infra.common.BaseEntity
 import jakarta.persistence.Column
 import jakarta.persistence.Entity
+import jakarta.persistence.Index
 import jakarta.persistence.Table
 import jakarta.persistence.UniqueConstraint
 import java.time.LocalDateTime
@@ -17,6 +18,10 @@ import java.time.LocalDateTime
 @Entity
 @Table(
 	name = "referral_reward_grants",
+	indexes = [
+		// 추천 실적 집계(referrer_user_id 동등 + count·sum)용.
+		Index(name = "idx_referrer_user_id", columnList = "referrer_user_id"),
+	],
 	uniqueConstraints = [
 		// 동시 요청까지 막는 최종 방어선. 판정은 존재 여부 조회로 하고, 이 제약은 안전망이다.
 		UniqueConstraint(name = "ux_referred_di_hash", columnNames = ["referred_di_hash"]),
