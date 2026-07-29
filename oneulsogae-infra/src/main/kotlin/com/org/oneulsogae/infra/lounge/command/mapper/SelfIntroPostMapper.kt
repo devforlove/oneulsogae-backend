@@ -10,8 +10,10 @@ fun SelfIntroPostEntity.toDomain(): SelfIntroPost =
 		postId = postId,
 		mbti = mbti,
 		interests = interests,
+		personality = personality,
 		idealType = idealType,
 		charmPoint = charmPoint,
+		freeWord = freeWord,
 	)
 
 /**
@@ -23,6 +25,8 @@ fun SelfIntroPost.toEntity(): SelfIntroPostEntity =
 		postId = postId,
 		mbti = mbti,
 		interests = interests,
+		personality = personality,
 		idealType = idealType,
 		charmPoint = charmPoint,
+		freeWord = freeWord,
 	).also { if (id != 0L) it.id = id }

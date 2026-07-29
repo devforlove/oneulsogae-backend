@@ -19,8 +19,10 @@ class SelfIntroPostTest : DescribeSpec({
 		postId = 1L,
 		mbti = "ENFP",
 		interests = "러닝과 전시 관람",
+		personality = "긍정적이고 다정해요",
 		idealType = "대화가 잘 통하는 사람",
 		charmPoint = "잘 웃어요",
+		freeWord = "편하게 연락주세요",
 	)
 
 	describe("create") {
@@ -30,8 +32,10 @@ class SelfIntroPostTest : DescribeSpec({
 			post.postId shouldBe 1L
 			post.mbti shouldBe "ENFP"
 			post.interests shouldBe "러닝과 전시 관람"
+			post.personality shouldBe "긍정적이고 다정해요"
 			post.idealType shouldBe "대화가 잘 통하는 사람"
 			post.charmPoint shouldBe "잘 웃어요"
+			post.freeWord shouldBe "편하게 연락주세요"
 			post.id shouldBe 0
 		}
 	}
@@ -41,8 +45,10 @@ class SelfIntroPostTest : DescribeSpec({
 			val exception: BusinessException = shouldThrow {
 				SelfIntroPost.validateContent(
 					interests = "  ",
+					personality = "긍정적이고 다정해요",
 					idealType = "대화가 잘 통하는 사람",
 					charmPoint = "잘 웃어요",
+					freeWord = "편하게 연락주세요",
 				)
 			}
 
@@ -53,8 +59,10 @@ class SelfIntroPostTest : DescribeSpec({
 			val exception: BusinessException = shouldThrow {
 				SelfIntroPost.validateContent(
 					interests = "러닝과 전시 관람",
+					personality = "긍정적이고 다정해요",
 					idealType = "가".repeat(SelfIntroPost.MAX_LONG_TEXT_LENGTH + 1),
 					charmPoint = "잘 웃어요",
+					freeWord = "편하게 연락주세요",
 				)
 			}
 

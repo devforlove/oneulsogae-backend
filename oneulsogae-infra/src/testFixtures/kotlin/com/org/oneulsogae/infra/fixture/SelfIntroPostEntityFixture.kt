@@ -9,14 +9,18 @@ object SelfIntroPostEntityFixture {
 		postId: Long,
 		mbti: String? = "ENFP",
 		interests: String = "러닝과 전시 관람",
+		personality: String = "긍정적이고 다정해요",
 		idealType: String = "대화가 잘 통하는 사람",
 		charmPoint: String = "잘 웃어요",
+		freeWord: String = "편하게 연락주세요",
 	): SelfIntroPostEntity =
 		SelfIntroPostEntity(
 			postId = postId,
 			mbti = mbti,
 			interests = interests,
+			personality = personality,
 			idealType = idealType,
 			charmPoint = charmPoint,
+			freeWord = freeWord,
 		)
 }

@@ -57,13 +57,15 @@ class SelfIntroPostE2ETest : AbstractIntegrationSupport({
 			.fetch()
 	}
 
-	/** 본문 3개 항목을 모두 채운 요청. 사진은 호출부가 덧붙인다. (MBTI는 입력이 아니라 프로필 스냅샷) */
+	/** 본문 5개 항목을 모두 채운 요청. 사진은 호출부가 덧붙인다. (MBTI는 입력이 아니라 프로필 스냅샷) */
 	fun requestWithContent(userId: Long): RequestSpecification =
 		RestAssured.given()
 			.header("Authorization", "Bearer ${accessTokenFor(userId)}")
 			.multiPart("interests", "러닝과 전시 관람", "text/plain;charset=UTF-8")
+			.multiPart("personality", "긍정적이고 다정해요", "text/plain;charset=UTF-8")
 			.multiPart("idealType", "대화가 잘 통하는 사람", "text/plain;charset=UTF-8")
 			.multiPart("charmPoint", "잘 웃어요", "text/plain;charset=UTF-8")
+			.multiPart("freeWord", "편하게 연락주세요", "text/plain;charset=UTF-8")
 
 	describe("POST /lounge/v1/self-intro-posts") {
 
@@ -88,8 +90,10 @@ class SelfIntroPostE2ETest : AbstractIntegrationSupport({
 				// MBTI는 요청에 없고, 등록 시점 프로필 값이 스냅샷으로 담긴다.
 				selfIntro.mbti shouldBe "ENFP"
 				selfIntro.interests shouldBe "러닝과 전시 관람"
+				selfIntro.personality shouldBe "긍정적이고 다정해요"
 				selfIntro.idealType shouldBe "대화가 잘 통하는 사람"
 				selfIntro.charmPoint shouldBe "잘 웃어요"
+				selfIntro.freeWord shouldBe "편하게 연락주세요"
 
 				val images: List<LoungePostImageEntity> = imagesOf(post.id!!)
 				images.size shouldBe 2

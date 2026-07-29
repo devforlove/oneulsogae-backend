@@ -92,8 +92,10 @@ class GetSelfIntroPostDaoImpl(
 					userDetail.universityName,
 					selfIntro.mbti,
 					selfIntro.interests,
+					selfIntro.personality,
 					selfIntro.idealType,
 					selfIntro.charmPoint,
+					selfIntro.freeWord,
 				),
 			)
 			.from(post)

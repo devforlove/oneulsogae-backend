@@ -8,7 +8,7 @@ import java.time.LocalDateTime
  * 셀프 소개팅(셀소) 본문 도메인 모델. 공통 골격([LoungePost])에 [postId]로 붙는다.
  * 작성자의 성별·나이·키·지역·직업은 프로필(user 도메인)이 소유하므로 여기에 담지 않고 조회 시 조인한다.
  * MBTI도 프로필 소유라 입력받지 않으며, 등록 시점의 프로필 값을 스냅샷으로 담는다. (프로필에 없으면 null)
- * 본문 항목(관심사·이상형/연애관·매력 어필)은 모두 필수이며 최대 길이가 있다. 등록 빈도는 [validateDailyLimit]로 제한한다.
+ * 본문 항목(관심사·성격·이상형/연애관·매력 어필·한마디)은 모두 필수이며 최대 길이가 있다. 등록 빈도는 [validateDailyLimit]로 제한한다.
  */
 data class SelfIntroPost(
 	val id: Long = 0,
@@ -17,10 +17,14 @@ data class SelfIntroPost(
 	val mbti: String?,
 	/** 관심사. */
 	val interests: String,
+	/** 성격. */
+	val personality: String,
 	/** 이상형/연애관. */
 	val idealType: String,
 	/** 나의 매력 어필. */
 	val charmPoint: String,
+	/** 자유 한마디. */
+	val freeWord: String,
 ) {
 
 	companion object {
@@ -34,7 +38,7 @@ data class SelfIntroPost(
 		/** 한 글에 올릴 수 있는 최대 사진 장수. */
 		const val MAX_PHOTO_COUNT: Int = 5
 
-		/** 서술형 입력(관심사·이상형/연애관·매력 어필)의 최대 길이. */
+		/** 서술형 입력(관심사·성격·이상형/연애관·매력 어필·한마디)의 최대 길이. */
 		const val MAX_LONG_TEXT_LENGTH: Int = 500
 
 		/** 등록 빈도 제한 기준 시간(시간 단위). 이 구간 안에 등록한 셀소가 [MAX_POSTS_PER_WINDOW]건 이상이면 막는다. */
@@ -48,16 +52,20 @@ data class SelfIntroPost(
 			postId: Long,
 			mbti: String?,
 			interests: String,
+			personality: String,
 			idealType: String,
 			charmPoint: String,
+			freeWord: String,
 		): SelfIntroPost {
-			validateContent(interests, idealType, charmPoint)
+			validateContent(interests, personality, idealType, charmPoint, freeWord)
 			return SelfIntroPost(
 				postId = postId,
 				mbti = mbti,
 				interests = interests,
+				personality = personality,
 				idealType = idealType,
 				charmPoint = charmPoint,
+				freeWord = freeWord,
 			)
 		}
 
@@ -68,12 +76,16 @@ data class SelfIntroPost(
 		 */
 		fun validateContent(
 			interests: String,
+			personality: String,
 			idealType: String,
 			charmPoint: String,
+			freeWord: String,
 		) {
 			validateText(interests, MAX_LONG_TEXT_LENGTH)
+			validateText(personality, MAX_LONG_TEXT_LENGTH)
 			validateText(idealType, MAX_LONG_TEXT_LENGTH)
 			validateText(charmPoint, MAX_LONG_TEXT_LENGTH)
+			validateText(freeWord, MAX_LONG_TEXT_LENGTH)
 		}
 
 		/**

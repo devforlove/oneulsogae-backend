@@ -33,6 +33,10 @@ class SelfIntroPostEntity(
 	@Column(name = "interests", nullable = false, length = 500)
 	var interests: String,
 
+	/** 성격. */
+	@Column(name = "personality", nullable = false, length = 500)
+	var personality: String,
+
 	/** 이상형/연애관. */
 	@Column(name = "ideal_type", nullable = false, length = 500)
 	var idealType: String,
@@ -40,4 +44,8 @@ class SelfIntroPostEntity(
 	/** 나의 매력 어필. */
 	@Column(name = "charm_point", nullable = false, length = 500)
 	var charmPoint: String,
+
+	/** 자유 한마디. */
+	@Column(name = "free_word", nullable = false, length = 500)
+	var freeWord: String,
 ) : BaseEntity()

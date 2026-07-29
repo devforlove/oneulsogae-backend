@@ -92,8 +92,10 @@ class GetSelfIntroPostDetailE2ETest : AbstractIntegrationSupport({
 					.body("data.universityName", Matchers.equalTo("한국대학교"))
 					.body("data.mbti", Matchers.equalTo("ENFP"))
 					.body("data.interests", Matchers.equalTo("러닝과 전시 관람"))
+					.body("data.personality", Matchers.equalTo("긍정적이고 다정해요"))
 					.body("data.idealType", Matchers.equalTo("대화가 잘 통하는 사람"))
 					.body("data.charmPoint", Matchers.equalTo("잘 웃어요"))
+					.body("data.freeWord", Matchers.equalTo("편하게 연락주세요"))
 					// 대화 신청 버튼의 비용 안내값. 조회한 사용자(뷰어, 여기서는 작성자 본인=FEMALE) 성별 기준이다.
 					.body("data.chatRequestCoinAmount", Matchers.equalTo(CoinUsageType.LOUNGE_CHAT_INIT.coinAmount(Gender.FEMALE)))
 					.body("data.imageUrls", Matchers.hasSize<Any>(2))

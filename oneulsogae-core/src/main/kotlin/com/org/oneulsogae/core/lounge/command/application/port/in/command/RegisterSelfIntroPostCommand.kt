@@ -9,10 +9,14 @@ data class RegisterSelfIntroPostCommand(
 	val photos: List<FilePart>,
 	/** 관심사. */
 	val interests: String,
+	/** 성격. */
+	val personality: String,
 	/** 이상형/연애관. */
 	val idealType: String,
 	/** 나의 매력 어필. */
 	val charmPoint: String,
+	/** 자유 한마디. */
+	val freeWord: String,
 ) {
 
 	/** 업로드 파일 한 개의 바이트·메타. */
